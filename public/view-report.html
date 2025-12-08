@@ -1,0 +1,1856 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>View Report - LSPU Emergency Response System</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/fix-rotation.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <script src="https://cdn.jsdelivr.net/npm/supabase@2"></script>
+    <script src="js/supabase.js"></script>
+    <style>
+        .admin-view-page {
+            background: #f8fafc;
+            min-height: 100vh;
+        }
+        
+        .report-header {
+            background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%);
+            color: white;
+            padding: 2rem;
+            border-radius: 12px;
+            margin-bottom: 2rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+        
+        .report-header h1 {
+            font-size: 2rem;
+            font-weight: 700;
+            margin: 0 0 0.5rem 0;
+        }
+        
+        .report-header .subtitle {
+            font-size: 1.1rem;
+            opacity: 0.9;
+            margin: 0;
+        }
+        
+        .report-meta {
+            display: flex;
+            gap: 2rem;
+            margin-top: 1.5rem;
+            flex-wrap: wrap;
+        }
+        
+        .meta-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-size: 0.9rem;
+        }
+        
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+        
+        .info-card {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            border: 1px solid #e5e7eb;
+        }
+        
+        .info-card h3 {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #1f2937;
+            margin: 0 0 1rem 0;
+            padding-bottom: 0.5rem;
+            border-bottom: 2px solid #3b82f6;
+        }
+        
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.75rem 0;
+            border-bottom: 1px solid #f3f4f6;
+        }
+        
+        .info-row:last-child {
+            border-bottom: none;
+        }
+        
+        .info-label {
+            font-weight: 600;
+            color: #374151;
+            font-size: 0.9rem;
+        }
+        
+        .info-value {
+            color: #1f2937;
+            font-size: 0.9rem;
+            text-align: right;
+            max-width: 60%;
+        }
+        
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .status-pending { background: #fef3c7; color: #d97706; }
+        .status-processing { background: #dbeafe; color: #2563eb; }
+        .status-classified { background: #fed7aa; color: #ea580c; }
+        .status-assigned { background: #e0e7ff; color: #7c3aed; }
+        .status-in-progress { background: #a7f3d0; color: #059669; }
+        .status-completed { background: #d1fae5; color: #047857; }
+        .status-cancelled { background: #f3f4f6; color: #6b7280; }
+        
+        .priority-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+        
+        .priority-1 { background: #fee2e2; color: #dc2626; }
+        .priority-2 { background: #fef3c7; color: #d97706; }
+        .priority-3 { background: #dbeafe; color: #2563eb; }
+        .priority-4 { background: #f3f4f6; color: #6b7280; }
+        
+        .emergency-type {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+        
+        .type-fire { background: #fee2e2; color: #dc2626; }
+        .type-flood { background: #dbeafe; color: #2563eb; }
+        .type-accident { background: #fef3c7; color: #d97706; }
+        .type-medical { background: #d1fae5; color: #059669; }
+        .type-other { background: #f3f4f6; color: #6b7280; }
+        
+        .action-buttons {
+            display: flex;
+            gap: 1rem;
+            margin-top: 2rem;
+            padding-top: 2rem;
+            border-top: 1px solid #e5e7eb;
+        }
+        
+        .btn-action {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            font-weight: 600;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            border: none;
+            cursor: pointer;
+        }
+        
+        .btn-primary {
+            background: #3b82f6;
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: #2563eb;
+            transform: translateY(-1px);
+        }
+        
+        .btn-success {
+            background: #10b981;
+            color: white;
+        }
+        
+        .btn-success:hover {
+            background: #059669;
+            transform: translateY(-1px);
+        }
+        
+        .btn-secondary {
+            background: #6b7280;
+            color: white;
+        }
+        
+        .btn-secondary:hover {
+            background: #4b5563;
+            transform: translateY(-1px);
+        }
+        
+        .image-preview {
+            width: 100%;
+            max-width: 300px;
+            height: 200px;
+            object-fit: cover;
+            border-radius: 8px;
+            border: 1px solid #e5e7eb;
+        }
+        
+        .no-image {
+            width: 100%;
+            max-width: 300px;
+            height: 200px;
+            background: #f3f4f6;
+            border: 2px dashed #d1d5db;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #6b7280;
+            font-size: 0.9rem;
+        }
+        
+        /* Two-column pair rows for labels and values */
+        .pair-row {
+            display: grid;
+            grid-template-columns: 120px 1fr;
+            gap: 1rem;
+            align-items: start;
+        }
+        .pair-label {
+            font-weight: 600;
+            color: #374151;
+            font-size: 0.9rem;
+        }
+        .pair-value {
+            color: #1f2937;
+            font-size: 0.9rem;
+            text-align: left;
+            word-break: break-word;
+            overflow-wrap: anywhere;
+        }
+        
+        .loading-state {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 3rem;
+            color: #6b7280;
+        }
+        
+        .spinner {
+            width: 2rem;
+            height: 2rem;
+            border: 3px solid #e5e7eb;
+            border-top: 3px solid #3b82f6;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-right: 1rem;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Multi-select responder list styles */
+        .responder-item {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.75rem;
+            border-bottom: 1px solid #f3f4f6;
+            transition: background-color 0.2s ease;
+            cursor: pointer;
+        }
+
+        .responder-item:hover {
+            background-color: #f9fafb;
+        }
+
+        .responder-item:last-child {
+            border-bottom: none;
+        }
+
+        .responder-item input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+            accent-color: #3b82f6;
+        }
+
+        .responder-item-info {
+            flex: 1;
+        }
+
+        .responder-item-name {
+            font-weight: 500;
+            color: #1f2937;
+            font-size: 0.9rem;
+        }
+
+        .responder-item-role {
+            font-size: 0.75rem;
+            color: #6b7280;
+        }
+
+        .responder-item-assigned {
+            background-color: #f0fdf4;
+            border-left: 3px solid #10b981;
+        }
+
+        .responder-item-assigned .responder-item-name {
+            color: #059669;
+        }
+
+        .responder-item-assigned::after {
+            content: "✓ Assigned";
+            font-size: 0.75rem;
+            color: #059669;
+            font-weight: 600;
+            margin-left: auto;
+        }
+
+        /* Toast Notification Styles */
+        .toast-notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            min-width: 300px;
+            max-width: 500px;
+            padding: 1rem 1.5rem;
+            border-radius: 12px;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3), 0 8px 10px -6px rgba(0, 0, 0, 0.2);
+            z-index: 10002 !important; /* Above modals */
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            animation: slideInRight 0.3s ease, fadeOut 0.3s ease 2.7s forwards;
+            font-weight: 500;
+            font-size: 0.9375rem;
+            pointer-events: auto;
+        }
+
+        .toast-notification.success {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white;
+            border-left: 4px solid #047857;
+        }
+
+        .toast-notification.error {
+            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+            color: white;
+            border-left: 4px solid #b91c1c;
+        }
+
+        .toast-notification.info {
+            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+            color: white;
+            border-left: 4px solid #1d4ed8;
+        }
+
+        .toast-notification.warning {
+            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+            color: white;
+            border-left: 4px solid #b45309;
+        }
+
+        .toast-icon {
+            font-size: 1.5rem;
+            flex-shrink: 0;
+        }
+
+        .toast-message {
+            flex: 1;
+            line-height: 1.5;
+        }
+
+        .toast-close {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 1.25rem;
+            cursor: pointer;
+            padding: 0;
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0.8;
+            transition: opacity 0.2s;
+            flex-shrink: 0;
+        }
+
+        .toast-close:hover {
+            opacity: 1;
+        }
+
+        @keyframes slideInRight {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        @keyframes fadeOut {
+            from {
+                opacity: 1;
+                transform: translateX(0);
+            }
+            to {
+                opacity: 0;
+                transform: translateX(100%);
+            }
+        }
+
+        /* Hide emergencySystem alert elements */
+        .alert {
+            display: none !important;
+        }
+
+        .alerts-container {
+            display: none !important;
+        }
+    </style>
+</head>
+<body class="admin-view-page">
+    <div class="dashboard-container">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <div class="sidebar-logo">
+                    <img src="images/udrrmo image.jpg" alt="UDRRMO Logo" 
+                         style="width: 50px; height: 50px; object-fit: contain; border-radius: 50%; border: 2px solid white; display: block;">
+                    <div class="logo-text">
+                        <h3>Kapiyu Admin</h3>
+                        <p>Emergency Response</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="system-status">
+                <div class="status-indicator">
+                    <span class="status-dot online"></span>
+                    <span>System Status: Online</span>
+                </div>
+            </div>
+            
+            <nav class="sidebar-nav">
+                <a href="admin.html" class="nav-item">
+                    <i class="bi bi-house"></i> Dashboard
+                </a>
+                <a href="reports.html" class="nav-item active">
+                    <i class="bi bi-file-text"></i> Reports
+                </a>
+                <a href="announcements.html" class="nav-item">
+                    <i class="bi bi-megaphone"></i> Announcements
+                </a>
+                <a href="early-warning.html" class="nav-item">
+                    <i class="bi bi-shield-exclamation"></i> Early Warning
+                </a>
+                <a href="map.html" class="nav-item">
+                    <i class="bi bi-map"></i> Map View
+                </a>
+                <a href="evacuation-guide.html" class="nav-item">
+                    <i class="bi bi-compass"></i> Evacuation Guide
+                </a>
+                <a href="archive.html" class="nav-item">
+                    <i class="bi bi-folder"></i> Archived
+                </a>
+                <a href="analytics.html" class="nav-item">
+                    <i class="bi bi-graph-up"></i> Analytics
+                </a>
+                <a href="user-management.html" class="nav-item">
+                    <i class="bi bi-people"></i> User Management
+                </a>
+                <a href="lsm-admin.html" class="nav-item">
+                    <i class="bi bi-journal-bookmark"></i> Learning Modules
+                </a>
+            </nav>
+            
+            <div class="sidebar-footer">
+                <div class="user-info-card">
+                    <div class="user-avatar">A</div>
+                    <div class="user-details">
+                        <h4>Admin User</h4>
+                        <p>Kapiyu Command</p>
+                    </div>
+                </div>
+                <button class="logout-btn" onclick="showLogoutConfirm()" style="width: 100%;padding: 0.75rem 1rem;background: rgba(239, 68, 68, 0.1);border: 1px solid rgba(239, 68, 68, 0.3);color: #fca5a5;border-radius: 8px;font-size: 0.875rem;font-weight: 500;cursor: pointer;transition: all 0.2s ease;display: flex;align-items: center;gap: 0.5rem;margin-left: 0px;">
+                    <i class="bi bi-box-arrow-right"></i> Logout
+                </button>
+            </div>
+        </div>
+
+        <style>
+            .logout-btn:hover {
+                background: #EF4444 !important;
+                border-color: #EF4444 !important;
+                color: white !important;
+            }
+            
+            .logout-btn:hover i {
+                color: white !important;
+            }
+        </style>
+        
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Report Header -->
+            <div class="report-header">
+                <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                    <div>
+                        <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 0.5rem;">
+                            <i class="bi bi-clipboard-data" style="font-size: 1.5rem;"></i>
+                            <h1 style="margin: 0; font-size: 1.5rem;">Emergency Report Details</h1>
+                        </div>
+                        <p class="subtitle" style="margin: 0; opacity: 0.8;">Comprehensive view of emergency report information</p>
+                    </div>
+                    <div></div>
+                </div>
+            </div>
+            
+            <!-- Report Information Grid -->
+            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin-bottom: 2rem;">
+                <!-- Emergency Information -->
+                <div class="info-card" style="border: 1px solid #e5e7eb; border-radius: 0.5rem; overflow: hidden;">
+                    <div style="background-color: #f9fafb; padding: 1rem; border-bottom: 1px solid #e5e7eb;">
+                        <div style="display: flex; align-items: center; gap: 0.5rem;">
+                            <i class="bi bi-exclamation-triangle"></i>
+                            <h3 style="margin: 0; font-size: 1rem;">Emergency Information</h3>
+                        </div>
+                    </div>
+                    <div style="padding: 1rem;">
+                        <div style="display: grid; gap: 1rem;">
+                            <div class="pair-row">
+                                <span class="pair-label">Type</span>
+                                <div id="emergencyType" class="pair-value" style="text-align: right;">Loading...</div>
+                            </div>
+                            <div class="pair-row">
+                                <span class="pair-label">Classification</span>
+                                <div id="emergencyClassification" class="pair-value" style="text-align: right;">-</div>
+                            </div>
+                            <div class="pair-row">
+                                <span class="pair-label">Status</span>
+                                <div id="emergencyStatus" class="pair-value" style="text-align: right;">Loading...</div>
+                            </div>
+                            <div class="pair-row">
+                                <span class="pair-label">Priority</span>
+                                <div id="emergencyPriority" class="pair-value" style="text-align: right;">Loading...</div>
+                            </div>
+                            <div class="pair-row">
+                                <span class="pair-label">Severity</span>
+                                <div id="emergencySeverity" class="pair-value" style="text-align: right;">Loading...</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Reporter Information -->
+                <div class="info-card" style="border: 1px solid #e5e7eb; border-radius: 0.5rem; overflow: hidden;">
+                    <div style="background-color: #f9fafb; padding: 1rem; border-bottom: 1px solid #e5e7eb;">
+                        <div style="display: flex; align-items: center; gap: 0.5rem;">
+                            <i class="bi bi-person"></i>
+                            <h3 style="margin: 0; font-size: 1rem;">Reporter Information</h3>
+                        </div>
+                    </div>
+                    <div style="padding: 1rem;">
+                        <div style="display: grid; gap: 1rem;">
+                            <div class="pair-row">
+                                <span class="pair-label">Name</span>
+                                <div id="reporterName" class="pair-value">Loading...</div>
+                            </div>
+                            <div class="pair-row">
+                                <span class="pair-label">Email</span>
+                                <div id="reporterEmail" class="pair-value">Loading...</div>
+                            </div>
+                            <div class="pair-row">
+                                <span class="pair-label">Student No.</span>
+                                <div id="reporterStudentNo" class="pair-value">Loading...</div>
+                            </div>
+                            <div class="pair-row">
+                                <span class="pair-label">Contact</span>
+                                <div id="reporterContact" class="pair-value">Loading...</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Location & Description -->
+                <div class="info-card" style="border: 1px solid #e5e7eb; border-radius: 0.5rem; overflow: hidden;">
+                    <div style="background-color: #f9fafb; padding: 1rem; border-bottom: 1px solid #e5e7eb;">
+                        <div style="display: flex; align-items: center; gap: 0.5rem;">
+                            <i class="bi bi-geo-alt"></i>
+                            <h3 style="margin: 0; font-size: 1rem;">Location & Description</h3>
+                        </div>
+                    </div>
+                    <div style="padding: 1rem;">
+                        <div style="display: grid; gap: 1rem;">
+                            <div class="pair-row">
+                                <span class="pair-label">Location</span>
+                                <div id="reportLocation" class="pair-value">Loading...</div>
+                            </div>
+                            <div class="pair-row">
+                                <span class="pair-label">Description</span>
+                                <div id="reportDescription" class="pair-value">Loading...</div>
+                            </div>
+                            <div class="image-section" style="display: grid; grid-template-columns: auto 300px; gap: 1rem; align-items: center;">
+                                <span style="color: #6B7280; font-size: 0.875rem;"></span>
+                                <div id="reportImageContainer">
+                                    <div class="no-image">No image uploaded</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Assignment Information -->
+                <div class="info-card" style="border: 1px solid #e5e7eb; border-radius: 0.5rem; overflow: hidden;">
+                    <div style="background-color: #f9fafb; padding: 1rem; border-bottom: 1px solid #e5e7eb;">
+                        <div style="display: flex; align-items: center; gap: 0.5rem;">
+                            <i class="bi bi-person-badge"></i>
+                            <h3 style="margin: 0; font-size: 1rem;">Assignment Information</h3>
+                        </div>
+                    </div>
+                    <div style="padding: 1rem;">
+                        <div style="display: grid; gap: 1rem;">
+                            <div class="pair-row">
+                                <span class="pair-label">Assigned Responder</span>
+                                <div id="assignedResponder" class="pair-value">Loading...</div>
+                            </div>
+                            <div class="pair-row">
+                                <span class="pair-label">Assignment ID</span>
+                                <div id="assignmentId" class="pair-value">Loading...</div>
+                            </div>
+                            <div class="pair-row">
+                                <span class="pair-label">Response Time</span>
+                                <div id="responseTime" class="pair-value">Loading...</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Timestamps -->
+                <div class="info-card" style="border: 1px solid #e5e7eb; border-radius: 0.5rem; overflow: hidden;">
+                    <div style="background-color: #f9fafb; padding: 1rem; border-bottom: 1px solid #e5e7eb;">
+                        <div style="display: flex; align-items: center; gap: 0.5rem;">
+                            <i class="bi bi-clock-history"></i>
+                            <h3 style="margin: 0; font-size: 1rem;">Timestamps</h3>
+                        </div>
+                    </div>
+                    <div style="padding: 1rem;">
+                        <div style="display: grid; gap: 1rem;">
+                            <div class="pair-row">
+                                <span class="pair-label">Created At</span>
+                                <div id="createdAt" class="pair-value">Loading...</div>
+                            </div>
+                            <div class="pair-row">
+                                <span class="pair-label">Last Updated</span>
+                                <div id="lastUpdated" class="pair-value">Loading...</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- AI Analysis -->
+                <div class="info-card" id="aiAnalysisCard" style="display: none; border: 1px solid #e5e7eb; border-radius: 0.5rem; overflow: hidden;">
+                    <div style="background-color: #f9fafb; padding: 1rem; border-bottom: 1px solid #e5e7eb;">
+                        <div style="display: flex; align-items: center; gap: 0.5rem;">
+                            <i class="bi bi-robot"></i>
+                            <h3 style="margin: 0; font-size: 1rem;">AI Analysis</h3>
+                        </div>
+                    </div>
+                    <div style="padding: 1rem;">
+                        <div style="display: grid; gap: 1rem;">
+                            <div class="pair-row">
+                                <span class="pair-label">Analysis</span>
+                                <div id="aiAnalysis" class="pair-value">Loading...</div>
+                            </div>
+                            <div class="pair-row">
+                                <span class="pair-label">Confidence</span>
+                                <div id="aiConfidence" class="pair-value">Loading...</div>
+                            </div>
+                            <div class="pair-row">
+                                <span class="pair-label">Model</span>
+                                <div id="aiModel" class="pair-value">Loading...</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Action Buttons -->
+            <div class="action-buttons">
+                <button class="btn-action btn-success" id="assignBtn">
+                    <i class="bi bi-person-plus"></i> Assign Responder
+                </button>
+                <button class="btn-action" id="correctBtn" style="background:#F59E0B;color:white;" title="Correct Classification">
+                    <i class="bi bi-pencil-square"></i> Correct Classification
+                </button>
+                <a class="btn-action btn-primary" id="editLink">
+                    <i class="bi bi-pencil"></i> Edit Report
+                </a>
+                <a href="admin.html" class="btn-action btn-secondary">
+                    <i class="bi bi-arrow-left"></i> Back to Dashboard
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Assign Responder Modal -->
+    <div id="assignModal" class="modal-overlay" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">Assign Responder(s)</h3>
+                <button class="modal-close" onclick="closeAssignModal()">
+                    <i class="bi bi-x"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label class="form-label">Select Responders (Multiple Selection)</label>
+                    <div id="responderList" style="max-height: 300px; overflow-y: auto; border: 1px solid #e5e7eb; border-radius: 8px; padding: 0.5rem;">
+                        <div style="padding: 1rem; text-align: center; color: #6b7280;">Loading responders...</div>
+                    </div>
+                    <p style="margin-top: 0.5rem; font-size: 0.75rem; color: #6b7280;">
+                        Select one or more responders to assign to this emergency report.
+                    </p>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeAssignModal()">Cancel</button>
+                <button id="assignConfirm" class="btn btn-success">
+                    <i class="bi bi-person-plus"></i> Assign Responders
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentReport = null;
+        let reportId = null;
+
+        // Get report ID from URL
+        function getUrlParameter(name) {
+            const urlParams = new URLSearchParams(window.location.search);
+            return urlParams.get(name);
+        }
+
+        // Initialize the page
+        document.addEventListener('DOMContentLoaded', async function() {
+            try {
+                // Remove any existing alert elements from emergencySystem
+                const existingAlerts = document.querySelectorAll('.alert');
+                existingAlerts.forEach(alert => alert.remove());
+                
+                reportId = getUrlParameter('id');
+                if (!reportId) {
+                    showError('No report ID provided');
+                    return;
+                }
+
+                // Initialize emergency system
+                await window.emergencySystem.initialize();
+                
+                // Override emergencySystem alert methods to prevent showing alerts
+                if (window.emergencySystem) {
+                    window.emergencySystem.showAlert = function() { /* Disabled */ };
+                    window.emergencySystem.showSuccess = function() { /* Disabled */ };
+                    window.emergencySystem.showError = function() { /* Disabled */ };
+                    window.emergencySystem.showInfo = function() { /* Disabled */ };
+                }
+                
+                // Load report details
+                await loadReportDetails();
+                
+                console.log('✅ View report page initialized successfully');
+            } catch (error) {
+                console.error('❌ Error initializing view report page:', error);
+                showError('Failed to load report details');
+            }
+        });
+
+        // Load report details
+        async function loadReportDetails() {
+            try {
+                console.log('📄 Loading report details for ID:', reportId);
+                
+                const report = await window.emergencySystem.getReportById(reportId);
+                if (!report) {
+                    showError('Report not found');
+                    return;
+                }
+
+                currentReport = report;
+                
+                // Fetch reporter user details if reporter_uid exists
+                let reporterUserData = null;
+                if (report.reporter_uid) {
+                    try {
+                        console.log('🔍 Fetching reporter user data for UID:', report.reporter_uid);
+                        const { data, error } = await window.emergencySystem.supabase.functions.invoke('get-users', {
+                            body: {}
+                        });
+                        
+                        if (!error && data?.users) {
+                            // Find the user matching reporter_uid
+                            reporterUserData = data.users.find(u => 
+                                (u.user_id || u.id) === report.reporter_uid || 
+                                u.id === report.reporter_uid
+                            );
+                            
+                            if (reporterUserData) {
+                                console.log('✅ Found reporter user data:', reporterUserData);
+                                // Merge reporter user data into report object
+                                report.reporter_email = reporterUserData.email || '';
+                                report.reporter_student_number = reporterUserData.student_number || reporterUserData.studentNumber || '';
+                                report.reporter_phone = reporterUserData.phone || reporterUserData.contactNumber || '';
+                                report.reporter_full_name = reporterUserData.name || reporterUserData.full_name || report.reporter_name || '';
+                            }
+                        }
+                    } catch (userError) {
+                        console.warn('⚠️ Could not fetch reporter user data:', userError);
+                        // Continue without reporter user data
+                    }
+                }
+                
+                await displayReportDetails(report);
+                
+                // Set edit link
+                document.getElementById('editLink').href = `edit-report.html?id=${reportId}`;
+                
+                console.log('✅ Report details loaded successfully');
+            } catch (error) {
+                console.error('❌ Error loading report details:', error);
+                showError('Failed to load report details: ' + error.message);
+            }
+        }
+
+        // Display report details
+        async function displayReportDetails(report) {
+            // Format location data
+            let locationText = 'Location not specified';
+            if (report.location) {
+                if (typeof report.location === 'string') {
+                    try {
+                        const locationData = JSON.parse(report.location);
+                        locationText = locationData.address || locationData.formatted_address || 'Location detected';
+                    } catch (e) {
+                        locationText = report.location;
+                    }
+                } else if (report.location.address) {
+                    locationText = report.location.address;
+                } else if (report.location.formatted_address) {
+                    locationText = report.location.formatted_address;
+                } else {
+                    locationText = 'Location detected';
+                }
+            }
+
+            // Format timestamps
+            const createdAt = new Date(report.created_at).toLocaleString();
+            const updatedAt = report.last_update ? new Date(report.last_update).toLocaleString() : 'Never updated';
+
+            // Header badges removed per design update
+
+            // Update emergency information
+            document.getElementById('emergencyType').innerHTML = getEmergencyTypeBadge(report.type);
+            
+            // Get classification/description (corrected_description takes precedence, then ai_description)
+            let classification = report.corrected_description || report.ai_description || '';
+            // If classification contains "-", extract the part after the dash (e.g., "Fire Emergency - Electrical Fire" -> "Electrical Fire")
+            if (classification && classification.includes('-')) {
+                const parts = classification.split('-').map(p => p.trim());
+                if (parts.length > 1) {
+                    classification = parts.slice(1).join('-').trim();
+                }
+            }
+            // If no classification, try to get from message or description
+            if (!classification || classification === '') {
+                classification = report.message || 'Not specified';
+                // Limit message length if used as classification
+                if (classification.length > 50) {
+                    classification = classification.substring(0, 50) + '...';
+                }
+            }
+            document.getElementById('emergencyClassification').textContent = classification || 'Not specified';
+            
+            document.getElementById('emergencyStatus').innerHTML = getStatusBadge(report.status);
+            document.getElementById('emergencyPriority').innerHTML = getPriorityBadge(report.priority || 4);
+            document.getElementById('emergencySeverity').innerHTML = report.severity || 'LOW';
+
+            // Update reporter information
+            // Use reporter_full_name if available (from user data), otherwise use reporter_name
+            const reporterName = report.reporter_full_name || report.reporter_name || 'Anonymous';
+            document.getElementById('reporterName').textContent = reporterName;
+            
+            const uidEl = document.getElementById('reporterUid');
+            if (uidEl) uidEl.textContent = report.reporter_uid || 'Not provided';
+            
+            // Get email from multiple possible sources (prioritize reporter_email from user data)
+            const reporterEmail = report.reporter_email || report.email || report.gmail || 'Not provided';
+            document.getElementById('reporterEmail').textContent = reporterEmail;
+            
+            // Get student number from multiple possible sources
+            const reporterStudentNo = report.reporter_student_number || 
+                                     report.student_number || 
+                                     report.student_no || 
+                                     report.student_id || 
+                                     'Not provided';
+            document.getElementById('reporterStudentNo').textContent = reporterStudentNo;
+            
+            // Get contact/phone from multiple possible sources
+            const reporterContact = report.reporter_phone || 
+                                   report.phone || 
+                                   report.contactNumber || 
+                                   'Not provided';
+            document.getElementById('reporterContact').textContent = reporterContact;
+
+            // Update location and description
+            document.getElementById('reportLocation').textContent = locationText;
+            document.getElementById('reportDescription').textContent = report.message || 'No description provided';
+
+            // Try to resolve a human-readable address when only coordinates are available
+            try {
+                const coords = extractCoordinates(report);
+                if (coords && (locationText === 'Location detected' || locationText === 'Location not specified' || /^(\d+\.?\d*),\s*(\d+\.?\d*)$/.test(locationText))) {
+                    const locElem = document.getElementById('reportLocation');
+                    locElem.textContent = `${coords.lat.toFixed(5)}, ${coords.lng.toFixed(5)} (resolving…)`;
+                    reverseGeocode(coords.lat, coords.lng).then(address => {
+                        if (address) {
+                            locElem.textContent = address;
+                        }
+                    }).catch(() => {
+                        // leave coordinate fallback
+                        locElem.textContent = `${coords.lat.toFixed(5)}, ${coords.lng.toFixed(5)}`;
+                    });
+                }
+            } catch (e) {
+                // ignore
+            }
+
+            // Update report image (from any typical field)
+            let imageUrl = report.image_url || report.photo_url || report.image || report.image_path || null;
+            const imageContainer = document.getElementById('reportImageContainer');
+            try {
+                // If we received a storage path (no protocol), convert to public URL via Supabase Storage
+                if (imageUrl && typeof imageUrl === 'string' && !/^https?:\/\//i.test(imageUrl)) {
+                    const pub = window.emergencySystem?.supabase?.storage
+                        ?.from('reports-images')
+                        ?.getPublicUrl(imageUrl);
+                    if (pub?.data?.publicUrl) {
+                        imageUrl = pub.data.publicUrl;
+                    }
+                }
+            } catch (e) {
+                console.warn('Could not resolve public URL for report image:', e);
+            }
+
+            if (imageUrl) {
+                const img = document.createElement('img');
+                img.src = imageUrl;
+                img.alt = 'Report image';
+                img.className = 'image-preview';
+                imageContainer.innerHTML = '';
+                imageContainer.appendChild(img);
+            } else {
+                imageContainer.innerHTML = '<div class="no-image">No image uploaded</div>';
+            }
+
+            // Update assignment information - fetch multiple assigned responders
+            const assignedResponderEl = document.getElementById('assignedResponder');
+            try {
+                const { data: assignments, error: assignError } = await window.emergencySystem.supabase
+                    .from('assignment')
+                    .select('responder_id, id, status')
+                    .eq('report_id', reportId)
+                    .eq('status', 'assigned');
+
+                if (!assignError && assignments && assignments.length > 0) {
+                    // Fetch responder names
+                    const responderIds = assignments.map(a => a.responder_id);
+                    const responders = await window.emergencySystem.getResponders();
+                    
+                    const responderNames = assignments.map(a => {
+                        const responder = responders.find(r => r.id === a.responder_id);
+                        return responder?.name || `Responder ${a.responder_id.substring(0, 8)}`;
+                    });
+                    
+                    assignedResponderEl.textContent = responderNames.join(', ');
+                    assignedResponderEl.style.color = '#059669';
+                } else {
+                    assignedResponderEl.textContent = 'Not assigned';
+                    assignedResponderEl.style.color = '#6b7280';
+                }
+            } catch (err) {
+                console.warn('Could not fetch assignments:', err);
+                assignedResponderEl.textContent = report.responder_name || 'Not assigned';
+            }
+            
+            document.getElementById('assignmentId').textContent = report.assignment_id || 'Not assigned';
+            document.getElementById('responseTime').textContent = report.response_time || 'Not specified';
+
+            // Update timestamps
+            document.getElementById('createdAt').textContent = createdAt;
+            document.getElementById('lastUpdated').textContent = updatedAt;
+
+            // Update AI analysis if available
+            if (report.ai_analysis) {
+                document.getElementById('aiAnalysisCard').style.display = 'block';
+                document.getElementById('aiAnalysis').textContent = report.ai_analysis;
+                document.getElementById('aiConfidence').textContent = Math.round((report.ai_confidence || 0) * 100) + '%';
+                document.getElementById('aiModel').textContent = report.ai_model || 'Unknown';
+            }
+
+            // Update assign button - allow adding more responders even if some are assigned
+            const assignBtn = document.getElementById('assignBtn');
+            const editLink = document.getElementById('editLink');
+
+            // Always enable assign button (can add more responders)
+            assignBtn.disabled = false;
+            assignBtn.style.opacity = '1';
+            assignBtn.style.cursor = 'pointer';
+            assignBtn.innerHTML = '<i class="bi bi-person-plus"></i> Assign Responder(s)';
+            assignBtn.classList.remove('btn-secondary');
+            assignBtn.classList.add('btn-success');
+
+            // Check if report is assigned (has at least one responder) to disable edit
+            try {
+                const { data: assignments, error: assignError } = await window.emergencySystem.supabase
+                    .from('assignment')
+                    .select('id')
+                    .eq('report_id', reportId)
+                    .eq('status', 'assigned')
+                    .limit(1);
+
+                const hasAssignments = !assignError && assignments && assignments.length > 0;
+
+                if (hasAssignments) {
+                    // Disable edit button when assigned
+                editLink.style.pointerEvents = 'none';
+                editLink.style.opacity = '0.5';
+                editLink.style.cursor = 'not-allowed';
+                editLink.style.color = '#9ca3af';
+                editLink.innerHTML = '<i class="bi bi-pencil"></i> Edit Report (Disabled)';
+                editLink.href = '#';
+            } else {
+                // Enable edit button
+                    editLink.style.pointerEvents = 'auto';
+                    editLink.style.opacity = '1';
+                    editLink.style.cursor = 'pointer';
+                    editLink.style.color = '';
+                    editLink.innerHTML = '<i class="bi bi-pencil"></i> Edit Report';
+                    editLink.href = `edit-report.html?id=${reportId}`;
+                }
+            } catch (err) {
+                console.warn('Could not check assignments:', err);
+                // Default to enabling edit
+                editLink.style.pointerEvents = 'auto';
+                editLink.style.opacity = '1';
+                editLink.style.cursor = 'pointer';
+                editLink.style.color = '';
+                editLink.innerHTML = '<i class="bi bi-pencil"></i> Edit Report';
+                editLink.href = `edit-report.html?id=${reportId}`;
+            }
+        }
+
+        // Get emergency type badge
+        function getEmergencyTypeBadge(type) {
+            const icons = {
+                fire: '🔥',
+                flood: '🌊',
+                accident: '🚗',
+                medical: '🏥',
+                other: '⚠️'
+            };
+            const icon = icons[type] || '⚠️';
+            return `<span class="emergency-type type-${type}">${icon} ${type.toUpperCase()}</span>`;
+        }
+
+        // Get status badge
+        function getStatusBadge(status) {
+            return `<span class="status-badge status-${status}">${status.toUpperCase()}</span>`;
+        }
+
+        // Get priority badge
+        function getPriorityBadge(priority) {
+            const priorities = {
+                1: 'Critical',
+                2: 'High',
+                3: 'Medium',
+                4: 'Low'
+            };
+            return `<span class="priority-badge priority-${priority}">${priorities[priority] || 'Low'}</span>`;
+        }
+
+        // Extract possible coordinates from report payload
+        function extractCoordinates(report) {
+            // direct fields
+            let lat = report.latitude || report.lat || report.location_lat || report.locationLat;
+            let lng = report.longitude || report.lon || report.lng || report.location_lng || report.locationLng;
+
+            // inside location object or JSON string
+            const parseLoc = (loc) => {
+                if (!loc) return;
+                if (typeof loc === 'string') {
+                    try {
+                        loc = JSON.parse(loc);
+                    } catch (_) {
+                        // try simple "lat,lng" format
+                        const m = loc.match(/(-?\d+\.?\d*)[,\s]+(-?\d+\.?\d*)/);
+                        if (m) {
+                            return { lat: parseFloat(m[1]), lng: parseFloat(m[2]) };
+                        }
+                        return;
+                    }
+                }
+                return {
+                    lat: loc.latitude ?? loc.lat ?? loc.y ?? loc.latlng?.lat,
+                    lng: loc.longitude ?? loc.lon ?? loc.lng ?? loc.x ?? loc.latlng?.lng
+                };
+            };
+
+            const nested = parseLoc(report.location);
+            if (nested && (nested.lat != null && nested.lng != null)) {
+                lat = lat ?? nested.lat;
+                lng = lng ?? nested.lng;
+            }
+
+            if (lat != null && lng != null) {
+                const nlat = Number(lat);
+                const nlng = Number(lng);
+                if (!isNaN(nlat) && !isNaN(nlng)) return { lat: nlat, lng: nlng };
+            }
+            return null;
+        }
+
+        // Reverse geocode using OpenStreetMap Nominatim (no API key required)
+        async function reverseGeocode(lat, lng) {
+            const url = `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${encodeURIComponent(lat)}&lon=${encodeURIComponent(lng)}`;
+            const res = await fetch(url, {
+                headers: {
+                    // Friendly UA per Nominatim policy
+                    'Accept': 'application/json'
+                }
+            });
+            if (!res.ok) return null;
+            const data = await res.json();
+            return data.display_name || null;
+        }
+
+        // Assign responder functionality
+        document.getElementById('assignBtn').addEventListener('click', async function() {
+            try {
+                const responders = await window.emergencySystem.getResponders();
+                if (!responders || responders.length === 0) {
+                    showError('No responders available');
+                    return;
+                }
+
+                // Fetch existing assignments for this report
+                let assignedResponderIds = [];
+                try {
+                    const { data: assignments, error: assignError } = await window.emergencySystem.supabase
+                        .from('assignment')
+                        .select('responder_id')
+                        .eq('report_id', reportId)
+                        .eq('status', 'assigned');
+                    
+                    if (!assignError && assignments) {
+                        assignedResponderIds = assignments.map(a => a.responder_id);
+                    }
+                } catch (err) {
+                    console.warn('Could not fetch existing assignments:', err);
+                }
+
+                // Populate responder list with checkboxes
+                const responderList = document.getElementById('responderList');
+                responderList.innerHTML = '';
+                
+                responders.forEach(responder => {
+                    const isAssigned = assignedResponderIds.includes(responder.id);
+                    const item = document.createElement('div');
+                    item.className = `responder-item ${isAssigned ? 'responder-item-assigned' : ''}`;
+                    
+                    const checkbox = document.createElement('input');
+                    checkbox.type = 'checkbox';
+                    checkbox.value = responder.id;
+                    checkbox.id = `responder-${responder.id}`;
+                    checkbox.checked = isAssigned;
+                    if (isAssigned) {
+                        checkbox.disabled = true; // Don't allow unchecking already assigned
+                    }
+                    
+                    const info = document.createElement('div');
+                    info.className = 'responder-item-info';
+                    
+                    const name = document.createElement('div');
+                    name.className = 'responder-item-name';
+                    name.textContent = responder.name;
+                    
+                    const role = document.createElement('div');
+                    role.className = 'responder-item-role';
+                    role.textContent = responder.role || 'responder';
+                    
+                    info.appendChild(name);
+                    info.appendChild(role);
+                    
+                    item.appendChild(checkbox);
+                    item.appendChild(info);
+                    
+                    // Make entire row clickable
+                    item.addEventListener('click', function(e) {
+                        if (e.target.type !== 'checkbox' && !checkbox.disabled) {
+                            checkbox.checked = !checkbox.checked;
+                        }
+                    });
+                    
+                    responderList.appendChild(item);
+                });
+
+                // Show modal
+                document.getElementById('assignModal').style.display = 'flex';
+            } catch (error) {
+                console.error('Error loading responders:', error);
+                showError('Failed to load responders');
+            }
+        });
+
+        // Confirm assignment
+        document.getElementById('assignConfirm').addEventListener('click', async function() {
+            // Get all checked responders
+            const checkboxes = document.querySelectorAll('#responderList input[type="checkbox"]:checked:not(:disabled)');
+            const selectedResponderIds = Array.from(checkboxes).map(cb => cb.value);
+
+            if (selectedResponderIds.length === 0) {
+                showError('Please select at least one responder');
+                return;
+            }
+
+            try {
+                // Get existing assignments to avoid duplicates
+                const { data: existingAssignments, error: fetchError } = await window.emergencySystem.supabase
+                    .from('assignment')
+                    .select('responder_id')
+                    .eq('report_id', reportId)
+                    .eq('status', 'assigned');
+
+                if (fetchError) throw fetchError;
+
+                const existingResponderIds = existingAssignments ? existingAssignments.map(a => a.responder_id) : [];
+                
+                // Filter out already assigned responders
+                const newResponderIds = selectedResponderIds.filter(id => !existingResponderIds.includes(id));
+
+                if (newResponderIds.length === 0) {
+                    showSuccess('All selected responders are already assigned');
+                    closeAssignModal();
+                    return;
+                }
+
+                // Create assignments for new responders
+                const assignmentsToCreate = newResponderIds.map(responderId => ({
+                        report_id: reportId,
+                        responder_id: responderId,
+                        status: 'assigned'
+                }));
+
+                const { data: newAssignments, error: assignmentError } = await window.emergencySystem.supabase
+                    .from('assignment')
+                    .insert(assignmentsToCreate)
+                    .select();
+
+                if (assignmentError) throw assignmentError;
+
+                // Update report status to 'assigned' if not already completed
+                console.log(`🔄 Updating report ${reportId.substring(0, 8)}... status to 'assigned'`);
+                
+                const { data: currentReport, error: fetchCurrentError } = await window.emergencySystem.supabase
+                    .from('reports')
+                    .select('status')
+                    .eq('id', reportId)
+                    .single();
+                
+                if (fetchCurrentError) {
+                    console.warn('Could not fetch current report status:', fetchCurrentError);
+                } else {
+                    console.log(`📊 Current report status: ${currentReport?.status}`);
+                }
+                
+                // Update status to 'assigned' (unless already completed)
+                const { data: updatedReport, error: updateError } = await window.emergencySystem.supabase
+                    .from('reports')
+                    .update({
+                        status: 'assigned',
+                        last_update: new Date().toISOString()
+                    })
+                    .eq('id', reportId)
+                    .neq('status', 'completed') // Don't update if already completed
+                    .select()
+                    .single();
+
+                if (updateError) {
+                    console.error('❌ Report status update failed:', updateError);
+                    // Don't throw - assignment was successful, just log the error
+                } else {
+                    console.log(`✅ Report status updated to: ${updatedReport?.status}`);
+                }
+
+                const count = newAssignments.length;
+                const responderText = count > 1 ? 'responders' : 'responder';
+                
+                // Show success message first
+                showSuccess(`${count} ${responderText} assigned successfully!`);
+                
+                // Close modal after a brief delay so user can see the message
+                setTimeout(() => {
+                    closeAssignModal();
+                }, 300);
+                
+                // Reload report details to show updated status
+                setTimeout(async () => {
+                    await loadReportDetails();
+                    console.log('✅ Report details reloaded after assignment');
+                }, 800);
+
+            } catch (error) {
+                console.error('Assignment error:', error);
+                showError('Failed to assign responders: ' + error.message);
+            }
+        });
+
+        // Close assign modal
+        function closeAssignModal() {
+            document.getElementById('assignModal').style.display = 'none';
+            const responderList = document.getElementById('responderList');
+            responderList.innerHTML = '<div style="padding: 1rem; text-align: center; color: #6b7280;">Loading responders...</div>';
+        }
+
+        // Utility functions
+        function showError(message) {
+            // Show toast notification only
+            showToast(message, 'error');
+        }
+
+        function showSuccess(message) {
+            // Show toast notification only
+            showToast(message, 'success');
+            }
+
+        // Toast notification function
+        function showToast(message, type = 'info') {
+            // Remove any existing toasts
+            const existingToasts = document.querySelectorAll('.toast-notification');
+            existingToasts.forEach(toast => toast.remove());
+
+            // Create toast element
+            const toast = document.createElement('div');
+            toast.className = `toast-notification ${type}`;
+
+            // Icons for different types
+            const icons = {
+                success: '<i class="bi bi-check-circle-fill"></i>',
+                error: '<i class="bi bi-x-circle-fill"></i>',
+                info: '<i class="bi bi-info-circle-fill"></i>',
+                warning: '<i class="bi bi-exclamation-triangle-fill"></i>'
+            };
+
+            toast.innerHTML = `
+                <div class="toast-icon">${icons[type] || icons.info}</div>
+                <div class="toast-message">${message}</div>
+                <button class="toast-close" onclick="this.parentElement.remove()">
+                    <i class="bi bi-x"></i>
+                </button>
+            `;
+
+            // Add to body
+            document.body.appendChild(toast);
+
+            // Auto remove after 3 seconds
+            setTimeout(() => {
+                if (toast.parentElement) {
+                    toast.style.animation = 'fadeOut 0.3s ease forwards';
+                    setTimeout(() => toast.remove(), 300);
+                }
+            }, 3000);
+        }
+
+        // Show logout confirmation modal
+        function showLogoutConfirm() {
+            const modal = document.getElementById('logoutModal');
+            modal.classList.remove('hidden');
+        }
+        
+        // Close logout modal
+        function closeLogoutModal() {
+            const modal = document.getElementById('logoutModal');
+            modal.classList.add('hidden');
+        }
+        
+        // Confirm and execute logout
+        async function confirmLogout() {
+            try {
+                // Close modal first
+                closeLogoutModal();
+                
+                // Perform logout
+                await window.emergencySystem.signOut();
+                window.location.href = 'login.html';
+            } catch (error) {
+                console.error('Logout error:', error);
+                showError('Failed to logout. Please try again.');
+            }
+        }
+        
+        // Close modal when clicking outside
+        document.addEventListener('click', function(event) {
+            const modal = document.getElementById('logoutModal');
+            if (event.target === modal) {
+                closeLogoutModal();
+            }
+        });
+        
+        // Close modal with Escape key
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'Escape') {
+                const modal = document.getElementById('logoutModal');
+                if (!modal.classList.contains('hidden')) {
+                    closeLogoutModal();
+                }
+            }
+        });
+
+        // Correction modal functionality
+        let currentReportForCorrection = null;
+
+        // Initialize correction button
+        const correctBtn = document.getElementById('correctBtn');
+        if (correctBtn) {
+            correctBtn.addEventListener('click', () => {
+                if (currentReport) {
+                    openCorrectionModal(currentReport.id, currentReport);
+                }
+            });
+        }
+
+        function openCorrectionModal(reportId, reportData) {
+            currentReportForCorrection = { id: reportId, ...reportData };
+            document.getElementById('correction-modal').style.display = 'flex';
+            
+            // Populate form with current classification
+            document.getElementById('current-type').textContent = (reportData.type || 'unknown').toUpperCase();
+            document.getElementById('current-confidence').textContent = reportData.confidence 
+                ? `${(reportData.confidence * 100).toFixed(0)}%` 
+                : 'N/A';
+            
+            // Display AI analysis if available
+            const aiInfo = document.getElementById('ai-analysis-info');
+            if (reportData.ai_description || reportData.ai_labels) {
+                let aiText = '';
+                if (reportData.ai_description) aiText += `<strong>Description:</strong> ${reportData.ai_description}<br>`;
+                if (reportData.ai_labels && Array.isArray(reportData.ai_labels)) {
+                    aiText += `<strong>Tags:</strong> ${reportData.ai_labels.join(', ')}`;
+                }
+                aiInfo.innerHTML = aiText || 'No AI analysis available';
+            } else {
+                aiInfo.textContent = 'No AI analysis available';
+            }
+            
+            // Reset form
+            document.getElementById('corrected-type').value = '';
+            document.getElementById('corrected-description').value = '';
+            document.getElementById('correction-reason').value = '';
+            document.querySelectorAll('input[type="checkbox"][name="issue-category"]').forEach(cb => cb.checked = false);
+        }
+
+        function closeCorrectionModal() {
+            document.getElementById('correction-modal').style.display = 'none';
+            currentReportForCorrection = null;
+        }
+
+        async function submitCorrection() {
+            const reportId = currentReportForCorrection?.id;
+            if (!reportId) {
+                alert('No report selected for correction');
+                return;
+            }
+
+            const correctedType = document.getElementById('corrected-type').value;
+            const correctedDescription = document.getElementById('corrected-description').value.trim();
+            const correctionReason = document.getElementById('correction-reason').value;
+            const issueCategories = Array.from(document.querySelectorAll('input[type="checkbox"][name="issue-category"]:checked'))
+                .map(cb => cb.value);
+
+            // Validation
+            if (!correctedType) {
+                alert('Please select the correct emergency type');
+                return;
+            }
+
+            if (!correctionReason || correctionReason.trim().length < 20) {
+                alert('Please provide a detailed correction reason (minimum 20 characters) explaining why the classification is wrong');
+                return;
+            }
+
+            try {
+                // Use emergencySystem.supabase if available, otherwise try window.supabase
+                const supabaseClient = window.emergencySystem?.supabase || window.supabase;
+                
+                if (!supabaseClient) {
+                    alert('Supabase client not initialized. Please refresh the page.');
+                    return;
+                }
+                
+                // Get current session, refreshing if needed
+                let { data: { session }, error: sessionError } = await supabaseClient.auth.getSession();
+                
+                // If no session or error, try to refresh
+                if (!session || sessionError) {
+                    const { data: { session: refreshedSession }, error: refreshError } = await supabaseClient.auth.refreshSession();
+                    if (refreshedSession) {
+                        session = refreshedSession;
+                    }
+                }
+                
+                if (!session) {
+                    alert('You must be logged in to correct classifications. Please log in again.');
+                    return;
+                }
+
+                // Get Supabase URL from config or emergencySystem
+                const supabaseUrl = window.EMERGENCY_CONFIG?.supabaseUrl || 
+                                  window.emergencySystem?.supabase?.supabaseUrl || 
+                                  'https://hmolyqzbvxxliemclrld.supabase.co';
+
+                const response = await fetch(`${supabaseUrl}/functions/v1/correct-classification`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${session.access_token}`,
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        report_id: reportId,
+                        corrected_type: correctedType,
+                        corrected_description: correctedDescription || undefined,
+                        correction_reason: correctionReason.trim(),
+                        issue_categories: issueCategories,
+                        correction_confidence: true,
+                    }),
+                });
+
+                const result = await response.json();
+
+                if (response.ok && result.success) {
+                    showSuccess('Classification corrected successfully! The system will learn from this correction.');
+                    closeCorrectionModal();
+                    // Reload the report to show updated classification
+                    if (typeof loadReportDetails === 'function') {
+                        loadReportDetails();
+                    } else {
+                        window.location.reload();
+                    }
+                } else {
+                    showError(`Failed to correct classification: ${result.error || 'Unknown error'}`);
+                }
+            } catch (error) {
+                console.error('Error submitting correction:', error);
+                showError('Failed to submit correction. Please try again.');
+            }
+        }
+    </script>
+
+    <!-- Classification Correction Modal -->
+    <div id="correction-modal" class="modal-overlay" style="display: none;">
+        <div class="modal-content" style="max-width: 600px; max-height: 90vh; overflow-y: auto; background: white; border-radius: 12px; padding: 0;">
+            <div class="modal-header">
+                <h3 class="modal-title">Correct Classification</h3>
+                <button class="modal-close" onclick="closeCorrectionModal()">
+                    <i class="bi bi-x"></i>
+                </button>
+            </div>
+            <form onsubmit="event.preventDefault(); submitCorrection();">
+                <div class="modal-body">
+                    <div style="margin-bottom: 1rem;">
+                        <label style="display: block; margin-bottom: 0.5rem; font-weight: 500; color: #374151;">Current Classification</label>
+                        <div style="padding: 0.75rem; background: #f3f4f6; border-radius: 0.375rem;">
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <span><strong>Type:</strong> <span id="current-type">-</span></span>
+                                <span><strong>Confidence:</strong> <span id="current-confidence">-</span></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div style="margin-bottom: 1rem;">
+                        <label style="display: block; margin-bottom: 0.5rem; font-weight: 500; color: #374151;">AI Analysis</label>
+                        <div id="ai-analysis-info" style="padding: 0.75rem; background: #f3f4f6; border-radius: 0.375rem; font-size: 0.875rem; color: #6b7280;">
+                            Loading...
+                        </div>
+                    </div>
+
+                    <div style="margin-bottom: 1rem;">
+                        <label for="corrected-type" style="display: block; margin-bottom: 0.5rem; font-weight: 500; color: #374151;">Correct Emergency Type *</label>
+                        <select id="corrected-type" class="form-input" required style="width: 100%; padding: 0.75rem; border: 1px solid #d1d5db; border-radius: 0.375rem; font-size: 0.875rem;">
+                            <option value="">Select correct type...</option>
+                            <option value="flood">Flood</option>
+                            <option value="accident">Accident</option>
+                            <option value="fire">Fire</option>
+                            <option value="medical">Medical</option>
+                            <option value="earthquake">Earthquake</option>
+                            <option value="storm">Storm</option>
+                            <option value="non_emergency">Non-Emergency</option>
+                            <option value="other">Other</option>
+                        </select>
+                    </div>
+
+                    <div style="margin-bottom: 1rem;">
+                        <label style="display: block; margin-bottom: 0.5rem; font-weight: 500; color: #374151;">Issue Categories (Optional)</label>
+                        <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+                            <label style="display: flex; align-items: center; gap: 0.5rem; font-weight: normal;">
+                                <input type="checkbox" name="issue-category" value="wrong-context">
+                                Wrong context detected (e.g., training vs real emergency)
+                            </label>
+                            <label style="display: flex; align-items: center; gap: 0.5rem; font-weight: normal;">
+                                <input type="checkbox" name="issue-category" value="missing-keywords">
+                                Missing keywords or visual indicators
+                            </label>
+                            <label style="display: flex; align-items: center; gap: 0.5rem; font-weight: normal;">
+                                <input type="checkbox" name="issue-category" value="visual-misclassification">
+                                Visual misclassification (wrong visual interpretation)
+                            </label>
+                            <label style="display: flex; align-items: center; gap: 0.5rem; font-weight: normal;">
+                                <input type="checkbox" name="issue-category" value="confusing-similarity">
+                                Confusing similarity to another emergency type
+                            </label>
+                            <label style="display: flex; align-items: center; gap: 0.5rem; font-weight: normal;">
+                                <input type="checkbox" name="issue-category" value="low-confidence">
+                                Low confidence classification error
+                            </label>
+                        </div>
+                    </div>
+
+                    <div style="margin-bottom: 1rem;">
+                        <label for="corrected-description" style="display: block; margin-bottom: 0.5rem; font-weight: 500; color: #374151;">
+                            Corrected Description (Optional)
+                            <span style="font-weight: normal; color: #6b7280; font-size: 0.875rem;">
+                                - Update the description part (e.g., "Fallen Tree, Fallen Branch" instead of "Vehicle Incident")
+                            </span>
+                        </label>
+                        <input 
+                            type="text" 
+                            id="corrected-description" 
+                            class="form-input" 
+                            placeholder="e.g., Fallen Tree, Fallen Branch, Pathway Blocked"
+                            style="width: 100%; padding: 0.75rem; border: 1px solid #d1d5db; border-radius: 0.375rem; font-size: 0.875rem;"
+                        />
+                    </div>
+
+                    <div style="margin-bottom: 1rem;">
+                        <label for="correction-reason" style="display: block; margin-bottom: 0.5rem; font-weight: 500; color: #374151;">
+                            Detailed Correction Reason * 
+                            <span style="font-weight: normal; color: #6b7280; font-size: 0.875rem;">
+                                (Minimum 20 characters - explain why this classification is wrong)
+                            </span>
+                        </label>
+                        <textarea 
+                            id="correction-reason" 
+                            class="form-input" 
+                            rows="5" 
+                            required
+                            placeholder="Please provide a detailed explanation of why the AI classification is incorrect. Include specific details about what should have been detected (e.g., 'This is a sports injury on a playing field, not a traffic accident. The image shows an injured knee with no vehicles present.')"
+                            minlength="20"
+                            style="width: 100%; padding: 0.75rem; border: 1px solid #d1d5db; border-radius: 0.375rem; font-size: 0.875rem; font-family: inherit;"
+                        ></textarea>
+                    </div>
+                </div>
+                <div style="display: flex; gap: 0.75rem; justify-content: flex-end; padding: 1rem; border-top: 1px solid #e5e7eb;">
+                    <button type="button" onclick="closeCorrectionModal()" style="padding: 0.75rem 1.5rem; background: #6b7280; color: white; border: none; border-radius: 0.375rem; cursor: pointer; font-weight: 500;">
+                        Cancel
+                    </button>
+                    <button type="submit" style="padding: 0.75rem 1.5rem; background: #3b82f6; color: white; border: none; border-radius: 0.375rem; cursor: pointer; font-weight: 500;">
+                        Submit Correction
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Logout Confirmation Modal -->
+    <div id="logoutModal" class="logout-modal hidden">
+        <div class="logout-modal-overlay" onclick="closeLogoutModal()"></div>
+        <div class="logout-modal-content">
+            <div class="logout-modal-icon">
+                <i class="bi bi-exclamation-triangle"></i>
+            </div>
+            <h3 class="logout-modal-title">Confirm Logout</h3>
+            <p class="logout-modal-message">Are you sure you want to logout? You'll need to sign in again to access the system.</p>
+            <div class="logout-modal-buttons">
+                <button class="logout-modal-btn cancel" onclick="closeLogoutModal()">
+                    <i class="bi bi-x-circle"></i> Cancel
+                </button>
+                <button class="logout-modal-btn confirm" onclick="confirmLogout()">
+                    <i class="bi bi-box-arrow-right"></i> Logout
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <style>
+        /* Logout Confirmation Modal */
+        .logout-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 10000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            animation: fadeIn 0.2s ease;
+        }
+        
+        .logout-modal.hidden {
+            display: none;
+        }
+        
+        .logout-modal-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(4px);
+        }
+        
+        .logout-modal-content {
+            position: relative;
+            background: white;
+            border-radius: 16px;
+            padding: 2rem;
+            max-width: 420px;
+            width: 90%;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3), 0 10px 10px -5px rgba(0, 0, 0, 0.2);
+            animation: slideUp 0.3s ease;
+            text-align: center;
+        }
+        
+        .logout-modal-icon {
+            width: 64px;
+            height: 64px;
+            margin: 0 auto 1.5rem;
+            background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 3px solid #fca5a5;
+        }
+        
+        .logout-modal-icon i {
+            font-size: 2rem;
+            color: #ef4444;
+        }
+        
+        .logout-modal-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #111827;
+            margin: 0 0 0.75rem 0;
+        }
+        
+        .logout-modal-message {
+            font-size: 0.9375rem;
+            color: #6b7280;
+            line-height: 1.6;
+            margin: 0 0 1.75rem 0;
+        }
+        
+        .logout-modal-buttons {
+            display: flex;
+            gap: 0.75rem;
+            justify-content: center;
+        }
+        
+        .logout-modal-btn {
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            font-size: 0.875rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            border: 2px solid transparent;
+        }
+        
+        .logout-modal-btn.cancel {
+            background: #f3f4f6;
+            color: #374151;
+            border-color: #e5e7eb;
+        }
+        
+        .logout-modal-btn.cancel:hover {
+            background: #e5e7eb;
+            border-color: #d1d5db;
+            transform: translateY(-1px);
+        }
+        
+        .logout-modal-btn.confirm {
+            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+            color: white;
+            border-color: #ef4444;
+            box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3);
+        }
+        
+        .logout-modal-btn.confirm:hover {
+            background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4);
+        }
+        
+        .logout-modal-btn:active {
+            transform: translateY(0);
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px) scale(0.95);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+    </style>
+</body>
+</html>

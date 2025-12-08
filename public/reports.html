@@ -1,0 +1,1385 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reports - LSPU Emergency Response System</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/system-status.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <script src="https://cdn.jsdelivr.net/npm/supabase@2"></script>
+    <script src="js/supabase.js"></script>
+</head>
+<body>
+    <div class="dashboard-container">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <div class="sidebar-logo">
+                    <img src="images/udrrmo image.jpg" alt="UDRRMO Logo" 
+                         style="width: 50px; height: 50px; object-fit: contain; border-radius: 50%; border: 2px solid white; display: block;">
+                    <div class="logo-text">
+                        <h3>Kapiyu Admin</h3>
+                        <p>Emergency Response</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="system-status">
+                <div class="status-indicator">
+                    <span class="status-dot online"></span>
+                    <span>System Status: Online</span>
+                </div>
+            </div>
+            
+            <nav class="sidebar-nav">
+                <a href="admin.html" class="nav-item">
+                    <i class="bi bi-house"></i> Dashboard
+                </a>
+                <a href="reports.html" class="nav-item active">
+                    <i class="bi bi-file-text"></i> Reports
+                </a>
+                <a href="announcements.html" class="nav-item">
+                    <i class="bi bi-megaphone"></i> Announcements
+                </a>
+                <a href="early-warning-dashboard.html" class="nav-item">
+                    <i class="bi bi-shield-exclamation"></i> Early Warning
+                </a>
+                <a href="map.html" class="nav-item">
+                    <i class="bi bi-map"></i> Map View
+                </a>
+                <a href="evacuation-guide.html" class="nav-item">
+                    <i class="bi bi-shield-check"></i> Evacuation Guide
+                </a>
+                <a href="archive.html" class="nav-item">
+                    <i class="bi bi-folder"></i> Archived
+                </a>
+                <a href="analytics.html" class="nav-item">
+                    <i class="bi bi-graph-up"></i> Analytics
+                </a>
+                <a href="user-management.html" class="nav-item">
+                    <i class="bi bi-people"></i> User Management
+                </a>
+                <a href="lsm-admin.html" class="nav-item">
+                    <i class="bi bi-journal-bookmark"></i> Learning Modules
+                </a>
+            </nav>
+            
+            <div class="sidebar-footer">
+                <div class="user-info-card">
+                    <div class="user-avatar">A</div>
+                    <div class="user-details">
+                        <h4>Admin User</h4>
+                        <p>Kapiyu Command</p>
+                    </div>
+                </div>
+                <button class="logout-btn" onclick="showLogoutConfirm()" style="width: 100%;padding: 0.75rem 1rem;background: rgba(239, 68, 68, 0.1);border: 1px solid rgba(239, 68, 68, 0.3);color: #fca5a5;border-radius: 8px;font-size: 0.875rem;font-weight: 500;cursor: pointer;transition: all 0.2s ease;display: flex;align-items: center;gap: 0.5rem;margin-left: 0px;">
+                    <i class="bi bi-box-arrow-right"></i> Logout
+                </button>
+            </div>
+        </div>
+
+        <style>
+            .logout-btn:hover {
+                background: #EF4444 !important;
+                border-color: #EF4444 !important;
+                color: white !important;
+            }
+            
+            .logout-btn:hover i {
+                color: white !important;
+            }
+            
+            /* Modern Header Card for Reports Page */
+            .admin-section .card:first-child {
+                border-radius: 16px;
+                box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 
+                            0 2px 4px -1px rgba(0, 0, 0, 0.06),
+                            0 0 0 1px rgba(0, 0, 0, 0.05);
+                border: 1px solid rgba(226, 232, 240, 0.8);
+                margin-bottom: 1.5rem;
+                overflow: hidden;
+                background: white;
+            }
+            
+            .admin-section .card:first-child .card-header {
+                background: linear-gradient(135deg, #f8fafc 0%, #ffffff 100%);
+                border-bottom: 1px solid rgba(226, 232, 240, 0.8);
+                padding: 1.5rem 1.75rem;
+                position: relative;
+            }
+            
+            .admin-section .card:first-child .card-header::after {
+                content: '';
+                position: absolute;
+                bottom: 0;
+                left: 0;
+                right: 0;
+                height: 2px;
+                background: linear-gradient(90deg, transparent, rgba(59, 130, 246, 0.3), transparent);
+            }
+            
+            .admin-section .card:first-child .card-title {
+                font-size: 1.75rem;
+                font-weight: 800;
+                color: #1e293b;
+                margin: 0;
+                background: linear-gradient(180deg, #0f172a 0%, #1e293b 50%, #334155 100%);
+                -webkit-background-clip: text;
+                -webkit-text-fill-color: transparent;
+                background-clip: text;
+                letter-spacing: -0.02em;
+                text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+            }
+            
+            .admin-section .card:first-child .card-subtitle {
+                font-size: 0.9375rem;
+                color: #4b5563;
+                margin: 0.5rem 0 0 0;
+                font-weight: 500;
+                line-height: 1.5;
+            }
+        </style>
+        
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Reports Section -->
+            <div class="admin-section active">
+                <!-- Header Card -->
+                <div class="card">
+                    <div class="card-header">
+                        <h2 class="card-title">Emergency Reports</h2>
+                        <p class="card-subtitle">Manage and monitor emergency reports</p>
+                    </div>
+                </div>
+                
+                <!-- Filters Card -->
+                <div class="card">
+                    <div class="card-body">
+                        <!-- Filters and Actions -->
+                        <div class="mb-6">
+                            <div class="flex flex-wrap gap-4 mb-4">
+                                <div class="filter-group">
+                                    <label for="statusFilter" class="filter-label">Status:</label>
+                                    <select id="statusFilter" class="form-select" onchange="filterReports()">
+                                        <option value="all">All Status</option>
+                                        <option value="pending">Pending</option>
+                                        <option value="processing">Processing</option>
+                                        <option value="assigned">Assigned</option>
+                                        <option value="completed">Completed</option>
+                                    </select>
+                                </div>
+                                <div class="filter-group">
+                                    <label for="typeFilter" class="filter-label">Type:</label>
+                                    <select id="typeFilter" class="form-select" onchange="filterReports()">
+                                        <option value="all">All Types</option>
+                                        <option value="fire">Fire</option>
+                                        <option value="flood">Flood</option>
+                                        <option value="accident">Accident</option>
+                                        <option value="medical">Medical</option>
+                                        <option value="other">Other</option>
+                                    </select>
+                                </div>
+                                <div class="filter-group">
+                                    <label for="priorityFilter" class="filter-label">Priority:</label>
+                                    <select id="priorityFilter" class="form-select" onchange="filterReports()">
+                                        <option value="all">All Priorities</option>
+                                        <option value="1">Critical</option>
+                                        <option value="2">High</option>
+                                        <option value="3">Medium</option>
+                                        <option value="4">Low</option>
+                                    </select>
+                                </div>
+                            </div>
+                            
+                            <div class="flex gap-2">
+                                <button onclick="forceRefreshReports()" class="btn btn-primary">
+                                    <i class="bi bi-arrow-clockwise"></i> Refresh Reports
+                                </button>
+                                <button onclick="debugReportStatuses()" class="btn btn-warning">
+                                    <i class="bi bi-bug"></i> Debug Status
+                                </button>
+                                <button onclick="syncAllCompletedStatuses()" class="btn btn-success">
+                                    <i class="bi bi-arrow-repeat"></i> Sync All
+                                </button>
+                                <button onclick="checkAssignmentStatuses()" class="btn btn-info">
+                                    <i class="bi bi-info-circle"></i> Check Statuses
+                                </button>
+                                <button onclick="exportReports()" class="btn btn-secondary">
+                                    <i class="bi bi-download"></i> Export
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <!-- Reports Table -->
+                        <div class="table-responsive">
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>Type</th>
+                                        <th>Reporter</th>
+                                        <th>Location</th>
+                                        <th>Status</th>
+                                        <th>Priority</th>
+                                        <th>Created</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="reportsTableBody">
+                                    <tr>
+                                        <td colspan="8" class="text-center py-8">
+                                            <div class="loading-spinner"></div>
+                                            <p>Loading reports...</p>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        
+                        <!-- Pagination -->
+                        <div class="pagination-container">
+                            <div class="pagination-info">
+                                <span>Showing <span id="showingFrom">0</span> to <span id="showingTo">0</span> of <span id="totalReports">0</span> reports</span>
+                            </div>
+                            <div class="pagination-controls">
+                                <button class="btn btn-sm btn-outline" onclick="previousPage()" id="prevBtn" disabled>
+                                    <i class="bi bi-chevron-left"></i> Previous
+                                </button>
+                                <div class="page-numbers" id="pageNumbers"></div>
+                                <button class="btn btn-sm btn-outline" onclick="nextPage()" id="nextBtn" disabled>
+                                    Next <i class="bi bi-chevron-right"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+
+    <script>
+        let currentPage = 1;
+        let reportsPerPage = 10;
+        let allReports = [];
+        let filteredReports = [];
+
+        // Initialize the system when the page loads
+        document.addEventListener('DOMContentLoaded', async function() {
+            try {
+                // Remove any existing alert elements from emergencySystem
+                const existingAlerts = document.querySelectorAll('.alert');
+                existingAlerts.forEach(alert => alert.remove());
+                
+                // Initialize the emergency system
+                await window.emergencySystem.initialize();
+                
+                // Override emergencySystem alert methods to prevent showing alerts
+                if (window.emergencySystem) {
+                    window.emergencySystem.showAlert = function() { /* Disabled */ };
+                    window.emergencySystem.showSuccess = function() { /* Disabled */ };
+                    window.emergencySystem.showError = function() { /* Disabled */ };
+                    window.emergencySystem.showInfo = function() { /* Disabled */ };
+                }
+                
+                // Load reports
+                await loadReports();
+                
+                // Set up real-time updates
+                await setupRealTimeUpdates();
+                
+                console.log('✅ Reports page initialized successfully');
+            } catch (error) {
+                console.error('❌ Error initializing reports page:', error);
+            }
+        });
+
+        // Set up real-time updates for reports page
+        async function setupRealTimeUpdates() {
+            try {
+                // Subscribe to reports table changes
+                const reportsChannel = window.emergencySystem.supabase
+                    .channel('reports-page-updates')
+                    .on('postgres_changes', {
+                        event: '*',
+                        schema: 'public',
+                        table: 'reports'
+                    }, (payload) => {
+                        console.log('📊 Reports updated in reports page:', payload);
+                        // Reload reports when data changes
+                        loadReports();
+                    })
+                    .subscribe();
+
+                // Subscribe to assignments table changes (in case assignment completion affects report status)
+                const assignmentsChannel = window.emergencySystem.supabase
+                    .channel('reports-assignments-updates')
+                    .on('postgres_changes', {
+                        event: '*',
+                        schema: 'public',
+                        table: 'assignment'
+                    }, (payload) => {
+                        console.log('📋 Assignments updated in reports page:', payload);
+                        // Reload reports when assignments change
+                        loadReports();
+                    })
+                    .subscribe();
+
+                // Set up periodic refresh as backup (every 30 seconds)
+                setInterval(() => {
+                    console.log('🔄 Periodic refresh of reports...');
+                    loadReports();
+                }, 30000);
+
+                console.log('✅ Real-time updates enabled for reports page');
+            } catch (error) {
+                console.error('❌ Failed to setup real-time updates for reports page:', error);
+            }
+        }
+
+        // Load reports
+        async function loadReports() {
+            try {
+                showLoadingIndicator();
+                
+                console.log('🔄 Loading reports with fresh data...');
+                
+                // Force fresh data by clearing any potential cache
+                const reports = await window.emergencySystem.getReports();
+                allReports = reports || [];
+                filteredReports = [...allReports];
+                
+                console.log(`✅ Loaded ${allReports.length} reports`);
+                console.log('📊 Report statuses:', allReports.map(r => ({ id: r.id.substring(0, 8), status: r.status })));
+                
+                displayReports();
+                updatePagination();
+                
+                hideLoadingIndicator();
+            } catch (error) {
+                console.error('Error loading reports:', error);
+                hideLoadingIndicator();
+            }
+        }
+
+        // Force refresh reports with additional debugging
+        async function forceRefreshReports() {
+            try {
+                console.log('🔄 Force refreshing reports...');
+                
+                // Clear any cached data
+                allReports = [];
+                filteredReports = [];
+                
+                // Reset to first page
+                currentPage = 1;
+                
+                // Force reload
+                await loadReports();
+                
+                console.log('✅ Force refresh completed');
+            } catch (error) {
+                console.error('❌ Error during force refresh:', error);
+            }
+        }
+
+        // Debug report statuses
+        async function debugReportStatuses() {
+            try {
+                console.log('🐛 Debugging report statuses...');
+                
+                // Get all reports with detailed info
+                const { data: reports, error: reportsError } = await window.emergencySystem.supabase
+                    .from('reports')
+                    .select('id, status, type, created_at, updated_at')
+                    .order('created_at', { ascending: false });
+                
+                if (reportsError) {
+                    console.error('❌ Error fetching reports for debug:', reportsError);
+                    return;
+                }
+                
+                console.log('📊 All reports in database:');
+                reports.forEach(report => {
+                    console.log(`  - ID: ${report.id.substring(0, 8)}... | Status: ${report.status} | Type: ${report.type} | Updated: ${report.updated_at}`);
+                });
+                
+                // Get all assignments with their statuses
+                const { data: assignments, error: assignmentsError } = await window.emergencySystem.supabase
+                    .from('assignment')
+                    .select('id, report_id, status, assigned_at, completed_at')
+                    .order('assigned_at', { ascending: false });
+                
+                if (assignmentsError) {
+                    console.error('❌ Error fetching assignments for debug:', assignmentsError);
+                } else {
+                    console.log('📋 All assignments in database:');
+                    assignments.forEach(assignment => {
+                        console.log(`  - Assignment ID: ${assignment.id.substring(0, 8)}... | Report ID: ${assignment.report_id?.substring(0, 8)}... | Status: ${assignment.status} | Completed: ${assignment.completed_at}`);
+                    });
+                }
+                
+                // Check for mismatched statuses
+                const mismatched = [];
+                reports.forEach(report => {
+                    const assignment = assignments.find(a => a.report_id === report.id);
+                    if (assignment && assignment.status === 'resolved' && report.status !== 'completed') {
+                        mismatched.push({
+                            reportId: report.id,
+                            reportStatus: report.status,
+                            assignmentStatus: assignment.status
+                        });
+                    }
+                });
+                
+                if (mismatched.length > 0) {
+                    console.warn('⚠️ Found mismatched statuses:');
+                    mismatched.forEach(m => {
+                        console.warn(`  - Report ${m.reportId.substring(0, 8)}... has status "${m.reportStatus}" but assignment is "${m.assignmentStatus}"`);
+                    });
+                } else {
+                    console.log('✅ No mismatched statuses found');
+                }
+                
+                alert(`Debug complete! Check console for details.\n\nReports: ${reports.length}\nAssignments: ${assignments?.length || 0}\nMismatched: ${mismatched.length}`);
+                
+                // If there are mismatched statuses, offer to fix them
+                if (mismatched.length > 0) {
+                    const fix = confirm(`Found ${mismatched.length} mismatched statuses. Would you like to fix them automatically?`);
+                    if (fix) {
+                        await fixMismatchedStatuses(mismatched);
+                    }
+                }
+                
+            } catch (error) {
+                console.error('❌ Error during debug:', error);
+                alert('Debug failed: ' + error.message);
+            }
+        }
+
+        // Fix mismatched statuses
+        async function fixMismatchedStatuses(mismatched) {
+            try {
+                console.log('🔧 Fixing mismatched statuses...');
+                
+                for (const mismatch of mismatched) {
+                    console.log(`🔄 Fixing report ${mismatch.reportId.substring(0, 8)}... status from "${mismatch.reportStatus}" to "completed"`);
+                    
+                    const { error } = await window.emergencySystem.supabase
+                        .from('reports')
+                        .update({ 
+                            status: 'completed'
+                        })
+                        .eq('id', mismatch.reportId);
+                    
+                    if (error) {
+                        console.error(`❌ Failed to fix report ${mismatch.reportId.substring(0, 8)}...:`, error);
+                    } else {
+                        console.log(`✅ Fixed report ${mismatch.reportId.substring(0, 8)}... status`);
+                    }
+                }
+                
+                // Refresh the reports after fixing
+                await loadReports();
+                alert('Mismatched statuses fixed! Reports refreshed.');
+                
+            } catch (error) {
+                console.error('❌ Error fixing mismatched statuses:', error);
+                alert('Failed to fix mismatched statuses: ' + error.message);
+            }
+        }
+
+        // Check what assignment statuses exist in the database
+        async function checkAssignmentStatuses() {
+            try {
+                console.log('🔍 Checking assignment statuses...');
+                
+                // Get all assignments to see what statuses exist
+                const { data: allAssignments, error: assignmentsError } = await window.emergencySystem.supabase
+                    .from('assignment')
+                    .select('id, status, report_id')
+                    .not('report_id', 'is', null);
+                
+                if (assignmentsError) {
+                    console.error('❌ Error fetching assignments:', assignmentsError);
+                    alert('Failed to fetch assignments: ' + assignmentsError.message);
+                    return;
+                }
+                
+                console.log('📋 All assignments:', allAssignments);
+                
+                // Group by status
+                const statusGroups = {};
+                allAssignments.forEach(assignment => {
+                    if (!statusGroups[assignment.status]) {
+                        statusGroups[assignment.status] = [];
+                    }
+                    statusGroups[assignment.status].push(assignment);
+                });
+                
+                console.log('📊 Status groups:', statusGroups);
+                
+                let message = 'Assignment Statuses Found:\n\n';
+                Object.keys(statusGroups).forEach(status => {
+                    message += `• ${status}: ${statusGroups[status].length} assignments\n`;
+                });
+                
+                alert(message);
+                
+            } catch (error) {
+                console.error('❌ Error checking assignment statuses:', error);
+                alert('Failed to check assignment statuses: ' + error.message);
+            }
+        }
+
+        // Sync all completed statuses from assignments to reports
+        async function syncAllCompletedStatuses() {
+            try {
+                console.log('🔄 Syncing all completed statuses...');
+                
+                // Get all completed assignments (only 'resolved' is valid for assignment status)
+                const { data: completedAssignments, error: assignmentsError } = await window.emergencySystem.supabase
+                    .from('assignment')
+                    .select('id, report_id, status, completed_at')
+                    .eq('status', 'resolved')
+                    .not('report_id', 'is', null);
+                
+                if (assignmentsError) {
+                    console.error('❌ Error fetching completed assignments:', assignmentsError);
+                    alert('Failed to fetch completed assignments: ' + assignmentsError.message);
+                    return;
+                }
+                
+                console.log(`📋 Found ${completedAssignments.length} completed assignments`);
+                
+                if (completedAssignments.length === 0) {
+                    alert('No completed assignments found to sync.');
+                    return;
+                }
+                
+                // Get all reports to check current status
+                const { data: allReports, error: reportsError } = await window.emergencySystem.supabase
+                    .from('reports')
+                    .select('id, status')
+                    .in('id', completedAssignments.map(a => a.report_id));
+                
+                if (reportsError) {
+                    console.error('❌ Error fetching reports:', reportsError);
+                    alert('Failed to fetch reports: ' + reportsError.message);
+                    return;
+                }
+                
+                // Find reports that need to be updated
+                const reportsToUpdate = [];
+                completedAssignments.forEach(assignment => {
+                    const report = allReports.find(r => r.id === assignment.report_id);
+                    if (report && report.status !== 'completed') {
+                        reportsToUpdate.push({
+                            reportId: report.id,
+                            currentStatus: report.status,
+                            assignmentStatus: assignment.status
+                        });
+                    }
+                });
+                
+                console.log(`📊 Found ${reportsToUpdate.length} reports that need status updates`);
+                
+                if (reportsToUpdate.length === 0) {
+                    alert('All reports are already synced!');
+                    return;
+                }
+                
+                // Update all reports that need syncing
+                let successCount = 0;
+                let errorCount = 0;
+                
+                for (const update of reportsToUpdate) {
+                    try {
+                        console.log(`🔄 Updating report ${update.reportId.substring(0, 8)}... from "${update.currentStatus}" to "completed"`);
+                        
+                        const { error } = await window.emergencySystem.supabase
+                            .from('reports')
+                            .update({ 
+                                status: 'completed'
+                            })
+                            .eq('id', update.reportId);
+                        
+                        if (error) {
+                            console.error(`❌ Failed to update report ${update.reportId.substring(0, 8)}...:`, error);
+                            errorCount++;
+                        } else {
+                            console.log(`✅ Updated report ${update.reportId.substring(0, 8)}... status`);
+                            successCount++;
+                        }
+                    } catch (updateError) {
+                        console.error(`❌ Exception updating report ${update.reportId.substring(0, 8)}...:`, updateError);
+                        errorCount++;
+                    }
+                }
+                
+                // Refresh the reports after syncing
+                await loadReports();
+                
+                alert(`Sync completed!\n\n✅ Successfully updated: ${successCount} reports\n❌ Failed to update: ${errorCount} reports\n\nReports refreshed.`);
+                
+            } catch (error) {
+                console.error('❌ Error syncing completed statuses:', error);
+                alert('Failed to sync completed statuses: ' + error.message);
+            }
+        }
+
+        // Display reports
+        function displayReports() {
+            const tbody = document.getElementById('reportsTableBody');
+            if (!tbody) return;
+
+            const start = (currentPage - 1) * reportsPerPage;
+            const end = start + reportsPerPage;
+            const pageReports = filteredReports.slice(start, end);
+
+            if (pageReports.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="8" class="text-center py-8">
+                            <p class="text-gray-500">No reports found</p>
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            tbody.innerHTML = pageReports.map(report => `
+                <tr>
+                    <td class="font-mono text-sm">${report.id ? report.id.substring(0, 8) + '...' : 'N/A'}</td>
+                    <td>
+                        <span class="badge badge-${report.type || 'other'}">${getEmergencyIcon(report.type)} ${(report.type || 'other').toUpperCase()}</span>
+                    </td>
+                    <td>${report.reporter_name || 'Anonymous'}</td>
+                    <td>
+                        <a href="map.html?reportId=${report.id}" style="color: #3b82f6; text-decoration: none; cursor: pointer;" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'" title="View on Map">
+                            <i class="bi bi-geo-alt-fill"></i> ${report.location?.address || 'Location detected'}
+                        </a>
+                    </td>
+                    <td>
+                        <span class="badge badge-${report.status || 'pending'}">${(report.status || 'pending').toUpperCase()}</span>
+                    </td>
+                    <td>
+                        <span class="badge badge-priority-${report.priority || 4}">${getPriorityText(report.priority || 4)}</span>
+                    </td>
+                    <td>${report.created_at ? new Date(report.created_at).toLocaleDateString() : 'N/A'}</td>
+                    <td>
+                        <div class="action-buttons">
+                            <button onclick="viewReport('${report.id}')" class="btn btn-sm btn-info" title="View Details">
+                                <i class="bi bi-eye"></i>
+                            </button>
+                            ${report.type ? `<button onclick="openCorrectionModalFromId('${report.id}')" class="btn btn-sm" style="background:#F59E0B;color:white;" title="Correct Classification">
+                                <i class="bi bi-pencil-square"></i>
+                            </button>` : ''}
+                            <button onclick="editReport('${report.id}')" class="btn btn-sm btn-warning" title="Edit">
+                                <i class="bi bi-pencil"></i>
+                            </button>
+                            <button onclick="archiveReport('${report.id}')" class="btn btn-sm btn-secondary" title="Archive">
+                                <i class="bi bi-archive"></i>
+                            </button>
+                            <button onclick="deleteReport('${report.id}')" class="btn btn-sm btn-danger" title="Delete">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        // Filter reports
+        function filterReports() {
+            const statusFilter = document.getElementById('statusFilter').value;
+            const typeFilter = document.getElementById('typeFilter').value;
+            const priorityFilter = document.getElementById('priorityFilter').value;
+
+            filteredReports = allReports.filter(report => {
+                const statusMatch = statusFilter === 'all' || report.status === statusFilter;
+                const typeMatch = typeFilter === 'all' || report.type === typeFilter;
+                const priorityMatch = priorityFilter === 'all' || report.priority == priorityFilter;
+                
+                return statusMatch && typeMatch && priorityMatch;
+            });
+
+            currentPage = 1;
+            displayReports();
+            updatePagination();
+        }
+
+        // View report
+        function viewReport(reportId) {
+            // Navigate to the view-report page with the report ID
+            window.location.href = `view-report.html?id=${reportId}`;
+        }
+
+
+        // Edit report
+        function editReport(reportId) {
+            window.location.href = `edit-report.html?id=${reportId}`;
+        }
+
+        // Archive report
+        async function archiveReport(reportId) {
+            if (!confirm('Are you sure you want to archive this report?')) {
+                return;
+            }
+
+            try {
+                await window.emergencySystem.archiveReport(reportId);
+                await loadReports();
+                // Success - reports will refresh automatically
+            } catch (error) {
+                console.error('Error archiving report:', error);
+                alert('Failed to archive report: ' + error.message);
+            }
+        }
+
+        // Delete report
+        async function deleteReport(reportId) {
+            if (!confirm('Are you sure you want to delete this report? This action cannot be undone.')) {
+                return;
+            }
+
+            try {
+                await window.emergencySystem.deleteReport(reportId);
+                await loadReports();
+                // Success - reports will refresh automatically
+            } catch (error) {
+                console.error('Error deleting report:', error);
+                alert('Failed to delete report: ' + error.message);
+            }
+        }
+
+        // Export reports
+        function exportReports() {
+            const csvContent = generateCSV(filteredReports);
+            const blob = new Blob([csvContent], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `emergency-reports-${new Date().toISOString().split('T')[0]}.csv`;
+            a.click();
+            window.URL.revokeObjectURL(url);
+        }
+
+        // Generate CSV
+        function generateCSV(reports) {
+            const headers = ['ID', 'Type', 'Reporter', 'Location', 'Status', 'Priority', 'Created', 'Message'];
+            const rows = reports.map(report => [
+                report.id || 'N/A',
+                report.type || 'other',
+                report.reporter_name || 'Anonymous',
+                report.location?.address || 'Location detected',
+                report.status || 'pending',
+                getPriorityText(report.priority || 4),
+                report.created_at ? new Date(report.created_at).toLocaleString() : 'N/A',
+                report.message || ''
+            ]);
+            
+            return [headers, ...rows].map(row => row.map(field => `"${field}"`).join(',')).join('\n');
+        }
+
+        // Pagination functions
+        function updatePagination() {
+            const totalPages = Math.ceil(filteredReports.length / reportsPerPage);
+            const start = (currentPage - 1) * reportsPerPage + 1;
+            const end = Math.min(currentPage * reportsPerPage, filteredReports.length);
+
+            document.getElementById('showingFrom').textContent = start;
+            document.getElementById('showingTo').textContent = end;
+            document.getElementById('totalReports').textContent = filteredReports.length;
+
+            document.getElementById('prevBtn').disabled = currentPage === 1;
+            document.getElementById('nextBtn').disabled = currentPage === totalPages;
+
+            // Update page numbers
+            const pageNumbers = document.getElementById('pageNumbers');
+            pageNumbers.innerHTML = '';
+            
+            for (let i = 1; i <= totalPages; i++) {
+                const button = document.createElement('button');
+                button.textContent = i;
+                button.className = `page-number ${i === currentPage ? 'active' : ''}`;
+                button.onclick = () => goToPage(i);
+                pageNumbers.appendChild(button);
+            }
+        }
+
+        function goToPage(page) {
+            currentPage = page;
+            displayReports();
+            updatePagination();
+        }
+
+        function previousPage() {
+            if (currentPage > 1) {
+                currentPage--;
+                displayReports();
+                updatePagination();
+            }
+        }
+
+        function nextPage() {
+            const totalPages = Math.ceil(filteredReports.length / reportsPerPage);
+            if (currentPage < totalPages) {
+                currentPage++;
+                displayReports();
+                updatePagination();
+            }
+        }
+
+        // Utility functions
+        function getEmergencyIcon(type) {
+            const icons = {
+                fire: '🔥',
+                flood: '🌊',
+                accident: '🚗',
+                medical: '🏥',
+                other: '⚠️'
+            };
+            return icons[type || 'other'] || '⚠️';
+        }
+
+        function getPriorityText(priority) {
+            const priorities = {
+                1: 'Critical',
+                2: 'High',
+                3: 'Medium',
+                4: 'Low'
+            };
+            return priorities[priority] || 'Low';
+        }
+
+        function showLoadingIndicator() {
+            const tbody = document.getElementById('reportsTableBody');
+            if (tbody) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="8" class="text-center py-8">
+                            <div class="loading-spinner"></div>
+                            <p>Loading reports...</p>
+                        </td>
+                    </tr>
+                `;
+            }
+        }
+
+        function hideLoadingIndicator() {
+            // Loading indicator will be replaced by displayReports()
+        }
+
+        // Logout function
+        async function showLogoutConfirm() {
+            const modal = document.getElementById('logoutModal');
+            modal.classList.remove('hidden');
+        }
+        
+        // Close logout modal
+        function closeLogoutModal() {
+            const modal = document.getElementById('logoutModal');
+            modal.classList.add('hidden');
+        }
+        
+        // Confirm and execute logout
+        async function confirmLogout() {
+            try {
+                // Close modal first
+                closeLogoutModal();
+                
+                // Perform logout
+                await window.emergencySystem.signOut();
+                window.location.href = 'login.html';
+            } catch (error) {
+                console.error('Logout error:', error);
+                alert('Failed to logout. Please try again.');
+            }
+        }
+        
+        // Close modal when clicking outside
+        document.addEventListener('click', function(event) {
+            const modal = document.getElementById('logoutModal');
+            if (event.target === modal) {
+                closeLogoutModal();
+            }
+        });
+        
+        // Close modal with Escape key
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'Escape') {
+                const modal = document.getElementById('logoutModal');
+                if (!modal.classList.contains('hidden')) {
+                    closeLogoutModal();
+                }
+            }
+        });
+
+        // Correction modal functionality
+        let currentReportForCorrection = null;
+
+        // Helper function to open modal by fetching report data
+        async function openCorrectionModalFromId(reportId) {
+            try {
+                // Use emergencySystem.supabase if available, otherwise try window.supabase
+                const supabaseClient = window.emergencySystem?.supabase || window.supabase;
+                
+                if (!supabaseClient) {
+                    alert('Supabase client not initialized. Please refresh the page.');
+                    return;
+                }
+                
+                const { data: report, error } = await supabaseClient
+                    .from('reports')
+                    .select('*')
+                    .eq('id', reportId)
+                    .single();
+                
+                if (error) {
+                    console.error('Error fetching report:', error);
+                    alert('Failed to load report details: ' + error.message);
+                    return;
+                }
+                
+                if (report) {
+                    openCorrectionModal(reportId, report);
+                } else {
+                    alert('Report not found');
+                }
+            } catch (error) {
+                console.error('Error opening correction modal:', error);
+                alert('Failed to open correction form: ' + error.message);
+            }
+        }
+
+        function openCorrectionModal(reportId, reportData) {
+            currentReportForCorrection = { id: reportId, ...reportData };
+            document.getElementById('correction-modal').classList.remove('hidden');
+            
+            // Populate form with current classification
+            document.getElementById('current-type').textContent = (reportData.type || 'unknown').toUpperCase();
+            document.getElementById('current-confidence').textContent = reportData.confidence 
+                ? `${(reportData.confidence * 100).toFixed(0)}%` 
+                : 'N/A';
+            
+            // Display AI analysis if available
+            const aiInfo = document.getElementById('ai-analysis-info');
+            if (reportData.ai_description || reportData.ai_labels) {
+                let aiText = '';
+                if (reportData.ai_description) aiText += `<strong>Description:</strong> ${reportData.ai_description}<br>`;
+                if (reportData.ai_labels && Array.isArray(reportData.ai_labels)) {
+                    aiText += `<strong>Tags:</strong> ${reportData.ai_labels.join(', ')}`;
+                }
+                aiInfo.innerHTML = aiText || 'No AI analysis available';
+            } else {
+                aiInfo.textContent = 'No AI analysis available';
+            }
+            
+            // Reset form
+            document.getElementById('corrected-type').value = '';
+            document.getElementById('corrected-description').value = '';
+            document.getElementById('correction-reason').value = '';
+            document.querySelectorAll('input[type="checkbox"][name="issue-category"]').forEach(cb => cb.checked = false);
+        }
+
+        function closeCorrectionModal() {
+            document.getElementById('correction-modal').classList.add('hidden');
+            currentReportForCorrection = null;
+        }
+
+        async function submitCorrection() {
+            const reportId = currentReportForCorrection?.id;
+            if (!reportId) {
+                alert('No report selected for correction');
+                return;
+            }
+
+            const correctedType = document.getElementById('corrected-type').value;
+            const correctedDescription = document.getElementById('corrected-description').value.trim();
+            const correctionReason = document.getElementById('correction-reason').value;
+            const issueCategories = Array.from(document.querySelectorAll('input[type="checkbox"][name="issue-category"]:checked'))
+                .map(cb => cb.value);
+
+            // Validation
+            if (!correctedType) {
+                alert('Please select the correct emergency type');
+                return;
+            }
+
+            if (!correctionReason || correctionReason.trim().length < 20) {
+                alert('Please provide a detailed correction reason (minimum 20 characters) explaining why the classification is wrong');
+                return;
+            }
+
+            try {
+                // Use emergencySystem.supabase if available, otherwise try window.supabase
+                const supabaseClient = window.emergencySystem?.supabase || window.supabase;
+                
+                if (!supabaseClient) {
+                    alert('Supabase client not initialized. Please refresh the page.');
+                    return;
+                }
+                
+                // Get current session, refreshing if needed
+                let { data: { session }, error: sessionError } = await supabaseClient.auth.getSession();
+                
+                // If no session or error, try to refresh
+                if (!session || sessionError) {
+                    const { data: { session: refreshedSession }, error: refreshError } = await supabaseClient.auth.refreshSession();
+                    if (refreshedSession) {
+                        session = refreshedSession;
+                    }
+                }
+                
+                if (!session) {
+                    alert('You must be logged in to correct classifications. Please log in again.');
+                    return;
+                }
+
+                // Get Supabase URL from config or emergencySystem
+                const supabaseUrl = window.EMERGENCY_CONFIG?.supabaseUrl || 
+                                  window.emergencySystem?.supabase?.supabaseUrl || 
+                                  'https://hmolyqzbvxxliemclrld.supabase.co';
+
+                const response = await fetch(`${supabaseUrl}/functions/v1/correct-classification`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${session.access_token}`,
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        report_id: reportId,
+                        corrected_type: correctedType,
+                        corrected_description: correctedDescription || undefined,
+                        correction_reason: correctionReason.trim(),
+                        issue_categories: issueCategories,
+                        correction_confidence: true,
+                    }),
+                });
+
+                const result = await response.json();
+
+                if (response.ok && result.success) {
+                    alert('Classification corrected successfully! The system will learn from this correction.');
+                    closeCorrectionModal();
+                    // Refresh reports
+                    if (typeof loadReports === 'function') {
+                        loadReports();
+                    }
+                } else {
+                    alert(`Failed to correct classification: ${result.error || 'Unknown error'}`);
+                }
+            } catch (error) {
+                console.error('Error submitting correction:', error);
+                alert('Failed to submit correction. Please try again.');
+            }
+        }
+    </script>
+
+    <!-- Classification Correction Modal -->
+    <div id="correction-modal" class="modal hidden">
+        <div class="modal-content" style="max-width: 600px; background: white; border-radius: 12px; padding: 0; max-height: 90vh; overflow-y: auto; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);">
+            <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center; padding: 1.5rem; border-bottom: 1px solid #e5e7eb;">
+                <h2 style="margin: 0; font-size: 1.5rem; font-weight: 600; color: #111827;">Correct Classification</h2>
+                <button class="modal-close" onclick="closeCorrectionModal()" style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: #6b7280; padding: 0.5rem; border-radius: 0.375rem;">&times;</button>
+            </div>
+            <form onsubmit="event.preventDefault(); submitCorrection();" style="padding: 1.5rem;">
+                <div class="form-group" style="margin-bottom: 1rem;">
+                    <label class="form-label" style="display: block; margin-bottom: 0.5rem; font-weight: 500; color: #374151;">Current Classification</label>
+                    <div style="padding: 0.75rem; background: #f3f4f6; border-radius: 0.375rem;">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <span><strong>Type:</strong> <span id="current-type">-</span></span>
+                            <span><strong>Confidence:</strong> <span id="current-confidence">-</span></span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group" style="margin-bottom: 1rem;">
+                    <label class="form-label" style="display: block; margin-bottom: 0.5rem; font-weight: 500; color: #374151;">AI Analysis</label>
+                    <div id="ai-analysis-info" style="padding: 0.75rem; background: #f3f4f6; border-radius: 0.375rem; font-size: 0.875rem; color: #6b7280;">
+                        Loading...
+                    </div>
+                </div>
+
+                <div class="form-group" style="margin-bottom: 1rem;">
+                    <label class="form-label" for="corrected-type" style="display: block; margin-bottom: 0.5rem; font-weight: 500; color: #374151;">Correct Emergency Type *</label>
+                    <select id="corrected-type" class="form-input" required style="width: 100%; padding: 0.75rem; border: 1px solid #d1d5db; border-radius: 0.375rem; font-size: 0.875rem;">
+                        <option value="">Select correct type...</option>
+                        <option value="flood">Flood</option>
+                        <option value="accident">Accident</option>
+                        <option value="fire">Fire</option>
+                        <option value="medical">Medical</option>
+                        <option value="earthquake">Earthquake</option>
+                        <option value="storm">Storm</option>
+                        <option value="non_emergency">Non-Emergency</option>
+                        <option value="other">Other</option>
+                    </select>
+                </div>
+
+                <div class="form-group" style="margin-bottom: 1rem;">
+                    <label class="form-label" style="display: block; margin-bottom: 0.5rem; font-weight: 500; color: #374151;">Issue Categories (Optional)</label>
+                    <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+                        <label style="display: flex; align-items: center; gap: 0.5rem; font-weight: normal;">
+                            <input type="checkbox" name="issue-category" value="wrong-context">
+                            Wrong context detected (e.g., training vs real emergency)
+                        </label>
+                        <label style="display: flex; align-items: center; gap: 0.5rem; font-weight: normal;">
+                            <input type="checkbox" name="issue-category" value="missing-keywords">
+                            Missing keywords or visual indicators
+                        </label>
+                        <label style="display: flex; align-items: center; gap: 0.5rem; font-weight: normal;">
+                            <input type="checkbox" name="issue-category" value="visual-misclassification">
+                            Visual misclassification (wrong visual interpretation)
+                        </label>
+                        <label style="display: flex; align-items: center; gap: 0.5rem; font-weight: normal;">
+                            <input type="checkbox" name="issue-category" value="confusing-similarity">
+                            Confusing similarity to another emergency type
+                        </label>
+                        <label style="display: flex; align-items: center; gap: 0.5rem; font-weight: normal;">
+                            <input type="checkbox" name="issue-category" value="low-confidence">
+                            Low confidence classification error
+                        </label>
+                    </div>
+                </div>
+
+                <div class="form-group" style="margin-bottom: 1rem;">
+                    <label for="corrected-description" class="form-label" style="display: block; margin-bottom: 0.5rem; font-weight: 500; color: #374151;">
+                        Corrected Description (Optional)
+                        <span style="font-weight: normal; color: #6b7280; font-size: 0.875rem;">
+                            - Update the description part (e.g., "Fallen Tree, Fallen Branch" instead of "Vehicle Incident")
+                        </span>
+                    </label>
+                    <input 
+                        type="text" 
+                        id="corrected-description" 
+                        class="form-input" 
+                        placeholder="e.g., Fallen Tree, Fallen Branch, Pathway Blocked"
+                        style="width: 100%; padding: 0.75rem; border: 1px solid #d1d5db; border-radius: 0.375rem; font-size: 0.875rem;"
+                    />
+                </div>
+
+                <div class="form-group" style="margin-bottom: 1rem;">
+                    <label class="form-label" for="correction-reason" style="display: block; margin-bottom: 0.5rem; font-weight: 500; color: #374151;">
+                        Detailed Correction Reason * 
+                        <span style="font-weight: normal; color: #6b7280; font-size: 0.875rem;">
+                            (Minimum 20 characters - explain why this classification is wrong)
+                        </span>
+                    </label>
+                    <textarea 
+                        id="correction-reason" 
+                        class="form-input" 
+                        rows="5" 
+                        required
+                        placeholder="Please provide a detailed explanation of why the AI classification is incorrect. Include specific details about what should have been detected (e.g., 'This is a sports injury on a playing field, not a traffic accident. The image shows an injured knee with no vehicles present.')"
+                        minlength="20"
+                        style="width: 100%; padding: 0.75rem; border: 1px solid #d1d5db; border-radius: 0.375rem; font-size: 0.875rem; font-family: inherit;"
+                    ></textarea>
+                </div>
+
+                <div style="display: flex; gap: 0.75rem; justify-content: flex-end; margin-top: 1.5rem;">
+                    <button type="button" onclick="closeCorrectionModal()" style="padding: 0.75rem 1.5rem; background: #6b7280; color: white; border: none; border-radius: 0.375rem; cursor: pointer; font-weight: 500;">
+                        Cancel
+                    </button>
+                    <button type="submit" style="padding: 0.75rem 1.5rem; background: #3b82f6; color: white; border: none; border-radius: 0.375rem; cursor: pointer; font-weight: 500;">
+                        Submit Correction
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <style>
+        /* Modal Styles for reports.html */
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        
+        .modal.hidden {
+            display: none;
+        }
+        
+        .modal-close:hover {
+            background-color: #f3f4f6;
+            color: #374151;
+        }
+    </style>
+
+    <!-- Logout Confirmation Modal -->
+    <div id="logoutModal" class="logout-modal hidden">
+        <div class="logout-modal-overlay" onclick="closeLogoutModal()"></div>
+        <div class="logout-modal-content">
+            <div class="logout-modal-icon">
+                <i class="bi bi-exclamation-triangle"></i>
+            </div>
+            <h3 class="logout-modal-title">Confirm Logout</h3>
+            <p class="logout-modal-message">Are you sure you want to logout? You'll need to sign in again to access the system.</p>
+            <div class="logout-modal-buttons">
+                <button class="logout-modal-btn cancel" onclick="closeLogoutModal()">
+                    <i class="bi bi-x-circle"></i> Cancel
+                </button>
+                <button class="logout-modal-btn confirm" onclick="confirmLogout()">
+                    <i class="bi bi-box-arrow-right"></i> Logout
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <style>
+        /* Logout Confirmation Modal */
+        .logout-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 10000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            animation: fadeIn 0.2s ease;
+        }
+        
+        .logout-modal.hidden {
+            display: none;
+        }
+        
+        .logout-modal-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(4px);
+        }
+        
+        .logout-modal-content {
+            position: relative;
+            background: white;
+            border-radius: 16px;
+            padding: 2rem;
+            max-width: 420px;
+            width: 90%;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3), 0 10px 10px -5px rgba(0, 0, 0, 0.2);
+            animation: slideUp 0.3s ease;
+            text-align: center;
+        }
+        
+        .logout-modal-icon {
+            width: 64px;
+            height: 64px;
+            margin: 0 auto 1.5rem;
+            background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 3px solid #fca5a5;
+        }
+        
+        .logout-modal-icon i {
+            font-size: 2rem;
+            color: #ef4444;
+        }
+        
+        .logout-modal-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #111827;
+            margin: 0 0 0.75rem 0;
+        }
+        
+        .logout-modal-message {
+            font-size: 0.9375rem;
+            color: #6b7280;
+            line-height: 1.6;
+            margin: 0 0 1.75rem 0;
+        }
+        
+        .logout-modal-buttons {
+            display: flex;
+            gap: 0.75rem;
+            justify-content: center;
+        }
+        
+        .logout-modal-btn {
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            font-size: 0.875rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            border: 2px solid transparent;
+        }
+        
+        .logout-modal-btn.cancel {
+            background: #f3f4f6;
+            color: #374151;
+            border-color: #e5e7eb;
+        }
+        
+        .logout-modal-btn.cancel:hover {
+            background: #e5e7eb;
+            border-color: #d1d5db;
+            transform: translateY(-1px);
+        }
+        
+        .logout-modal-btn.confirm {
+            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+            color: white;
+            border-color: #ef4444;
+            box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3);
+        }
+        
+        .logout-modal-btn.confirm:hover {
+            background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4);
+        }
+        
+        .logout-modal-btn:active {
+            transform: translateY(0);
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px) scale(0.95);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        /* Hide emergencySystem alert elements */
+        .alert {
+            display: none !important;
+        }
+
+        .alerts-container {
+            display: none !important;
+        }
+    </style>
+</body>
+</html>

@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Super User - General Announcements</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/system-status.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <script src="https://cdn.jsdelivr.net/npm/supabase@2"></script>
+    <script src="js/supabase.js"></script>
+    <style>
+        .su-nav {
+            background: #020617;
+            color: white;
+            padding: 0.75rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 1rem;
+            box-shadow: 0 4px 12px rgba(15,23,42,0.45);
+            position: sticky;
+            top: 0;
+            z-index: 40;
+        }
+        .su-nav-title {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-weight: 600;
+        }
+        .su-nav-links {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            font-size: 0.9rem;
+        }
+        .su-nav-link {
+            color: rgba(248,250,252,0.85);
+            text-decoration: none;
+            padding: 0.35rem 0.75rem;
+            border-radius: 9999px;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+        }
+        .su-nav-link:hover {
+            background: rgba(148,163,184,0.25);
+        }
+        .su-nav-link.active {
+            background: linear-gradient(135deg, #3b82f6, #2563eb);
+            color: white;
+        }
+        .su-page {
+            background: #f8fafc;
+            min-height: 100vh;
+        }
+        .su-header {
+            background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+            color: white;
+            padding: 1.5rem 2rem;
+            border-radius: 0 0 24px 24px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+            margin-bottom: 2rem;
+        }
+        .su-container {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 0 1.5rem 2rem;
+        }
+        .su-card {
+            background: white;
+            border-radius: 16px;
+            padding: 1.75rem;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.08);
+            border: 1px solid #e5e7eb;
+            margin-bottom: 1.5rem;
+        }
+        .su-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+        .badge-status {
+            font-size: 0.75rem;
+            padding: 0.25rem 0.6rem;
+            border-radius: 9999px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        .badge-status.active {
+            background: #fee2e2;
+            color: #b91c1c;
+        }
+        .badge-status.inactive {
+            background: #e5e7eb;
+            color: #4b5563;
+        }
+        .badge-status.expired {
+            background: #fef3c7;
+            color: #92400e;
+        }
+        .su-announcement-actions {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+        .su-btn {
+            border-radius: 9999px;
+            padding: 0.4rem 0.9rem;
+            border: none;
+            font-size: 0.8rem;
+            font-weight: 500;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.25rem;
+        }
+        .su-btn-primary {
+            background: linear-gradient(135deg, #3b82f6, #2563eb);
+            color: white;
+        }
+        .su-btn-secondary {
+            background: #e5e7eb;
+            color: #374151;
+        }
+        .su-btn-danger {
+            background: #fee2e2;
+            color: #b91c1c;
+        }
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.6);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10000;
+            backdrop-filter: blur(4px);
+        }
+        .modal.hidden {
+            display: none;
+        }
+        .modal-content {
+            background: white;
+            border-radius: 16px;
+            padding: 2rem;
+            max-width: 600px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 25px rgba(0, 0, 0, 0.3);
+        }
+    </style>
+</head>
+<body>
+    <nav class="su-nav">
+        <div class="su-nav-title">
+            <i class="bi bi-shield-check"></i>
+            <span>LSPU Emergency • Super User</span>
+        </div>
+        <div class="su-nav-links">
+            <a href="super-user.html" class="su-nav-link">
+                <i class="bi bi-grid-fill"></i>
+                Dashboard
+            </a>
+            <a href="super-user-reports.html" class="su-nav-link">
+                <i class="bi bi-clipboard-data"></i>
+                Recent Reports
+            </a>
+            <a href="super-user-early-warning.html" class="su-nav-link">
+                <i class="bi bi-shield-exclamation"></i>
+                Early Warning
+            </a>
+            <a href="super-user-map.html" class="su-nav-link">
+                <i class="bi bi-map"></i>
+                Map View
+            </a>
+            <a href="super-user-evacuation.html" class="su-nav-link">
+                <i class="bi bi-shield-check"></i>
+                Evacuation Guide
+            </a>
+            <a href="super-user-announcements.html" class="su-nav-link active">
+                <i class="bi bi-megaphone-fill"></i>
+                General Announcements
+            </a>
+            <button type="button" onclick="showLogoutConfirm()" class="su-nav-link" style="border:none;background:none;cursor:pointer;">
+                <i class="bi bi-box-arrow-right"></i>
+                Logout
+            </button>
+        </div>
+    </nav>
+    <div class="su-page">
+        <header class="su-header">
+            <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:1rem;">
+                <div>
+                    <h1 style="margin:0;font-size:1.75rem;display:flex;align-items:center;gap:0.75rem;">
+                        <i class="bi bi-megaphone-fill"></i>
+                        Super User - General Announcements
+                    </h1>
+                    <p style="margin:0.5rem 0 0 0;font-size:0.9rem;opacity:0.9;">
+                        Create and manage non-evacuation announcements for all citizens.
+                    </p>
+                </div>
+            </div>
+        </header>
+
+        <main class="su-container">
+            <!-- Composer -->
+            <section class="su-card">
+                <div class="su-card-header">
+                    <div style="display:flex;align-items:center;gap:0.5rem;">
+                        <span style="font-size:1.5rem;">📢</span>
+                        <div>
+                            <h2 style="margin:0;font-size:1.1rem;color:#111827;">Create General Announcement</h2>
+                            <p style="margin:0.25rem 0 0 0;font-size:0.85rem;color:#6b7280;">
+                                For schedule changes, reminders, and other updates that do not require evacuation.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                <form id="generalAnnouncementForm" onsubmit="handleCreateAnnouncement(event)">
+                    <div class="form-group">
+                        <label class="form-label" for="gaTitle">Title</label>
+                        <input id="gaTitle" type="text" class="form-input" placeholder="e.g. Suspension of Classes for This Afternoon" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="gaMessage">Message</label>
+                        <textarea id="gaMessage" class="form-textarea" placeholder="Write the full details of the announcement here..." required></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="gaAudience">Target Audience</label>
+                        <select id="gaAudience" class="form-select">
+                            <option value="all">All Users</option>
+                            <option value="students">Students</option>
+                            <option value="faculty">Faculty</option>
+                            <option value="staff">Staff</option>
+                            <option value="responders">Responders</option>
+                        </select>
+                    </div>
+                    <div style="display:flex;gap:0.75rem;margin-top:1rem;">
+                        <button type="submit" class="su-btn su-btn-primary">
+                            <i class="bi bi-send"></i>
+                            Post Announcement
+                        </button>
+                        <button type="button" class="su-btn su-btn-secondary" onclick="document.getElementById('generalAnnouncementForm').reset()">
+                            Clear
+                        </button>
+                    </div>
+                </form>
+            </section>
+
+            <!-- List -->
+            <section class="su-card">
+                <div class="su-card-header">
+                    <div style="display:flex;align-items:center;gap:0.5rem;">
+                        <span style="font-size:1.25rem;">📜</span>
+                        <h2 style="margin:0;font-size:1.05rem;color:#111827;">Recent General Announcements</h2>
+                    </div>
+                    <button type="button" class="su-btn su-btn-secondary" onclick="loadAnnouncements()">
+                        <i class="bi bi-arrow-clockwise"></i>
+                        Refresh
+                    </button>
+                </div>
+                <div id="announcementsList">
+                    <p style="font-size:0.9rem;color:#6b7280;">Loading announcements...</p>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Logout Modal -->
+    <div id="logoutModal" class="modal hidden">
+        <div class="modal-content">
+            <h2 style="margin: 0 0 1rem 0;">Confirm Logout</h2>
+            <p>Are you sure you want to logout?</p>
+            <div style="display:flex;gap:1rem;margin-top:1.5rem;">
+                <button class="su-btn su-btn-secondary" style="flex:1;justify-content:center;" onclick="closeLogoutModal()">Cancel</button>
+                <button class="su-btn su-btn-primary" style="flex:1;justify-content:center;" onclick="confirmLogout()">Logout</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Ensure only super_user can access this page
+        document.addEventListener('DOMContentLoaded', async () => {
+            await window.emergencySystem.initialize();
+
+            const role = window.emergencySystem.user?.user_metadata?.role;
+            if (!window.emergencySystem.user || role !== 'super_user') {
+                console.log('Not super_user, redirecting...');
+                if (role === 'admin') {
+                    window.location.href = 'admin.html';
+                } else {
+                    window.location.href = 'login.html';
+                }
+                return;
+            }
+
+            await loadAnnouncements();
+        });
+
+        async function handleCreateAnnouncement(event) {
+            event.preventDefault();
+            try {
+                const titleEl = document.getElementById('gaTitle');
+                const msgEl = document.getElementById('gaMessage');
+                const audEl = document.getElementById('gaAudience');
+
+                const title = titleEl.value.trim();
+                const message = msgEl.value.trim();
+                const audience = audEl.value;
+
+                if (!title || !message) {
+                    window.emergencySystem.showError('Please provide both a title and a message.');
+                    return;
+                }
+
+                const currentUser = window.emergencySystem.user;
+                const payload = {
+                    title,
+                    message,
+                    type: 'general',
+                    priority: 'medium',
+                    target_audience: audience,
+                    status: 'active',
+                    created_by: currentUser?.id
+                };
+
+                const { data, error } = await window.emergencySystem.supabase
+                    .from('announcements')
+                    .insert([payload])
+                    .select();
+
+                if (error) {
+                    console.error('Insert announcement error:', error);
+                    window.emergencySystem.showError('Failed to create announcement');
+                    return;
+                }
+
+                // Send notifications via Edge Function
+                if (data && data.length > 0 && data[0].id) {
+                    try {
+                        const { data: sessionData } = await window.emergencySystem.supabase.auth.getSession();
+                        const token = sessionData?.session?.access_token;
+                        
+                        // Use hardcoded Supabase URL and key (same as in supabase.js)
+                        const supabaseUrl = 'https://hmolyqzbvxxliemclrld.supabase.co';
+                        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imhtb2x5cXpidnh4bGllbWNscmxkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjAyNDY5NzAsImV4cCI6MjA3NTgyMjk3MH0.G2AOT-8zZ5sk8qGQUBifFqq5ww2W7Hxvtux0tlQ0Q-4';
+                        
+                        const notifyResponse = await fetch(`${supabaseUrl}/functions/v1/announcement-notify`, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Authorization': `Bearer ${token || supabaseKey}`,
+                                'apikey': supabaseKey
+                            },
+                            body: JSON.stringify({ announcementId: data[0].id })
+                        });
+                        
+                        if (notifyResponse.ok) {
+                            const notifyResult = await notifyResponse.json();
+                            console.log('✅ Notifications sent:', notifyResult);
+                        } else {
+                            console.warn('⚠️ Failed to send notifications:', notifyResponse.status);
+                        }
+                    } catch (notifyError) {
+                        console.warn('⚠️ Error calling announcement-notify:', notifyError);
+                        // Don't fail the announcement creation if notification fails
+                    }
+                }
+
+                window.emergencySystem.showSuccess('Announcement posted!');
+                document.getElementById('generalAnnouncementForm').reset();
+                await loadAnnouncements();
+            } catch (e) {
+                console.error('handleCreateAnnouncement error:', e);
+                window.emergencySystem.showError('Failed to create announcement');
+            }
+        }
+
+        async function loadAnnouncements() {
+            try {
+                const container = document.getElementById('announcementsList');
+                container.innerHTML = '<p style="font-size:0.9rem;color:#6b7280;">Loading announcements...</p>';
+
+                const { data, error } = await window.emergencySystem.supabase
+                    .from('announcements')
+                    .select('*')
+                    .eq('type', 'general')
+                    .order('created_at', { ascending: false })
+                    .limit(50);
+
+                if (error) {
+                    console.error('Load announcements error:', error);
+                    container.innerHTML = '<p style="font-size:0.9rem;color:#b91c1c;">Failed to load announcements.</p>';
+                    return;
+                }
+
+                const announcements = data || [];
+                if (!announcements.length) {
+                    container.innerHTML = '<p style="font-size:0.9rem;color:#6b7280;">No general announcements yet.</p>';
+                    return;
+                }
+
+                container.innerHTML = announcements.map(renderAnnouncementCard).join('');
+            } catch (e) {
+                console.error('loadAnnouncements exception:', e);
+            }
+        }
+
+        function renderAnnouncementCard(a) {
+            const status = a.status || 'active';
+            const statusLabel = status.toUpperCase();
+            return `
+                <article class="su-announcement" style="border-bottom:1px solid #e5e7eb;padding:0.75rem 0;">
+                    <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:1rem;">
+                        <div style="flex:1;min-width:0;">
+                            <div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.25rem;">
+                                <span style="font-size:1.25rem;">📢</span>
+                                <h3 style="margin:0;font-size:0.95rem;color:#111827;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
+                                    ${a.title}
+                                </h3>
+                                <span class="badge-status ${status}">
+                                    ${statusLabel}
+                                </span>
+                            </div>
+                            <p style="margin:0.25rem 0 0.4rem 0;font-size:0.85rem;color:#4b5563;white-space:pre-wrap;">
+                                ${a.message}
+                            </p>
+                            <div style="font-size:0.75rem;color:#6b7280;display:flex;flex-wrap:wrap;gap:0.75rem;margin-top:0.25rem;">
+                                <span><i class="bi bi-clock"></i> ${new Date(a.created_at).toLocaleString()}</span>
+                                <span><i class="bi bi-people"></i> ${a.target_audience || 'all'}</span>
+                            </div>
+                        </div>
+                        <div class="su-announcement-actions">
+                            <button class="su-btn su-btn-secondary" onclick="toggleAnnouncementStatus('${a.id}', '${status}')">
+                                <i class="bi bi-${status === 'active' ? 'pause' : 'play'}"></i>
+                                ${status === 'active' ? 'Deactivate' : 'Activate'}
+                            </button>
+                            <button class="su-btn su-btn-danger" onclick="deleteAnnouncement('${a.id}')">
+                                <i class="bi bi-trash"></i>
+                                Delete
+                            </button>
+                        </div>
+                    </div>
+                </article>
+            `;
+        }
+
+        async function toggleAnnouncementStatus(id, currentStatus) {
+            try {
+                const newStatus = currentStatus === 'active' ? 'inactive' : 'active';
+                const { error } = await window.emergencySystem.supabase
+                    .from('announcements')
+                    .update({ status: newStatus }, { returning: 'minimal' })
+                    .eq('id', id);
+
+                if (error) {
+                    console.error('toggleAnnouncementStatus error:', error);
+                    window.emergencySystem.showError('Failed to update status');
+                    return;
+                }
+
+                window.emergencySystem.showSuccess(`Announcement ${newStatus === 'active' ? 'activated' : 'deactivated'}!`);
+                await loadAnnouncements();
+            } catch (e) {
+                console.error('toggleAnnouncementStatus exception:', e);
+                window.emergencySystem.showError('Failed to update status');
+            }
+        }
+
+        async function deleteAnnouncement(id) {
+            if (!window.confirm('Delete this announcement? This cannot be undone.')) return;
+            try {
+                const { error } = await window.emergencySystem.supabase
+                    .from('announcements')
+                    .delete({ returning: 'minimal' })
+                    .eq('id', id);
+
+                if (error) {
+                    console.error('deleteAnnouncement error:', error);
+                    window.emergencySystem.showError('Failed to delete announcement');
+                    return;
+                }
+
+                window.emergencySystem.showSuccess('Announcement deleted.');
+                await loadAnnouncements();
+            } catch (e) {
+                console.error('deleteAnnouncement exception:', e);
+                window.emergencySystem.showError('Failed to delete announcement');
+            }
+        }
+
+        // Logout helpers (shared behavior with other super user pages)
+        function showLogoutConfirm() {
+            document.getElementById('logoutModal').classList.remove('hidden');
+        }
+        function closeLogoutModal() {
+            document.getElementById('logoutModal').classList.add('hidden');
+        }
+        async function confirmLogout() {
+            try {
+                await window.emergencySystem.signOut();
+                window.location.href = 'login.html';
+            } catch (error) {
+                console.error('Logout error:', error);
+                window.emergencySystem.showError('Failed to logout');
+            }
+        }
+    </script>
+</body>
+</html>
+
+

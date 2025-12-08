@@ -1,0 +1,17 @@
+# Example: Copy these settings to your config.toml and update with your Gmail credentials
+
+# Use Gmail SMTP to send emails with credentials
+[auth.email.smtp]
+enabled = true
+host = "smtp.gmail.com"
+port = 587
+user = "your-email@gmail.com"  # Replace with your Gmail
+pass = "env(SMTP_PASSWORD)"     # Use environment variable for security
+admin_email = "your-email@gmail.com"
+sender_name = "LSPU Emergency Response System"
+
+# Custom email template that shows credentials
+[auth.email.template.invite]
+subject = "Account Verification - LSPU Emergency Response System"
+content_path = "./supabase/templates/verification-with-credentials.html"
+

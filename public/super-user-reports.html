@@ -1,0 +1,1067 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Super User • Recent Reports - LSPU Emergency Response System</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/system-status.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <style>
+        /* Reuse Super User theme from dashboard */
+        .su-nav {
+            background: #020617;
+            color: white;
+            padding: 0.75rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 1rem;
+            box-shadow: 0 4px 12px rgba(15,23,42,0.45);
+            position: sticky;
+            top: 0;
+            z-index: 40;
+        }
+        .su-nav-title {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-weight: 600;
+        }
+        .su-nav-links {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            font-size: 0.9rem;
+        }
+        .su-nav-link {
+            color: rgba(248,250,252,0.85);
+            text-decoration: none;
+            padding: 0.35rem 0.75rem;
+            border-radius: 9999px;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+        }
+        .su-nav-link:hover {
+            background: rgba(148,163,184,0.25);
+        }
+        .su-nav-link.active {
+            background: linear-gradient(135deg, #3b82f6, #2563eb);
+            color: white;
+        }
+        .super-user-container {
+            background: #f8f9fa;
+            min-height: 100vh;
+        }
+        .super-user-header {
+            background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+            color: white;
+            padding: 2rem;
+            border-radius: 0 0 24px 24px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+            margin-bottom: 2rem;
+        }
+        .super-user-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+            color: white;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            box-shadow: 0 4px 6px rgba(59, 130, 246, 0.4);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+        }
+        .stats-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-top: 1.5rem;
+        }
+        .stat-item {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 1rem;
+            border-radius: 8px;
+            text-align: center;
+        }
+        .stat-number {
+            font-size: 1.75rem;
+            font-weight: 700;
+            color: white;
+        }
+        .stat-label {
+            font-size: 0.875rem;
+            color: rgba(255, 255, 255, 0.9);
+            margin-top: 0.5rem;
+        }
+        .broadcast-card {
+            background: white;
+            border-radius: 16px;
+            padding: 1.5rem 1.75rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            margin-bottom: 2rem;
+            border: 2px solid #e5e7eb;
+        }
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.6);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10000;
+            backdrop-filter: blur(4px);
+        }
+        .modal.hidden {
+            display: none;
+        }
+        .modal-content {
+            background: white;
+            border-radius: 16px;
+            padding: 2rem;
+            max-width: 600px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 25px rgba(0, 0, 0, 0.3);
+        }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/supabase@2"></script>
+    <script src="js/supabase.js"></script>
+</head>
+<body>
+    <nav class="su-nav">
+        <div class="su-nav-title">
+            <i class="bi bi-shield-check"></i>
+            <span>LSPU Emergency • Super User</span>
+        </div>
+        <div class="su-nav-links">
+            <a href="super-user.html" class="su-nav-link">
+                <i class="bi bi-grid-fill"></i>
+                Dashboard
+            </a>
+            <a href="super-user-reports.html" class="su-nav-link active">
+                <i class="bi bi-clipboard-data"></i>
+                Recent Reports
+            </a>
+            <a href="super-user-early-warning.html" class="su-nav-link">
+                <i class="bi bi-shield-exclamation"></i>
+                Early Warning
+            </a>
+            <a href="super-user-map.html" class="su-nav-link">
+                <i class="bi bi-map"></i>
+                Map View
+            </a>
+            <a href="super-user-evacuation.html" class="su-nav-link">
+                <i class="bi bi-shield-check"></i>
+                Evacuation Guide
+            </a>
+            <a href="super-user-announcements.html" class="su-nav-link">
+                <i class="bi bi-megaphone-fill"></i>
+                General Announcements
+            </a>
+            <button type="button" onclick="showLogoutConfirm()" class="su-nav-link" style="border:none;background:none;cursor:pointer;">
+                <i class="bi bi-box-arrow-right"></i>
+                Logout
+            </button>
+        </div>
+    </nav>
+
+    <div class="super-user-container">
+        <!-- Header -->
+        <div class="super-user-header">
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+                <div>
+                    <h1 style="margin: 0; font-size: 2rem; display: flex; align-items: center; gap: 1rem;">
+                        <i class="bi bi-clipboard-data"></i>
+                        Recent Reports
+                        <span class="super-user-badge">
+                            <i class="bi bi-star-fill"></i> Premium Access
+                        </span>
+                    </h1>
+                    <p style="margin: 0.5rem 0 0 0; opacity: 0.9;">
+                        Full view of emergency reports across the system.
+                    </p>
+                </div>
+                <div style="text-align: right;">
+                    <div style="font-size: 0.875rem; opacity: 0.8;">Logged in as</div>
+                    <div style="font-weight: 600;" id="userEmail">Super User</div>
+                </div>
+            </div>
+
+            <div class="stats-row">
+                <div class="stat-item">
+                    <div class="stat-number" id="totalReports">0</div>
+                    <div class="stat-label">Total Reports</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number" id="openReports">0</div>
+                    <div class="stat-label">Open / Active</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div style="max-width: 1200px; margin: 0 auto; padding: 0 2rem 2rem;">
+            <div class="broadcast-card">
+                <div style="display:flex;justify-content:space-between;align-items:center;gap:0.75rem;flex-wrap:wrap;margin-bottom:1rem;">
+                    <div style="display:flex;align-items:center;gap:0.75rem;">
+                        <i class="bi bi-list-ul" style="font-size: 1.75rem; color: #0f766e;"></i>
+                        <div>
+                            <h2 style="margin:0;color:#111827;">All Recent Reports</h2>
+                            <p style="margin:0;color:#6b7280;font-size:0.9rem;">
+                                Click any row to open full details, including image and location.
+                            </p>
+                        </div>
+                    </div>
+                    <div style="display:flex;gap:0.5rem;flex-wrap:wrap;">
+                        <input
+                            id="reportSearchInput"
+                            type="text"
+                            placeholder="Search by ID, type, or status..."
+                            style="padding:0.4rem 0.75rem;border-radius:9999px;border:1px solid #d1d5db;font-size:0.85rem;min-width:220px;outline:none;">
+                        <select id="statusFilter" style="padding:0.4rem 0.75rem;border-radius:9999px;border:1px solid #d1d5db;font-size:0.85rem;">
+                            <option value="all">All statuses</option>
+                            <option value="pending">Pending</option>
+                            <option value="processing">Processing</option>
+                            <option value="assigned">Assigned</option>
+                            <option value="classified">Classified</option>
+                            <option value="completed">Completed</option>
+                            <option value="resolved">Resolved</option>
+                            <option value="closed">Closed</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div style="overflow-x:auto;">
+                    <table style="width: 100%; border-collapse: collapse; font-size: 0.85rem;">
+                        <thead>
+                            <tr style="background: #f3f4f6;">
+                                <th style="text-align:left;padding:0.5rem;border-bottom:1px solid #e5e7eb;">ID</th>
+                                <th style="text-align:left;padding:0.5rem;border-bottom:1px solid #e5e7eb;">Type</th>
+                                <th style="text-align:left;padding:0.5rem;border-bottom:1px solid #e5e7eb;">Status</th>
+                                <th style="text-align:left;padding:0.5rem;border-bottom:1px solid #e5e7eb;">Responder</th>
+                                <th style="text-align:left;padding:0.5rem;border-bottom:1px solid #e5e7eb;">Created</th>
+                            </tr>
+                        </thead>
+                        <tbody id="reportsTableBody">
+                            <tr>
+                                <td colspan="4" style="text-align:center;padding:0.75rem;color:#6b7280;">Loading reports...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Report Detail Modal with Edit Functionality -->
+    <div id="reportModal" class="modal hidden">
+        <div class="modal-content" style="max-width: 800px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                <h2 style="margin: 0; color: #111827;">
+                    <i class="bi bi-file-earmark-medical"></i> Report Details
+                </h2>
+                <div style="display: flex; gap: 0.5rem; align-items: center;">
+                    <button id="editReportBtn" onclick="toggleEditMode()" style="padding: 0.5rem 1rem; border: 1px solid #3b82f6; background: white; color: #3b82f6; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 0.85rem;">
+                        <i class="bi bi-pencil"></i> Edit
+                    </button>
+                    <button onclick="closeReportModal()" style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: #6b7280;">
+                        <i class="bi bi-x"></i>
+                    </button>
+                </div>
+            </div>
+
+            <div id="reportViewMode">
+                <div style="display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(0, 1.5fr); gap: 1.5rem;">
+                    <div>
+                        <p style="margin: 0.25rem 0; font-size: 0.9rem; color: #4b5563;">
+                            <strong>ID:</strong> <span id="reportModalId"></span>
+                        </p>
+                        <p style="margin: 0.25rem 0; font-size: 0.9rem; color: #4b5563;">
+                            <strong>Type:</strong> <span id="reportModalType"></span>
+                        </p>
+                        <p style="margin: 0.25rem 0; font-size: 0.9rem; color: #4b5563;">
+                            <strong>Status:</strong> <span id="reportModalStatus"></span>
+                        </p>
+                        <p style="margin: 0.25rem 0; font-size: 0.9rem; color: #4b5563;">
+                            <strong>Lifecycle Status:</strong> <span id="reportModalLifecycleStatus"></span>
+                        </p>
+                        <p style="margin: 0.25rem 0; font-size: 0.9rem; color: #4b5563;">
+                            <strong>Created:</strong> <span id="reportModalCreated"></span>
+                        </p>
+                        <p style="margin: 0.25rem 0; font-size: 0.9rem; color: #4b5563;">
+                            <strong>Last Updated:</strong> <span id="reportModalLastUpdate"></span>
+                        </p>
+                        <p style="margin: 0.25rem 0; font-size: 0.9rem; color: #4b5563;">
+                            <strong>Location:</strong> <span id="reportModalLocation"></span>
+                        </p>
+                        <p style="margin: 0.5rem 0 0; font-size: 0.9rem; color: #4b5563;">
+                            <strong>Assigned Responder:</strong>
+                        </p>
+                        <p id="reportModalResponder" style="margin: 0.25rem 0; font-size: 0.9rem; color: #6b7280;">
+                            <span id="reportModalResponderName">Not assigned</span>
+                        </p>
+                        <p id="reportModalAssignmentStatus" style="margin: 0.5rem 0 0; font-size: 0.9rem; color: #4b5563; display: none;">
+                            <strong>Assignment Status:</strong> <span id="reportModalAssignmentStatusValue"></span>
+                        </p>
+                        <p style="margin: 0.5rem 0 0; font-size: 0.9rem; color: #4b5563;">
+                            <strong>Description:</strong>
+                        </p>
+                        <p id="reportModalDescription" style="margin: 0.25rem 0; font-size: 0.9rem; color: #6b7280; white-space: pre-line;"></p>
+                    </div>
+                    <div>
+                        <p style="margin: 0 0 0.5rem 0; font-size: 0.9rem; color: #4b5563;"><strong>Report Image</strong></p>
+                        <div id="reportImageContainer" style="border-radius: 12px; border: 1px solid #e5e7eb; background: #f9fafb; padding: 0.5rem; display: flex; align-items: center; justify-content: center; min-height: 220px;">
+                            <img id="reportModalImage" src="" alt="Report image" style="max-width: 100%; max-height: 260px; border-radius: 8px; display: none; object-fit: contain;">
+                            <span id="reportNoImageText" style="color: #9ca3af; font-size: 0.9rem;">No image available for this report</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="reportEditMode" style="display: none;">
+                <form id="reportEditForm" onsubmit="saveReportChanges(event)">
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
+                        <div>
+                            <label style="display: block; margin-bottom: 0.5rem; font-size: 0.9rem; font-weight: 600; color: #374151;">
+                                Type
+                            </label>
+                            <select id="editReportType" style="width: 100%; padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 8px; font-size: 0.9rem;">
+                                <option value="fire">Fire</option>
+                                <option value="medical">Medical</option>
+                                <option value="flood">Flood</option>
+                                <option value="earthquake">Earthquake</option>
+                                <option value="accident">Accident</option>
+                                <option value="other">Other</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label style="display: block; margin-bottom: 0.5rem; font-size: 0.9rem; font-weight: 600; color: #374151;">
+                                Status
+                            </label>
+                            <select id="editReportStatus" style="width: 100%; padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 8px; font-size: 0.9rem;">
+                                <option value="pending">Pending</option>
+                                <option value="processing">Processing</option>
+                                <option value="classified">Classified</option>
+                                <option value="assigned">Assigned</option>
+                                <option value="completed">Completed</option>
+                                <option value="resolved">Resolved</option>
+                                <option value="closed">Closed</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label style="display: block; margin-bottom: 0.5rem; font-size: 0.9rem; font-weight: 600; color: #374151;">
+                                Lifecycle Status
+                            </label>
+                            <select id="editReportLifecycleStatus" style="width: 100%; padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 8px; font-size: 0.9rem;">
+                                <option value="pending">Pending</option>
+                                <option value="classified">Classified</option>
+                                <option value="assigned">Assigned</option>
+                                <option value="accepted">Accepted</option>
+                                <option value="enroute">En Route</option>
+                                <option value="on_scene">On Scene</option>
+                                <option value="resolved">Resolved</option>
+                                <option value="closed">Closed</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label style="display: block; margin-bottom: 0.5rem; font-size: 0.9rem; font-weight: 600; color: #374151;">
+                                Assign Responder
+                            </label>
+                            <select id="editReportResponder" style="width: 100%; padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 8px; font-size: 0.9rem;">
+                                <option value="">-- Select Responder --</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div style="margin-bottom: 1rem;">
+                        <label style="display: block; margin-bottom: 0.5rem; font-size: 0.9rem; font-weight: 600; color: #374151;">
+                            Description
+                        </label>
+                        <textarea id="editReportDescription" rows="4" style="width: 100%; padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 8px; font-size: 0.9rem; font-family: inherit; resize: vertical;"></textarea>
+                    </div>
+                    <div style="display: flex; gap: 0.75rem; justify-content: flex-end; margin-top: 1.5rem;">
+                        <button type="button" onclick="cancelEditMode()" style="padding: 0.75rem 1.5rem; border: 1px solid #d1d5db; background: white; color: #374151; border-radius: 8px; font-weight: 600; cursor: pointer;">
+                            Cancel
+                        </button>
+                        <button type="submit" style="padding: 0.75rem 1.5rem; border: none; background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); color: white; border-radius: 8px; font-weight: 600; cursor: pointer;">
+                            <i class="bi bi-check-circle"></i> Save Changes
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Logout Modal (reuse implementation from dashboard) -->
+    <div id="logoutModal" class="modal hidden">
+        <div class="modal-content">
+            <h2 style="margin: 0 0 1rem 0;">Confirm Logout</h2>
+            <p>Are you sure you want to logout?</p>
+            <div style="display:flex;gap:1rem;margin-top:1.5rem;">
+                <button class="btn btn-secondary" onclick="closeLogoutModal()" style="flex:1;padding:0.75rem 1.5rem;border:none;border-radius:8px;font-weight:600;cursor:pointer;background:#e5e7eb;color:#374151;">
+                    Cancel
+                </button>
+                <button class="btn btn-primary" onclick="confirmLogout()" style="flex:1;padding:0.75rem 1.5rem;border:none;border-radius:8px;font-weight:600;cursor:pointer;background:linear-gradient(135deg,#3b82f6 0%,#2563eb 100%);color:white;">
+                    Logout
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let reportsCache = [];
+        let currentReportId = null;
+        let currentReportData = null;
+        let availableResponders = [];
+        let isEditMode = false;
+
+        document.addEventListener('DOMContentLoaded', async function () {
+            try {
+                await window.emergencySystem.initialize();
+
+                const userRole = window.emergencySystem.user?.user_metadata?.role;
+                if (!window.emergencySystem.user || userRole !== 'super_user') {
+                    console.log('User not super_user, redirecting...');
+                    if (userRole === 'admin') {
+                        window.location.href = 'admin.html';
+                    } else {
+                        window.location.href = 'login.html';
+                    }
+                    return;
+                }
+
+                if (window.emergencySystem.user?.email) {
+                    document.getElementById('userEmail').textContent = window.emergencySystem.user.email;
+                }
+
+                await loadReports();
+                await loadResponders();
+
+                const searchInput = document.getElementById('reportSearchInput');
+                const statusFilter = document.getElementById('statusFilter');
+                if (searchInput) {
+                    searchInput.addEventListener('input', applyFilters);
+                }
+                if (statusFilter) {
+                    statusFilter.addEventListener('change', applyFilters);
+                }
+
+                console.log('✅ Super User reports page initialized');
+            } catch (error) {
+                console.error('❌ Error initializing super user reports page:', error);
+            }
+        });
+
+        async function loadReports() {
+            try {
+                const reports = await window.emergencySystem.getReports();
+                if (!Array.isArray(reports) || !reports.length) {
+                    reportsCache = [];
+                    updateStats();
+                    renderReportsTable([]);
+                    return;
+                }
+
+                // Fetch assignment data for each report to get responder status
+                const reportsWithAssignments = await Promise.all(reports.map(async (report) => {
+                    try {
+                        const { data: assignments, error } = await window.emergencySystem.supabase
+                            .from('assignment')
+                            .select('*, responder:responder_id(id, name, role)')
+                            .eq('report_id', report.id)
+                            .in('status', ['assigned', 'accepted', 'enroute', 'on_scene'])
+                            .order('assigned_at', { ascending: false })
+                            .limit(1);
+                        
+                        if (!error && assignments && assignments.length > 0) {
+                            const assignment = assignments[0];
+                            report.assignment_status = assignment.status;
+                            report.assignment_id = assignment.id;
+                            if (assignment.responder) {
+                                report.responder_name = assignment.responder.name;
+                                report.responder_role = assignment.responder.role;
+                            }
+                        }
+                    } catch (err) {
+                        console.warn('Could not load assignment for report:', report.id, err);
+                    }
+                    return report;
+                }));
+
+                // Sort newest first
+                reportsCache = reportsWithAssignments
+                    .slice()
+                    .sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
+
+                updateStats();
+                renderReportsTable(reportsCache.slice(0, 100)); // show up to 100 most recent
+            } catch (error) {
+                console.error('Error loading reports:', error);
+                renderReportsTable([]);
+            }
+        }
+
+        function updateStats() {
+            const totalEl = document.getElementById('totalReports');
+            const openEl = document.getElementById('openReports');
+            const total = reportsCache.length;
+            const open = reportsCache.filter(r => (r.status || '').toLowerCase() !== 'resolved' && (r.status || '').toLowerCase() !== 'closed').length;
+            if (totalEl) totalEl.textContent = total;
+            if (openEl) openEl.textContent = open;
+        }
+
+        function applyFilters() {
+            const search = (document.getElementById('reportSearchInput')?.value || '').toLowerCase().trim();
+            const statusFilter = (document.getElementById('statusFilter')?.value || 'all').toLowerCase();
+
+            let filtered = reportsCache.slice();
+
+            if (statusFilter !== 'all') {
+                filtered = filtered.filter(r => (r.status || '').toLowerCase() === statusFilter);
+            }
+
+            if (search) {
+                filtered = filtered.filter(r => {
+                    const id = (r.id || '').toLowerCase();
+                    const type = ((r.type || r.classification || r.classified_type || '')).toLowerCase();
+                    const status = (r.status || '').toLowerCase();
+                    return id.includes(search) || type.includes(search) || status.includes(search);
+                });
+            }
+
+            renderReportsTable(filtered.slice(0, 200));
+        }
+
+        async function loadResponders() {
+            try {
+                availableResponders = await window.emergencySystem.getResponders({ is_available: true });
+                console.log('✅ Loaded responders:', availableResponders.length);
+            } catch (error) {
+                console.error('❌ Error loading responders:', error);
+                availableResponders = [];
+            }
+        }
+
+        function renderReportsTable(reports) {
+            const tbody = document.getElementById('reportsTableBody');
+            if (!tbody) return;
+
+            if (!reports || !reports.length) {
+                tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:0.75rem;color:#6b7280;">No reports found</td></tr>';
+                return;
+            }
+
+            const rows = reports.map(report => {
+                const idShort = (report.id || '').substring(0, 8) + '...';
+                const type = report.type || report.classification || report.classified_type || 'Unknown';
+                const status = (report.status || 'unknown').toUpperCase();
+                const created = report.created_at ? new Date(report.created_at).toLocaleString() : '-';
+                const hasResponder = report.responder_id || report.responder_name;
+                const assignmentStatus = report.assignment_status || null;
+
+                let statusColor = '#6b7280';
+                const statusLower = status.toLowerCase();
+                if (statusLower === 'pending') statusColor = '#f59e0b';
+                else if (statusLower === 'processing' || statusLower === 'assigned') statusColor = '#3b82f6';
+                else if (statusLower === 'completed' || statusLower === 'resolved') statusColor = '#16a34a';
+
+                // Determine responder display with enroute status
+                let responderDisplay = '<span style="color:#9ca3af;"><i class="bi bi-person-x"></i> Unassigned</span>';
+                if (hasResponder) {
+                    if (assignmentStatus === 'enroute') {
+                        responderDisplay = `<span style="color:#3b82f6;font-weight:600;"><i class="bi bi-truck"></i> En Route</span>`;
+                    } else if (assignmentStatus === 'on_scene') {
+                        responderDisplay = `<span style="color:#0ea5e9;font-weight:600;"><i class="bi bi-geo-alt-fill"></i> On Scene</span>`;
+                    } else if (assignmentStatus === 'accepted') {
+                        responderDisplay = `<span style="color:#f59e0b;font-weight:600;"><i class="bi bi-check-circle"></i> Accepted</span>`;
+                    } else {
+                        responderDisplay = `<span style="color:#16a34a;"><i class="bi bi-person-check"></i> Assigned</span>`;
+                    }
+                }
+
+                return `
+                    <tr style="cursor:pointer;" onclick="openReportModal('${report.id}')">
+                        <td style="padding:0.5rem;border-bottom:1px solid #e5e7eb;color:#4b5563;">${idShort}</td>
+                        <td style="padding:0.5rem;border-bottom:1px solid #e5e7eb;color:#111827;">${type}</td>
+                        <td style="padding:0.5rem;border-bottom:1px solid #e5e7eb;color:${statusColor};font-weight:600;">${status}</td>
+                        <td style="padding:0.5rem;border-bottom:1px solid #e5e7eb;color:#6b7280;">
+                            ${responderDisplay}
+                        </td>
+                        <td style="padding:0.5rem;border-bottom:1px solid #e5e7eb;color:#6b7280;">${created}</td>
+                    </tr>
+                `;
+            }).join('');
+
+            tbody.innerHTML = rows;
+        }
+
+        // Helpers copied from dashboard for consistent formatting
+        function formatLocationValue(location) {
+            if (!location) return 'Unknown Location';
+
+            try {
+                if (typeof location === 'string') {
+                    if (location.startsWith('{')) {
+                        try {
+                            const locationData = JSON.parse(location);
+                            if (locationData.address && locationData.address !== 'Location detected') {
+                                return locationData.address;
+                            } else if (locationData.formatted_address && locationData.formatted_address !== 'Location detected') {
+                                return locationData.formatted_address;
+                            } else if (locationData.latitude && locationData.longitude) {
+                                return `${Number(locationData.latitude).toFixed(6)}, ${Number(locationData.longitude).toFixed(6)}`;
+                            } else {
+                                return 'Location detected';
+                            }
+                        } catch (e) {
+                            return location;
+                        }
+                    } else {
+                        return location;
+                    }
+                } else if (typeof location === 'object') {
+                    if (location.address && location.address !== 'Location detected') {
+                        return location.address;
+                    } else if (location.formatted_address && location.formatted_address !== 'Location detected') {
+                        return location.formatted_address;
+                    } else if (location.latitude && location.longitude) {
+                        return `${Number(location.latitude).toFixed(6)}, ${Number(location.longitude).toFixed(6)}`;
+                    } else {
+                        return 'Location detected';
+                    }
+                }
+            } catch (e) {
+                console.warn('Error formatting location:', e);
+            }
+
+            return 'Location detected';
+        }
+
+        function extractCoordinates(report) {
+            let lat = report.latitude || report.lat || report.location_lat || report.locationLat;
+            let lng = report.longitude || report.lon || report.lng || report.location_lng || report.locationLng;
+
+            const parseLoc = (loc) => {
+                if (!loc) return;
+                if (typeof loc === 'string') {
+                    try {
+                        loc = JSON.parse(loc);
+                    } catch (_) {
+                        const m = loc.match(/(-?\\d+\\.?\\d*)[,\\s]+(-?\\d+\\.?\\d*)/);
+                        if (m) {
+                            return { lat: parseFloat(m[1]), lng: parseFloat(m[2]) };
+                        }
+                        return;
+                    }
+                }
+                return {
+                    lat: loc.latitude ?? loc.lat ?? loc.y ?? loc.latlng?.lat,
+                    lng: loc.longitude ?? loc.lon ?? loc.lng ?? loc.x ?? loc.latlng?.lng
+                };
+            };
+
+            const nested = parseLoc(report.location);
+            if (nested && (nested.lat != null && nested.lng != null)) {
+                lat = lat ?? nested.lat;
+                lng = lng ?? nested.lng;
+            }
+
+            if (lat != null && lng != null) {
+                const nlat = Number(lat);
+                const nlng = Number(lng);
+                if (!isNaN(nlat) && !isNaN(nlng)) return { lat: nlat, lng: nlng };
+            }
+            return null;
+        }
+
+        async function openReportModal(reportId) {
+            try {
+                if (!reportId || !reportsCache.length) {
+                    console.warn('No report cache or invalid id');
+                    return;
+                }
+
+                let report = reportsCache.find(r => r.id === reportId);
+                if (!report) {
+                    // Try to fetch from database if not in cache
+                    try {
+                        report = await window.emergencySystem.getReportById(reportId);
+                    } catch (err) {
+                        window.emergencySystem?.showError?.('Report details not found');
+                        return;
+                    }
+                }
+
+                currentReportId = reportId;
+                currentReportData = report;
+                isEditMode = false;
+
+                // Load current assignment if exists
+                let currentAssignment = null;
+                if (report.assignment_id || report.responder_id) {
+                    try {
+                        const { data: assignments, error } = await window.emergencySystem.supabase
+                            .from('assignment')
+                            .select('*, responder:responder_id(id, name, role, phone)')
+                            .eq('report_id', reportId)
+                            .order('assigned_at', { ascending: false })
+                            .limit(1);
+                        
+                        if (!error && assignments && assignments.length > 0) {
+                            currentAssignment = assignments[0];
+                        }
+                    } catch (err) {
+                        console.warn('Could not load assignment:', err);
+                    }
+                }
+
+                const idEl = document.getElementById('reportModalId');
+                const typeEl = document.getElementById('reportModalType');
+                const statusEl = document.getElementById('reportModalStatus');
+                const lifecycleStatusEl = document.getElementById('reportModalLifecycleStatus');
+                const createdEl = document.getElementById('reportModalCreated');
+                const lastUpdateEl = document.getElementById('reportModalLastUpdate');
+                const locationEl = document.getElementById('reportModalLocation');
+                const descEl = document.getElementById('reportModalDescription');
+                const responderNameEl = document.getElementById('reportModalResponderName');
+                const imgEl = document.getElementById('reportModalImage');
+                const noImgEl = document.getElementById('reportNoImageText');
+                const modal = document.getElementById('reportModal');
+
+                if (!modal || !idEl || !typeEl || !statusEl || !createdEl || !locationEl || !descEl || !imgEl || !noImgEl) {
+                    console.warn('Report modal elements missing');
+                    return;
+                }
+
+                idEl.textContent = report.id || 'N/A';
+                typeEl.textContent = report.type || report.classification || report.classified_type || 'Unknown';
+                statusEl.textContent = (report.status || 'unknown').toUpperCase();
+                lifecycleStatusEl.textContent = (report.lifecycle_status || report.status || 'pending').toUpperCase();
+                createdEl.textContent = report.created_at ? new Date(report.created_at).toLocaleString() : '-';
+                lastUpdateEl.textContent = report.last_update ? new Date(report.last_update).toLocaleString() : (report.created_at ? new Date(report.created_at).toLocaleString() : '-');
+
+                let locationText = formatLocationValue(report.location);
+                const coords = extractCoordinates(report);
+                if (coords) {
+                    const coordText = `${coords.lat.toFixed(5)}, ${coords.lng.toFixed(5)}`;
+                    if (!locationText || locationText === 'Location detected' || locationText === 'Unknown Location') {
+                        locationText = coordText;
+                    } else {
+                        locationText = `${locationText} (${coordText})`;
+                    }
+                }
+                locationEl.textContent = locationText || 'Not specified';
+
+                descEl.textContent = report.message || report.description || report.details || 'No description provided.';
+
+                // Display responder assignment with status
+                const assignmentStatusEl = document.getElementById('reportModalAssignmentStatus');
+                const assignmentStatusValueEl = document.getElementById('reportModalAssignmentStatusValue');
+                
+                if (currentAssignment && currentAssignment.responder) {
+                    responderNameEl.textContent = `${currentAssignment.responder.name} (${currentAssignment.responder.role})`;
+                    responderNameEl.style.color = '#16a34a';
+                    responderNameEl.style.fontWeight = '600';
+                    
+                    // Show assignment status
+                    if (currentAssignment.status) {
+                        const status = currentAssignment.status.toUpperCase();
+                        let statusColor = '#6b7280';
+                        let statusIcon = '';
+                        
+                        if (currentAssignment.status === 'enroute') {
+                            statusColor = '#3b82f6';
+                            statusIcon = '<i class="bi bi-truck"></i> ';
+                        } else if (currentAssignment.status === 'on_scene') {
+                            statusColor = '#0ea5e9';
+                            statusIcon = '<i class="bi bi-geo-alt-fill"></i> ';
+                        } else if (currentAssignment.status === 'accepted') {
+                            statusColor = '#f59e0b';
+                            statusIcon = '<i class="bi bi-check-circle"></i> ';
+                        } else if (currentAssignment.status === 'assigned') {
+                            statusColor = '#6366f1';
+                            statusIcon = '<i class="bi bi-person-check"></i> ';
+                        }
+                        
+                        assignmentStatusValueEl.innerHTML = `<span style="color:${statusColor};font-weight:600;">${statusIcon}${status}</span>`;
+                        assignmentStatusEl.style.display = 'block';
+                    } else {
+                        assignmentStatusEl.style.display = 'none';
+                    }
+                } else if (report.responder_name) {
+                    responderNameEl.textContent = report.responder_name;
+                    responderNameEl.style.color = '#16a34a';
+                    responderNameEl.style.fontWeight = '600';
+                    
+                    // Show assignment status from report if available
+                    if (report.assignment_status) {
+                        const status = report.assignment_status.toUpperCase();
+                        let statusColor = '#6b7280';
+                        let statusIcon = '';
+                        
+                        if (report.assignment_status === 'enroute') {
+                            statusColor = '#3b82f6';
+                            statusIcon = '<i class="bi bi-truck"></i> ';
+                        } else if (report.assignment_status === 'on_scene') {
+                            statusColor = '#0ea5e9';
+                            statusIcon = '<i class="bi bi-geo-alt-fill"></i> ';
+                        } else if (report.assignment_status === 'accepted') {
+                            statusColor = '#f59e0b';
+                            statusIcon = '<i class="bi bi-check-circle"></i> ';
+                        } else if (report.assignment_status === 'assigned') {
+                            statusColor = '#6366f1';
+                            statusIcon = '<i class="bi bi-person-check"></i> ';
+                        }
+                        
+                        assignmentStatusValueEl.innerHTML = `<span style="color:${statusColor};font-weight:600;">${statusIcon}${status}</span>`;
+                        assignmentStatusEl.style.display = 'block';
+                    } else {
+                        assignmentStatusEl.style.display = 'none';
+                    }
+                } else {
+                    responderNameEl.textContent = 'Not assigned';
+                    responderNameEl.style.color = '#9ca3af';
+                    responderNameEl.style.fontWeight = '400';
+                    assignmentStatusEl.style.display = 'none';
+                }
+
+                let imageUrl = report.image_url || report.photo_url || report.image || report.image_path || null;
+                try {
+                    if (imageUrl && typeof imageUrl === 'string' && !/^https?:\/\//i.test(imageUrl)) {
+                        const pub = window.emergencySystem?.supabase?.storage
+                            ?.from('reports-images')
+                            ?.getPublicUrl(imageUrl);
+                        if (pub?.data?.publicUrl) {
+                            imageUrl = pub.data.publicUrl;
+                        }
+                    }
+                } catch (e2) {
+                    console.warn('Could not resolve public URL for report image:', e2);
+                }
+
+                if (imageUrl) {
+                    imgEl.src = imageUrl;
+                    imgEl.style.display = 'block';
+                    noImgEl.style.display = 'none';
+                } else {
+                    imgEl.src = '';
+                    imgEl.style.display = 'none';
+                    noImgEl.style.display = 'block';
+                }
+
+                // Populate edit form
+                populateEditForm(report, currentAssignment);
+
+                // Show view mode, hide edit mode
+                document.getElementById('reportViewMode').style.display = 'block';
+                document.getElementById('reportEditMode').style.display = 'none';
+                document.getElementById('editReportBtn').innerHTML = '<i class="bi bi-pencil"></i> Edit';
+
+                modal.classList.remove('hidden');
+            } catch (e) {
+                console.error('Error opening report modal:', e);
+                window.emergencySystem?.showError?.('Failed to open report details');
+            }
+        }
+
+        function populateEditForm(report, assignment) {
+            document.getElementById('editReportType').value = report.type || report.classification || report.classified_type || 'other';
+            document.getElementById('editReportStatus').value = report.status || 'pending';
+            document.getElementById('editReportLifecycleStatus').value = report.lifecycle_status || report.status || 'pending';
+            document.getElementById('editReportDescription').value = report.message || report.description || report.details || '';
+
+            // Populate responder dropdown
+            const responderSelect = document.getElementById('editReportResponder');
+            responderSelect.innerHTML = '<option value="">-- Select Responder --</option>';
+            
+            availableResponders.forEach(responder => {
+                const option = document.createElement('option');
+                option.value = responder.id;
+                option.textContent = `${responder.name} (${responder.role})${responder.is_available ? '' : ' - Busy'}`;
+                if (assignment && assignment.responder_id === responder.id) {
+                    option.selected = true;
+                } else if (report.responder_id === responder.id) {
+                    option.selected = true;
+                }
+                responderSelect.appendChild(option);
+            });
+        }
+
+        function toggleEditMode() {
+            isEditMode = !isEditMode;
+            const viewMode = document.getElementById('reportViewMode');
+            const editMode = document.getElementById('reportEditMode');
+            const editBtn = document.getElementById('editReportBtn');
+
+            if (isEditMode) {
+                viewMode.style.display = 'none';
+                editMode.style.display = 'block';
+                editBtn.innerHTML = '<i class="bi bi-x-circle"></i> Cancel Edit';
+            } else {
+                viewMode.style.display = 'block';
+                editMode.style.display = 'none';
+                editBtn.innerHTML = '<i class="bi bi-pencil"></i> Edit';
+            }
+        }
+
+        function cancelEditMode() {
+            isEditMode = false;
+            toggleEditMode();
+        }
+
+        async function saveReportChanges(event) {
+            event.preventDefault();
+            
+            if (!currentReportId || !currentReportData) {
+                window.emergencySystem.showError('No report selected');
+                return;
+            }
+
+            try {
+                const updateData = {
+                    type: document.getElementById('editReportType').value,
+                    status: document.getElementById('editReportStatus').value,
+                    lifecycle_status: document.getElementById('editReportLifecycleStatus').value,
+                    message: document.getElementById('editReportDescription').value,
+                    last_update: new Date().toISOString()
+                };
+
+                const selectedResponderId = document.getElementById('editReportResponder').value;
+
+                // Update report
+                const { data: updatedReport, error: updateError } = await window.emergencySystem.supabase
+                    .from('reports')
+                    .update(updateData)
+                    .eq('id', currentReportId)
+                    .select()
+                    .single();
+
+                if (updateError) {
+                    throw updateError;
+                }
+
+                // Handle responder assignment using Edge Function
+                if (selectedResponderId) {
+                    try {
+                        // Get current user for assigned_by field
+                        const { data: sessionData } = await window.emergencySystem.supabase.auth.getSession();
+                        const userId = sessionData?.session?.user?.id;
+
+                        if (!userId) {
+                            throw new Error('User not authenticated');
+                        }
+
+                        console.log(`🚀 Calling assign-responder Edge Function for report ${currentReportId}`);
+
+                        // Call the assign-responder Edge Function
+                        // This handles everything: assignment creation, notification sending, real-time updates
+                        const { data: assignResult, error: assignError } = await window.emergencySystem.supabase.functions.invoke('assign-responder', {
+                            body: {
+                                report_id: currentReportId,
+                                responder_id: selectedResponderId,
+                                assigned_by: userId
+                            }
+                        });
+
+                        if (assignError) {
+                            console.error('❌ Failed to assign responder via Edge Function:', assignError);
+                            window.emergencySystem.showError('Failed to assign responder: ' + assignError.message);
+                            return; // Exit early on error
+                        } else {
+                            console.log('✅ Responder assigned successfully with push notification:', assignResult);
+                        }
+                    } catch (error) {
+                        console.error('❌ Error calling assign-responder Edge Function:', error);
+                        window.emergencySystem.showError('Failed to assign responder: ' + error.message);
+                        return; // Exit early on error
+                    }
+                } else if (currentReportData.responder_id) {
+                    // If responder was removed, cancel all active assignments
+                    const { data: assignments } = await window.emergencySystem.supabase
+                        .from('assignment')
+                        .select('*')
+                        .eq('report_id', currentReportId)
+                        .in('status', ['assigned', 'accepted', 'enroute', 'on_scene']);
+
+                    if (assignments && assignments.length > 0) {
+                        for (const assignment of assignments) {
+                            await window.emergencySystem.supabase
+                                .from('assignment')
+                                .update({ status: 'cancelled' })
+                                .eq('id', assignment.id);
+                        }
+                    }
+
+                    // Clear responder from report
+                    await window.emergencySystem.supabase
+                        .from('reports')
+                        .update({
+                            responder_id: null,
+                            assignment_id: null,
+                            lifecycle_status: updateData.lifecycle_status || 'pending'
+                        })
+                        .eq('id', currentReportId);
+                }
+
+                window.emergencySystem.showSuccess('Report updated successfully!');
+                
+                // Reload reports and refresh modal
+                await loadReports();
+                await openReportModal(currentReportId);
+                
+            } catch (error) {
+                console.error('Error saving report:', error);
+                window.emergencySystem.showError('Failed to save changes: ' + (error.message || 'Unknown error'));
+            }
+        }
+
+        function closeReportModal() {
+            const modal = document.getElementById('reportModal');
+            if (modal) {
+                modal.classList.add('hidden');
+                isEditMode = false;
+                currentReportId = null;
+                currentReportData = null;
+            }
+        }
+
+        // Close modal when clicking outside
+        document.addEventListener('click', function(event) {
+            const modal = document.getElementById('reportModal');
+            if (modal && !modal.classList.contains('hidden')) {
+                if (event.target === modal) {
+                    closeReportModal();
+                }
+            }
+        });
+
+        // Logout helpers (same behavior as dashboard)
+        function showLogoutConfirm() {
+            document.getElementById('logoutModal').classList.remove('hidden');
+        }
+        function closeLogoutModal() {
+            document.getElementById('logoutModal').classList.add('hidden');
+        }
+        async function confirmLogout() {
+            try {
+                await window.emergencySystem.signOut();
+                window.location.href = 'login.html';
+            } catch (error) {
+                console.error('Logout error:', error);
+                window.emergencySystem.showError('Failed to logout');
+            }
+        }
+    </script>
+</body>
+</html>
+
+

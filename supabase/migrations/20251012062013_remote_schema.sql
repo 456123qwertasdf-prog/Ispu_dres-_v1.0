@@ -1,0 +1,2 @@
+-- Reports table is now created in the first migration (20250113000000_add_new_tables.sql)
+-- This migration file is kept for reference but the reports table creation has been moved

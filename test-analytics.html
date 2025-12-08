@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Classification Analytics</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        h1 { color: #333; }
+        button {
+            background-color: #dc2626;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px 0;
+        }
+        button:hover { background-color: #b91c1c; }
+        .loading { color: #666; font-style: italic; }
+        .error { color: #dc2626; background: #fee; padding: 15px; border-radius: 4px; margin: 10px 0; }
+        .success { color: #059669; background: #d1fae5; padding: 15px; border-radius: 4px; margin: 10px 0; }
+        pre {
+            background: #f3f4f6;
+            padding: 15px;
+            border-radius: 4px;
+            overflow-x: auto;
+            max-height: 600px;
+            overflow-y: auto;
+        }
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+        .stat-card {
+            background: #f9fafb;
+            padding: 15px;
+            border-radius: 6px;
+            border-left: 4px solid #dc2626;
+        }
+        .stat-card h3 {
+            margin: 0 0 10px 0;
+            font-size: 14px;
+            color: #666;
+        }
+        .stat-card .value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #333;
+        }
+        .misclassification {
+            background: #fef3c7;
+            border-left: 4px solid #f59e0b;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 4px;
+        }
+        .low-confidence {
+            background: #fee2e2;
+            border-left: 4px solid #ef4444;
+            padding: 10px;
+            margin: 5px 0;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 Classification Analytics</h1>
+        <button onclick="runAnalytics()">Run Analytics</button>
+        <div id="results"></div>
+    </div>
+
+    <script type="module">
+        // Load Supabase
+        const script = document.createElement('script');
+        script.src = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js';
+        script.onload = () => {
+            window.supabase = supabase.createClient(
+                'https://hmolyqzbvxxliemclrld.supabase.co',
+                'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imhtb2x5cXpidnh4bGllbWNscmxkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjAyNDY5NzAsImV4cCI6MjA3NTgyMjk3MH0.G2AOT-8zZ5sk8qGQUBifFqq5ww2W7Hxvtux0tlQ0Q-4'
+            );
+        };
+        document.head.appendChild(script);
+
+        window.runAnalytics = async function() {
+            const resultsDiv = document.getElementById('results');
+            resultsDiv.innerHTML = '<div class="loading">🔄 Running analytics... Please wait...</div>';
+
+            try {
+                const { data, error } = await window.supabase.functions.invoke('analyze-classifications', {
+                    body: {}
+                });
+
+                if (error) {
+                    throw error;
+                }
+
+                if (data.error) {
+                    resultsDiv.innerHTML = `<div class="error">❌ Error: ${data.error}</div>`;
+                    return;
+                }
+
+                displayResults(data);
+            } catch (error) {
+                resultsDiv.innerHTML = `<div class="error">❌ Error: ${error.message || error}</div>`;
+                console.error('Analytics error:', error);
+            }
+        };
+
+        function displayResults(data) {
+            const { analysis, summary } = data;
+            const resultsDiv = document.getElementById('results');
+
+            let html = `
+                <div class="success">
+                    <h2>✅ Analytics Complete</h2>
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <h3>Total Classifications</h3>
+                            <div class="value">${summary.totalClassifications}</div>
+                        </div>
+                        <div class="stat-card">
+                            <h3>Low Confidence Cases</h3>
+                            <div class="value">${summary.lowConfidenceCount}</div>
+                        </div>
+                        <div class="stat-card">
+                            <h3>Potential Misclassifications</h3>
+                            <div class="value">${summary.potentialMisclassificationsCount}</div>
+                        </div>
+                        <div class="stat-card">
+                            <h3>Types Analyzed</h3>
+                            <div class="value">${summary.typesAnalyzed}</div>
+                        </div>
+                    </div>
+                </div>
+
+                <h2>📊 Confidence Distribution</h2>
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <h3>Very Low (&lt; 50%)</h3>
+                        <div class="value">${analysis.confidenceDistribution.veryLow}</div>
+                    </div>
+                    <div class="stat-card">
+                        <h3>Low (50-60%)</h3>
+                        <div class="value">${analysis.confidenceDistribution.low}</div>
+                    </div>
+                    <div class="stat-card">
+                        <h3>Medium (60-80%)</h3>
+                        <div class="value">${analysis.confidenceDistribution.medium}</div>
+                    </div>
+                    <div class="stat-card">
+                        <h3>High (80-90%)</h3>
+                        <div class="value">${analysis.confidenceDistribution.high}</div>
+                    </div>
+                    <div class="stat-card">
+                        <h3>Very High (&gt; 90%)</h3>
+                        <div class="value">${analysis.confidenceDistribution.veryHigh}</div>
+                    </div>
+                </div>
+
+                <h2>📈 Performance by Type</h2>
+                <table style="width: 100%; border-collapse: collapse; margin: 20px 0;">
+                    <thead>
+                        <tr style="background: #f3f4f6;">
+                            <th style="padding: 12px; text-align: left; border-bottom: 2px solid #ddd;">Type</th>
+                            <th style="padding: 12px; text-align: right; border-bottom: 2px solid #ddd;">Count</th>
+                            <th style="padding: 12px; text-align: right; border-bottom: 2px solid #ddd;">Avg Confidence</th>
+                            <th style="padding: 12px; text-align: right; border-bottom: 2px solid #ddd;">Low Confidence</th>
+                            <th style="padding: 12px; text-align: right; border-bottom: 2px solid #ddd;">High Confidence</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+
+            Object.entries(analysis.byType)
+                .sort((a, b) => b[1].count - a[1].count)
+                .forEach(([type, stats]: [string, any]) => {
+                    html += `
+                        <tr>
+                            <td style="padding: 10px; border-bottom: 1px solid #eee;"><strong>${type.toUpperCase()}</strong></td>
+                            <td style="padding: 10px; text-align: right; border-bottom: 1px solid #eee;">${stats.count}</td>
+                            <td style="padding: 10px; text-align: right; border-bottom: 1px solid #eee;">${(stats.avgConfidence * 100).toFixed(1)}%</td>
+                            <td style="padding: 10px; text-align: right; border-bottom: 1px solid #eee; color: ${stats.lowConfidence > 0 ? '#dc2626' : '#059669'};">${stats.lowConfidence}</td>
+                            <td style="padding: 10px; text-align: right; border-bottom: 1px solid #eee; color: #059669;">${stats.highConfidence}</td>
+                        </tr>
+                    `;
+                });
+
+            html += `
+                    </tbody>
+                </table>
+            `;
+
+            // Show potential misclassifications
+            if (analysis.potentialMisclassifications.length > 0) {
+                html += `
+                    <h2>⚠️ Potential Misclassifications (${analysis.potentialMisclassifications.length})</h2>
+                `;
+                
+                analysis.potentialMisclassifications.slice(0, 20).forEach((mis: any) => {
+                    html += `
+                        <div class="misclassification">
+                            <strong>Report ID:</strong> ${mis.id}<br>
+                            <strong>Classified as:</strong> <span style="color: #dc2626;">${mis.classifiedAs.toUpperCase()}</span><br>
+                            <strong>Suggested:</strong> <span style="color: #059669;">${mis.suggestedType.toUpperCase()}</span><br>
+                            <strong>Confidence:</strong> ${(parseFloat(mis.confidence) * 100).toFixed(1)}%<br>
+                            <strong>Reason:</strong> ${mis.reason}<br>
+                            <strong>Description:</strong> ${mis.description || 'N/A'}
+                        </div>
+                    `;
+                });
+
+                if (analysis.potentialMisclassifications.length > 20) {
+                    html += `<p><em>... and ${analysis.potentialMisclassifications.length - 20} more</em></p>`;
+                }
+            }
+
+            // Show low confidence cases
+            if (analysis.lowConfidenceCases.length > 0) {
+                html += `
+                    <h2>📉 Low Confidence Cases (${analysis.lowConfidenceCases.length})</h2>
+                `;
+                
+                analysis.lowConfidenceCases.slice(0, 15).forEach((case_: any) => {
+                    html += `
+                        <div class="low-confidence">
+                            <strong>Report ID:</strong> ${case_.id}<br>
+                            <strong>Type:</strong> ${case_.type.toUpperCase()}<br>
+                            <strong>Confidence:</strong> ${(parseFloat(case_.confidence) * 100).toFixed(1)}%<br>
+                            <strong>Date:</strong> ${new Date(case_.createdAt).toLocaleString()}<br>
+                            <strong>Description:</strong> ${case_.description || 'N/A'}
+                        </div>
+                    `;
+                });
+
+                if (analysis.lowConfidenceCases.length > 15) {
+                    html += `<p><em>... and ${analysis.lowConfidenceCases.length - 15} more</em></p>`;
+                }
+            }
+
+            html += `
+                <h2>📋 Full Analysis Data</h2>
+                <pre>${JSON.stringify(data, null, 2)}</pre>
+            `;
+
+            resultsDiv.innerHTML = html;
+        }
+    </script>
+</body>
+</html>
+

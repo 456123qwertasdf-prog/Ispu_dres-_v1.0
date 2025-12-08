@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Classification Analytics - LSPU Emergency Response</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            margin: 0;
+            padding: 2rem;
+            background: #f3f4f6;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            padding: 2rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #dc2626;
+            margin-bottom: 1rem;
+        }
+        .section {
+            margin: 2rem 0;
+            padding: 1.5rem;
+            background: #f9fafb;
+            border-radius: 6px;
+            border-left: 4px solid #dc2626;
+        }
+        .section h2 {
+            margin-top: 0;
+            color: #374151;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1rem;
+        }
+        th, td {
+            padding: 0.75rem;
+            text-align: left;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        th {
+            background: #f3f4f6;
+            font-weight: 600;
+            color: #374151;
+        }
+        .badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 12px;
+            font-size: 0.875rem;
+            font-weight: 500;
+        }
+        .badge-high { background: #dcfce7; color: #166534; }
+        .badge-medium { background: #fef3c7; color: #92400e; }
+        .badge-low { background: #fee2e2; color: #991b1b; }
+        .loading {
+            text-align: center;
+            padding: 2rem;
+            color: #6b7280;
+        }
+        .error {
+            background: #fee2e2;
+            color: #991b1b;
+            padding: 1rem;
+            border-radius: 6px;
+            margin: 1rem 0;
+        }
+        .stat-card {
+            display: inline-block;
+            padding: 1rem;
+            margin: 0.5rem;
+            background: white;
+            border-radius: 6px;
+            border: 1px solid #e5e7eb;
+            min-width: 150px;
+        }
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #dc2626;
+        }
+        .stat-label {
+            font-size: 0.875rem;
+            color: #6b7280;
+            margin-top: 0.25rem;
+        }
+        button {
+            background: #dc2626;
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 6px;
+            font-weight: 500;
+            cursor: pointer;
+            margin: 0.5rem 0;
+        }
+        button:hover {
+            background: #b91c1c;
+        }
+        pre {
+            background: #1f2937;
+            color: #f9fafb;
+            padding: 1rem;
+            border-radius: 6px;
+            overflow-x: auto;
+            font-size: 0.875rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 Classification Analytics Dashboard</h1>
+        <p>Analyze past classifications to identify problematic cases and improve the model.</p>
+        
+        <button onclick="runAnalytics()">🔄 Run Analysis</button>
+        
+        <div id="results"></div>
+    </div>
+
+    <script src="js/supabase.js"></script>
+    <script>
+        async function runAnalytics() {
+            const resultsDiv = document.getElementById('results');
+            resultsDiv.innerHTML = '<div class="loading">⏳ Analyzing classifications... Please wait.</div>';
+
+            try {
+                // Initialize emergency system if not already initialized
+                if (!window.emergencySystem || !window.emergencySystem.supabase) {
+                    await window.emergencySystem.initialize();
+                }
+
+                console.log('📊 Calling analyze-classifications function...');
+                const { data, error } = await window.emergencySystem.supabase.functions.invoke('analyze-classifications', {
+                    body: {}
+                });
+
+                if (error) {
+                    throw error;
+                }
+
+                if (!data || !data.success) {
+                    throw new Error('Analysis failed: ' + JSON.stringify(data));
+                }
+
+                const analysis = data.analysis;
+                const summary = data.summary;
+
+                // Build HTML report
+                let html = `
+                    <div class="section">
+                        <h2>📈 Summary Statistics</h2>
+                        <div>
+                            <div class="stat-card">
+                                <div class="stat-value">${summary.totalClassifications}</div>
+                                <div class="stat-label">Total Classifications</div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-value">${summary.lowConfidenceCount}</div>
+                                <div class="stat-label">Low Confidence (&lt;60%)</div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-value">${summary.potentialMisclassificationsCount}</div>
+                                <div class="stat-label">Potential Misclassifications</div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-value">${summary.typesAnalyzed}</div>
+                                <div class="stat-label">Emergency Types</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="section">
+                        <h2>📊 Performance by Emergency Type</h2>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Type</th>
+                                    <th>Count</th>
+                                    <th>Avg Confidence</th>
+                                    <th>Low Confidence</th>
+                                    <th>High Confidence</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                `;
+
+                // Sort by count descending
+                const sortedTypes = Object.entries(analysis.byType)
+                    .sort((a, b) => b[1].count - a[1].count);
+
+                sortedTypes.forEach(([type, stats]) => {
+                    const confidenceClass = stats.avgConfidence >= 0.8 ? 'badge-high' : 
+                                           stats.avgConfidence >= 0.6 ? 'badge-medium' : 'badge-low';
+                    html += `
+                        <tr>
+                            <td><strong>${type.toUpperCase()}</strong></td>
+                            <td>${stats.count}</td>
+                            <td><span class="badge ${confidenceClass}">${(stats.avgConfidence * 100).toFixed(1)}%</span></td>
+                            <td>${stats.lowConfidence}</td>
+                            <td>${stats.highConfidence}</td>
+                        </tr>
+                    `;
+                });
+
+                html += `
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="section">
+                        <h2>⚠️ Low Confidence Cases (Need Review)</h2>
+                `;
+
+                if (analysis.lowConfidenceCases.length === 0) {
+                    html += '<p>✅ No low confidence cases found!</p>';
+                } else {
+                    html += `<p>Found <strong>${analysis.lowConfidenceCases.length}</strong> cases with confidence &lt; 60%:</p>`;
+                    html += '<table><thead><tr><th>ID</th><th>Type</th><th>Confidence</th><th>Date</th><th>Description</th></tr></thead><tbody>';
+                    analysis.lowConfidenceCases.slice(0, 20).forEach(case_ => {
+                        html += `
+                            <tr>
+                                <td>${case_.id.substring(0, 8)}...</td>
+                                <td><strong>${case_.type}</strong></td>
+                                <td><span class="badge badge-low">${(parseFloat(case_.confidence) * 100).toFixed(0)}%</span></td>
+                                <td>${new Date(case_.createdAt).toLocaleDateString()}</td>
+                                <td>${case_.description || 'No description'}</td>
+                            </tr>
+                        `;
+                    });
+                    html += '</tbody></table>';
+                    if (analysis.lowConfidenceCases.length > 20) {
+                        html += `<p><em>Showing first 20 of ${analysis.lowConfidenceCases.length} cases</em></p>`;
+                    }
+                }
+
+                html += '</div>';
+
+                html += `
+                    <div class="section">
+                        <h2>🔍 Potential Misclassifications</h2>
+                `;
+
+                if (analysis.potentialMisclassifications.length === 0) {
+                    html += '<p>✅ No obvious misclassifications detected!</p>';
+                } else {
+                    html += `<p>Found <strong>${analysis.potentialMisclassifications.length}</strong> potential misclassifications:</p>`;
+                    html += '<table><thead><tr><th>ID</th><th>Classified As</th><th>Should Be</th><th>Confidence</th><th>Reason</th><th>Description</th></tr></thead><tbody>';
+                    analysis.potentialMisclassifications.forEach(mis => {
+                        html += `
+                            <tr>
+                                <td>${mis.id.substring(0, 8)}...</td>
+                                <td><strong>${mis.classifiedAs}</strong></td>
+                                <td><span class="badge badge-high">${mis.suggestedType}</span></td>
+                                <td>${(parseFloat(mis.confidence) * 100).toFixed(0)}%</td>
+                                <td><em>${mis.reason}</em></td>
+                                <td>${mis.description || 'No description'}</td>
+                            </tr>
+                        `;
+                    });
+                    html += '</tbody></table>';
+                }
+
+                html += '</div>';
+
+                html += `
+                    <div class="section">
+                        <h2>📊 Confidence Distribution</h2>
+                        <div>
+                            <div class="stat-card">
+                                <div class="stat-value">${analysis.confidenceDistribution.veryLow}</div>
+                                <div class="stat-label">Very Low (&lt;50%)</div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-value">${analysis.confidenceDistribution.low}</div>
+                                <div class="stat-label">Low (50-60%)</div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-value">${analysis.confidenceDistribution.medium}</div>
+                                <div class="stat-label">Medium (60-80%)</div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-value">${analysis.confidenceDistribution.high}</div>
+                                <div class="stat-label">High (80-90%)</div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-value">${analysis.confidenceDistribution.veryHigh}</div>
+                                <div class="stat-label">Very High (&gt;90%)</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="section">
+                        <h2>📋 Raw Data</h2>
+                        <details>
+                            <summary>Click to view full JSON response</summary>
+                            <pre>${JSON.stringify(data, null, 2)}</pre>
+                        </details>
+                    </div>
+                `;
+
+                resultsDiv.innerHTML = html;
+                console.log('✅ Analytics complete:', data);
+
+            } catch (error) {
+                console.error('❌ Analytics failed:', error);
+                resultsDiv.innerHTML = `
+                    <div class="error">
+                        <strong>Error:</strong> ${error.message || JSON.stringify(error)}
+                        <br><br>
+                        <details>
+                            <summary>Full Error Details</summary>
+                            <pre>${JSON.stringify(error, null, 2)}</pre>
+                        </details>
+                    </div>
+                `;
+            }
+        }
+
+        // Auto-run on page load
+        document.addEventListener('DOMContentLoaded', async () => {
+            // Initialize emergency system
+            if (!window.emergencySystem) {
+                window.emergencySystem = new EmergencyResponseSystem();
+            }
+            await window.emergencySystem.initialize();
+            console.log('✅ Analytics page ready. Click "Run Analysis" button to analyze classifications.');
+        });
+    </script>
+</body>
+</html>
+

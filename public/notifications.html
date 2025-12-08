@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Notifications - LSPU Emergency Response</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: #f8fafc;
+            color: #1e293b;
+        }
+        .notification-header {
+            background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        .notification-header h1 {
+            margin: 0;
+            font-size: 24px;
+            font-weight: 700;
+        }
+        .notification-actions {
+            margin-top: 15px;
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+        }
+        .btn {
+            padding: 8px 16px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+        .btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+        .notification-list {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .notification-item {
+            background: white;
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 12px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            border-left: 4px solid #3b82f6;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .notification-item:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+        }
+        .notification-item.unread {
+            background: rgba(59, 130, 246, 0.05);
+            border-left-color: #3b82f6;
+        }
+        .notification-content {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+        }
+        .notification-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            color: white;
+            flex-shrink: 0;
+        }
+        .notification-icon.success {
+            background: linear-gradient(135deg, #10b981, #059669);
+        }
+        .notification-icon.warning {
+            background: linear-gradient(135deg, #f59e0b, #d97706);
+        }
+        .notification-icon.error {
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+        }
+        .notification-icon.info {
+            background: linear-gradient(135deg, #3b82f6, #2563eb);
+        }
+        .notification-details {
+            flex: 1;
+        }
+        .notification-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #1e293b;
+            margin: 0 0 4px 0;
+        }
+        .notification-message {
+            font-size: 14px;
+            color: #64748b;
+            margin: 0 0 8px 0;
+            line-height: 1.4;
+        }
+        .notification-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 12px;
+            color: #94a3b8;
+        }
+        .notification-empty {
+            text-align: center;
+            padding: 40px 20px;
+            color: #64748b;
+        }
+        .notification-empty i {
+            font-size: 48px;
+            margin-bottom: 16px;
+            opacity: 0.5;
+        }
+    </style>
+</head>
+<body>
+    <div class="notification-header">
+        <h1><i class="bi bi-bell"></i> Notifications</h1>
+        <div class="notification-actions">
+            <button class="btn" onclick="markAllAsRead()">Mark All Read</button>
+            <button class="btn" onclick="clearAllNotifications()">Clear All</button>
+            <button class="btn" onclick="window.close()">Close</button>
+        </div>
+    </div>
+    <div class="notification-list" id="notificationList">
+        <div class="notification-empty">
+            <i class="bi bi-bell-slash"></i>
+            <p>No notifications yet</p>
+        </div>
+    </div>
+    <script>
+        function loadNotifications() {
+            const saved = localStorage.getItem('user-notifications');
+            const notifications = saved ? JSON.parse(saved) : [];
+            const list = document.getElementById('notificationList');
+            
+            if (notifications.length === 0) {
+                list.innerHTML = `
+                    <div class="notification-empty">
+                        <i class="bi bi-bell-slash"></i>
+                        <p>No notifications yet</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            list.innerHTML = notifications.map(notification => {
+                const timeAgo = getTimeAgo(new Date(notification.timestamp));
+                const iconMap = {
+                    success: 'bi bi-check-circle-fill',
+                    warning: 'bi bi-exclamation-triangle-fill',
+                    error: 'bi bi-x-circle-fill',
+                    info: 'bi bi-info-circle-fill'
+                };
+                
+                return `
+                    <div class="notification-item ${!notification.read ? 'unread' : ''}" 
+                         onclick="markAsRead('${notification.id}')">
+                        <div class="notification-content">
+                            <div class="notification-icon ${notification.icon}">
+                                <i class="${iconMap[notification.icon]}"></i>
+                            </div>
+                            <div class="notification-details">
+                                <div class="notification-title">${notification.title}</div>
+                                <div class="notification-message">${notification.message}</div>
+                                <div class="notification-meta">
+                                    <span class="notification-time">${timeAgo}</span>
+                                    <span class="notification-type">${notification.type}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+        
+        function markAsRead(notificationId) {
+            const saved = localStorage.getItem('user-notifications');
+            const notifications = saved ? JSON.parse(saved) : [];
+            const notification = notifications.find(n => n.id == notificationId);
+            if (notification) {
+                notification.read = true;
+                localStorage.setItem('user-notifications', JSON.stringify(notifications));
+                loadNotifications();
+            }
+        }
+        
+        function markAllAsRead() {
+            const saved = localStorage.getItem('user-notifications');
+            const notifications = saved ? JSON.parse(saved) : [];
+            notifications.forEach(notification => {
+                notification.read = true;
+            });
+            localStorage.setItem('user-notifications', JSON.stringify(notifications));
+            loadNotifications();
+        }
+        
+        function clearAllNotifications() {
+            localStorage.removeItem('user-notifications');
+            loadNotifications();
+        }
+        
+        function getTimeAgo(date) {
+            const now = new Date();
+            const diff = now - date;
+            const minutes = Math.floor(diff / 60000);
+            const hours = Math.floor(diff / 3600000);
+            const days = Math.floor(diff / 86400000);
+            
+            if (minutes < 1) return 'Just now';
+            if (minutes < 60) return `${minutes}m ago`;
+            if (hours < 24) return `${hours}h ago`;
+            return `${days}d ago`;
+        }
+        
+        // Load notifications when page opens
+        loadNotifications();
+    </script>
+</body>
+</html>

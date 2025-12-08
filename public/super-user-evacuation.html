@@ -1,0 +1,952 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Emergency Evacuation Guide - Super User - LSPU Emergency Response</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/system-status.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <script src="https://cdn.jsdelivr.net/npm/supabase@2"></script>
+    <script src="js/supabase.js"></script>
+    <style>
+        /* Super User Navigation */
+        .su-nav {
+            background: #020617;
+            color: white;
+            padding: 0.75rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 1rem;
+            box-shadow: 0 4px 12px rgba(15,23,42,0.45);
+            position: sticky;
+            top: 0;
+            z-index: 40;
+        }
+        .su-nav-title {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-weight: 600;
+        }
+        .su-nav-links {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            font-size: 0.9rem;
+        }
+        .su-nav-link {
+            color: rgba(248,250,252,0.85);
+            text-decoration: none;
+            padding: 0.35rem 0.75rem;
+            border-radius: 9999px;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+        }
+        .su-nav-link:hover {
+            background: rgba(148,163,184,0.25);
+        }
+        .su-nav-link.active {
+            background: linear-gradient(135deg, #3b82f6, #2563eb);
+            color: white;
+        }
+        .super-user-container {
+            background: #f8f9fa;
+            min-height: 100vh;
+        }
+        .main-content-wrapper {
+            max-width: 1600px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+        .evacuation-card {
+            position: relative;
+            border-radius: 16px;
+            padding: 1.5rem 1.75rem;
+            border-left: 5px solid #ef4444;
+            background: radial-gradient(140% 160% at 0 0, #fee2e2 0, #ffffff 40%);
+            box-shadow: 0 12px 30px rgba(15, 23, 42, 0.06);
+            transition: transform 0.25s ease, box-shadow 0.25s ease;
+        }
+        .evacuation-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 16px 40px rgba(15, 23, 42, 0.08);
+        }
+        .evacuation-card:nth-child(2) {
+            border-left-color: #f97316;
+            background: radial-gradient(140% 160% at 0 0, #ffedd5 0, #ffffff 40%);
+        }
+        .safety-instruction {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin: 0.5rem 0;
+            padding: 0.85rem 1.1rem;
+            border-radius: 999px;
+            background: linear-gradient(90deg, #eff6ff 0%, #ffffff 100%);
+            border: 1px solid #dbeafe;
+            position: relative;
+            overflow: hidden;
+        }
+        .safety-instruction::before {
+            content: '';
+            width: 4px;
+            align-self: stretch;
+            border-radius: 999px;
+            background: #3b82f6;
+        }
+        .safety-instruction strong {
+            font-weight: 700;
+            color: #0f172a;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+            margin-right: 0.25rem;
+        }
+        .safety-instruction span,
+        .safety-instruction {
+            color: #1f2937;
+            font-size: 0.95rem;
+        }
+        .emergency-contact {
+            background: #fef3c7;
+            border: 2px solid #f59e0b;
+            padding: 1rem;
+            margin: 0.5rem 0;
+            border-radius: 8px;
+        }
+        .evacuation-route {
+            background: #dcfce7;
+            border: 2px solid #10b981;
+            padding: 1rem;
+            margin: 0.5rem 0;
+            border-radius: 8px;
+        }
+        .card {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 
+                        0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            margin-bottom: 1.5rem;
+            border: 1px solid rgba(226, 232, 240, 0.8);
+        }
+        .card-header {
+            background: linear-gradient(135deg, #f8fafc 0%, #ffffff 100%);
+            border-bottom: 1px solid rgba(226, 232, 240, 0.8);
+            padding: 1.5rem;
+            position: relative;
+        }
+        .card-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #1e293b;
+            margin: 0;
+        }
+        .card-subtitle {
+            font-size: 0.9375rem;
+            color: #64748b;
+            margin: 0.5rem 0 0 0;
+        }
+        .card-body {
+            padding: 1.5rem;
+        }
+        .mb-6 {
+            margin-bottom: 1.5rem;
+        }
+        .grid {
+            display: grid;
+        }
+        .grid-cols-1 {
+            grid-template-columns: repeat(1, minmax(0, 1fr));
+        }
+        .md\:grid-cols-2 {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+        .md\:grid-cols-3 {
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+        }
+        .gap-4 {
+            gap: 1rem;
+        }
+        .gap-6 {
+            gap: 1.5rem;
+        }
+        .p-6 {
+            padding: 1.5rem;
+        }
+        .text-lg {
+            font-size: 1.125rem;
+        }
+        .text-xl {
+            font-size: 1.25rem;
+        }
+        .font-semibold {
+            font-weight: 600;
+        }
+        .mb-2 {
+            margin-bottom: 0.5rem;
+        }
+        .mb-3 {
+            margin-bottom: 0.75rem;
+        }
+        .mb-4 {
+            margin-bottom: 1rem;
+        }
+        .mt-6 {
+            margin-top: 1.5rem;
+        }
+        .mt-1 {
+            margin-top: 0.25rem;
+        }
+        .space-y-1 > * + * {
+            margin-top: 0.25rem;
+        }
+        .space-y-2 > * + * {
+            margin-top: 0.5rem;
+        }
+        .space-y-3 > * + * {
+            margin-top: 0.75rem;
+        }
+        .flex {
+            display: flex;
+        }
+        .items-center {
+            align-items: center;
+        }
+        .items-start {
+            align-items: flex-start;
+        }
+        .gap-2 {
+            gap: 0.5rem;
+        }
+        .text-green-600 {
+            color: #16a34a;
+        }
+        .text-orange-600 {
+            color: #ea580c;
+        }
+        .text-gray-600 {
+            color: #4b5563;
+        }
+        .text-sm {
+            font-size: 0.875rem;
+        }
+        ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        li {
+            margin: 0;
+        }
+        .btn {
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: none;
+        }
+        .btn-primary {
+            background-color: #3b82f6;
+            color: white;
+        }
+        .btn-primary:hover {
+            background-color: #2563eb;
+        }
+        .btn-outline {
+            background-color: white;
+            color: #374151;
+            border: 1px solid #d1d5db;
+        }
+        .btn-outline:hover {
+            background-color: #f9fafb;
+        }
+        .btn-sm {
+            padding: 0.25rem 0.75rem;
+            font-size: 0.875rem;
+        }
+        @media (min-width: 768px) {
+            .md\:grid-cols-2 {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+            .md\:grid-cols-3 {
+                grid-template-columns: repeat(3, minmax(0, 1fr));
+            }
+        }
+        /* Modal Styles */
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        .modal.hidden {
+            display: none;
+        }
+        .modal-content {
+            background: white;
+            border-radius: 12px;
+            padding: 0;
+            max-width: 600px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+        }
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1.5rem;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        .modal-header h2 {
+            margin: 0;
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #111827;
+        }
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: #6b7280;
+            padding: 0.5rem;
+            border-radius: 0.375rem;
+            transition: all 0.2s;
+        }
+        .modal-close:hover {
+            background-color: #f3f4f6;
+            color: #374151;
+        }
+        .modal form {
+            padding: 1.5rem;
+        }
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+        .form-label {
+            display: block;
+            font-weight: 500;
+            margin-bottom: 0.5rem;
+            color: #374151;
+        }
+        .form-input {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: border-color 0.2s;
+        }
+        .form-input:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+        .modal-footer {
+            display: flex;
+            gap: 1rem;
+            justify-content: flex-end;
+            padding: 1.5rem;
+            border-top: 1px solid #e5e7eb;
+        }
+        .logout-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 10000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            animation: fadeIn 0.2s ease;
+        }
+        .logout-modal.hidden {
+            display: none;
+        }
+        .logout-modal-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(4px);
+        }
+        .logout-modal-content {
+            position: relative;
+            background: white;
+            border-radius: 16px;
+            padding: 2rem;
+            max-width: 420px;
+            width: 90%;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3), 0 10px 10px -5px rgba(0, 0, 0, 0.2);
+            animation: slideUp 0.3s ease;
+            text-align: center;
+        }
+        .logout-modal-icon {
+            width: 64px;
+            height: 64px;
+            margin: 0 auto 1.5rem;
+            background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 3px solid #fca5a5;
+        }
+        .logout-modal-icon i {
+            font-size: 2rem;
+            color: #ef4444;
+        }
+        .logout-modal-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #111827;
+            margin: 0 0 0.75rem 0;
+        }
+        .logout-modal-message {
+            font-size: 0.9375rem;
+            color: #6b7280;
+            line-height: 1.6;
+            margin: 0 0 1.75rem 0;
+        }
+        .logout-modal-buttons {
+            display: flex;
+            gap: 0.75rem;
+            justify-content: center;
+        }
+        .logout-modal-btn {
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            font-size: 0.875rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            border: 2px solid transparent;
+        }
+        .logout-modal-btn.cancel {
+            background: #f3f4f6;
+            color: #374151;
+            border-color: #e5e7eb;
+        }
+        .logout-modal-btn.cancel:hover {
+            background: #e5e7eb;
+            border-color: #d1d5db;
+            transform: translateY(-1px);
+        }
+        .logout-modal-btn.confirm {
+            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+            color: white;
+            border-color: #ef4444;
+            box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3);
+        }
+        .logout-modal-btn.confirm:hover {
+            background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4);
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px) scale(0.95);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+    </style>
+</head>
+<body>
+    <nav class="su-nav">
+        <div class="su-nav-title">
+            <i class="bi bi-shield-check"></i>
+            <span>LSPU Emergency • Super User</span>
+        </div>
+        <div class="su-nav-links">
+            <a href="super-user.html" class="su-nav-link">
+                <i class="bi bi-grid-fill"></i>
+                Dashboard
+            </a>
+            <a href="super-user-reports.html" class="su-nav-link">
+                <i class="bi bi-clipboard-data"></i>
+                Recent Reports
+            </a>
+            <a href="super-user-early-warning.html" class="su-nav-link">
+                <i class="bi bi-shield-exclamation"></i>
+                Early Warning
+            </a>
+            <a href="super-user-map.html" class="su-nav-link">
+                <i class="bi bi-map"></i>
+                Map View
+            </a>
+            <a href="super-user-evacuation.html" class="su-nav-link active">
+                <i class="bi bi-shield-check"></i>
+                Evacuation Guide
+            </a>
+            <a href="super-user-announcements.html" class="su-nav-link">
+                <i class="bi bi-megaphone-fill"></i>
+                General Announcements
+            </a>
+            <button type="button" onclick="showLogoutConfirm()" class="su-nav-link" style="border:none;background:none;cursor:pointer;">
+                <i class="bi bi-box-arrow-right"></i>
+                Logout
+            </button>
+        </div>
+    </nav>
+
+    <div class="super-user-container">
+        <div class="main-content-wrapper">
+            <!-- Evacuation Guide Section -->
+            <div class="admin-section active">
+                <!-- Header Section -->
+                <div class="card">
+                    <div class="card-header">
+                        <h2 class="card-title">Emergency Evacuation Guide</h2>
+                        <p class="card-subtitle">Safety procedures and evacuation routes for LSPU Sta. Cruz Campus</p>
+                    </div>
+                </div>
+
+                <!-- Emergency Procedures -->
+                <div class="card mb-6">
+                    <div class="card-header">
+                        <h3 class="card-title">
+                            <i class="bi bi-exclamation-triangle"></i> Emergency Procedures
+                        </h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <!-- Earthquake Procedures -->
+                            <div class="evacuation-card">
+                                <div class="p-6">
+                                    <h4 class="text-lg font-semibold mb-4 flex items-center gap-2">
+                                        <i class="bi bi-activity"></i> Earthquake Safety
+                                    </h4>
+                                    <div class="space-y-3">
+                                        <div class="safety-instruction">
+                                            <strong>DROP</strong> - Drop to the ground immediately
+                                        </div>
+                                        <div class="safety-instruction">
+                                            <strong>COVER</strong> - Take cover under a sturdy table or desk
+                                        </div>
+                                        <div class="safety-instruction">
+                                            <strong>HOLD ON</strong> - Hold onto the table leg until shaking stops
+                                        </div>
+                                        <div class="safety-instruction">
+                                            <strong>EVACUATE</strong> - Follow evacuation routes to designated areas
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Fire Procedures -->
+                            <div class="evacuation-card">
+                                <div class="p-6">
+                                    <h4 class="text-lg font-semibold mb-4 flex items-center gap-2">
+                                        <i class="bi bi-fire"></i> Fire Safety
+                                    </h4>
+                                    <div class="space-y-3">
+                                        <div class="safety-instruction">
+                                            <strong>ALERT</strong> - Pull fire alarm and call emergency services
+                                        </div>
+                                        <div class="safety-instruction">
+                                            <strong>EVACUATE</strong> - Use nearest exit, never use elevators
+                                        </div>
+                                        <div class="safety-instruction">
+                                            <strong>ASSEMBLE</strong> - Gather at designated assembly points
+                                        </div>
+                                        <div class="safety-instruction">
+                                            <strong>ACCOUNT</strong> - Report to safety officers for headcount
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Training Videos -->
+                <div class="card mb-6">
+                    <div class="card-header">
+                        <h3 class="card-title">
+                            <i class="bi bi-camera-video"></i> Emergency Training Videos
+                        </h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                            <!-- First Aid Video -->
+                            <div>
+                                <h4 class="text-lg font-semibold mb-3 flex items-center gap-2">
+                                    <i class="bi bi-heart-pulse-fill"></i> First Aid
+                                </h4>
+                                <div style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; background: #000; border-radius: 8px; margin-bottom: 1rem;">
+                                    <iframe id="firstAidVideo" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: none;" 
+                                        src="https://www.youtube.com/embed/TsJ49Np3HS0" 
+                                        title="First Aid Training Tutorial" 
+                                        frameborder="0" 
+                                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                                        allowfullscreen>
+                                    </iframe>
+                                </div>
+                            </div>
+
+                            <!-- Earthquake Video -->
+                            <div>
+                                <h4 class="text-lg font-semibold mb-3 flex items-center gap-2">
+                                    <i class="bi bi-activity"></i> Earthquake Drill
+                                </h4>
+                                <div style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; background: #000; border-radius: 8px; margin-bottom: 1rem;">
+                                    <iframe id="earthquakeVideo" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: none;" 
+                                        src="https://www.youtube.com/embed/BLEPakj1YTY" 
+                                        title="Earthquake Drill Tutorial" 
+                                        frameborder="0" 
+                                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                                        allowfullscreen>
+                                    </iframe>
+                                </div>
+                            </div>
+
+                            <!-- Fire Drill Video -->
+                            <div>
+                                <h4 class="text-lg font-semibold mb-3 flex items-center gap-2">
+                                    <i class="bi bi-fire"></i> Fire Drill
+                                </h4>
+                                <div style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; background: #000; border-radius: 8px; margin-bottom: 1rem;">
+                                    <iframe id="fireDrillVideo" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: none;" 
+                                        src="https://www.youtube.com/embed/kPWyiscBrfk" 
+                                        title="Fire Drill Tutorial" 
+                                        frameborder="0" 
+                                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                                        allowfullscreen>
+                                    </iframe>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Evacuation Routes -->
+                <div class="card mb-6">
+                    <div class="card-header">
+                        <h3 class="text-xl font-semibold flex items-center gap-2">
+                            <i class="bi bi-map"></i> Evacuation Routes & Assembly Points
+                        </h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <!-- Main Evacuation Area -->
+                            <div class="evacuation-route">
+                                <h4 class="text-lg font-semibold mb-3 flex items-center gap-2">
+                                    <i class="bi bi-geo-alt"></i> Primary Evacuation Area
+                                </h4>
+                                <p class="mb-3"><strong>Location:</strong> Main Quadrangle / Open Field</p>
+                                <p class="mb-3"><strong>Capacity:</strong> 2,000+ people</p>
+                                <div class="space-y-2">
+                                    <div class="flex items-center gap-2">
+                                        <i class="bi bi-check-circle text-green-600"></i>
+                                        <span>Open space away from buildings</span>
+                                    </div>
+                                    <div class="flex items-center gap-2">
+                                        <i class="bi bi-check-circle text-green-600"></i>
+                                        <span>First aid station available</span>
+                                    </div>
+                                    <div class="flex items-center gap-2">
+                                        <i class="bi bi-check-circle text-green-600"></i>
+                                        <span>Emergency supplies storage</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Secondary Evacuation Areas -->
+                            <div class="evacuation-route">
+                                <h4 class="text-lg font-semibold mb-3 flex items-center gap-2">
+                                    <i class="bi bi-geo-alt-fill"></i> Secondary Evacuation Areas
+                                </h4>
+                                <div class="space-y-2">
+                                    <div class="flex items-center gap-2">
+                                        <i class="bi bi-building"></i>
+                                        <span>Gymnasium (Building 15)</span>
+                                    </div>
+                                    <div class="flex items-center gap-2">
+                                        <i class="bi bi-building"></i>
+                                        <span>Library (Building 8)</span>
+                                    </div>
+                                    <div class="flex items-center gap-2">
+                                        <i class="bi bi-building"></i>
+                                        <span>Auditorium (Building 12)</span>
+                                    </div>
+                                    <div class="flex items-center gap-2">
+                                        <i class="bi bi-building"></i>
+                                        <span>Parking Area (North Side)</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Emergency Contacts -->
+                <div class="card mb-6">
+                    <div class="card-header">
+                        <h3 class="text-xl font-semibold flex items-center gap-2">
+                            <i class="bi bi-telephone"></i> Emergency Contacts
+                        </h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <!-- MDRRMO -->
+                            <div class="emergency-contact">
+                                <h4 class="text-lg font-semibold mb-2">MDRRMO</h4>
+                                <p class="text-sm text-gray-600 mb-2">Municipal Disaster Risk Reduction and Management Office</p>
+                                <div class="space-y-1">
+                                    <div class="flex items-center gap-2">
+                                        <i class="bi bi-phone"></i>
+                                        <span>0921-962-0602</span>
+                                    </div>
+                                    <div class="flex items-center gap-2">
+                                        <i class="bi bi-telephone"></i>
+                                        <span>(049) 557-1047</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- PDRRMO -->
+                            <div class="emergency-contact">
+                                <h4 class="text-lg font-semibold mb-2">PDRRMO</h4>
+                                <p class="text-sm text-gray-600 mb-2">Provincial Disaster Risk Reduction and Management Office</p>
+                                <div class="space-y-1">
+                                    <div class="flex items-center gap-2">
+                                        <i class="bi bi-phone"></i>
+                                        <span>0917 417 3698</span>
+                                    </div>
+                                    <div class="flex items-center gap-2">
+                                        <i class="bi bi-telephone"></i>
+                                        <span>(049) 501-4672</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- BFP -->
+                            <div class="emergency-contact">
+                                <h4 class="text-lg font-semibold mb-2">BFP</h4>
+                                <p class="text-sm text-gray-600 mb-2">Bureau of Fire Protection</p>
+                                <div class="space-y-1">
+                                    <div class="flex items-center gap-2">
+                                        <i class="bi bi-phone"></i>
+                                        <span>0917 417 3698</span>
+                                    </div>
+                                    <div class="flex items-center gap-2">
+                                        <i class="bi bi-telephone"></i>
+                                        <span>(049) 501-0004</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Additional Emergency Contacts -->
+                        <div class="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div class="emergency-contact">
+                                <h4 class="text-lg font-semibold mb-2">Police Station</h4>
+                                <div class="space-y-1">
+                                    <div class="flex items-center gap-2">
+                                        <i class="bi bi-phone"></i>
+                                        <span>0928-465-3820</span>
+                                    </div>
+                                    <div class="flex items-center gap-2">
+                                        <i class="bi bi-telephone"></i>
+                                        <span>501-5971</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="emergency-contact">
+                                <h4 class="text-lg font-semibold mb-2">Medical Emergency</h4>
+                                <div class="space-y-1">
+                                    <div class="flex items-center gap-2">
+                                        <i class="bi bi-hospital"></i>
+                                        <span>Laguna Doctors Hospital: (049) 501-3218</span>
+                                    </div>
+                                    <div class="flex items-center gap-2">
+                                        <i class="bi bi-hospital"></i>
+                                        <span>Laguna Medical Center: (049) 543-333</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Safety Tips -->
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="text-xl font-semibold flex items-center gap-2">
+                            <i class="bi bi-lightbulb"></i> Safety Tips & Reminders
+                        </h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                                <h4 class="text-lg font-semibold mb-3">Before an Emergency</h4>
+                                <ul class="space-y-2">
+                                    <li class="flex items-start gap-2">
+                                        <i class="bi bi-check-circle text-green-600 mt-1"></i>
+                                        <span>Familiarize yourself with evacuation routes</span>
+                                    </li>
+                                    <li class="flex items-start gap-2">
+                                        <i class="bi bi-check-circle text-green-600 mt-1"></i>
+                                        <span>Know the location of emergency exits</span>
+                                    </li>
+                                    <li class="flex items-start gap-2">
+                                        <i class="bi bi-check-circle text-green-600 mt-1"></i>
+                                        <span>Keep emergency contact numbers handy</span>
+                                    </li>
+                                    <li class="flex items-start gap-2">
+                                        <i class="bi bi-check-circle text-green-600 mt-1"></i>
+                                        <span>Participate in emergency drills</span>
+                                    </li>
+                                </ul>
+                            </div>
+                            <div>
+                                <h4 class="text-lg font-semibold mb-3">During an Emergency</h4>
+                                <ul class="space-y-2">
+                                    <li class="flex items-start gap-2">
+                                        <i class="bi bi-exclamation-triangle text-orange-600 mt-1"></i>
+                                        <span>Stay calm and follow instructions</span>
+                                    </li>
+                                    <li class="flex items-start gap-2">
+                                        <i class="bi bi-exclamation-triangle text-orange-600 mt-1"></i>
+                                        <span>Use designated evacuation routes</span>
+                                    </li>
+                                    <li class="flex items-start gap-2">
+                                        <i class="bi bi-exclamation-triangle text-orange-600 mt-1"></i>
+                                        <span>Help others if it's safe to do so</span>
+                                    </li>
+                                    <li class="flex items-start gap-2">
+                                        <i class="bi bi-exclamation-triangle text-orange-600 mt-1"></i>
+                                        <span>Report to assembly points for headcount</span>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Current video being edited
+        let currentVideoType = null;
+
+        // Initialize page and videos
+        document.addEventListener('DOMContentLoaded', async () => {
+            try {
+                // Initialize the emergency system
+                await window.emergencySystem.initialize();
+
+                // Check if user is super_user
+                const userRole = window.emergencySystem.user?.user_metadata?.role;
+                if (!window.emergencySystem.user || userRole !== 'super_user') {
+                    if (userRole === 'admin') {
+                        window.location.href = 'evacuation-guide.html';
+                    } else {
+                        window.location.href = 'login.html';
+                    }
+                    return;
+                }
+
+                // Load saved video URLs
+                const videos = ['firstAidVideo', 'earthquakeVideo', 'fireDrillVideo'];
+                videos.forEach(videoId => {
+                    const savedURL = localStorage.getItem(videoId + 'URL');
+                    if (savedURL) {
+                        document.getElementById(videoId).src = savedURL;
+                    }
+                });
+            } catch (error) {
+                console.error('Error initializing evacuation guide:', error);
+            }
+        });
+
+        // Show logout confirmation modal
+        function showLogoutConfirm() {
+            document.getElementById('logoutModal').classList.remove('hidden');
+        }
+        
+        // Close logout modal
+        function closeLogoutModal() {
+            document.getElementById('logoutModal').classList.add('hidden');
+        }
+        
+        // Confirm and execute logout
+        async function confirmLogout() {
+            try {
+                closeLogoutModal();
+                await window.emergencySystem.signOut();
+                window.location.href = 'login.html';
+            } catch (error) {
+                console.error('Logout error:', error);
+            }
+        }
+        
+        // Close modal when clicking outside
+        document.addEventListener('click', function(event) {
+            const modal = document.getElementById('logoutModal');
+            if (event.target === modal) {
+                closeLogoutModal();
+            }
+        });
+        
+        // Close modal with Escape key
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'Escape') {
+                const modal = document.getElementById('logoutModal');
+                if (!modal.classList.contains('hidden')) {
+                    closeLogoutModal();
+                }
+            }
+        });
+    </script>
+
+    <!-- Logout Confirmation Modal -->
+    <div id="logoutModal" class="logout-modal hidden">
+        <div class="logout-modal-overlay" onclick="closeLogoutModal()"></div>
+        <div class="logout-modal-content">
+            <div class="logout-modal-icon">
+                <i class="bi bi-exclamation-triangle"></i>
+            </div>
+            <h3 class="logout-modal-title">Confirm Logout</h3>
+            <p class="logout-modal-message">Are you sure you want to logout? You'll need to sign in again to access the system.</p>
+            <div class="logout-modal-buttons">
+                <button class="logout-modal-btn cancel" onclick="closeLogoutModal()">
+                    <i class="bi bi-x-circle"></i> Cancel
+                </button>
+                <button class="logout-modal-btn confirm" onclick="confirmLogout()">
+                    <i class="bi bi-box-arrow-right"></i> Logout
+                </button>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
+
+

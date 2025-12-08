@@ -1,0 +1,1437 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Analytics - LSPU Emergency Response System</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/system-status.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <script src="https://cdn.jsdelivr.net/npm/supabase@2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="js/supabase.js"></script>
+</head>
+<body>
+    <div class="dashboard-container">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <div class="sidebar-logo">
+                    <img src="images/udrrmo image.jpg" alt="UDRRMO Logo" 
+                         style="width: 50px; height: 50px; object-fit: contain; border-radius: 50%; border: 2px solid white; display: block;">
+                    <div class="logo-text">
+                        <h3>Kapiyu Admin</h3>
+                        <p>Emergency Response</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="system-status">
+                <div class="status-indicator">
+                    <span class="status-dot online"></span>
+                    <span>System Status: Online</span>
+                </div>
+            </div>
+            
+            <nav class="sidebar-nav">
+                <a href="admin.html" class="nav-item">
+                    <i class="bi bi-house"></i> Dashboard
+                </a>
+                <a href="reports.html" class="nav-item">
+                    <i class="bi bi-file-text"></i> Reports
+                </a>
+                <a href="announcements.html" class="nav-item">
+                    <i class="bi bi-megaphone"></i> Announcements
+                </a>
+                <a href="early-warning-dashboard.html" class="nav-item">
+                    <i class="bi bi-shield-exclamation"></i> Early Warning
+                </a>
+                <a href="map.html" class="nav-item">
+                    <i class="bi bi-map"></i> Map View
+                </a>
+                <a href="evacuation-guide.html" class="nav-item">
+                    <i class="bi bi-shield-check"></i> Evacuation Guide
+                </a>
+                <a href="archive.html" class="nav-item">
+                    <i class="bi bi-folder"></i> Archived
+                </a>
+                <a href="analytics.html" class="nav-item active">
+                    <i class="bi bi-graph-up"></i> Analytics
+                </a>
+                <a href="user-management.html" class="nav-item">
+                    <i class="bi bi-people"></i> User Management
+                </a>
+                <a href="lsm-admin.html" class="nav-item">
+                    <i class="bi bi-journal-bookmark"></i> Learning Modules
+                </a>
+            </nav>
+            
+            <div class="sidebar-footer">
+                <div class="user-info-card">
+                    <div class="user-avatar">A</div>
+                    <div class="user-details">
+                        <h4>Admin User</h4>
+                        <p>Kapiyu Command</p>
+                    </div>
+                </div>
+                <button class="logout-btn" onclick="showLogoutConfirm()" style="width: 100%;padding: 0.75rem 1rem;background: rgba(239, 68, 68, 0.1);border: 1px solid rgba(239, 68, 68, 0.3);color: #fca5a5;border-radius: 8px;font-size: 0.875rem;font-weight: 500;cursor: pointer;transition: all 0.2s ease;display: flex;align-items: center;gap: 0.5rem;margin-left: 0px;">
+                    <i class="bi bi-box-arrow-right"></i> Logout
+                </button>
+            </div>
+        </div>
+
+        <style>
+            .logout-btn:hover {
+                background: #EF4444 !important;
+                border-color: #EF4444 !important;
+                color: white !important;
+            }
+            
+            .logout-btn:hover i {
+                color: white !important;
+            }
+            
+            /* Modern Analytics Dashboard Styling */
+            .admin-section.active {
+                padding: 1.5rem;
+            }
+            
+            /* Header Card Modernization */
+            .admin-section .card:first-child {
+                border-radius: 16px;
+                box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 
+                            0 2px 4px -1px rgba(0, 0, 0, 0.06),
+                            0 0 0 1px rgba(0, 0, 0, 0.05);
+                border: 1px solid rgba(226, 232, 240, 0.8);
+                margin-bottom: 1.5rem;
+                overflow: hidden;
+            }
+            
+            .admin-section .card:first-child .card-header {
+                background: linear-gradient(135deg, #f8fafc 0%, #ffffff 100%);
+                border-bottom: 1px solid rgba(226, 232, 240, 0.8);
+                padding: 1.5rem 1.75rem;
+                position: relative;
+            }
+            
+            .admin-section .card:first-child .card-header::after {
+                content: '';
+                position: absolute;
+                bottom: 0;
+                left: 0;
+                right: 0;
+                height: 2px;
+                background: linear-gradient(90deg, transparent, rgba(59, 130, 246, 0.3), transparent);
+            }
+            
+            .admin-section .card:first-child .card-title {
+                font-size: 1.75rem;
+                font-weight: 800;
+                color: #1e293b;
+                margin: 0;
+                background: linear-gradient(180deg, #0f172a 0%, #1e293b 50%, #334155 100%);
+                -webkit-background-clip: text;
+                -webkit-text-fill-color: transparent;
+                background-clip: text;
+                letter-spacing: -0.02em;
+                text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+            }
+            
+            .admin-section .card:first-child .card-subtitle {
+                font-size: 0.9375rem;
+                color: #4b5563;
+                margin: 0.5rem 0 0 0;
+                font-weight: 500;
+                line-height: 1.5;
+            }
+            
+            /* Modern Analytics Overview Cards */
+            .analytics-overview {
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+                gap: 1.5rem;
+                margin-bottom: 2rem;
+            }
+            
+            .analytics-card {
+                background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+                border-radius: 16px;
+                padding: 1.75rem;
+                box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 
+                            0 2px 4px -1px rgba(0, 0, 0, 0.06),
+                            0 0 0 1px rgba(0, 0, 0, 0.05);
+                border: 1px solid rgba(226, 232, 240, 0.8);
+                transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+                position: relative;
+                overflow: hidden;
+                cursor: pointer;
+            }
+            
+            .analytics-card::before {
+                content: '';
+                position: absolute;
+                top: 0;
+                left: 0;
+                right: 0;
+                height: 4px;
+                background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.8), transparent);
+                opacity: 0;
+                transition: opacity 0.4s ease;
+            }
+            
+            .analytics-card:hover::before {
+                opacity: 1;
+            }
+            
+            .analytics-card:hover {
+                transform: translateY(-4px);
+                box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 
+                            0 10px 10px -5px rgba(0, 0, 0, 0.04),
+                            0 0 0 1px rgba(139, 92, 246, 0.1);
+            }
+            
+            .analytics-card::after {
+                content: '';
+                position: absolute;
+                top: -50%;
+                right: -50%;
+                width: 200%;
+                height: 200%;
+                background: radial-gradient(circle, rgba(255, 255, 255, 0.1) 0%, transparent 70%);
+                opacity: 0;
+                transition: opacity 0.4s ease;
+            }
+            
+            .analytics-card:hover::after {
+                opacity: 1;
+            }
+            
+            .analytics-card-icon {
+                width: 72px;
+                height: 72px;
+                border-radius: 16px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 28px;
+                color: white;
+                flex-shrink: 0;
+                box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
+                transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+                position: relative;
+                overflow: hidden;
+                margin-bottom: 1.25rem;
+            }
+            
+            .analytics-card-icon::before {
+                content: '';
+                position: absolute;
+                top: -50%;
+                left: -50%;
+                width: 200%;
+                height: 200%;
+                background: linear-gradient(45deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+                transform: rotate(45deg);
+                transition: all 0.6s ease;
+            }
+            
+            .analytics-card:hover .analytics-card-icon::before {
+                animation: shine 0.6s ease;
+            }
+            
+            .analytics-card:hover .analytics-card-icon {
+                transform: scale(1.1) rotate(5deg);
+                box-shadow: 0 12px 24px rgba(0, 0, 0, 0.2);
+            }
+            
+            @keyframes shine {
+                0% { transform: translateX(-100%) translateY(-100%) rotate(45deg); }
+                100% { transform: translateX(100%) translateY(100%) rotate(45deg); }
+            }
+            
+            .analytics-card-primary .analytics-card-icon {
+                background: linear-gradient(135deg, #dc2626 0%, #b91c1c 50%, #991b1b 100%);
+            }
+            
+            .analytics-card-success .analytics-card-icon {
+                background: linear-gradient(135deg, #10b981 0%, #059669 50%, #047857 100%);
+            }
+            
+            .analytics-card-warning .analytics-card-icon {
+                background: linear-gradient(135deg, #f59e0b 0%, #d97706 50%, #b45309 100%);
+            }
+            
+            .analytics-card-info .analytics-card-icon {
+                background: linear-gradient(135deg, #3b82f6 0%, #2563eb 50%, #1d4ed8 100%);
+            }
+            
+            .analytics-card-content {
+                display: flex;
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+            
+            .analytics-card-number {
+                font-size: 2.75rem;
+                font-weight: 800;
+                line-height: 1;
+                margin-bottom: 0.5rem;
+                background: linear-gradient(135deg, #1f2937 0%, #111827 100%);
+                -webkit-background-clip: text;
+                -webkit-text-fill-color: transparent;
+                background-clip: text;
+                letter-spacing: -0.02em;
+                transition: all 0.3s ease;
+            }
+            
+            .analytics-card:hover .analytics-card-number {
+                transform: scale(1.05);
+            }
+            
+            .analytics-card-label {
+                font-size: 0.9375rem;
+                font-weight: 700;
+                color: #374151;
+                text-transform: uppercase;
+                letter-spacing: 0.05em;
+                margin-bottom: 0.25rem;
+            }
+            
+            .analytics-card-trend {
+                font-size: 0.8125rem;
+                color: #64748b;
+                font-weight: 600;
+            }
+            
+            /* Modern Chart Cards */
+            .analytics-charts {
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+                gap: 1.5rem;
+                margin-bottom: 2rem;
+            }
+            
+            .analytics-charts .card {
+                border-radius: 16px;
+                box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 
+                            0 2px 4px -1px rgba(0, 0, 0, 0.06),
+                            0 0 0 1px rgba(0, 0, 0, 0.05);
+                border: 1px solid rgba(226, 232, 240, 0.8);
+                overflow: hidden;
+                transition: all 0.3s ease;
+            }
+            
+            .analytics-charts .card:hover {
+                box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 
+                            0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            }
+            
+            .analytics-charts .card-header {
+                background: linear-gradient(135deg, #f8fafc 0%, #ffffff 100%);
+                border-bottom: 1px solid rgba(226, 232, 240, 0.8);
+                padding: 1.25rem 1.5rem;
+                position: relative;
+            }
+            
+            .chart-header-content {
+                display: flex;
+                align-items: flex-start;
+                gap: 0.75rem;
+                margin-bottom: 0.5rem;
+            }
+            
+            .chart-icon-square {
+                width: 12px;
+                height: 12px;
+                background: #374151;
+                flex-shrink: 0;
+                margin-top: 0.25rem;
+            }
+            
+            .chart-title-wrapper {
+                flex: 1;
+                display: flex;
+                flex-direction: column;
+                gap: 0;
+            }
+            
+            .analytics-charts .card-header::after {
+                content: '';
+                position: absolute;
+                bottom: 0;
+                left: 0;
+                right: 0;
+                height: 1px;
+                background: linear-gradient(90deg, transparent, rgba(59, 130, 246, 0.2), transparent);
+            }
+            
+            .analytics-charts .card-title {
+                font-size: 1.25rem;
+                font-weight: 700;
+                color: #1e293b;
+                margin: 0;
+                line-height: 1.3;
+                letter-spacing: -0.01em;
+            }
+            
+            .card-title-continuation {
+                font-size: 1.25rem;
+                font-weight: 700;
+                color: #1e293b;
+                line-height: 1.3;
+                letter-spacing: -0.01em;
+                display: block;
+            }
+            
+            .analytics-charts .card-subtitle {
+                font-size: 0.875rem;
+                color: #64748b;
+                margin: 0.375rem 0 0 0;
+                font-weight: 400;
+                line-height: 1.5;
+            }
+            
+            .analytics-charts .card-body {
+                padding: 1.5rem;
+            }
+            
+            .chart-container {
+                position: relative;
+                height: 320px;
+                width: 100%;
+            }
+            
+            /* Modern Export Actions Card */
+            .card:nth-of-type(2) {
+                border-radius: 16px;
+                box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 
+                            0 2px 4px -1px rgba(0, 0, 0, 0.06),
+                            0 0 0 1px rgba(0, 0, 0, 0.05);
+                border: 1px solid rgba(226, 232, 240, 0.8);
+                margin-bottom: 1.5rem;
+            }
+            
+            .card:nth-of-type(2) .card-body {
+                padding: 1.25rem 1.5rem;
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                flex-wrap: wrap;
+                gap: 1rem;
+            }
+            
+            .action-buttons {
+                display: flex;
+                gap: 0.75rem;
+                flex-wrap: wrap;
+            }
+            
+            .action-buttons .btn {
+                padding: 0.625rem 1.25rem;
+                border-radius: 10px;
+                font-weight: 600;
+                font-size: 0.875rem;
+                transition: all 0.3s ease;
+                border: none;
+                box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+                display: flex;
+                align-items: center;
+                gap: 0.5rem;
+            }
+            
+            .action-buttons .btn:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+            }
+            
+            .action-buttons .btn-danger {
+                background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+                color: white;
+            }
+            
+            .action-buttons .btn-success {
+                background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+                color: white;
+            }
+            
+            .action-buttons .btn-primary {
+                background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+                color: white;
+            }
+            
+            .date-range-selector {
+                display: flex;
+                align-items: center;
+                gap: 0.75rem;
+            }
+            
+            .date-range-selector label {
+                font-size: 0.875rem;
+                font-weight: 600;
+                color: #374151;
+            }
+            
+            .date-range-selector select {
+                padding: 0.625rem 1rem;
+                border: 1px solid rgba(226, 232, 240, 0.8);
+                border-radius: 10px;
+                background: white;
+                font-size: 0.875rem;
+                color: #374151;
+                cursor: pointer;
+                transition: all 0.2s ease;
+                font-weight: 500;
+            }
+            
+            .date-range-selector select:focus {
+                outline: none;
+                border-color: #3b82f6;
+                box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+            }
+            
+            /* Responsive adjustments */
+            @media (max-width: 768px) {
+                .analytics-overview {
+                    grid-template-columns: 1fr;
+                    gap: 1rem;
+                }
+                
+                .analytics-charts {
+                    grid-template-columns: 1fr;
+                    gap: 1rem;
+                }
+                
+                .card:nth-of-type(2) .card-body {
+                    flex-direction: column;
+                    align-items: stretch;
+                }
+                
+                .action-buttons {
+                    justify-content: center;
+                    width: 100%;
+                }
+                
+                .date-range-selector {
+                    width: 100%;
+                    justify-content: space-between;
+                }
+            }
+        </style>
+        
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Analytics Section -->
+            <div class="admin-section active">
+               
+
+                <!-- Header Card -->
+                <div class="card">
+                    <div class="card-header">
+                        <h2 class="card-title">Analytics Dashboard</h2>
+                        <p class="card-subtitle">Comprehensive emergency response analytics and insights</p>
+                    </div>
+                </div>
+                
+                <!-- Analytics Overview Cards -->
+                <div class="analytics-overview">
+                    <div class="analytics-card analytics-card-primary">
+                        <div class="analytics-card-icon">
+                            <i class="bi bi-exclamation-triangle"></i>
+                        </div>
+                        <div class="analytics-card-content">
+                            <div class="analytics-card-number" id="totalEmergencies">0</div>
+                            <div class="analytics-card-label">Total Emergencies</div>
+                            <div class="analytics-card-trend" id="emergencyTrend">Loading...</div>
+                        </div>
+                    </div>
+                    
+                    <div class="analytics-card analytics-card-success">
+                        <div class="analytics-card-icon">
+                            <i class="bi bi-clock"></i>
+                        </div>
+                        <div class="analytics-card-content">
+                            <div class="analytics-card-number" id="avgResponseTime">--</div>
+                            <div class="analytics-card-label">Avg Response Time</div>
+                            <div class="analytics-card-trend" id="responseTrend">Loading...</div>
+                        </div>
+                    </div>
+                    
+                    <div class="analytics-card analytics-card-warning">
+                        <div class="analytics-card-icon">
+                            <i class="bi bi-people"></i>
+                        </div>
+                        <div class="analytics-card-content">
+                            <div class="analytics-card-number" id="activeResponders">0</div>
+                            <div class="analytics-card-label">Active Responders</div>
+                            <div class="analytics-card-trend" id="responderTrend">Loading...</div>
+                        </div>
+                    </div>
+                    
+                    <div class="analytics-card analytics-card-info">
+                        <div class="analytics-card-icon">
+                            <i class="bi bi-check-circle"></i>
+                        </div>
+                        <div class="analytics-card-content">
+                            <div class="analytics-card-number" id="resolvedCases">0</div>
+                            <div class="analytics-card-label">Resolved Cases</div>
+                            <div class="analytics-card-trend" id="resolvedTrend">Loading...</div>
+                        </div>
+                    </div>
+                </div>
+                 <!-- Export Actions Card -->
+                 <div class="card">
+                    <div class="card-body" style="display: flex; justify-content: space-between; align-items: center;">
+                        <div class="action-buttons">
+                            <button onclick="exportAnalytics('pdf')" class="btn btn-danger">
+                                <i class="bi bi-file-pdf"></i> Export PDF Report
+                            </button>
+                            <button onclick="exportAnalytics('excel')" class="btn btn-success">
+                                <i class="bi bi-file-excel"></i> Export Excel Data
+                            </button>
+                            <button onclick="refreshAnalytics()" class="btn btn-primary">
+                                <i class="bi bi-arrow-clockwise"></i> Refresh Data
+                            </button>
+                        </div>
+                        <div class="date-range-selector">
+                            <label for="dateRange">Date Range:</label>
+                            <select id="dateRange" onchange="updateDateRange()">
+                                <option value="7">Last 7 days</option>
+                                <option value="30" selected>Last 30 days</option>
+                                <option value="90">Last 90 days</option>
+                                <option value="365">Last year</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Analytics Charts Section -->
+                <div class="analytics-charts">
+                    <!-- Emergency Type Distribution -->
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="chart-header-content">
+                                <div class="chart-icon-square"></div>
+                                <div class="chart-title-wrapper">
+                                    <h3 class="card-title">Emergency Type</h3>
+                                    <span class="card-title-continuation">Distribution</span>
+                                </div>
+                            </div>
+                            <p class="card-subtitle">Breakdown of emergency types over time</p>
+                        </div>
+                        <div class="card-body">
+                            <div class="chart-container">
+                                <canvas id="emergencyTypeChart" width="400" height="200"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    
+                    <!-- Monthly Trends -->
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="chart-header-content">
+                                <div class="chart-icon-square"></div>
+                                <div class="chart-title-wrapper">
+                                    <h3 class="card-title">Monthly Emergency</h3>
+                                    <span class="card-title-continuation">Trends</span>
+                                </div>
+                            </div>
+                            <p class="card-subtitle">Emergency frequency over the past 12 months</p>
+                        </div>
+                        <div class="card-body">
+                            <div class="chart-container">
+                                <canvas id="monthlyTrendsChart" width="400" height="200"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Priority Distribution -->
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="chart-header-content">
+                                <div class="chart-icon-square"></div>
+                                <div class="chart-title-wrapper">
+                                    <h3 class="card-title">Priority</h3>
+                                    <span class="card-title-continuation">Distribution</span>
+                                </div>
+                            </div>
+                            <p class="card-subtitle">Distribution of emergency priorities</p>
+                        </div>
+                        <div class="card-body">
+                            <div class="chart-container">
+                                <canvas id="priorityChart" width="400" height="200"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Global variables for analytics
+        let analyticsData = {};
+        let charts = {};
+        let currentDateRange = 30;
+
+        // Initialize the system when the page loads
+        document.addEventListener('DOMContentLoaded', async function() {
+            try {
+                // Initialize the emergency system
+                await window.emergencySystem.initialize();
+                
+                // Initialize charts first
+                initializeCharts();
+                
+                // Load analytics data
+                await loadAnalyticsData();
+                
+                console.log('✅ Analytics page initialized successfully');
+            } catch (error) {
+                console.error('❌ Error initializing analytics page:', error);
+            }
+        });
+
+        // Load analytics data
+        async function loadAnalyticsData() {
+            try {
+                showLoadingState();
+                
+                // Load reports and responders data
+                const [reports, responders] = await Promise.all([
+                    window.emergencySystem.getReports(),
+                    window.emergencySystem.getResponders()
+                ]);
+                
+                analyticsData = {
+                    reports: reports || [],
+                    responders: responders || []
+                };
+                
+                // Update overview cards
+                updateOverviewCards();
+                
+                // Update charts
+                updateCharts();
+                
+                hideLoadingState();
+                
+            } catch (error) {
+                console.error('Error loading analytics data:', error);
+                hideLoadingState();
+            }
+        }
+
+        // Update overview cards
+        function updateOverviewCards() {
+            const reports = analyticsData.reports;
+            const responders = analyticsData.responders;
+            
+            // Total emergencies
+            const totalEmergencies = reports.length;
+            document.getElementById('totalEmergencies').textContent = totalEmergencies;
+            document.getElementById('emergencyTrend').textContent = `${totalEmergencies} total cases`;
+            
+            // Average response time (mock calculation)
+            const avgResponseTime = calculateAverageResponseTime(reports);
+            document.getElementById('avgResponseTime').textContent = avgResponseTime || '12m';
+            document.getElementById('responseTrend').textContent = 'Response time tracking';
+            
+            // Active responders
+            const activeResponders = responders.filter(r => r.is_available).length;
+            document.getElementById('activeResponders').textContent = activeResponders;
+            document.getElementById('responderTrend').textContent = `${activeResponders} available`;
+            
+            // Resolved cases
+            const resolvedCases = reports.filter(r => r.status === 'completed').length;
+            document.getElementById('resolvedCases').textContent = resolvedCases;
+            document.getElementById('resolvedTrend').textContent = `${resolvedCases} resolved`;
+            
+        }
+
+        // Calculate average response time
+        function calculateAverageResponseTime(reports) {
+            const completedReports = reports.filter(r => r.status === 'completed' && r.assigned_at && r.completed_at);
+            if (completedReports.length === 0) return '--';
+            
+            const totalTime = completedReports.reduce((sum, report) => {
+                const assigned = new Date(report.assigned_at);
+                const completed = new Date(report.completed_at);
+                return sum + (completed - assigned);
+            }, 0);
+            
+            const avgMinutes = Math.round(totalTime / (completedReports.length * 60000));
+            return `${avgMinutes}m`;
+        }
+
+        // Initialize charts
+        function initializeCharts() {
+            // Emergency Type Distribution Chart
+            const emergencyTypeCtx = document.getElementById('emergencyTypeChart').getContext('2d');
+            charts.emergencyType = new Chart(emergencyTypeCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Fire', 'Flood', 'Accident', 'Medical', 'Other'],
+                    datasets: [{
+                        data: [5, 3, 2, 4, 1],
+                        backgroundColor: [
+                            'rgba(239, 68, 68, 0.9)',
+                            'rgba(59, 130, 246, 0.9)',
+                            'rgba(245, 158, 11, 0.9)',
+                            'rgba(16, 185, 129, 0.9)',
+                            'rgba(107, 114, 128, 0.9)'
+                        ],
+                        borderColor: '#ffffff',
+                        borderWidth: 3,
+                        hoverBorderWidth: 4,
+                        hoverOffset: 8
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: {
+                        intersect: true
+                    },
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                usePointStyle: true,
+                                padding: 15,
+                                font: {
+                                    size: 13,
+                                    weight: '600',
+                                    family: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif"
+                                },
+                                color: '#374151',
+                                generateLabels: function(chart) {
+                                    const data = chart.data;
+                                    if (data.labels.length && data.datasets.length) {
+                                        return data.labels.map((label, i) => {
+                                            const value = data.datasets[0].data[i];
+                                            const total = data.datasets[0].data.reduce((a, b) => a + b, 0);
+                                            const percentage = ((value / total) * 100).toFixed(1);
+                                            return {
+                                                text: `${label} (${percentage}%)`,
+                                                fillStyle: data.datasets[0].backgroundColor[i],
+                                                strokeStyle: data.datasets[0].borderColor,
+                                                lineWidth: data.datasets[0].borderWidth,
+                                                hidden: false,
+                                                index: i
+                                            };
+                                        });
+                                    }
+                                    return [];
+                                }
+                            }
+                        },
+                        tooltip: {
+                            backgroundColor: 'rgba(30, 41, 59, 0.95)',
+                            padding: 12,
+                            titleFont: {
+                                size: 13,
+                                weight: '600'
+                            },
+                            bodyFont: {
+                                size: 13,
+                                weight: '500'
+                            },
+                            borderColor: 'rgba(255, 255, 255, 0.2)',
+                            borderWidth: 1,
+                            cornerRadius: 8,
+                            displayColors: true,
+                            callbacks: {
+                                label: function(context) {
+                                    const label = context.label || '';
+                                    const value = context.parsed || 0;
+                                    const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                    const percentage = ((value / total) * 100).toFixed(1);
+                                    return `${label}: ${value} (${percentage}%)`;
+                                }
+                            }
+                        }
+                    },
+                    animation: {
+                        animateRotate: true,
+                        animateScale: true,
+                        duration: 1000,
+                        easing: 'easeOutQuart'
+                    }
+                }
+            });
+
+
+            // Monthly Trends Chart
+            const monthlyTrendsCtx = document.getElementById('monthlyTrendsChart').getContext('2d');
+            
+            // Create gradient for line chart
+            const monthlyTrendsGradient = monthlyTrendsCtx.createLinearGradient(0, 0, 0, 400);
+            monthlyTrendsGradient.addColorStop(0, 'rgba(220, 38, 38, 0.3)');
+            monthlyTrendsGradient.addColorStop(0.5, 'rgba(220, 38, 38, 0.15)');
+            monthlyTrendsGradient.addColorStop(1, 'rgba(220, 38, 38, 0.05)');
+            
+            charts.monthlyTrends = new Chart(monthlyTrendsCtx, {
+                type: 'line',
+                data: {
+                    labels: getLast12Months(),
+                    datasets: [{
+                        label: 'Emergencies',
+                        data: [2, 3, 1, 4, 2, 5, 3, 2, 4, 1, 3, 2],
+                        borderColor: '#dc2626',
+                        backgroundColor: monthlyTrendsGradient,
+                        borderWidth: 3,
+                        tension: 0.4,
+                        fill: true,
+                        pointRadius: 5,
+                        pointHoverRadius: 7,
+                        pointBackgroundColor: '#ffffff',
+                        pointBorderColor: '#dc2626',
+                        pointBorderWidth: 2,
+                        pointHoverBackgroundColor: '#dc2626',
+                        pointHoverBorderColor: '#ffffff',
+                        pointHoverBorderWidth: 3,
+                        shadowOffsetX: 0,
+                        shadowOffsetY: 4,
+                        shadowBlur: 8,
+                        shadowColor: 'rgba(220, 38, 38, 0.2)'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: {
+                        intersect: false,
+                        mode: 'index'
+                    },
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'top',
+                            labels: {
+                                usePointStyle: true,
+                                padding: 15,
+                                font: {
+                                    size: 13,
+                                    weight: '600',
+                                    family: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif"
+                                },
+                                color: '#374151'
+                            }
+                        },
+                        tooltip: {
+                            backgroundColor: 'rgba(30, 41, 59, 0.95)',
+                            padding: 12,
+                            titleFont: {
+                                size: 13,
+                                weight: '600'
+                            },
+                            bodyFont: {
+                                size: 13,
+                                weight: '500'
+                            },
+                            borderColor: 'rgba(220, 38, 38, 0.3)',
+                            borderWidth: 1,
+                            cornerRadius: 8,
+                            displayColors: true,
+                            callbacks: {
+                                label: function(context) {
+                                    return `${context.dataset.label}: ${context.parsed.y} emergencies`;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            grid: {
+                                display: true,
+                                color: 'rgba(226, 232, 240, 0.5)',
+                                lineWidth: 1
+                            },
+                            ticks: {
+                                color: '#64748b',
+                                font: {
+                                    size: 11,
+                                    weight: '500'
+                                },
+                                maxRotation: 45,
+                                minRotation: 45
+                            },
+                            border: {
+                                display: true,
+                                color: '#e2e8f0'
+                            }
+                        },
+                        y: {
+                            beginAtZero: true,
+                            grid: {
+                                display: true,
+                                color: 'rgba(226, 232, 240, 0.5)',
+                                lineWidth: 1
+                            },
+                            ticks: {
+                                color: '#64748b',
+                                font: {
+                                    size: 11,
+                                    weight: '500'
+                                },
+                                stepSize: 5,
+                                callback: function(value) {
+                                    return value;
+                                }
+                            },
+                            border: {
+                                display: true,
+                                color: '#e2e8f0'
+                            }
+                        }
+                    }
+                }
+            });
+
+            // Priority Chart
+            const priorityCtx = document.getElementById('priorityChart').getContext('2d');
+            charts.priority = new Chart(priorityCtx, {
+                type: 'pie',
+                data: {
+                    labels: ['Critical', 'High', 'Medium', 'Low'],
+                    datasets: [{
+                        data: [2, 3, 8, 6],
+                        backgroundColor: [
+                            'rgba(220, 38, 38, 0.9)',
+                            'rgba(245, 158, 11, 0.9)',
+                            'rgba(59, 130, 246, 0.9)',
+                            'rgba(16, 185, 129, 0.9)'
+                        ],
+                        borderColor: '#ffffff',
+                        borderWidth: 3,
+                        hoverBorderWidth: 4,
+                        hoverOffset: 8
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: {
+                        intersect: true
+                    },
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                usePointStyle: true,
+                                padding: 15,
+                                font: {
+                                    size: 13,
+                                    weight: '600',
+                                    family: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif"
+                                },
+                                color: '#374151',
+                                generateLabels: function(chart) {
+                                    const data = chart.data;
+                                    if (data.labels.length && data.datasets.length) {
+                                        return data.labels.map((label, i) => {
+                                            const value = data.datasets[0].data[i];
+                                            const total = data.datasets[0].data.reduce((a, b) => a + b, 0);
+                                            const percentage = ((value / total) * 100).toFixed(1);
+                                            return {
+                                                text: `${label} (${percentage}%)`,
+                                                fillStyle: data.datasets[0].backgroundColor[i],
+                                                strokeStyle: data.datasets[0].borderColor,
+                                                lineWidth: data.datasets[0].borderWidth,
+                                                hidden: false,
+                                                index: i
+                                            };
+                                        });
+                                    }
+                                    return [];
+                                }
+                            }
+                        },
+                        tooltip: {
+                            backgroundColor: 'rgba(30, 41, 59, 0.95)',
+                            padding: 12,
+                            titleFont: {
+                                size: 13,
+                                weight: '600'
+                            },
+                            bodyFont: {
+                                size: 13,
+                                weight: '500'
+                            },
+                            borderColor: 'rgba(255, 255, 255, 0.2)',
+                            borderWidth: 1,
+                            cornerRadius: 8,
+                            displayColors: true,
+                            callbacks: {
+                                label: function(context) {
+                                    const label = context.label || '';
+                                    const value = context.parsed || 0;
+                                    const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                    const percentage = ((value / total) * 100).toFixed(1);
+                                    return `${label}: ${value} (${percentage}%)`;
+                                }
+                            }
+                        }
+                    },
+                    animation: {
+                        animateRotate: true,
+                        animateScale: true,
+                        duration: 1000,
+                        easing: 'easeOutQuart'
+                    }
+                }
+            });
+        }
+
+        // Update charts with real data
+        function updateCharts() {
+            const reports = analyticsData.reports;
+            
+            // Emergency Type Distribution
+            // Use corrected_type if available, otherwise use type
+            const typeCounts = {
+                fire: reports.filter(r => {
+                    const effectiveType = (r.corrected_type || r.type || '').toLowerCase().trim();
+                    return effectiveType === 'fire' || 
+                           (effectiveType === '' && r.ai_description && r.ai_description.toLowerCase().includes('fire'));
+                }).length,
+                flood: reports.filter(r => {
+                    const effectiveType = (r.corrected_type || r.type || '').toLowerCase().trim();
+                    return effectiveType === 'flood' || 
+                           (effectiveType === '' && r.ai_description && r.ai_description.toLowerCase().includes('flood'));
+                }).length,
+                accident: reports.filter(r => {
+                    const effectiveType = (r.corrected_type || r.type || '').toLowerCase().trim();
+                    return effectiveType === 'accident' || 
+                           effectiveType === 'vehicle' || 
+                           effectiveType === 'traffic' ||
+                           (effectiveType === '' && r.ai_description && (
+                               r.ai_description.toLowerCase().includes('accident') ||
+                               r.ai_description.toLowerCase().includes('vehicle') ||
+                               r.ai_description.toLowerCase().includes('traffic')
+                           ));
+                }).length,
+                medical: reports.filter(r => {
+                    const effectiveType = (r.corrected_type || r.type || '').toLowerCase().trim();
+                    return effectiveType === 'medical' || 
+                           effectiveType === 'health' ||
+                           (effectiveType === '' && r.ai_description && (
+                               r.ai_description.toLowerCase().includes('medical') ||
+                               r.ai_description.toLowerCase().includes('health') ||
+                               r.ai_description.toLowerCase().includes('injury') ||
+                               r.ai_description.toLowerCase().includes('hospital')
+                           ));
+                }).length,
+                other: reports.filter(r => {
+                    const effectiveType = (r.corrected_type || r.type || '').toLowerCase().trim();
+                    return !['fire', 'flood', 'accident', 'vehicle', 'traffic', 'medical', 'health'].includes(effectiveType);
+                }).length
+            };
+            
+            charts.emergencyType.data.datasets[0].data = [
+                typeCounts.fire,
+                typeCounts.flood,
+                typeCounts.accident,
+                typeCounts.medical,
+                typeCounts.other
+            ];
+            charts.emergencyType.update();
+
+
+            // Monthly Trends
+            const monthlyData = calculateMonthlyTrends(reports);
+            charts.monthlyTrends.data.datasets[0].data = monthlyData;
+            charts.monthlyTrends.update();
+
+            // Priority Distribution
+            const priorityCounts = {
+                1: reports.filter(r => r.priority === 1).length,
+                2: reports.filter(r => r.priority === 2).length,
+                3: reports.filter(r => r.priority === 3).length,
+                4: reports.filter(r => r.priority === 4 || !r.priority).length
+            };
+            
+            charts.priority.data.datasets[0].data = [
+                priorityCounts[1],
+                priorityCounts[2],
+                priorityCounts[3],
+                priorityCounts[4]
+            ];
+            charts.priority.update();
+        }
+
+        // Calculate monthly trends
+        function calculateMonthlyTrends(reports) {
+            const monthlyData = new Array(12).fill(0);
+            const now = new Date();
+            
+            reports.forEach(report => {
+                const reportDate = new Date(report.created_at);
+                const monthDiff = (now.getMonth() - reportDate.getMonth() + 12) % 12;
+                if (monthDiff < 12) {
+                    monthlyData[11 - monthDiff]++;
+                }
+            });
+            
+            return monthlyData;
+        }
+
+        // Get last 12 months labels
+        function getLast12Months() {
+            const months = [];
+            const now = new Date();
+            
+            for (let i = 11; i >= 0; i--) {
+                const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
+                months.push(date.toLocaleDateString('en-US', { month: 'short', year: '2-digit' }));
+            }
+            
+            return months;
+        }
+
+        // Show loading state
+        function showLoadingState() {
+            // Add loading indicators to cards
+            document.querySelectorAll('.analytics-card-number').forEach(el => {
+                el.textContent = '...';
+            });
+        }
+
+        // Hide loading state
+        function hideLoadingState() {
+            // Loading state is handled by updateOverviewCards()
+        }
+
+        // Export analytics
+        function exportAnalytics(format) {
+            if (format === 'pdf') {
+                alert('PDF export functionality would be implemented here');
+            } else if (format === 'excel') {
+                alert('Excel export functionality would be implemented here');
+            }
+        }
+
+        // Refresh analytics
+        async function refreshAnalytics() {
+            await loadAnalyticsData();
+        }
+
+        // Update date range
+        function updateDateRange() {
+            currentDateRange = parseInt(document.getElementById('dateRange').value);
+            loadAnalyticsData();
+        }
+
+        // Show logout confirmation modal
+        function showLogoutConfirm() {
+            const modal = document.getElementById('logoutModal');
+            modal.classList.remove('hidden');
+        }
+        
+        // Close logout modal
+        function closeLogoutModal() {
+            const modal = document.getElementById('logoutModal');
+            modal.classList.add('hidden');
+        }
+        
+        // Confirm and execute logout
+        async function confirmLogout() {
+            try {
+                // Close modal first
+                closeLogoutModal();
+                
+                // Show loading state (optional)
+                if (window.emergencySystem && window.emergencySystem.showSuccess) {
+                    window.emergencySystem.showSuccess('Logging out...');
+                }
+                
+                // Perform logout
+                await window.emergencySystem.signOut();
+                window.location.href = 'login.html';
+            } catch (error) {
+                console.error('Logout error:', error);
+                if (window.emergencySystem && window.emergencySystem.showError) {
+                    window.emergencySystem.showError('Failed to logout. Please try again.');
+                }
+            }
+        }
+        
+        // Close modal when clicking outside
+        document.addEventListener('click', function(event) {
+            const modal = document.getElementById('logoutModal');
+            if (event.target === modal) {
+                closeLogoutModal();
+            }
+        });
+        
+        // Close modal with Escape key
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'Escape') {
+                const modal = document.getElementById('logoutModal');
+                if (!modal.classList.contains('hidden')) {
+                    closeLogoutModal();
+                }
+            }
+        });
+    </script>
+
+    <!-- Logout Confirmation Modal -->
+    <div id="logoutModal" class="logout-modal hidden">
+        <div class="logout-modal-overlay" onclick="closeLogoutModal()"></div>
+        <div class="logout-modal-content">
+            <div class="logout-modal-icon">
+                <i class="bi bi-exclamation-triangle"></i>
+            </div>
+            <h3 class="logout-modal-title">Confirm Logout</h3>
+            <p class="logout-modal-message">Are you sure you want to logout? You'll need to sign in again to access the system.</p>
+            <div class="logout-modal-buttons">
+                <button class="logout-modal-btn cancel" onclick="closeLogoutModal()">
+                    <i class="bi bi-x-circle"></i> Cancel
+                </button>
+                <button class="logout-modal-btn confirm" onclick="confirmLogout()">
+                    <i class="bi bi-box-arrow-right"></i> Logout
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <style>
+        /* Logout Confirmation Modal */
+        .logout-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 10000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            animation: fadeIn 0.2s ease;
+        }
+        
+        .logout-modal.hidden {
+            display: none;
+        }
+        
+        .logout-modal-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(4px);
+        }
+        
+        .logout-modal-content {
+            position: relative;
+            background: white;
+            border-radius: 16px;
+            padding: 2rem;
+            max-width: 420px;
+            width: 90%;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3), 0 10px 10px -5px rgba(0, 0, 0, 0.2);
+            animation: slideUp 0.3s ease;
+            text-align: center;
+        }
+        
+        .logout-modal-icon {
+            width: 64px;
+            height: 64px;
+            margin: 0 auto 1.5rem;
+            background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 3px solid #fca5a5;
+        }
+        
+        .logout-modal-icon i {
+            font-size: 2rem;
+            color: #ef4444;
+        }
+        
+        .logout-modal-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #111827;
+            margin: 0 0 0.75rem 0;
+        }
+        
+        .logout-modal-message {
+            font-size: 0.9375rem;
+            color: #6b7280;
+            line-height: 1.6;
+            margin: 0 0 1.75rem 0;
+        }
+        
+        .logout-modal-buttons {
+            display: flex;
+            gap: 0.75rem;
+            justify-content: center;
+        }
+        
+        .logout-modal-btn {
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            font-size: 0.875rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            border: 2px solid transparent;
+        }
+        
+        .logout-modal-btn.cancel {
+            background: #f3f4f6;
+            color: #374151;
+            border-color: #e5e7eb;
+        }
+        
+        .logout-modal-btn.cancel:hover {
+            background: #e5e7eb;
+            border-color: #d1d5db;
+            transform: translateY(-1px);
+        }
+        
+        .logout-modal-btn.confirm {
+            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+            color: white;
+            border-color: #ef4444;
+            box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3);
+        }
+        
+        .logout-modal-btn.confirm:hover {
+            background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4);
+        }
+        
+        .logout-modal-btn:active {
+            transform: translateY(0);
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px) scale(0.95);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+    </style>
+</body>
+</html>

@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Edit Profile - LSPU Emergency Response</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="manifest" href="manifest.json">
+    <link rel="icon" type="image/x-icon" href="images/favicon.ico">
+    <!-- Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        .profile-container {
+            max-width: 600px;
+            margin: 2rem auto;
+            padding: 2rem;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        
+        .profile-header {
+            text-align: center;
+            margin-bottom: 2rem;
+            padding-bottom: 1.5rem;
+            border-bottom: 2px solid #e5e7eb;
+        }
+        
+        .profile-avatar {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 1rem;
+            font-size: 3rem;
+            color: white;
+            border: 4px solid white;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+        
+        .profile-header h2 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #1f2937;
+            margin: 0 0 0.5rem 0;
+        }
+        
+        .profile-header p {
+            color: #6b7280;
+            margin: 0;
+        }
+        
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+        
+        .form-label {
+            display: block;
+            font-weight: 600;
+            color: #374151;
+            margin-bottom: 0.5rem;
+            font-size: 0.875rem;
+        }
+        
+        .form-input {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            transition: all 0.2s ease;
+        }
+        
+        .form-input:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+        
+        .form-input:disabled {
+            background-color: #f3f4f6;
+            color: #6b7280;
+            cursor: not-allowed;
+        }
+        
+        .button-group {
+            display: flex;
+            gap: 1rem;
+            margin-top: 2rem;
+        }
+        
+        .btn {
+            flex: 1;
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            border: none;
+        }
+        
+        .btn-primary {
+            background: #3b82f6;
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: #2563eb;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+        }
+        
+        .btn-secondary {
+            background: #6b7280;
+            color: white;
+        }
+        
+        .btn-secondary:hover {
+            background: #4b5563;
+        }
+
+        .alert {
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 1.5rem;
+            display: none;
+        }
+
+        .alert-success {
+            background: #d1fae5;
+            color: #065f46;
+            border: 1px solid #10b981;
+        }
+
+        .alert-error {
+            background: #fee2e2;
+            color: #991b1b;
+            border: 1px solid #ef4444;
+        }
+
+        .loading {
+            display: inline-block;
+            width: 1rem;
+            height: 1rem;
+            border: 2px solid #f3f4f6;
+            border-top-color: #3b82f6;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="container">
+            <div class="flex items-center justify-between">
+                <div class="navbar-brand-container">
+                    <img src="images/udrrmo-logo.jpg" alt="UDRRMO Logo" class="navbar-logo">
+                    <a href="login.html" class="navbar-brand">Kapiyu Emergency</a>
+                </div>
+                <div class="navbar-nav">
+                    <div data-auth="required" class="hidden" style="display: flex; align-items: center; gap: 15px;">
+                        <button onclick="goBack()" class="btn btn-outline btn-sm">
+                            <i class="bi bi-arrow-left"></i> Back
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Alerts Container -->
+    <div class="alerts-container"></div>
+
+    <!-- Main Content -->
+    <main class="container">
+        <div class="profile-container">
+            <div class="profile-header">
+                <div class="profile-avatar">
+                    <i class="bi bi-person-fill"></i>
+                </div>
+                <h2>Edit Your Profile</h2>
+                <p>Update your personal information</p>
+            </div>
+
+            <div id="alertMessage" class="alert"></div>
+
+            <form id="profileForm">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem;">
+                    <div class="form-group">
+                        <label class="form-label">First Name</label>
+                        <input type="text" id="firstName" class="form-input" placeholder="Enter your first name" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Last Name</label>
+                        <input type="text" id="lastName" class="form-input" placeholder="Enter your last name" required>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Email Address</label>
+                    <input type="email" id="email" class="form-input" disabled>
+                    <small style="color: #6b7280; font-size: 0.8rem;">Email cannot be changed</small>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Phone Number</label>
+                    <input type="tel" id="phone" class="form-input" placeholder="Enter your phone number">
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">ID Number</label>
+                    <input type="text" id="studentNumber" class="form-input" placeholder="Enter your ID number">
+                </div>
+
+                <!-- Password Change Section -->
+                <div style="border-top: 2px solid #e5e7eb; padding-top: 1.5rem; margin-top: 1.5rem;">
+                    <h3 style="font-size: 1.1rem; font-weight: 600; color: #374151; margin-bottom: 1rem; display: flex; align-items: center; gap: 8px;">
+                        <i class="bi bi-lock"></i> Change Password
+                    </h3>
+                    <div class="form-group">
+                        <label class="form-label">Current Password</label>
+                        <input type="password" id="currentPassword" class="form-input" placeholder="Enter your current password">
+                    </div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem;">
+                        <div class="form-group">
+                            <label class="form-label">New Password</label>
+                            <input type="password" id="newPassword" class="form-input" placeholder="Enter new password">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Confirm New Password</label>
+                            <input type="password" id="confirmPassword" class="form-input" placeholder="Confirm new password">
+                        </div>
+                    </div>
+                    <small style="color: #6b7280; font-size: 0.8rem;">
+                        <i class="bi bi-info-circle"></i> Leave password fields blank to keep your current password
+                    </small>
+                </div>
+
+                <div class="button-group">
+                    <button type="button" onclick="goBack()" class="btn btn-secondary">
+                        <i class="bi bi-x-circle"></i> Cancel
+                    </button>
+                    <button type="submit" class="btn btn-primary" id="submitBtn">
+                        <span id="submitText"><i class="bi bi-check-circle"></i> Save Changes</span>
+                        <span id="submitLoading" class="loading hidden"></span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container py-8">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <div>
+                    <div class="footer-brand">
+                        <img src="images/udrrmo-logo.jpg" alt="UDRRMO Logo" class="footer-logo">
+                        <div>
+                            <h3 class="footer-title">Emergency Response</h3>
+                            <p class="footer-subtitle">AI-powered emergency reporting and response management system.</p>
+                        </div>
+                    </div>
+                </div>
+                <div>
+                    <h3 class="footer-section-title">Quick Links</h3>
+                    <div class="space-y-2">
+                        <a href="user.html" class="footer-link">Report Emergency</a>
+                        <a href="login.html" class="footer-link">Switch Role</a>
+                    </div>
+                </div>
+                <div>
+                    <h3 class="footer-section-title">Contact</h3>
+                    <p class="footer-text">LSPU Emergency Response System</p>
+                    <p class="footer-text">For emergencies, call 911</p>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2024 LSPU Emergency Response System. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Scripts -->
+    <script src="js/supabase.js"></script>
+    <script>
+        let currentUser = null;
+
+        // Initialize page
+        document.addEventListener('DOMContentLoaded', async () => {
+            // Wait for system initialization
+            await new Promise(resolve => {
+                const checkInit = () => {
+                    if (typeof emergencySystem !== 'undefined' && emergencySystem.isInitialized) {
+                        resolve();
+                    } else {
+                        setTimeout(checkInit, 100);
+                    }
+                };
+                checkInit();
+            });
+
+            // Check if user is authenticated
+            if (!emergencySystem.user) {
+                window.location.href = 'login.html';
+                return;
+            }
+
+            // Load user profile data
+            await loadUserProfile();
+
+            // Set up form submission
+            document.getElementById('profileForm').addEventListener('submit', async (e) => {
+                e.preventDefault();
+                await saveProfile();
+            });
+        });
+
+        // Load user profile
+        async function loadUserProfile() {
+            try {
+                currentUser = emergencySystem.user;
+                const userMetadata = currentUser.user_metadata || {};
+
+                // Load additional data from user_profiles table
+                const { data: profileData, error } = await emergencySystem.supabase
+                    .from('user_profiles')
+                    .select('*')
+                    .eq('user_id', currentUser.id)
+                    .single();
+
+                if (error && error.code !== 'PGRST116') {
+                    console.error('Error loading profile:', error);
+                }
+
+                // Get full name and split into first and last
+                const fullName = profileData?.name || userMetadata.full_name || '';
+                let firstName = '';
+                let lastName = '';
+                
+                if (fullName) {
+                    const nameParts = fullName.split(' ');
+                    if (nameParts.length > 1) {
+                        firstName = nameParts[0];
+                        lastName = nameParts.slice(1).join(' ');
+                    } else {
+                        firstName = fullName;
+                    }
+                }
+
+                // Populate form fields
+                document.getElementById('firstName').value = firstName;
+                document.getElementById('lastName').value = lastName;
+                document.getElementById('email').value = currentUser.email || '';
+                document.getElementById('phone').value = profileData?.phone || userMetadata.phone || '';
+                document.getElementById('studentNumber').value = profileData?.student_number || userMetadata.student_number || '';
+
+                console.log('✅ Profile loaded successfully');
+
+            } catch (error) {
+                console.error('Failed to load profile:', error);
+                showAlert('Failed to load profile information', 'error');
+            }
+        }
+
+        // Save profile
+        async function saveProfile() {
+            try {
+                const submitBtn = document.getElementById('submitBtn');
+                const submitText = document.getElementById('submitText');
+                const submitLoading = document.getElementById('submitLoading');
+
+                // Show loading state
+                submitBtn.disabled = true;
+                submitText.classList.add('hidden');
+                submitLoading.classList.remove('hidden');
+
+                const firstName = document.getElementById('firstName').value;
+                const lastName = document.getElementById('lastName').value;
+                const fullName = `${firstName} ${lastName}`.trim();
+                const phone = document.getElementById('phone').value;
+                const studentNumber = document.getElementById('studentNumber').value;
+                const currentPassword = document.getElementById('currentPassword').value;
+                const newPassword = document.getElementById('newPassword').value;
+                const confirmPassword = document.getElementById('confirmPassword').value;
+
+                // Validate password if user wants to change it
+                if (currentPassword || newPassword || confirmPassword) {
+                    if (!currentPassword || !newPassword || !confirmPassword) {
+                        throw new Error('Please fill all password fields to change your password');
+                    }
+                    if (newPassword !== confirmPassword) {
+                        throw new Error('New passwords do not match');
+                    }
+                    if (newPassword.length < 6) {
+                        throw new Error('Password must be at least 6 characters long');
+                    }
+                    
+                    // Update password first (requires current password)
+                    const { error: passwordError } = await emergencySystem.supabase.auth.updateUser({
+                        password: newPassword
+                    });
+
+                    if (passwordError) {
+                        throw new Error('Failed to change password: ' + passwordError.message);
+                    }
+                }
+
+                // Update user metadata
+                const updateData = {
+                    full_name: fullName,
+                    first_name: firstName,
+                    last_name: lastName,
+                    phone: phone,
+                    student_number: studentNumber
+                };
+
+                const { error: updateError } = await emergencySystem.supabase.auth.updateUser({
+                    data: updateData
+                });
+
+                if (updateError) {
+                    throw updateError;
+                }
+
+                // Check if profile exists in user_profiles table
+                const { data: existingProfile } = await emergencySystem.supabase
+                    .from('user_profiles')
+                    .select('user_id')
+                    .eq('user_id', currentUser.id)
+                    .single();
+
+                const profileData = {
+                    user_id: currentUser.id,
+                    name: fullName,
+                    phone: phone,
+                    student_number: studentNumber,
+                    is_active: true
+                };
+
+                if (existingProfile) {
+                    // Update existing profile
+                    const { error: updateProfileError } = await emergencySystem.supabase
+                        .from('user_profiles')
+                        .update(profileData)
+                        .eq('user_id', currentUser.id);
+
+                    if (updateProfileError) {
+                        throw updateProfileError;
+                    }
+                } else {
+                    // Create new profile
+                    const { error: insertProfileError } = await emergencySystem.supabase
+                        .from('user_profiles')
+                        .insert(profileData);
+
+                    if (insertProfileError) {
+                        throw insertProfileError;
+                    }
+                }
+
+                // Reload user to get updated metadata
+                await emergencySystem.supabase.auth.getSession();
+
+                showAlert('Profile updated successfully!', 'success');
+
+                // Hide loading state
+                submitBtn.disabled = false;
+                submitText.classList.remove('hidden');
+                submitLoading.classList.add('hidden');
+
+                // Redirect after a short delay
+                setTimeout(() => {
+                    window.location.href = 'user.html';
+                }, 1500);
+
+            } catch (error) {
+                console.error('Failed to save profile:', error);
+                showAlert('Failed to update profile: ' + error.message, 'error');
+                
+                // Hide loading state
+                const submitBtn = document.getElementById('submitBtn');
+                const submitText = document.getElementById('submitText');
+                const submitLoading = document.getElementById('submitLoading');
+                submitBtn.disabled = false;
+                submitText.classList.remove('hidden');
+                submitLoading.classList.add('hidden');
+            }
+        }
+
+        // Show alert message
+        function showAlert(message, type) {
+            const alertDiv = document.getElementById('alertMessage');
+            alertDiv.className = `alert alert-${type}`;
+            alertDiv.textContent = message;
+            alertDiv.style.display = 'block';
+
+            setTimeout(() => {
+                alertDiv.style.display = 'none';
+            }, 5000);
+        }
+
+        // Go back to user page
+        function goBack() {
+            window.location.href = 'user.html';
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,790 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Reports - LSPU Emergency Response</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="manifest" href="manifest.json">
+    <link rel="icon" type="image/x-icon" href="images/favicon.ico">
+    <!-- Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        /* Enhanced card styling */
+        .stat-card {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+            transition: all 0.3s ease;
+            border-left: 4px solid transparent;
+        }
+        
+        .stat-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
+        }
+        
+        .stat-card.blue { border-left-color: #3b82f6; }
+        .stat-card.green { border-left-color: #10b981; }
+        .stat-card.yellow { border-left-color: #f59e0b; }
+        .stat-card.red { border-left-color: #dc2626; }
+        
+        .stat-icon-wrapper {
+            width: 60px;
+            height: 60px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.75rem;
+        }
+        
+        .stat-content {
+            margin-left: 1.25rem;
+        }
+        
+        .stat-label {
+            font-size: 0.875rem;
+            color: #6b7280;
+            font-weight: 500;
+            margin-bottom: 0.25rem;
+        }
+        
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #111827;
+            line-height: 1;
+        }
+        
+        /* Report card styling */
+        .report-card {
+            background: white;
+            border: 1px solid #e5e7eb;
+            border-left: 4px solid #6b7280;
+            border-radius: 12px;
+            padding: 1.5rem;
+            transition: all 0.3s ease;
+            margin-bottom: 1rem;
+        }
+        
+        .report-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+        }
+        
+        .report-card.fire { border-left-color: #dc2626; background: linear-gradient(135deg, #fef2f2 0%, #ffffff 100%); }
+        .report-card.medical { border-left-color: #dc2626; background: linear-gradient(135deg, #fef2f2 0%, #ffffff 100%); }
+        .report-card.accident { border-left-color: #f59e0b; background: linear-gradient(135deg, #fffbeb 0%, #ffffff 100%); }
+        .report-card.flood { border-left-color: #3b82f6; background: linear-gradient(135deg, #eff6ff 0%, #ffffff 100%); }
+        .report-card.earthquake { border-left-color: #8b5cf6; background: linear-gradient(135deg, #faf5ff 0%, #ffffff 100%); }
+        .report-card.storm { border-left-color: #6366f1; background: linear-gradient(135deg, #eef2ff 0%, #ffffff 100%); }
+        .report-card.other { border-left-color: #6b7280; background: linear-gradient(135deg, #f9fafb 0%, #ffffff 100%); }
+        
+        .report-header {
+            display: flex;
+            align-items: flex-start;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+        
+        .report-icon {
+            font-size: 2.5rem;
+            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));
+        }
+        
+        .report-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: #111827;
+            margin-bottom: 0.5rem;
+        }
+        
+        .report-badges {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+            margin-top: 0.5rem;
+        }
+        
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.25rem;
+            padding: 0.375rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.025em;
+        }
+        
+        .badge-status {
+            background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+            color: #92400e;
+        }
+        
+        .badge-priority {
+            padding: 0.375rem 0.875rem;
+        }
+        
+        .badge-priority.high {
+            background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
+            color: #991b1b;
+        }
+        
+        .badge-priority.medium {
+            background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);
+            color: #92400e;
+        }
+        
+        .badge-priority.low {
+            background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+            color: #166534;
+        }
+        
+        .report-description {
+            color: #4b5563;
+            font-size: 0.9375rem;
+            line-height: 1.6;
+            margin: 1rem 0;
+            padding: 1rem;
+            background: rgba(249, 250, 251, 0.5);
+            border-radius: 8px;
+        }
+        
+        .report-meta {
+            display: flex;
+            gap: 1.5rem;
+            flex-wrap: wrap;
+            font-size: 0.875rem;
+            color: #6b7280;
+            padding-top: 1rem;
+            border-top: 1px solid #e5e7eb;
+        }
+        
+        .report-meta-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .report-meta-item i {
+            color: #9ca3af;
+        }
+        
+        .ai-confidence {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+            border-radius: 8px;
+            color: #1e40af;
+            font-size: 0.875rem;
+            font-weight: 500;
+            margin-top: 0.75rem;
+        }
+        
+        /* Page header styling */
+        .page-header {
+            background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+            color: white;
+            padding: 2.5rem 0;
+            margin: -2rem 0 2rem 0;
+            border-radius: 0 0 24px 24px;
+            box-shadow: 0 4px 20px rgba(59, 130, 246, 0.2);
+        }
+        
+        .page-header h1 {
+            color: white;
+            margin-bottom: 0.5rem;
+        }
+        
+        .page-header p {
+            color: rgba(255, 255, 255, 0.9);
+        }
+        
+        /* Empty state styling */
+        .empty-state {
+            text-align: center;
+            padding: 4rem 2rem;
+        }
+        
+        .empty-state-icon {
+            font-size: 4rem;
+            margin-bottom: 1.5rem;
+            opacity: 0.5;
+        }
+        
+        .empty-state-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: #374151;
+            margin-bottom: 0.5rem;
+        }
+        
+        .empty-state-text {
+            color: #6b7280;
+            margin-bottom: 1.5rem;
+        }
+        
+        /* Loading animation */
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        
+        .loading {
+            animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="container">
+            <div class="flex items-center justify-between">
+                <div class="navbar-brand-container">
+                    <img src="images/udrrmo-logo.jpg" alt="UDRRMO Logo" class="navbar-logo">
+                    <a href="user.html" class="navbar-brand">Kapiyu Emergency</a>
+                </div>
+                <div class="navbar-nav">
+                    <div data-auth="required" class="hidden">
+                        <button onclick="emergencySystem.signOut()" class="btn btn-outline btn-sm">Logout</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Alerts Container -->
+    <div class="alerts-container"></div>
+
+    <!-- Main Content -->
+    <main class="container" style="margin-top: 2rem;">
+        <!-- Page Header -->
+        <section class="mb-8">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h1 class="text-3xl font-bold text-gray-900 mb-2">
+                        <i class="bi bi-history"></i> My Reports History
+                    </h1>
+                    <p class="text-lg text-gray-600">View the history of all your submitted emergency reports</p>
+                </div>
+                <div>
+                    <a href="user.html" class="btn btn-primary">
+                        <i class="bi bi-arrow-left"></i> back to dashboard
+                    </a>
+                </div>
+            </div>
+        </section>
+
+        <!-- Reports Statistics -->
+        <section class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+            <div class="stat-card blue">
+                <div class="flex items-center">
+                    <div class="stat-icon-wrapper bg-blue-100">
+                        <i class="bi bi-clipboard text-blue-600"></i>
+                    </div>
+                    <div class="stat-content">
+                        <p class="stat-label">Total Reports</p>
+                        <p class="stat-value" id="totalReports">0</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="stat-card green">
+                <div class="flex items-center">
+                    <div class="stat-icon-wrapper bg-green-100">
+                        <i class="bi bi-check-circle text-green-600"></i>
+                    </div>
+                    <div class="stat-content">
+                        <p class="stat-label">Resolved</p>
+                        <p class="stat-value" id="resolvedReports">0</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="stat-card yellow">
+                <div class="flex items-center">
+                    <div class="stat-icon-wrapper bg-yellow-100">
+                        <i class="bi bi-person-check text-yellow-600"></i>
+                    </div>
+                    <div class="stat-content">
+                        <p class="stat-label">Assigned</p>
+                        <p class="stat-value" id="pendingReports">0</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="stat-card red">
+                <div class="flex items-center">
+                    <div class="stat-icon-wrapper bg-red-100">
+                        <i class="bi bi-exclamation-triangle text-red-600"></i>
+                    </div>
+                    <div class="stat-content">
+                        <p class="stat-label">High Priority</p>
+                        <p class="stat-value" id="highPriorityReports">0</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Reports History -->
+        <section class="card">
+            <div class="card-header">
+                <h2 class="card-title">Reports History</h2>
+                <p class="card-subtitle">Complete history of your emergency reports</p>
+            </div>
+            <div id="reportsList" class="max-h-96 overflow-y-auto space-y-4 p-4">
+                <div class="empty-state loading">
+                    <div class="empty-state-icon"><i class="bi bi-hourglass-split"></i></div>
+                    <h3 class="empty-state-title">Loading Reports</h3>
+                    <p class="empty-state-text">Please wait while we fetch your report history...</p>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container py-8">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <div>
+                    <div class="footer-brand">
+                        <img src="images/udrrmo-logo.jpg" alt="UDRRMO Logo" class="footer-logo">
+                        <div>
+                            <h3 class="footer-title">Emergency Response</h3>
+                            <p class="footer-subtitle">AI-powered emergency reporting and response management system.</p>
+                        </div>
+                    </div>
+                </div>
+                <div>
+                    <h3 class="footer-section-title">Quick Links</h3>
+                    <div class="space-y-2">
+                        <a href="user.html" class="footer-link">Submit Report</a>
+                        <a href="my-reports.html" class="footer-link">My Reports</a>
+                        <a href="login.html" class="footer-link">Switch Role</a>
+                    </div>
+                </div>
+                <div>
+                    <h3 class="footer-section-title">Contact</h3>
+                    <p class="footer-text">LSPU Emergency Response System</p>
+                    <p class="footer-text">For emergencies, call 911</p>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2024 LSPU Emergency Response System. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Scripts -->
+    <script src="js/supabase.js"></script>
+    <script>
+        // Navigation functionality
+        function showModules() {
+            alert('Modules section - This can be expanded with additional functionality');
+        }
+
+        // Load user's report history
+        async function loadUserReportHistory() {
+            try {
+                // Check if user is authenticated
+                if (!emergencySystem.user) {
+                    window.location.href = 'login.html';
+                    return;
+                }
+
+                console.log('Loading reports for user:', emergencySystem.user.id);
+
+                // Try to get user's reports - handle different scenarios
+                let reports = [];
+                try {
+                    // First try with user_id filter
+                    reports = await emergencySystem.getReports({ user_id: emergencySystem.user.id });
+                } catch (filterError) {
+                    console.log('User-specific filter failed, trying all reports:', filterError);
+                    // If user-specific filter fails, try getting all reports and filter client-side
+                    const allReports = await emergencySystem.getReports();
+                    reports = allReports.filter(report => report.reporter_uid === emergencySystem.user.id);
+                }
+
+                const reportsList = document.getElementById('reportsList');
+                
+                // Update statistics
+                updateStatistics(reports);
+                
+                if (reports.length === 0) {
+                    reportsList.innerHTML = 
+                        '<div class="empty-state">' +
+                            '<div class="empty-state-icon"><i class="bi bi-inbox"></i></div>' +
+                            '<h3 class="empty-state-title">No Reports Yet</h3>' +
+                            '<p class="empty-state-text">Your emergency reports will appear here once submitted</p>' +
+                            '<a href="user.html" class="btn btn-primary">Submit Your First Report</a>' +
+                        '</div>';
+                    return;
+                }
+
+                // Sort reports by creation date (newest first)
+                const sortedReports = reports.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+
+                reportsList.innerHTML = sortedReports.map(report => {
+                    const statusLabel = getStatusLabel(report);
+                    const priorityLabel = getPriorityLabel(report.priority);
+                    const priorityClass = getPriorityClass(priorityLabel);
+                    const statusIcon = getStatusIcon(statusLabel);
+                    const priorityIcon = getPriorityIcon(priorityLabel);
+                    const reportType = getReportType(report);
+                    const confidencePercent = getConfidencePercent(report);
+                    const confidenceHtml = confidencePercent !== null
+                        ? '<div class="ai-confidence">' +
+                            '<i class="bi bi-robot"></i>' +
+                            '<span>AI Confidence: ' + confidencePercent + '%</span>' +
+                        '</div>'
+                        : '';
+                    
+                    return '<div class="report-card ' + reportType + '">' +
+                        '<div class="report-header">' +
+                            '<div class="report-icon">' + getEmergencyIcon(report.type) + '</div>' +
+                            '<div style="flex: 1;">' +
+                                '<div class="report-title">' + getReportTitle(report) + '</div>' +
+                                '<div class="report-badges">' +
+                                    '<span class="badge badge-status">' + statusIcon + ' ' + formatStatusLabel(statusLabel).toUpperCase() + '</span>' +
+                                    '<span class="badge badge-priority ' + priorityClass + '">' + priorityIcon + ' ' + formatPriorityLabel(priorityLabel).toUpperCase() + ' PRIORITY</span>' +
+                                '</div>' +
+                            '</div>' +
+                        '</div>' +
+                        '<div class="report-description">' + formatReportDescription(report) + '</div>' +
+                        '<div class="report-meta">' +
+                            '<div class="report-meta-item"><i class="bi bi-geo-alt"></i><span>' + formatLocation(report.location) + '</span></div>' +
+                            '<div class="report-meta-item"><i class="bi bi-clock"></i><span>' + formatDate(report.created_at) + '</span></div>' +
+                        '</div>' +
+                        confidenceHtml +
+                    '</div>';
+                }).join('');
+            } catch (error) {
+                console.error('Failed to load report history:', error);
+                const reportsList = document.getElementById('reportsList');
+                reportsList.innerHTML = 
+                    '<div class="empty-state">' +
+                        '<div class="empty-state-icon"><i class="bi bi-exclamation-triangle"></i></div>' +
+                        '<h3 class="empty-state-title">Unable to Load Reports</h3>' +
+                        '<p class="empty-state-text">Please check your connection and try again</p>' +
+                        '<button onclick="location.reload()" class="btn btn-primary">Retry</button>' +
+                    '</div>';
+            }
+        }
+
+        // Update statistics
+        function updateStatistics(reports) {
+            const total = reports.length;
+            const resolvedStatuses = new Set(['resolved', 'completed', 'closed']);
+            const assignedStatuses = new Set([
+                'pending',
+                'assigned',
+                'classified',
+                'accepted',
+                'in_progress',
+                'enroute',
+                'on_scene'
+            ]);
+
+            const resolved = reports.filter(r => resolvedStatuses.has(getStatusLabel(r))).length;
+            const assigned = reports.filter(r => assignedStatuses.has(getStatusLabel(r))).length;
+            const highPriority = reports.filter(r => isHighPriority(getPriorityLabel(r.priority))).length;
+
+            document.getElementById('totalReports').textContent = total;
+            document.getElementById('resolvedReports').textContent = resolved;
+            document.getElementById('pendingReports').textContent = assigned;
+            document.getElementById('highPriorityReports').textContent = highPriority;
+        }
+
+        function getStatusLabel(report) {
+            const statusCandidates = [
+                typeof report.status === 'string' ? report.status : '',
+                typeof report.lifecycle_status === 'string' ? report.lifecycle_status : ''
+            ];
+
+            for (const candidate of statusCandidates) {
+                const normalized = candidate.trim().toLowerCase();
+                if (normalized) {
+                    return normalized;
+                }
+            }
+
+            return 'pending';
+        }
+
+        function formatStatusLabel(label) {
+            return label.replace(/_/g, ' ');
+        }
+
+        function getPriorityLabel(priority) {
+            if (priority === null || priority === undefined) {
+                return 'medium';
+            }
+
+            if (typeof priority === 'number' && !Number.isNaN(priority)) {
+                if (priority <= 2) return 'high';
+                if (priority === 3) return 'medium';
+                if (priority >= 4) return 'low';
+                return priority <= 1 ? 'high' : 'low';
+            }
+
+            if (typeof priority === 'string') {
+                const trimmed = priority.trim().toLowerCase();
+                if (!trimmed) return 'medium';
+                const numericValue = Number(trimmed);
+                if (!Number.isNaN(numericValue)) {
+                    return getPriorityLabel(numericValue);
+                }
+                return trimmed;
+            }
+
+            return 'medium';
+        }
+
+        function getPriorityClass(priorityLabel) {
+            if (['high', 'urgent', 'critical'].includes(priorityLabel)) {
+                return 'high';
+            }
+            if (priorityLabel === 'low') {
+                return 'low';
+            }
+            return 'medium';
+        }
+
+        function formatPriorityLabel(label) {
+            return label.replace(/_/g, ' ');
+        }
+
+        function isHighPriority(label) {
+            return ['high', 'urgent', 'critical'].includes(label);
+        }
+
+        function getReportType(report) {
+            if (typeof report.type === 'string' && report.type.trim()) {
+                return report.type.trim().toLowerCase();
+            }
+            return 'other';
+        }
+
+        function getReportTitle(report) {
+            if (typeof report.ai_description === 'string' && report.ai_description.includes('-')) {
+                return report.ai_description;
+            }
+            if (typeof report.type === 'string' && report.type.trim()) {
+                return report.type.trim().toUpperCase() + ' Emergency';
+            }
+            return 'Emergency Report';
+        }
+
+        function formatReportDescription(report) {
+            const description = (report.description ?? report.message ?? '').toString().trim();
+            return description || 'No description provided';
+        }
+
+        function getConfidencePercent(report) {
+            let value = report.confidence ?? report.ai_confidence;
+
+            if (value === null || value === undefined) {
+                return null;
+            }
+
+            if (typeof value === 'string') {
+                value = parseFloat(value);
+            }
+
+            if (typeof value !== 'number' || Number.isNaN(value)) {
+                return null;
+            }
+
+            let normalized = value;
+            if (normalized > 1) {
+                normalized = normalized / 100;
+            }
+            normalized = Math.max(0, Math.min(1, normalized));
+
+            return Math.round(normalized * 100);
+        }
+
+        // Utility functions
+        function getEmergencyIcon(type) {
+            const icons = {
+                fire: '🔥',
+                medical: '🏥',
+                accident: '🚗',
+                flood: '🌊',
+                earthquake: '🌍',
+                storm: '⛈️',
+                other: '⚠️'
+            };
+            if (typeof type === 'string') {
+                const normalized = type.toLowerCase();
+                return icons[normalized] || icons.other;
+            }
+            return icons.other;
+        }
+
+        function getPriorityColor(priority) {
+            const colors = {
+                high: 'red-600',
+                urgent: 'red-600',
+                critical: 'red-600',
+                medium: 'yellow-600',
+                low: 'green-600'
+            };
+            const label = getPriorityLabel(priority);
+            return colors[label] || colors.medium;
+        }
+
+        function getStatusIcon(status) {
+            const icons = {
+                pending: '⏳',
+                assigned: '👤',
+                classified: '📌',
+                accepted: '🤝',
+                in_progress: '🔄',
+                enroute: '🚑',
+                on_scene: '🚨',
+                completed: '✅',
+                resolved: '✅',
+                closed: '✅',
+                cancelled: '❌'
+            };
+            return icons[status] || '📋';
+        }
+
+        function getPriorityIcon(priority) {
+            const icons = {
+                high: '🔴',
+                urgent: '🔴',
+                critical: '🔴',
+                medium: '🟡',
+                low: '🟢'
+            };
+            const label = getPriorityLabel(priority);
+            return icons[label] || icons.medium;
+        }
+
+        function getStatusColor(status) {
+            const colors = {
+                pending: 'yellow-500',
+                assigned: 'blue-500',
+                classified: 'purple-500',
+                accepted: 'blue-500',
+                in_progress: 'orange-500',
+                enroute: 'orange-500',
+                on_scene: 'red-500',
+                completed: 'green-500',
+                resolved: 'green-500',
+                closed: 'green-500',
+                cancelled: 'red-500'
+            };
+            return colors[status] || 'gray-500';
+        }
+
+        function getPriorityBgColor(priority) {
+            const colors = {
+                high: 'red-100',
+                urgent: 'red-100',
+                critical: 'red-100',
+                medium: 'yellow-100',
+                low: 'green-100'
+            };
+            const label = getPriorityLabel(priority);
+            return colors[label] || colors.medium;
+        }
+
+        function formatLocation(location) {
+            if (!location) return 'Location not specified';
+
+            let parsed = location;
+            if (typeof location === 'string') {
+                try {
+                    parsed = JSON.parse(location);
+                } catch {
+                    return location;
+                }
+            }
+
+            if (typeof parsed === 'object' && parsed !== null) {
+                const address = parsed.address || parsed.formatted || parsed.description;
+                if (typeof address === 'string' && address.trim()) {
+                    return address.trim();
+                }
+
+                const lat = parsed.lat ?? parsed.latitude;
+                const lng = parsed.lng ?? parsed.longitude;
+                const latNum = lat !== undefined ? Number(lat) : null;
+                const lngNum = lng !== undefined ? Number(lng) : null;
+
+                if (latNum !== null && !Number.isNaN(latNum) && lngNum !== null && !Number.isNaN(lngNum)) {
+                    return `Lat ${latNum.toFixed(4)}, Lng ${lngNum.toFixed(4)}`;
+                }
+
+                return 'Location detected';
+            }
+
+            return location;
+        }
+
+        function formatDate(dateString) {
+            const date = new Date(dateString);
+            return date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+        }
+
+        // Check user role and redirect if necessary
+        function checkUserRole() {
+            if (!emergencySystem.user) {
+                window.location.href = 'login.html';
+                return false;
+            }
+            
+            const userRole = emergencySystem.user?.user_metadata?.role || 'citizen';
+            
+            if (userRole !== 'citizen') {
+                // Redirect to appropriate dashboard
+                if (userRole === 'responder') {
+                    window.location.href = 'responder.html';
+                } else if (userRole === 'admin') {
+                    window.location.href = 'admin.html';
+                } else if (userRole === 'super_user') {
+                    window.location.href = 'super-user.html';
+                }
+                return false;
+            }
+            
+            return true;
+        }
+
+        // Initialize page
+        document.addEventListener('DOMContentLoaded', async () => {
+            // Wait for system initialization
+            await new Promise(resolve => {
+                const checkInit = () => {
+                    if (emergencySystem.isInitialized) {
+                        resolve();
+                    } else {
+                        setTimeout(checkInit, 100);
+                    }
+                };
+                checkInit();
+            });
+
+            // Check user role
+            if (!checkUserRole()) {
+                return;
+            }
+
+            // Load user's report history
+            await loadUserReportHistory();
+        });
+    </script>
+</body>
+</html>
+
+</html>

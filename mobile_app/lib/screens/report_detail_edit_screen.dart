@@ -1,0 +1,751 @@
+import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
+import '../services/supabase_service.dart';
+
+class ReportDetailEditScreen extends StatefulWidget {
+  final Map<String, dynamic> report;
+
+  const ReportDetailEditScreen({
+    super.key,
+    required this.report,
+  });
+
+  @override
+  State<ReportDetailEditScreen> createState() => _ReportDetailEditScreenState();
+}
+
+class _ReportDetailEditScreenState extends State<ReportDetailEditScreen> {
+  bool _isEditMode = false;
+  bool _isLoading = false;
+  bool _isSaving = false;
+  List<Map<String, dynamic>> _responders = [];
+  Map<String, dynamic>? _currentAssignment;
+
+  // Form controllers
+  late TextEditingController _messageController;
+  String _selectedType = 'other';
+  String _selectedStatus = 'pending';
+  String _selectedLifecycleStatus = 'pending';
+  String? _selectedResponderId;
+
+  @override
+  void initState() {
+    super.initState();
+    _initializeForm();
+    _loadResponders();
+    _loadAssignment();
+  }
+
+  void _initializeForm() {
+    _messageController = TextEditingController(
+      text: widget.report['message']?.toString() ?? '',
+    );
+    _selectedType = widget.report['type']?.toString() ?? 'other';
+    _selectedStatus = widget.report['status']?.toString() ?? 'pending';
+    _selectedLifecycleStatus =
+        widget.report['lifecycle_status']?.toString() ?? 'pending';
+    _selectedResponderId = widget.report['responder_id']?.toString();
+  }
+
+  Future<void> _loadResponders() async {
+    try {
+      final response = await SupabaseService.client
+          .from('responder')
+          .select('id, name, role, is_available, status')
+          .eq('is_available', true)
+          .order('name');
+
+      if (response != null) {
+        setState(() {
+          _responders = List<Map<String, dynamic>>.from(response);
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to load responders: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _loadAssignment() async {
+    try {
+      final reportId = widget.report['id']?.toString();
+      if (reportId == null) return;
+
+      final response = await SupabaseService.client
+          .from('assignment')
+          .select('''
+            *,
+            responder:responder_id(id, name, role, phone)
+          ''')
+          .eq('report_id', reportId)
+          .order('assigned_at', ascending: false)
+          .limit(1);
+
+      if (response != null && response.isNotEmpty) {
+        setState(() {
+          _currentAssignment = Map<String, dynamic>.from(response[0]);
+          if (_currentAssignment?['responder'] != null) {
+            final responder = _currentAssignment!['responder'];
+            _selectedResponderId = responder['id']?.toString();
+          }
+        });
+      }
+    } catch (e) {
+      // Silently fail - assignment might not exist
+      print('Could not load assignment: $e');
+    }
+  }
+
+  Future<void> _saveChanges() async {
+    if (_isSaving) return;
+
+    setState(() {
+      _isSaving = true;
+    });
+
+    try {
+      final reportId = widget.report['id']?.toString();
+      if (reportId == null) {
+        throw Exception('Report ID is missing');
+      }
+
+      // Update report basic info
+      final updateData = {
+        'type': _selectedType,
+        'status': _selectedStatus,
+        'lifecycle_status': _selectedLifecycleStatus,
+        'message': _messageController.text,
+        'last_update': DateTime.now().toIso8601String(),
+      };
+
+      await SupabaseService.client
+          .from('reports')
+          .update(updateData)
+          .eq('id', reportId);
+
+      // Handle responder assignment using Edge Function
+      final previousResponderId = widget.report['responder_id']?.toString();
+      final hasNewAssignment = _selectedResponderId != null && 
+                                _selectedResponderId!.isNotEmpty;
+      final hasChangedAssignment = previousResponderId != _selectedResponderId;
+
+      if (hasNewAssignment && hasChangedAssignment) {
+        // Call the assign-responder Edge Function
+        // This will handle notifications automatically
+        debugPrint('🚀 Calling assign-responder Edge Function for report $reportId');
+        
+        try {
+          // Get current user ID
+          final currentUser = SupabaseService.client.auth.currentUser;
+          if (currentUser == null) {
+            throw Exception('User not authenticated');
+          }
+
+          final response = await SupabaseService.client.functions.invoke(
+            'assign-responder',
+            body: {
+              'report_id': reportId,
+              'responder_id': _selectedResponderId!,
+              'assigned_by': currentUser.id,
+            },
+          );
+
+          debugPrint('✅ Assignment successful: ${response.data}');
+        } catch (e) {
+          debugPrint('❌ Error calling assign-responder: $e');
+          throw Exception('Failed to assign responder: $e');
+        }
+      } else if (!hasNewAssignment && previousResponderId != null) {
+        // Unassign responder - cancel active assignments
+        final assignments = await SupabaseService.client
+            .from('assignment')
+            .select('*')
+            .eq('report_id', reportId)
+            .or('status.eq.assigned,status.eq.accepted,status.eq.enroute,status.eq.on_scene');
+
+        if (assignments != null && assignments.isNotEmpty) {
+          for (final assignment in assignments) {
+            await SupabaseService.client
+                .from('assignment')
+                .update({'status': 'cancelled'})
+                .eq('id', assignment['id']);
+          }
+        }
+
+        // Clear responder from report
+        await SupabaseService.client
+            .from('reports')
+            .update({
+              'responder_id': null,
+              'assignment_id': null,
+              'lifecycle_status': _selectedLifecycleStatus,
+            })
+            .eq('id', reportId);
+      }
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Report updated successfully!'),
+            backgroundColor: Colors.green,
+          ),
+        );
+        Navigator.of(context).pop(true); // Return true to indicate success
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to save changes: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isSaving = false;
+        });
+      }
+    }
+  }
+
+  @override
+  void dispose() {
+    _messageController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(_isEditMode ? 'Edit Report' : 'Report Details'),
+        backgroundColor: const Color(0xFF3b82f6),
+        foregroundColor: Colors.white,
+        actions: [
+          if (!_isEditMode)
+            IconButton(
+              icon: const Icon(Icons.edit),
+              onPressed: () {
+                setState(() {
+                  _isEditMode = true;
+                });
+              },
+              tooltip: 'Edit',
+            )
+          else
+            IconButton(
+              icon: const Icon(Icons.close),
+              onPressed: () {
+                setState(() {
+                  _isEditMode = false;
+                  _initializeForm(); // Reset form
+                });
+              },
+              tooltip: 'Cancel',
+            ),
+        ],
+      ),
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : _isEditMode
+              ? _buildEditView()
+              : _buildDetailView(),
+    );
+  }
+
+  Widget _buildDetailView() {
+    final report = widget.report;
+    final type = report['type']?.toString() ?? 'Unknown';
+    final status = report['status']?.toString() ?? 'Unknown';
+    final lifecycleStatus =
+        report['lifecycle_status']?.toString() ?? status;
+    final message = report['message']?.toString() ?? 'No description';
+    final createdAt = report['created_at']?.toString();
+    final lastUpdate = report['last_update']?.toString();
+    final reporterName = report['reporter_name']?.toString() ?? 'Unknown';
+    final responderName = _currentAssignment?['responder']?['name']?.toString() ??
+        report['responder_name']?.toString();
+
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Type and Status Card
+          Card(
+            elevation: 2,
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Text(
+                        _getTypeEmoji(type),
+                        style: const TextStyle(fontSize: 40),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              type.toUpperCase(),
+                              style: const TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            Wrap(
+                              spacing: 8,
+                              runSpacing: 8,
+                              children: [
+                                _buildStatusChip(status, 'Status'),
+                                _buildStatusChip(lifecycleStatus, 'Lifecycle'),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 16),
+
+          // Details Card
+          Card(
+            elevation: 2,
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Details',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  _buildDetailRow('Message', message),
+                  const Divider(),
+                  _buildDetailRow('Reporter', reporterName),
+                  const Divider(),
+                  _buildDetailRow(
+                    'Created',
+                    createdAt != null
+                        ? _formatDate(createdAt)
+                        : 'Unknown',
+                  ),
+                  if (lastUpdate != null) ...[
+                    const Divider(),
+                    _buildDetailRow(
+                      'Last Updated',
+                      _formatDate(lastUpdate),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 16),
+
+          // Responder Assignment Card
+          Card(
+            elevation: 2,
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Responder Assignment',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  if (responderName != null)
+                    Row(
+                      children: [
+                        const Icon(Icons.person, color: Colors.green),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                responderName,
+                                style: const TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                              if (_currentAssignment?['responder']?['role'] !=
+                                  null)
+                                Text(
+                                  _currentAssignment!['responder']['role']
+                                      .toString(),
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    color: Colors.grey.shade600,
+                                  ),
+                                ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    )
+                  else
+                    Row(
+                      children: [
+                        const Icon(Icons.person_outline,
+                            color: Colors.grey),
+                        const SizedBox(width: 8),
+                        Text(
+                          'Not assigned',
+                          style: TextStyle(
+                            fontSize: 16,
+                            color: Colors.grey.shade600,
+                          ),
+                        ),
+                      ],
+                    ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildEditView() {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Type Dropdown
+          _buildDropdown(
+            label: 'Type',
+            value: _selectedType,
+            items: const [
+              'fire',
+              'medical',
+              'flood',
+              'earthquake',
+              'accident',
+              'other',
+            ],
+            onChanged: (value) {
+              setState(() {
+                _selectedType = value!;
+              });
+            },
+          ),
+          const SizedBox(height: 16),
+
+          // Status Dropdown
+          _buildDropdown(
+            label: 'Status',
+            value: _selectedStatus,
+            items: const [
+              'pending',
+              'processing',
+              'classified',
+              'assigned',
+              'completed',
+              'resolved',
+              'closed',
+            ],
+            onChanged: (value) {
+              setState(() {
+                _selectedStatus = value!;
+              });
+            },
+          ),
+          const SizedBox(height: 16),
+
+          // Lifecycle Status Dropdown
+          _buildDropdown(
+            label: 'Lifecycle Status',
+            value: _selectedLifecycleStatus,
+            items: const [
+              'pending',
+              'classified',
+              'assigned',
+              'accepted',
+              'enroute',
+              'on_scene',
+              'resolved',
+              'closed',
+            ],
+            onChanged: (value) {
+              setState(() {
+                _selectedLifecycleStatus = value!;
+              });
+            },
+          ),
+          const SizedBox(height: 16),
+
+          // Responder Assignment Dropdown
+          _buildResponderDropdown(),
+          const SizedBox(height: 16),
+
+          // Message Text Field
+          TextField(
+            controller: _messageController,
+            decoration: const InputDecoration(
+              labelText: 'Message / Description',
+              border: OutlineInputBorder(),
+              hintText: 'Enter report description...',
+            ),
+            maxLines: 5,
+            minLines: 3,
+          ),
+          const SizedBox(height: 24),
+
+          // Save Button
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              onPressed: _isSaving ? null : _saveChanges,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF3b82f6),
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              child: _isSaving
+                  ? const SizedBox(
+                      height: 20,
+                      width: 20,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                      ),
+                    )
+                  : const Text(
+                      'Save Changes',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDropdown({
+    required String label,
+    required String value,
+    required List<String> items,
+    required ValueChanged<String?> onChanged,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: const TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w600,
+            color: Color(0xFF374151),
+          ),
+        ),
+        const SizedBox(height: 8),
+        DropdownButtonFormField<String>(
+          value: value,
+          decoration: const InputDecoration(
+            border: OutlineInputBorder(),
+            contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 16),
+          ),
+          items: items.map((item) {
+            return DropdownMenuItem(
+              value: item,
+              child: Text(item.toUpperCase()),
+            );
+          }).toList(),
+          onChanged: onChanged,
+        ),
+      ],
+    );
+  }
+
+  Widget _buildResponderDropdown() {
+    final responderItems = [
+      const DropdownMenuItem<String>(
+        value: null,
+        child: Text('-- Select Responder --'),
+      ),
+      ..._responders.map((responder) {
+        final name = responder['name']?.toString() ?? 'Unknown';
+        final role = responder['role']?.toString() ?? '';
+        final isAvailable = responder['is_available'] == true;
+        return DropdownMenuItem<String>(
+          value: responder['id']?.toString(),
+          child: Text(
+            '$name ($role)${isAvailable ? '' : ' - Busy'}',
+          ),
+        );
+      }),
+    ];
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Assign Responder',
+          style: TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w600,
+            color: Color(0xFF374151),
+          ),
+        ),
+        const SizedBox(height: 8),
+        DropdownButtonFormField<String?>(
+          value: _selectedResponderId,
+          decoration: const InputDecoration(
+            border: OutlineInputBorder(),
+            contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 16),
+          ),
+          items: responderItems,
+          onChanged: (value) {
+            setState(() {
+              _selectedResponderId = value;
+            });
+          },
+        ),
+      ],
+    );
+  }
+
+  Widget _buildDetailRow(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 100,
+            child: Text(
+              label,
+              style: TextStyle(
+                fontWeight: FontWeight.w600,
+                color: Colors.grey.shade700,
+              ),
+            ),
+          ),
+          Expanded(
+            child: Text(
+              value,
+              style: const TextStyle(fontSize: 14),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStatusChip(String status, String label) {
+    final color = _getStatusColor(status);
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.15),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: color.withOpacity(0.3)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            '$label: ',
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w600,
+              color: color,
+            ),
+          ),
+          Text(
+            status.toUpperCase(),
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w700,
+              color: color,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Color _getStatusColor(String status) {
+    switch (status.toLowerCase()) {
+      case 'resolved':
+      case 'completed':
+      case 'closed':
+        return const Color(0xFF10b981);
+      case 'pending':
+        return const Color(0xFFf97316);
+      case 'assigned':
+      case 'accepted':
+      case 'enroute':
+      case 'on_scene':
+        return const Color(0xFF3b82f6);
+      default:
+        return const Color(0xFF6b7280);
+    }
+  }
+
+  String _getTypeEmoji(String? type) {
+    switch (type?.toLowerCase()) {
+      case 'fire':
+        return '🔥';
+      case 'medical':
+        return '🏥';
+      case 'accident':
+        return '🚗';
+      case 'flood':
+        return '🌊';
+      case 'storm':
+        return '⛈️';
+      case 'earthquake':
+        return '🌍';
+      default:
+        return '⚠️';
+    }
+  }
+
+  String _formatDate(String? dateStr) {
+    if (dateStr == null) return 'Unknown';
+    try {
+      final date = DateTime.parse(dateStr);
+      return DateFormat('MMM d, yyyy • h:mm a').format(date.toLocal());
+    } catch (e) {
+      return 'Unknown';
+    }
+  }
+}
+

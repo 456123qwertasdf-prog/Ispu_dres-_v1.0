@@ -1,0 +1,761 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Emergency Learning Modules</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+</head>
+<body>
+  <!-- Navigation -->
+  <nav class="navbar">
+    <div class="container">
+      <div class="flex items-center justify-between">
+        <div class="navbar-brand-container">
+          <img src="images/udrrmo-logo.jpg" alt="UDRRMO Logo" class="navbar-logo">
+          <a href="user.html" class="navbar-brand">Kapiyu Emergency</a>
+        </div>
+        <div class="navbar-nav">
+          <button onclick="logout()" class="btn btn-outline btn-sm">Logout</button>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Main Content -->
+  <main class="container" style="margin-top: 2rem;">
+      <!-- Page Header -->
+      <section style="margin-bottom: 2rem;">
+        <div style="display: flex; align-items: center; justify-content: space-between;">
+          <div>
+            <h1 style="font-size: 1.75rem !important; font-weight: 800 !important; color: #1e293b !important; margin-bottom: 0.5rem !important; margin-top: 0 !important; letter-spacing: -0.02em; background: none !important; -webkit-background-clip: unset !important; -webkit-text-fill-color: #1e293b !important; background-clip: unset !important; text-shadow: none !important;">
+              <i class="bi bi-journal-bookmark" style="color: #1e293b !important; margin-right: 0.5rem;"></i> Learning Modules
+            </h1>
+            <p style="font-size: 0.9375rem !important; color: #64748b !important; margin: 0.5rem 0 0 0 !important; font-weight: 400 !important; line-height: 1.5;">Learn emergency preparedness. Track your progress like an academy.</p>
+          </div>
+          <div>
+            <a href="user.html" class="btn btn-primary">
+              <i class="bi bi-arrow-left"></i> back to dashboard
+            </a>
+          </div>
+        </div>
+      </section>
+
+      <!-- Course Selection and Modules -->
+      <section class="card">
+        <div class="card-body">
+          <div id="coursePicker" style="margin-bottom:20px; display:flex; gap:8px; align-items:center;">
+            <label style="font-size:0.9rem;color:#6b7280;font-weight:500;">Course</label>
+            <select id="courseSelect" class="form-input" style="max-width:320px;padding:6px 10px;" onchange="onCourseChange(this.value)"></select>
+            <button class="btn btn-outline btn-sm" onclick="reloadModules()" style="margin-left:auto;"><i class="bi bi-arrow-clockwise"></i> Refresh</button>
+          </div>
+          <div id="lmsGrid" style="display:grid;grid-template-columns:repeat(1,minmax(0,1fr));gap:14px;">
+            <div class="text-center py-8">
+              <div class="loading-spinner"></div>
+              <p class="text-gray-500 mt-4">Loading modules...</p>
+            </div>
+          </div>
+        </div>
+      </section>
+    <!-- PDF Preview Modal -->
+    <div id="pdfPreviewModal" class="modal hidden">
+      <div class="modal-content" style="max-width:810px;max-height:90vh;padding:0;display:flex;flex-direction:column;">
+        <div class="modal-header">
+          <h2 style="font-size:1.1rem;">PDF Preview</h2>
+          <button class="modal-close" onclick="togglePDFPreview(false)"><i class="bi bi-x-lg"></i></button>
+        </div>
+        <div style="flex:1;overflow:auto;background:#f3f4f6;display:flex;align-items:center;justify-content:center;">
+          <embed id="pdfViewer" src="" type="application/pdf" style="width:90vw;max-width:760px;height:70vh;"/>
+        </div>
+      </div>
+    </div>
+  </main>
+  <script src="js/supabase.js"></script>
+  <script>
+    // LMS page logic: grid cards with progress
+    let lsmModules = [];
+    let userProgressByModuleId = new Map();
+    let sortedModules = [];
+    let courses = [];
+    let selectedCourseId = null;
+    let quizzesByModuleId = new Map(); // Store quiz existence per module
+    let quizInitiatedModules = new Set(); // Track modules where quiz has been initiated
+    let quizResultsByModuleId = new Map(); // Store quiz results per module (user has taken quiz)
+
+    function resolvePdfUrl(mod) {
+      if (mod.pdfDataUrl) return mod.pdfDataUrl;
+      if (mod.pdf_url) return mod.pdf_url;
+      if (mod.pdf_path && window.emergencySystem && window.emergencySystem.supabase) {
+        try {
+          const { data } = window.emergencySystem.supabase
+            .storage.from('learning-modules')
+            .getPublicUrl(mod.pdf_path);
+          return (data && data.publicUrl) ? data.publicUrl : '';
+        } catch (_) { return ''; }
+      }
+      return '';
+    }
+
+    function logout() {
+      if (window.emergencySystem && window.emergencySystem.signOut) {
+        window.emergencySystem.signOut();
+      } else {
+        window.location.href = 'login.html';
+      }
+    }
+
+    async function loadLms() {
+      try {
+        await new Promise(resolve => {
+          const check = () => {
+            if (window.emergencySystem && window.emergencySystem.isInitialized) return resolve();
+            setTimeout(check, 100);
+          };
+          check();
+        });
+
+        const sb = window.emergencySystem.supabase;
+        var userObj = window.emergencySystem.user;
+        const userId = userObj ? userObj.id : null;
+
+        const [
+          { data: courseData }, 
+          { data: modules, error: mErr }, 
+          { data: progress, error: pErr }, 
+          { data: quizzes, error: qErr },
+          { data: quizResults, error: rErr }
+        ] = await Promise.all([
+          sb.from('lms_courses').select('*').order('created_at', { ascending: true }),
+          sb.from('learning_modules').select('*').eq('active', true).order('order', { ascending: true }),
+          userId ? sb.from('learning_progress').select('*').eq('user_id', userId) : Promise.resolve({ data: [], error: null }),
+          sb.from('lms_quizzes').select('module_id'),
+          userId ? sb.from('lms_results').select('*').eq('user_id', userId) : Promise.resolve({ data: [], error: null })
+        ]);
+
+        if (mErr) throw mErr;
+        courses = courseData || [];
+        lsmModules = modules || [];
+        // Store quiz existence by module ID
+        quizzesByModuleId = new Map((quizzes || []).map(q => [q.module_id, true]));
+        // Store quiz results by module ID (convert to string for consistent comparison)
+        quizResultsByModuleId = new Map((quizResults || []).map(r => [String(r.module_id), r]));
+        // pick selected course
+        if (!selectedCourseId && courses.length) selectedCourseId = courses[0].id;
+        renderCoursePicker();
+        applyCourseFilter();
+        userProgressByModuleId = new Map((progress || []).map(p => [p.module_id, p]));
+        renderLmsGrid();
+      } catch (e) {
+        console.warn('LMS load failed:', e);
+        const grid = document.getElementById('lmsGrid');
+        if (grid) {
+          grid.innerHTML = '<div class="text-center py-8"><div class="text-4xl mb-2">⚠️</div><p class="text-gray-500">Unable to load modules</p></div>';
+        }
+      }
+    }
+
+    function renderCoursePicker() {
+      const sel = document.getElementById('courseSelect');
+      if (!sel) return;
+      if (!courses.length) {
+        sel.innerHTML = '<option value="">No courses</option>';
+        return;
+      }
+      sel.innerHTML = courses.map(function(c){
+        return '<option value="' + c.id + '" ' + (c.id===selectedCourseId?'selected':'') + '>' + c.title + '</option>';
+      }).join('');
+    }
+
+    function onCourseChange(id) {
+      selectedCourseId = id;
+      applyCourseFilter();
+      renderLmsGrid();
+    }
+
+    function applyCourseFilter() {
+      if (selectedCourseId) {
+        sortedModules = lsmModules.filter(function(m){ return m.course_id === selectedCourseId; });
+      } else {
+        sortedModules = lsmModules.slice();
+      }
+    }
+
+    function renderLmsGrid() {
+      const grid = document.getElementById('lmsGrid');
+      if (!grid) return;
+      if (!lsmModules.length) {
+        grid.innerHTML = '<div class="text-center py-8"><div class="text-4xl mb-2">📘</div><p class="text-gray-500">No modules available</p></div>';
+        return;
+      }
+      // Responsive grid - 1 column on mobile, 2 on tablet, 3 on desktop
+      grid.style.gridTemplateColumns = 'repeat(1,minmax(0,1fr))';
+      const mq = window.matchMedia('(min-width: 768px)');
+      const mqLg = window.matchMedia('(min-width: 1024px)');
+      if (mqLg.matches) {
+        grid.style.gridTemplateColumns = 'repeat(3,minmax(0,1fr))';
+      } else if (mq.matches) {
+        grid.style.gridTemplateColumns = 'repeat(2,minmax(0,1fr))';
+      }
+
+      // Check if user has completed any modules
+      // If no modules are completed yet, unlock all modules (user is new or hasn't completed anything)
+      const hasCompletedModule = Array.from(userProgressByModuleId.values()).some(
+        p => p.status && String(p.status).toLowerCase() === 'completed'
+      );
+      
+      const cards = sortedModules.map((mod, idx) => {
+        const prog = userProgressByModuleId.get(mod.id);
+        const pct = (prog && typeof prog.progress === 'number') ? prog.progress : 0;
+        // Normalize status to lowercase for consistent comparison
+        const status = (prog && prog.status) ? String(prog.status).toLowerCase() : 'not_started';
+        const pdf = resolvePdfUrl(mod);
+        const hasHtml = !!mod.content_html;
+        const isFirst = idx === 0;
+        const prev = !isFirst ? sortedModules[idx - 1] : null;
+        const prevProg = prev ? userProgressByModuleId.get(prev.id) : null;
+        const prevStatus = prevProg && prevProg.status ? String(prevProg.status).toLowerCase() : 'not_started';
+        const prevCompleted = isFirst ? true : (prevStatus === 'completed');
+        // Unlock if: no completed modules yet (all unlocked), first module, previous completed, or module already started/completed
+        const unlocked = !hasCompletedModule || isFirst || prevCompleted || status === 'in_progress' || status === 'completed';
+        const statusBadge = (status === 'completed') ? 'badge-success' : (status === 'in_progress' ? 'badge-warning' : 'badge-secondary');
+
+        let buttonsHtml = '';
+        // Show View button if module has PDF or HTML content and is unlocked
+        if ((pdf || hasHtml) && unlocked) {
+          buttonsHtml += '<button class="btn btn-outline btn-sm" onclick="openModule(\'' + mod.id + '\')"><i class=\'bi bi-eye\'></i> View</button>';
+        } else if (!unlocked) {
+          // Only show locked button if module has content but is locked
+          if (pdf || hasHtml) {
+            buttonsHtml += '<button class="btn btn-outline btn-sm" disabled title="Complete the previous module to unlock"><i class=\'bi bi-lock\'></i> Locked</button>';
+          }
+        }
+        // Show Mark Completed button ONLY if not completed and unlocked
+        if (status !== 'completed' && unlocked) {
+          buttonsHtml += '<button class="btn btn-primary btn-sm" onclick="markCompleted(\'' + mod.id + '\')"><i class=\'bi bi-check2-circle\'></i> Mark Completed</button>';
+        }
+        // Show Take Quiz button if module is completed (check if quiz already taken)
+        if (status === 'completed' && unlocked) {
+          // Convert module ID to string for consistent comparison
+          const moduleIdStr = String(mod.id);
+          const quizResult = quizResultsByModuleId.get(moduleIdStr);
+          if (quizResult) {
+            // Check if this is a Google Form initiation (score 0 and passed false = just initiated, not completed)
+            if (quizResult.score === 0 && quizResult.passed === false && quizResult.initiated) {
+              // Quiz initiated but not completed (Google Form)
+              buttonsHtml += '<button class="btn btn-outline btn-sm" disabled title="Quiz already initiated"><i class=\'bi bi-check2-circle\'></i> Quiz Initiated</button>';
+            } else if (quizResult.score === 0 && quizResult.passed === false) {
+              // Check if this might be initiation - if module has Google Form URL, treat as initiated
+              const modWithQuiz = lsmModules.find(m => String(m.id) === moduleIdStr);
+              if (modWithQuiz && modWithQuiz.quiz_url) {
+                buttonsHtml += '<button class="btn btn-outline btn-sm" disabled title="Quiz already initiated"><i class=\'bi bi-check2-circle\'></i> Quiz Initiated</button>';
+              } else {
+                // Actual quiz result with score 0 (failed)
+                buttonsHtml += '<button class="btn btn-outline btn-sm" disabled title="Quiz failed with score 0%"><i class=\'bi bi-check2-circle\'></i> Quiz Failed (0%)</button>';
+              }
+            } else {
+              // Quiz already taken and completed - show completed status with score
+              const passedText = quizResult.passed ? 'Passed' : 'Failed';
+              buttonsHtml += '<button class="btn btn-outline btn-sm" disabled title="Quiz ' + passedText.toLowerCase() + ' with score ' + quizResult.score + '%"><i class=\'bi bi-check2-circle\'></i> Quiz ' + passedText + ' (' + quizResult.score + '%)</button>';
+            }
+          } else if (quizInitiatedModules.has(moduleIdStr) || quizInitiatedModules.has(mod.id)) {
+            // Quiz already initiated but not submitted (in-memory only, will be cleared on reload)
+            buttonsHtml += '<button class="btn btn-outline btn-sm" disabled title="Quiz already initiated"><i class=\'bi bi-check2-circle\'></i> Quiz Initiated</button>';
+          } else {
+            // Quiz not initiated yet - show active button
+            buttonsHtml += '<button class="btn btn-primary btn-sm" onclick="startQuiz(\'' + mod.id + '\')"><i class=\'bi bi-question-circle\'></i> Take Quiz</button>';
+          }
+        }
+
+        var card = '';
+        card += '<div class="card" style="display:flex;flex-direction:column;gap:10px;">';
+        card +=   '<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;">';
+        card +=     '<h3 class="text-lg" style="margin:0;font-weight:600;">' + (mod.title || '') + '</h3>';
+        card +=     '<span class="badge ' + statusBadge + '">' + status.replace('_',' ') + '</span>';
+        card +=   '</div>';
+        card +=   '<p class="text-sm text-gray-600" style="margin:0;">' + (mod.description || '') + '</p>';
+        card +=   '<div style="height:8px;background:#eef2ff;border-radius:8px;overflow:hidden;">';
+        card +=     '<div style="height:8px;background:#6366f1;width:' + pct + '%;"></div>';
+        card +=   '</div>';
+        card +=   '<div class="text-xs text-gray-500">Progress: ' + pct + '%</div>';
+        card +=   '<div style="display:flex;gap:8px;justify-content:flex-end;">' + buttonsHtml + '</div>';
+        card += '</div>';
+        return card;
+      }).join('');
+
+      grid.innerHTML = cards;
+    }
+
+    async function openModule(id) {
+      const mod = lsmModules.find(m => String(m.id) === String(id));
+      if (!mod) return;
+      const url = resolvePdfUrl(mod);
+      const hasHtml = !!mod.content_html;
+      if (!url && !hasHtml) return;
+      
+      // Prioritize PDF - show PDF if available, otherwise show HTML
+      if (url) {
+        // Show PDF in the modal
+        const modal = document.getElementById('pdfPreviewModal');
+        const container = modal.querySelector('.modal-content');
+        // Make sure we have the PDF viewer element
+        const viewerParent = container.children[1];
+        // Reset to PDF viewer if it was changed to HTML
+        if (!viewerParent.querySelector('#pdfViewer')) {
+          viewerParent.innerHTML = '<embed id="pdfViewer" src="" type="application/pdf" style="width:90vw;max-width:760px;height:70vh;"/>';
+        }
+        document.getElementById('pdfViewer').src = url;
+        togglePDFPreview(true);
+      } else if (hasHtml) {
+        // Only show HTML if no PDF is available
+        const modal = document.getElementById('pdfPreviewModal');
+        const container = modal.querySelector('.modal-content');
+        // Swap viewer area with HTML
+        const viewerParent = container.children[1];
+        viewerParent.innerHTML = '<div id="lmsHtmlViewer" style="width:90vw;max-width:760px;height:70vh;overflow:auto;background:#fff;display:flex;flex-direction:column;">'
+          + '<div style="flex:1;padding:12px 12px 4px 12px;">' + (mod.content_html || '') + '</div>'
+          + '<div style="padding:10px;border-top:1px solid #e5e7eb;background:#f9fafb;display:flex;gap:8px;justify-content:flex-end;">'
+          +   '<button class="btn btn-outline btn-sm" onclick="startQuiz(\'' + mod.id + '\')"><i class=\'bi bi-question-circle\'></i> Take Quiz</button>'
+          +   '<button class="btn btn-outline btn-sm" onclick="markCompletedAndNext(\'' + mod.id + '\')"><i class=\'bi bi-check2-all\'></i> Mark Completed</button>'
+          + '</div>'
+          + '</div>';
+        togglePDFPreview(true);
+      }
+      try { await upsertProgress(id, 'in_progress', 25); } catch (_) {}
+    }
+
+    async function markCompletedAndNext(currentId) {
+      try {
+        await markCompleted(currentId);
+        const idx = sortedModules.findIndex(m => String(m.id) === String(currentId));
+        const next = idx >= 0 ? sortedModules[idx + 1] : null;
+        if (next) {
+          await loadLms();
+          openModule(next.id);
+        } else {
+          window.emergencySystem.showSuccess('All modules completed');
+          togglePDFPreview(false);
+        }
+      } catch (_) {}
+    }
+
+    async function markCompleted(id) {
+      try {
+        await upsertProgress(id, 'completed', 100, true);
+        
+        // Update local progress map immediately to reflect the change
+        const existing = userProgressByModuleId.get(id);
+        userProgressByModuleId.set(id, {
+          ...existing,
+          status: 'completed',
+          progress: 100,
+          completed_at: new Date().toISOString()
+        });
+        
+        window.emergencySystem.showSuccess('Module marked as completed');
+        
+        // Reload from database to ensure consistency
+        await loadLms();
+        
+        // If all modules in course completed, offer certificate
+        maybeShowCertificateButton();
+      } catch (e) {
+        console.error('Failed to mark as completed:', e);
+        window.emergencySystem.showError('Failed to update progress');
+      }
+    }
+
+    function maybeShowCertificateButton() {
+      // Check if all course modules are completed
+      const allCompleted = sortedModules.length > 0 && sortedModules.every(function(m){
+        var p = userProgressByModuleId.get(m.id) || {};
+        const moduleStatus = p.status ? String(p.status).toLowerCase() : 'not_started';
+        return moduleStatus === 'completed';
+      });
+      if (!allCompleted) return;
+      const grid = document.getElementById('lmsGrid');
+      if (!grid) return;
+      const bannerId = 'courseCompletedBanner';
+      if (document.getElementById(bannerId)) return;
+      const wrap = document.createElement('div');
+      wrap.id = bannerId;
+      wrap.innerHTML = '<div class="card" style="border-left:4px solid #10b981;display:flex;align-items:center;justify-content:space-between;gap:10px;">'
+        + '<div class="text-sm text-gray-700" style="display:flex;align-items:center;gap:8px;">'
+        +   '<span class="badge badge-success">COMPLETED</span>'
+        +   '<span>Course completed! Great job.</span>'
+        + '</div>'
+        + '</div>';
+      grid.prepend(wrap.firstChild);
+    }
+
+    async function upsertProgress(moduleId, status, progressPct, setCompleted = false) {
+      if (!window.emergencySystem.user) throw new Error('Not signed in');
+      const nowIso = new Date().toISOString();
+      const existing = userProgressByModuleId.get(moduleId);
+      var startedAt = (existing && existing.started_at) ? existing.started_at : nowIso;
+      var completedAt = setCompleted ? nowIso : (status === 'completed' ? nowIso : ((existing && existing.completed_at) ? existing.completed_at : null));
+      const payload = {
+        user_id: window.emergencySystem.user.id,
+        module_id: moduleId,
+        status: status,
+        progress: progressPct,
+        started_at: startedAt,
+        completed_at: completedAt
+      };
+      const { error } = await window.emergencySystem.supabase
+        .from('learning_progress')
+        .upsert(payload, { onConflict: 'user_id,module_id' });
+      if (error) throw error;
+    }
+
+    async function startQuiz(moduleId) {
+      try {
+        const mod = lsmModules.find(m => String(m.id) === String(moduleId));
+        if (!mod) {
+          window.emergencySystem.showError('Module not found');
+          return;
+        }
+
+        // Mark module as completed if not already completed
+        const prog = userProgressByModuleId.get(moduleId);
+        const currentStatus = (prog && prog.status) ? String(prog.status).toLowerCase() : 'not_started';
+        if (currentStatus !== 'completed') {
+          await markCompleted(moduleId);
+          // markCompleted already calls loadLms(), so we need to re-fetch the module
+          await new Promise(resolve => setTimeout(resolve, 100)); // Small delay to ensure state is updated
+          const updatedProg = userProgressByModuleId.get(moduleId);
+          if (!updatedProg || String(updatedProg.status).toLowerCase() !== 'completed') {
+            window.emergencySystem.showError('Failed to mark module as completed');
+            return;
+          }
+        }
+
+        // Mark quiz as initiated (disable button)
+        quizInitiatedModules.add(moduleId);
+        
+        // Update UI immediately to show disabled button
+        renderLmsGrid();
+
+        // Check if module has Google Form URL (priority)
+        if (mod.quiz_url && mod.quiz_url.trim()) {
+          // Open Google Form in a new window/tab
+          let quizUrl = mod.quiz_url.trim();
+          
+          // Handle URLs that don't start with http:// or https://
+          // Automatically prepend https:// if missing
+          if (!quizUrl.startsWith('http://') && !quizUrl.startsWith('https://')) {
+            quizUrl = 'https://' + quizUrl;
+          }
+          
+          // Validate URL format
+          try {
+            new URL(quizUrl); // This will throw if invalid
+            
+            // Save quiz initiation to database so it persists across reloads
+            const moduleIdStr = String(moduleId);
+            const existingResult = quizResultsByModuleId.get(moduleIdStr);
+            // Only save if no result exists yet or if existing result is also initiation (score 0)
+            // This prevents overwriting actual quiz results
+            if (!existingResult || (existingResult.score === 0 && existingResult.passed === false)) {
+              try {
+                // First check if result already exists in database
+                const { data: existingDbResult } = await window.emergencySystem.supabase
+                  .from('lms_results')
+                  .select('*')
+                  .eq('user_id', window.emergencySystem.user.id)
+                  .eq('module_id', moduleId)
+                  .maybeSingle();
+                
+                // Only insert if no result exists or if existing is also initiation
+                if (!existingDbResult || (existingDbResult.score === 0 && existingDbResult.passed === false)) {
+                  const { error: saveError } = await window.emergencySystem.supabase
+                    .from('lms_results')
+                    .insert([{ 
+                      user_id: window.emergencySystem.user.id, 
+                      module_id: moduleId, 
+                      score: 0, // Score 0 indicates initiation only
+                      passed: false 
+                    }]);
+                  
+                  // Ignore duplicate errors (if result already exists, that's fine)
+                  if (!saveError || (saveError.code === '23505')) {
+                    // Update local map
+                    quizResultsByModuleId.set(moduleIdStr, {
+                      module_id: moduleId,
+                      score: 0,
+                      passed: false,
+                      initiated: true // Flag to indicate Google Form initiation
+                    });
+                  }
+                }
+              } catch (saveErr) {
+                console.warn('Failed to save quiz initiation:', saveErr);
+                // Continue anyway - still open the form
+              }
+            }
+            
+            // Open in new tab with security attributes
+            window.open(quizUrl, '_blank', 'noopener,noreferrer');
+            window.emergencySystem.showInfo('Opening quiz in a new tab...');
+            // Reload to show updated status
+            await loadLms();
+            return;
+          } catch (e) {
+            window.emergencySystem.showError('Invalid quiz URL format. Please check the URL in admin panel.');
+            console.error('Invalid quiz URL:', quizUrl, e);
+            // Revert quiz initiation on error
+            quizInitiatedModules.delete(moduleId);
+            renderLmsGrid();
+            return;
+          }
+        }
+
+        // Fallback to database quiz if no Google Form URL
+        const sb = window.emergencySystem.supabase;
+        
+        // Check if supabase is available
+        if (!sb) {
+          window.emergencySystem.showError('Database connection not available');
+          return;
+        }
+
+        // Use maybeSingle() to avoid error when no quiz exists
+        const { data: quiz, error: quizError } = await sb
+          .from('lms_quizzes')
+          .select('*')
+          .eq('module_id', moduleId)
+          .maybeSingle();
+        
+        if (quizError) {
+          console.error('Quiz query error:', quizError);
+          window.emergencySystem.showError('Failed to load quiz: ' + quizError.message);
+          return;
+        }
+        
+        if (!quiz) {
+          window.emergencySystem.showInfo('No quiz available for this module');
+          // Revert quiz initiation if no quiz found
+          quizInitiatedModules.delete(moduleId);
+          renderLmsGrid();
+          return;
+        }
+
+        // Load questions
+        const { data: questions, error: qError } = await sb
+          .from('lms_questions')
+          .select('id,question_text,question_type')
+          .eq('quiz_id', quiz.id);
+        
+        if (qError) {
+          console.error('Questions query error:', qError);
+          window.emergencySystem.showError('Failed to load questions');
+          // Revert quiz initiation on error
+          quizInitiatedModules.delete(moduleId);
+          renderLmsGrid();
+          return;
+        }
+
+        if (!questions || questions.length === 0) {
+          window.emergencySystem.showInfo('No questions found for this quiz');
+          // Revert quiz initiation if no questions
+          quizInitiatedModules.delete(moduleId);
+          renderLmsGrid();
+          return;
+        }
+
+        // Load options for all questions
+        const qIds = questions.map(q => q.id);
+        const { data: options, error: optError } = await sb
+          .from('lms_options')
+          .select('*')
+          .in('question_id', qIds);
+
+        if (optError) {
+          console.error('Options query error:', optError);
+          window.emergencySystem.showError('Failed to load answer options');
+          // Revert quiz initiation on error
+          quizInitiatedModules.delete(moduleId);
+          renderLmsGrid();
+          return;
+        }
+
+        renderQuizModal(quiz, questions, options || [], moduleId);
+      } catch (e) {
+        console.error('Quiz load failed:', e);
+        window.emergencySystem.showError('Failed to load quiz: ' + (e.message || 'Unknown error'));
+        // Revert quiz initiation on error
+        quizInitiatedModules.delete(moduleId);
+        renderLmsGrid();
+      }
+    }
+
+    function renderQuizModal(quiz, questions, options, moduleId) {
+      const modal = document.getElementById('pdfPreviewModal');
+      const container = modal.querySelector('.modal-content');
+      const viewerParent = container.children[1];
+      const mapOpts = options.reduce((m, o) => { (m[o.question_id] = m[o.question_id] || []).push(o); return m; }, {});
+      const formHtml = questions.map(function(q, idx){
+        const opts = mapOpts[q.id] || [];
+        const name = 'q_' + q.id;
+        const tfHtml = '<label style="display:block;"><input type="radio" name="' + name + '" value="True"> True</label>' +
+                       '<label style="display:block;"><input type="radio" name="' + name + '" value="False"> False</label>';
+        const mcqHtml = opts.map(function(o){
+          return '<label style="display:block;"><input type="radio" name="' + name + '" value="' + o.id + '"> ' + o.option_text + '</label>';
+        }).join('');
+        const body = q.question_type === 'tf' ? tfHtml : mcqHtml;
+        return '<div style="margin-bottom:12px;">'
+          + '<div style="font-weight:600;margin-bottom:6px;">' + (idx + 1) + '. ' + q.question_text + '</div>'
+          + body
+          + '</div>';
+      }).join('');
+
+      viewerParent.innerHTML = '<div id="lmsQuiz" style="width:90vw;max-width:760px;height:70vh;overflow:auto;background:#fff;display:flex;flex-direction:column;">'
+        + '<form id="quizForm" style="flex:1;padding:12px 12px 4px 12px;">' + formHtml + '</form>'
+        + '<div style="padding:10px;border-top:1px solid #e5e7eb;background:#f9fafb;display:flex;gap:8px;justify-content:flex-end;">'
+        +   '<button class="btn btn-primary btn-sm" onclick="submitQuiz(\'' + quiz.id + '\',\'' + moduleId + '\')"><i class=\'bi bi-check2-square\'></i> Submit Quiz</button>'
+        + '</div>'
+        + '</div>';
+      togglePDFPreview(true);
+    }
+
+    async function submitQuiz(quizId, moduleId) {
+      try {
+        if (event) event.preventDefault();
+        
+        const sb = window.emergencySystem.supabase;
+        if (!sb) {
+          window.emergencySystem.showError('Database connection not available');
+          return;
+        }
+
+        if (!window.emergencySystem.user) {
+          window.emergencySystem.showError('You must be logged in to submit a quiz');
+          return;
+        }
+
+        // Load quiz details
+        const { data: quiz, error: quizError } = await sb
+          .from('lms_quizzes')
+          .select('*')
+          .eq('id', quizId)
+          .single();
+        
+        if (quizError || !quiz) {
+          window.emergencySystem.showError('Failed to load quiz details');
+          return;
+        }
+
+        // Load questions
+        const { data: questions, error: qError } = await sb
+          .from('lms_questions')
+          .select('id,question_type')
+          .eq('quiz_id', quizId);
+        
+        if (qError) {
+          window.emergencySystem.showError('Failed to load questions');
+          return;
+        }
+
+        if (!questions || questions.length === 0) {
+          window.emergencySystem.showError('No questions found');
+          return;
+        }
+
+        // Load options
+        const qIds = questions.map(q => q.id);
+        const { data: options, error: optError } = await sb
+          .from('lms_options')
+          .select('*')
+          .in('question_id', qIds);
+
+        if (optError) {
+          window.emergencySystem.showError('Failed to load answer options');
+          return;
+        }
+
+        const correctByQ = (options || []).reduce((m, o) => { 
+          if (o.is_correct) m[o.question_id] = o; 
+          return m; 
+        }, {});
+
+        // Calculate score
+        let correct = 0;
+        questions.forEach(q => {
+          const name = 'q_' + q.id;
+          const input = document.querySelector("input[name='" + name + "']:checked");
+          if (!input) return;
+          if (q.question_type === 'tf') {
+            const val = input.value;
+            const expected = (correctByQ[q.id]?.option_text || 'True');
+            if (val === expected) correct++;
+          } else {
+            if (input.value === String(correctByQ[q.id]?.id)) correct++;
+          }
+        });
+        const total = questions.length || 1;
+        const scorePct = Math.round((correct/total)*100);
+        const passed = scorePct >= (quiz.pass_score || 70);
+
+        // Save result to database
+        const { error: resultError } = await sb
+          .from('lms_results')
+          .insert([{ 
+            user_id: window.emergencySystem.user.id, 
+            module_id: moduleId, 
+            score: scorePct, 
+            passed 
+          }]);
+
+        if (resultError) {
+          console.error('Failed to save quiz result:', resultError);
+          window.emergencySystem.showError('Failed to save quiz result: ' + resultError.message);
+          return;
+        }
+
+        // Update local quiz results map immediately (use string for consistency)
+        quizResultsByModuleId.set(String(moduleId), {
+          module_id: moduleId,
+          score: scorePct,
+          passed: passed
+        });
+
+        if (passed) {
+          await markCompleted(moduleId);
+          window.emergencySystem.showSuccess('Quiz passed: ' + scorePct + '%');
+          togglePDFPreview(false);
+          // Reload to refresh the UI
+          await loadLms();
+        } else {
+          window.emergencySystem.showError('Quiz failed: ' + scorePct + '%. Passing score is ' + (quiz.pass_score || 70) + '%');
+          // Reload to refresh the UI to show quiz completed status
+          await loadLms();
+        }
+      } catch (e) {
+        console.error('Quiz submit failed:', e);
+        window.emergencySystem.showError('Failed to submit quiz: ' + (e.message || 'Unknown error'));
+      }
+    }
+    function togglePDFPreview(show) {
+      var modal = document.getElementById('pdfPreviewModal');
+      if(show) {
+        modal.classList.remove('hidden');
+        modal.style.display = 'flex';
+      } else {
+        modal.classList.add('hidden');
+        modal.style.display = 'none';
+        const container = modal.querySelector('.modal-content');
+        if (container && container.children[1]) {
+          // Restore default PDF area when closing (in case it was replaced by HTML/quiz)
+          container.children[1].innerHTML = '<embed id="pdfViewer" src="" type="application/pdf" style="width:90vw;max-width:760px;height:70vh;"/>';
+        }
+        var viewer = document.getElementById('pdfViewer');
+        if (viewer) viewer.src = '';
+      }
+    }
+
+    function reloadModules() { loadLms(); }
+
+    document.addEventListener('DOMContentLoaded', loadLms);
+  </script>
+</body>
+</html>

@@ -1,0 +1,34 @@
+{
+  "name": "lspu-emergency-response",
+  "version": "2.0.0",
+  "description": "LSPU Emergency Response System - AI-powered emergency reporting and response management",
+  "main": "public/index.html",
+  "scripts": {
+    "start": "npx serve public -p 8000",
+    "dev": "npx live-server public --port=8000 --open=/index.html",
+    "build": "echo 'No build step required for static files'",
+    "test": "echo 'Run tests manually'"
+  },
+  "dependencies": {
+    "@azure/cognitiveservices-computervision": "^8.2.0",
+    "@azure/ms-rest-js": "^2.7.0",
+    "@google-cloud/vision": "^5.3.3",
+    "@supabase/supabase-js": "^2.75.0"
+  },
+  "devDependencies": {
+    "live-server": "^1.2.2",
+    "serve": "^14.2.1"
+  },
+  "keywords": [
+    "emergency-response",
+    "ai-image-analysis",
+    "real-time-notifications",
+    "geolocation",
+    "disaster-management"
+  ],
+  "author": "LSPU DRES Team",
+  "license": "MIT",
+  "engines": {
+    "node": ">=16.0.0"
+  }
+}

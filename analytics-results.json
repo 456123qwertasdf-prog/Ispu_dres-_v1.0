@@ -1,0 +1,40 @@
+{
+  "success": true,
+  "analysis": {
+    "total": 1,
+    "byType": {
+      "medical": {
+        "count": 1,
+        "avgConfidence": 1,
+        "lowConfidence": 0,
+        "highConfidence": 1
+      }
+    },
+    "lowConfidenceCases": [],
+    "potentialMisclassifications": [],
+    "confidenceDistribution": {
+      "veryLow": 0,
+      "low": 0,
+      "medium": 0,
+      "high": 0,
+      "veryHigh": 1
+    }
+  },
+  "summary": {
+    "totalClassifications": 1,
+    "totalReportsInDB": 1,
+    "lowConfidenceCount": 0,
+    "potentialMisclassificationsCount": 0,
+    "typesAnalyzed": 1,
+    "recentReports": [
+      {
+        "id": "f3fcfb56-5af9-4e0d-ad99-9b35d3c74cab",
+        "type": "medical",
+        "confidence": "1.00",
+        "createdAt": "2025-11-03T06:01:25.194831+00:00",
+        "hasImage": true,
+        "description": null
+      }
+    ]
+  }
+}

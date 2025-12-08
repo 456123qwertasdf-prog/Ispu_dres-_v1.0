@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Archive Report</title>
+  <link rel="stylesheet" href="css/style.css" />
+  <script src="js/supabase.js"></script>
+</head>
+<body>
+  <main class="container" style="margin-top:2rem;">
+    <section class="card">
+      <div class="card-header">
+        <h2 class="card-title">Archive Report</h2>
+        <p class="card-subtitle">Confirm archival</p>
+      </div>
+      <div class="p-6">
+        <p>Are you sure you want to archive this report?</p>
+        <div class="flex gap-2 justify-end mt-4">
+          <a class="btn btn-outline" href="admin.html">Cancel</a>
+          <button id="confirm" class="btn btn-primary">Archive</button>
+        </div>
+      </div>
+    </section>
+  </main>
+  <script>
+    function p(n){const u=new URL(window.location.href);return u.searchParams.get(n)}
+    const id=p('id');
+    document.addEventListener('DOMContentLoaded', async()=>{
+      await new Promise(r=>{const t=setInterval(()=>{if(window.emergencySystem?.isInitialized){clearInterval(t);r()}},100)});
+      document.getElementById('confirm').addEventListener('click', async()=>{
+        try{
+          await emergencySystem.supabase.from('reports').update({ status:'archived', archived_at:new Date().toISOString(), archived_by: emergencySystem.user?.id }).eq('id', id);
+          emergencySystem.showSuccess('Report archived');
+          setTimeout(()=>location.href='admin.html',600);
+        }catch(e){ emergencySystem.showError('Failed: '+e.message); }
+      });
+    });
+  </script>
+</body>
+</html>
+
+

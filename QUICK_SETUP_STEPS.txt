@@ -1,0 +1,40 @@
+YOUR APP PASSWORD: dwey rljb bmkj vooz
+
+STEP 1: Add to Supabase Secrets
+1. Go to: https://supabase.com/dashboard/project/hmolyqzbvxxliemclrld/settings/functions
+2. Click "Secrets" tab
+3. Click "Add new secret"
+4. Name: SMTP_PASSWORD
+5. Value: dweyrljbbmkjvooz (remove spaces, all lowercase)
+6. Click Save
+
+STEP 2: Update config.toml
+1. Open: supabase/config.toml
+2. Find line 190 (SMTP section)
+3. Uncomment these lines (remove the #):
+   [auth.email.smtp]
+   enabled = true
+   host = "smtp.gmail.com"
+   port = 587
+   user = "YOUR-EMAIL@gmail.com"  <-- REPLACE WITH YOUR GMAIL
+   pass = "env(SMTP_PASSWORD)"
+   admin_email = "YOUR-EMAIL@gmail.com"  <-- REPLACE WITH YOUR GMAIL
+   sender_name = "LSPU Emergency Response System"
+
+   [auth.email.template.invite]
+   subject = "Account Verification - LSPU Emergency Response System"
+   content_path = "./supabase/templates/verification-with-credentials.html"
+
+STEP 3: Replace YOUR-EMAIL@gmail.com
+- Find where it says "your-email@gmail.com" or "YOUR-EMAIL@gmail.com"
+- Replace with your actual Gmail address (the one you used for App Password)
+
+STEP 4: For Local Development
+- Create .env file in project root
+- Add: SMTP_PASSWORD=dweyrljbbmkjvooz
+- Run: supabase stop && supabase start
+
+STEP 5: Test
+- Create a new user
+- Check email - should have credentials!
+

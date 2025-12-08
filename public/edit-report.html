@@ -1,0 +1,633 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Edit Report - LSPU Emergency Response System</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/fix-rotation.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <script src="https://cdn.jsdelivr.net/npm/supabase@2"></script>
+    <script src="js/supabase.js"></script>
+    <style>
+        .admin-edit-page {
+            background: #f8fafc;
+            min-height: 100vh;
+        }
+        
+        .edit-header {
+            background: linear-gradient(135deg, #059669 0%, #10b981 100%);
+            color: white;
+            padding: 2rem;
+            border-radius: 12px;
+            margin-bottom: 2rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+        
+        .edit-header h1 {
+            font-size: 2rem;
+            font-weight: 700;
+            margin: 0 0 0.5rem 0;
+        }
+        
+        .edit-header .subtitle {
+            font-size: 1.1rem;
+            opacity: 0.9;
+            margin: 0;
+        }
+        
+        .form-container {
+            background: white;
+            border-radius: 12px;
+            padding: 2rem;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            border: 1px solid #e5e7eb;
+        }
+        
+        .form-section {
+            margin-bottom: 2rem;
+            padding: 1.5rem;
+            background: #f9fafb;
+            border-radius: 8px;
+            border: 1px solid #e5e7eb;
+        }
+        
+        .form-section h3 {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: #1f2937;
+            margin: 0 0 1.5rem 0;
+            padding-bottom: 0.5rem;
+            border-bottom: 2px solid #10b981;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+        }
+        
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+        
+        .form-label {
+            font-weight: 600;
+            color: #374151;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .form-input,
+        .form-select,
+        .form-textarea {
+            padding: 0.75rem 1rem;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            color: #1f2937;
+            background: white;
+            transition: all 0.3s ease;
+        }
+        
+        .form-input:focus,
+        .form-select:focus,
+        .form-textarea:focus {
+            outline: none;
+            border-color: #10b981;
+            box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+        }
+        
+        .form-textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+        
+        .form-color {
+            width: 60px;
+            height: 40px;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+        
+        .form-actions {
+            display: flex;
+            gap: 1rem;
+            margin-top: 2rem;
+            padding-top: 2rem;
+            border-top: 1px solid #e5e7eb;
+            justify-content: flex-end;
+        }
+        
+        .btn-action {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            font-weight: 600;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            border: none;
+            cursor: pointer;
+            font-size: 0.9rem;
+        }
+        
+        .btn-primary {
+            background: #10b981;
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: #059669;
+            transform: translateY(-1px);
+        }
+        
+        .btn-secondary {
+            background: #6b7280;
+            color: white;
+        }
+        
+        .btn-secondary:hover {
+            background: #4b5563;
+            transform: translateY(-1px);
+        }
+        
+        .loading-state {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 3rem;
+            color: #6b7280;
+        }
+        
+        .spinner {
+            width: 2rem;
+            height: 2rem;
+            border: 3px solid #e5e7eb;
+            border-top: 3px solid #10b981;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-right: 1rem;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+        
+        .form-row.single {
+            grid-template-columns: 1fr;
+        }
+        
+        .form-row.triple {
+            grid-template-columns: 1fr 1fr 1fr;
+        }
+        
+        @media (max-width: 768px) {
+            .form-row,
+            .form-row.triple {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Logout button hover effect */
+        .logout-btn:hover {
+            background: #EF4444 !important;
+            border-color: #EF4444 !important;
+            color: white !important;
+        }
+        
+        .logout-btn:hover i {
+            color: white !important;
+        }
+    </style>
+</head>
+<body class="admin-edit-page">
+    <div class="dashboard-container">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <div class="sidebar-logo">
+                    <img src="images/udrrmo image.jpg" alt="UDRRMO Logo" 
+                         style="width: 50px; height: 50px; object-fit: contain; border-radius: 50%; border: 2px solid white; display: block;">
+                    <div class="logo-text">
+                        <h3>Kapiyu Admin</h3>
+                        <p>Emergency Response</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="system-status">
+                <div class="status-indicator">
+                    <span class="status-dot online"></span>
+                    <span>System Status: Online</span>
+                </div>
+            </div>
+            
+            <nav class="sidebar-nav">
+                <a href="admin.html" class="nav-item">
+                    <i class="bi bi-house"></i> Dashboard
+                </a>
+                <a href="reports.html" class="nav-item">
+                    <i class="bi bi-file-text"></i> Reports
+                </a>
+                <a href="map.html" class="nav-item">
+                    <i class="bi bi-map"></i> Map View
+                </a>
+                <a href="archive.html" class="nav-item">
+                    <i class="bi bi-folder"></i> Archived
+                </a>
+                <a href="analytics.html" class="nav-item">
+                    <i class="bi bi-graph-up"></i> Analytics
+                </a>
+                <a href="lsm-admin.html" class="nav-item">
+                    <i class="bi bi-journal-bookmark"></i> Learning Modules
+                </a>
+                <a href="settings.html" class="nav-item">
+                    <i class="bi bi-gear"></i> Settings
+                </a>
+            </nav>
+            
+            <div class="sidebar-footer">
+                <div class="user-info-card">
+                    <div class="user-avatar">A</div>
+                    <div class="user-details">
+                        <h4>Admin User</h4>
+                        <p>Kapiyu Command</p>
+                    </div>
+                </div>
+                <button class="logout-btn" onclick="showLogoutConfirm()" style="width: 100%;padding: 0.75rem 1rem;background: rgba(239, 68, 68, 0.1);border: 1px solid rgba(239, 68, 68, 0.3);color: #fca5a5;border-radius: 8px;font-size: 0.875rem;font-weight: 500;cursor: pointer;transition: all 0.2s ease;display: flex;align-items: center;gap: 0.5rem;margin-left: 0px;">
+                    <i class="bi bi-box-arrow-right"></i> Logout
+                </button>
+            </div>
+        </div>
+        
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Edit Header -->
+            <div class="edit-header">
+                <h1>✏️ Edit Emergency Report</h1>
+                <p class="subtitle">Update and manage emergency report information</p>
+            </div>
+            
+            <!-- Edit Form -->
+            <div class="form-container">
+                <form id="reportEditForm" class="edit-form">
+                    <!-- Emergency Information Section -->
+                    <div class="form-section">
+                        <h3><i class="bi bi-exclamation-triangle"></i> Emergency Information</h3>
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label for="type" class="form-label">Emergency Type</label>
+                                <select id="type" name="type" class="form-select" required>
+                                    <option value="fire">🔥 Fire Emergency</option>
+                                    <option value="flood">🌊 Flood Emergency</option>
+                                    <option value="accident">🚗 Traffic Accident</option>
+                                    <option value="medical">🏥 Medical Emergency</option>
+                                    <option value="other">⚠️ Other Emergency</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="status" class="form-label">Status</label>
+                                <select id="status" name="status" class="form-select" required>
+                                    <option value="pending">⏳ Pending</option>
+                                    <option value="processing">🔄 Processing</option>
+                                    <option value="classified">📋 Classified</option>
+                                    <option value="assigned">👷 Assigned</option>
+                                    <option value="in-progress">🚀 In Progress</option>
+                                    <option value="completed">✅ Completed</option>
+                                    <option value="cancelled">❌ Cancelled</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="priority" class="form-label">Priority Level</label>
+                                <select id="priority" name="priority" class="form-select" required>
+                                    <option value="1">🔴 Critical (1)</option>
+                                    <option value="2">🟠 High (2)</option>
+                                    <option value="3">🟡 Medium (3)</option>
+                                    <option value="4">🟢 Low (4)</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="severity" class="form-label">Severity</label>
+                                <select id="severity" name="severity" class="form-select" required>
+                                    <option value="LOW">🟢 Low</option>
+                                    <option value="MEDIUM">🟡 Medium</option>
+                                    <option value="HIGH">🟠 High</option>
+                                    <option value="CRITICAL">🔴 Critical</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Reporter Information Section -->
+                    <div class="form-section">
+                        <h3><i class="bi bi-person"></i> Reporter Information</h3>
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label for="reporter_name" class="form-label">Reporter Name</label>
+                                <input type="text" id="reporter_name" name="reporter_name" class="form-input" 
+                                       placeholder="Enter reporter's full name">
+                            </div>
+                            <div class="form-group">
+                                <label for="reporter_uid" class="form-label">Reporter UID</label>
+                                <input type="text" id="reporter_uid" name="reporter_uid" class="form-input" 
+                                       placeholder="Enter reporter's unique identifier">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Location & Description Section -->
+                    <div class="form-section">
+                        <h3><i class="bi bi-geo-alt"></i> Location & Description</h3>
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label for="location" class="form-label">Location Address</label>
+                                <input type="text" id="location" name="location" class="form-input" 
+                                       placeholder="Enter exact location address">
+                            </div>
+                            <div class="form-group">
+                                <label for="message" class="form-label">Emergency Description</label>
+                                <textarea id="message" name="message" class="form-textarea" rows="4" 
+                                          placeholder="Provide detailed description of the emergency..."></textarea>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Response Information Section -->
+                    <div class="form-section">
+                        <h3><i class="bi bi-clock"></i> Response Information</h3>
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label for="response_time" class="form-label">Expected Response Time</label>
+                                <select id="response_time" name="response_time" class="form-select">
+                                    <option value="15 minutes">⚡ 15 minutes (Critical)</option>
+                                    <option value="30 minutes">🚨 30 minutes (High Priority)</option>
+                                    <option value="60 minutes">⏰ 60 minutes (Standard)</option>
+                                    <option value="2 hours">🕐 2 hours (Low Priority)</option>
+                                    <option value="4 hours">🕑 4 hours (Non-urgent)</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="emergency_color" class="form-label">Emergency Color Code</label>
+                                <div class="form-row">
+                                    <input type="color" id="emergency_color" name="emergency_color" class="form-color">
+                                    <input type="text" id="color_hex" class="form-input" placeholder="#FF0000" readonly>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="emergency_icon" class="form-label">Emergency Icon</label>
+                                <select id="emergency_icon" name="emergency_icon" class="form-select">
+                                    <option value="🔥">🔥 Fire</option>
+                                    <option value="🌊">🌊 Flood</option>
+                                    <option value="🚗">🚗 Accident</option>
+                                    <option value="🏥">🏥 Medical</option>
+                                    <option value="⚠️">⚠️ Other</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Additional Information Section -->
+                    <div class="form-section">
+                        <h3><i class="bi bi-info-circle"></i> Additional Information</h3>
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label for="ai_analysis" class="form-label">AI Analysis Notes</label>
+                                <textarea id="ai_analysis" name="ai_analysis" class="form-textarea" rows="3" 
+                                          placeholder="Add any AI analysis or automated insights..."></textarea>
+                            </div>
+                            <div class="form-group">
+                                <label for="recommendations" class="form-label">Recommendations</label>
+                                <textarea id="recommendations" name="recommendations" class="form-textarea" rows="3" 
+                                          placeholder="Add any recommendations or next steps..."></textarea>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+                
+                <!-- Action Buttons -->
+                <div class="form-actions">
+                    <a href="admin.html" class="btn-action btn-secondary">
+                        <i class="bi bi-arrow-left"></i> Cancel
+                    </a>
+                    <button id="saveBtn" class="btn-action btn-primary">
+                        <i class="bi bi-check"></i> Save Changes
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentReport = null;
+        let reportId = null;
+
+        // Get report ID from URL
+        function getUrlParameter(name) {
+            const urlParams = new URLSearchParams(window.location.search);
+            return urlParams.get(name);
+        }
+
+        // Initialize the page
+        document.addEventListener('DOMContentLoaded', async function() {
+            try {
+                reportId = getUrlParameter('id');
+                if (!reportId) {
+                    showError('No report ID provided');
+                    return;
+                }
+
+                // Initialize emergency system
+                await window.emergencySystem.initialize();
+                
+                // Load report data
+                await loadReportData();
+                
+                // Setup color picker
+                setupColorPicker();
+                
+                console.log('✅ Edit report page initialized successfully');
+            } catch (error) {
+                console.error('❌ Error initializing edit report page:', error);
+                showError('Failed to load report data');
+            }
+        });
+
+        // Load report data
+        async function loadReportData() {
+            try {
+                console.log('📄 Loading report data for editing:', reportId);
+                
+                const report = await window.emergencySystem.getReportById(reportId);
+                if (!report) {
+                    showError('Report not found');
+                    return;
+                }
+
+                currentReport = report;
+                populateForm(report);
+                
+                console.log('✅ Report data loaded successfully');
+            } catch (error) {
+                console.error('❌ Error loading report data:', error);
+                showError('Failed to load report data: ' + error.message);
+            }
+        }
+
+        // Populate form with report data
+        function populateForm(report) {
+            // Emergency Information
+            document.getElementById('type').value = report.type || 'other';
+            document.getElementById('status').value = report.status || 'pending';
+            document.getElementById('priority').value = report.priority || 4;
+            document.getElementById('severity').value = report.severity || 'LOW';
+
+            // Reporter Information
+            document.getElementById('reporter_name').value = report.reporter_name || '';
+            document.getElementById('reporter_uid').value = report.reporter_uid || '';
+
+            // Location & Description
+            let locationText = '';
+            if (report.location) {
+                if (typeof report.location === 'string') {
+                    try {
+                        const locationData = JSON.parse(report.location);
+                        locationText = locationData.address || locationData.formatted_address || '';
+                    } catch (e) {
+                        locationText = report.location;
+                    }
+                } else if (report.location.address) {
+                    locationText = report.location.address;
+                } else if (report.location.formatted_address) {
+                    locationText = report.location.formatted_address;
+                }
+            }
+            document.getElementById('location').value = locationText;
+            document.getElementById('message').value = report.message || '';
+
+            // Response Information
+            document.getElementById('response_time').value = report.response_time || '60 minutes';
+            document.getElementById('emergency_color').value = report.emergency_color || '#808080';
+            document.getElementById('color_hex').value = report.emergency_color || '#808080';
+            document.getElementById('emergency_icon').value = report.emergency_icon || '⚠️';
+
+            // Additional Information
+            document.getElementById('ai_analysis').value = report.ai_analysis || '';
+            document.getElementById('recommendations').value = (report.recommendations || []).join('\n');
+        }
+
+        // Setup color picker
+        function setupColorPicker() {
+            const colorPicker = document.getElementById('emergency_color');
+            const colorHex = document.getElementById('color_hex');
+            
+            colorPicker.addEventListener('input', function() {
+                colorHex.value = this.value;
+            });
+            
+            colorHex.addEventListener('input', function() {
+                if (this.value.match(/^#[0-9A-F]{6}$/i)) {
+                    colorPicker.value = this.value;
+                }
+            });
+        }
+
+        // Save changes
+        document.getElementById('saveBtn').addEventListener('click', async function() {
+            try {
+                const form = document.getElementById('reportEditForm');
+                const formData = new FormData(form);
+                
+                // Prepare update data
+                const updateData = {
+                    type: formData.get('type'),
+                    status: formData.get('status'),
+                    priority: parseInt(formData.get('priority')),
+                    severity: formData.get('severity'),
+                    reporter_name: formData.get('reporter_name'),
+                    reporter_uid: formData.get('reporter_uid'),
+                    message: formData.get('message'),
+                    response_time: formData.get('response_time'),
+                    emergency_color: formData.get('emergency_color'),
+                    emergency_icon: formData.get('emergency_icon'),
+                    ai_analysis: formData.get('ai_analysis'),
+                    recommendations: formData.get('recommendations').split('\n').filter(r => r.trim()),
+                    last_update: new Date().toISOString()
+                };
+
+                // Handle location data
+                const locationText = formData.get('location');
+                if (locationText) {
+                    updateData.location = {
+                        address: locationText,
+                        formatted_address: locationText
+                    };
+                }
+
+                console.log('💾 Saving report changes:', updateData);
+
+                // Update report
+                const { error } = await window.emergencySystem.supabase
+                    .from('reports')
+                    .update(updateData)
+                    .eq('id', reportId);
+
+                if (error) throw error;
+
+                showSuccess('Report updated successfully');
+                
+                // Redirect back to admin after a short delay
+                setTimeout(() => {
+                    window.location.href = 'admin.html';
+                }, 1500);
+
+            } catch (error) {
+                console.error('❌ Error saving report:', error);
+                showError('Failed to save changes: ' + error.message);
+            }
+        });
+
+        // Utility functions
+        function showError(message) {
+            if (window.emergencySystem && window.emergencySystem.showError) {
+                window.emergencySystem.showError(message);
+            } else {
+                alert('Error: ' + message);
+            }
+        }
+
+        function showSuccess(message) {
+            if (window.emergencySystem && window.emergencySystem.showSuccess) {
+                window.emergencySystem.showSuccess(message);
+            } else {
+                alert('Success: ' + message);
+            }
+        }
+
+        // Logout function
+        async function logout() {
+            try {
+                await window.emergencySystem.signOut();
+                window.location.href = 'login.html';
+            } catch (error) {
+                console.error('Logout error:', error);
+            }
+        }
+    </script>
+</body>
+</html>

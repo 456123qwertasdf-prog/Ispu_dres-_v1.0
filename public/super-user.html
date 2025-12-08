@@ -1,0 +1,791 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Super User Dashboard - LSPU Emergency Response System</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/system-status.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <style>
+        /* Notification Toast Animations */
+        @keyframes slideIn {
+            from {
+                transform: translateX(400px);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        @keyframes slideOut {
+            from {
+                transform: translateX(0);
+                opacity: 1;
+            }
+            to {
+                transform: translateX(400px);
+                opacity: 0;
+            }
+        }
+
+        /* Super User Theme - Matching Admin Colors */
+        .su-nav {
+            background: #020617;
+            color: white;
+            padding: 0.75rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 1rem;
+            box-shadow: 0 4px 12px rgba(15,23,42,0.45);
+            position: sticky;
+            top: 0;
+            z-index: 40;
+        }
+        .su-nav-title {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-weight: 600;
+        }
+        .su-nav-links {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            font-size: 0.9rem;
+        }
+        .su-nav-link {
+            color: rgba(248,250,252,0.85);
+            text-decoration: none;
+            padding: 0.35rem 0.75rem;
+            border-radius: 9999px;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+        }
+        .su-nav-link:hover {
+            background: rgba(148,163,184,0.25);
+        }
+        .su-nav-link.active {
+            background: linear-gradient(135deg, #3b82f6, #2563eb);
+            color: white;
+        }
+        .su-nav-user {
+            font-size: 0.8rem;
+            opacity: 0.85;
+        }
+
+        .super-user-container {
+            background: #f8f9fa;
+            min-height: 100vh;
+        }
+        
+        .super-user-header {
+            background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+            color: white;
+            padding: 2rem;
+            border-radius: 0 0 24px 24px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+            margin-bottom: 2rem;
+        }
+        
+        .super-user-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+            color: white;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            box-shadow: 0 4px 6px rgba(59, 130, 246, 0.4);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+        }
+        
+        .broadcast-card {
+            background: white;
+            border-radius: 16px;
+            padding: 2rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            margin-bottom: 2rem;
+            border: 2px solid #e5e7eb;
+        }
+
+        .broadcast-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1.5rem;
+            align-items: stretch;
+        }
+        
+        .broadcast-row .broadcast-quick {
+            flex: 1 1 35%;
+        }
+        
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.6);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10000;
+            backdrop-filter: blur(4px);
+        }
+        
+        .modal.hidden {
+            display: none;
+        }
+        
+        .modal-content {
+            background: white;
+            border-radius: 16px;
+            padding: 2rem;
+            max-width: 600px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 25px rgba(0, 0, 0, 0.3);
+        }
+        
+        .btn-group {
+            display: flex;
+            gap: 1rem;
+            margin-top: 1.5rem;
+        }
+        
+        .btn {
+            flex: 1;
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+            transform: translateY(-2px);
+        }
+        
+        .btn-secondary {
+            background: #e5e7eb;
+            color: #374151;
+        }
+        
+        .btn-secondary:hover {
+            background: #d1d5db;
+        }
+        
+        .stats-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-top: 1.5rem;
+        }
+        
+        .stat-item {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 1rem;
+            border-radius: 8px;
+            text-align: center;
+        }
+        
+        .stat-number {
+            font-size: 2rem;
+            font-weight: 700;
+            color: white;
+        }
+        
+        .stat-label {
+            font-size: 0.875rem;
+            color: rgba(255, 255, 255, 0.9);
+            margin-top: 0.5rem;
+        }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/supabase@2"></script>
+    <script src="js/supabase.js"></script>
+</head>
+<body>
+    <nav class="su-nav">
+        <div class="su-nav-title">
+            <i class="bi bi-shield-check"></i>
+            <span>LSPU Emergency • Super User</span>
+        </div>
+        <div class="su-nav-links">
+            <a href="super-user.html" class="su-nav-link active">
+                <i class="bi bi-grid-fill"></i>
+                Dashboard
+            </a>
+            <a href="super-user-reports.html" class="su-nav-link">
+                <i class="bi bi-clipboard-data"></i>
+                Recent Reports
+            </a>
+            <a href="super-user-sos-alerts.html" class="su-nav-link">
+                <i class="bi bi-exclamation-triangle-fill"></i>
+                SOS Alerts
+            </a>
+            <a href="super-user-early-warning.html" class="su-nav-link">
+                <i class="bi bi-shield-exclamation"></i>
+                Early Warning
+            </a>
+            <a href="super-user-map.html" class="su-nav-link">
+                <i class="bi bi-map"></i>
+                Map View
+            </a>
+            <a href="super-user-evacuation.html" class="su-nav-link">
+                <i class="bi bi-shield-check"></i>
+                Evacuation Guide
+            </a>
+            <a href="super-user-announcements.html" class="su-nav-link">
+                <i class="bi bi-megaphone-fill"></i>
+                General Announcements
+            </a>
+            <button type="button" onclick="showLogoutConfirm()" class="su-nav-link" style="border:none;background:none;cursor:pointer;">
+                <i class="bi bi-box-arrow-right"></i>
+                Logout
+            </button>
+        </div>
+    </nav>
+    <div class="super-user-container">
+        <!-- Header -->
+        <div class="super-user-header">
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+                <div>
+                    <h1 style="margin: 0; font-size: 2rem; display: flex; align-items: center; gap: 1rem;">
+                        <i class="bi bi-shield-check"></i>
+                        Super User Dashboard
+                        <span class="super-user-badge">
+                            <i class="bi bi-star-fill"></i> Premium Access
+                        </span>
+                    </h1>
+                    <p style="margin: 0.5rem 0 0 0; opacity: 0.9;">System-wide control and citizen communication</p>
+                </div>
+                <div style="display: flex; gap: 1rem; align-items: center;">
+                    <div style="text-align: right;">
+                        <div style="font-size: 0.875rem; opacity: 0.8;">Logged in as</div>
+                        <div style="font-weight: 600;" id="userEmail">Super User</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Quick Stats -->
+            <div class="stats-row">
+                <div class="stat-item">
+                    <div class="stat-number" id="totalCitizens">0</div>
+                    <div class="stat-label">Total Citizens</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number" id="activeReports">0</div>
+                    <div class="stat-label">Active Reports</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number" id="totalUsers">0</div>
+                    <div class="stat-label">Total Users</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div style="max-width: 1200px; margin: 0 auto; padding: 0 2rem 2rem;">
+            <!-- Quick One-Tap Alerts: FIRST thing on the dashboard -->
+            <div class="broadcast-row" style="margin-bottom: 1.5rem;">
+                <div class="broadcast-card broadcast-quick" style="flex: 1 1 100%;">
+                    <h2 style="margin: 0 0 1rem 0; color: #111827; display: flex; align-items: center; gap: 0.75rem;">
+                        <i class="bi bi-lightning-charge-fill" style="font-size: 2rem; color: #f59e0b;"></i>
+                        Quick One-Tap Alerts
+                    </h2>
+                    <p style="color: #6b7280; margin-bottom: 1.25rem;">
+                        Send predefined emergency alerts and important announcements with a single tap, and monitor which critical alerts are still active.
+                    </p>
+                    
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 0.75rem;">
+                        <button type="button" class="btn btn-primary" style="background: linear-gradient(135deg, #ef4444 0%, #b91c1c 100%);" onclick="sendQuickNotification('fire')">
+                            <i class="bi bi-fire"></i> Fire Emergency Alert
+                        </button>
+                        <button type="button" class="btn btn-primary" style="background: linear-gradient(135deg, #f97316 0%, #b91c1c 100%);" onclick="sendQuickNotification('earthquake')">
+                            <i class="bi bi-exclamation-triangle-fill"></i> Earthquake Safety Alert
+                        </button>
+                    </div>
+
+                    <div style="margin-top:1.5rem;padding-top:1rem;border-top:1px solid #e5e7eb;">
+                        <h3 style="margin:0 0 0.5rem 0;font-size:0.9rem;font-weight:600;color:#374151;display:flex;align-items:center;gap:0.5rem;">
+                            <i class="bi bi-activity" style="color:#ef4444;"></i>
+                            Active Critical Alerts
+                        </h3>
+                        <div id="activeAlertsContainer" style="font-size:0.85rem;color:#4b5563;"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- Logout Modal -->
+    <div id="logoutModal" class="modal hidden">
+        <div class="modal-content">
+            <h2 style="margin: 0 0 1rem 0;">Confirm Logout</h2>
+            <p>Are you sure you want to logout?</p>
+            <div class="btn-group">
+                <button class="btn btn-secondary" onclick="closeLogoutModal()">Cancel</button>
+                <button class="btn btn-primary" onclick="confirmLogout()">Logout</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Initialize
+        document.addEventListener('DOMContentLoaded', async function() {
+            try {
+                await window.emergencySystem.initialize();
+                
+                // Check if user is super_user
+                const userRole = window.emergencySystem.user?.user_metadata?.role;
+                if (!window.emergencySystem.user || userRole !== 'super_user') {
+                    console.log('User not super_user, redirecting...');
+                    if (userRole === 'admin') {
+                        window.location.href = 'admin.html';
+                    } else {
+                        window.location.href = 'login.html';
+                    }
+                    return;
+                }
+                
+                // Set user email
+                if (window.emergencySystem.user?.email) {
+                    document.getElementById('userEmail').textContent = window.emergencySystem.user.email;
+                }
+                
+                // Load stats
+                await loadStats();
+                await loadActiveAlerts();
+                
+                // Set up real-time notifications
+                await setupRealTimeNotifications();
+                
+                console.log('✅ Super User dashboard initialized');
+            } catch (error) {
+                console.error('❌ Error initializing super user dashboard:', error);
+            }
+        });
+
+        // Set up real-time notifications
+        async function setupRealTimeNotifications() {
+            try {
+                // Subscribe to notifications table for super user
+                const notificationsChannel = window.emergencySystem.supabase
+                    .channel('super-user-notifications')
+                    .on('postgres_changes', {
+                        event: 'INSERT',
+                        schema: 'public',
+                        table: 'notifications',
+                        filter: `target_type=eq.admin`
+                    }, (payload) => {
+                        console.log('🔔 New notification received:', payload.new);
+                        if (payload.new) {
+                            showNotificationToast(payload.new);
+                            syncNotifications();
+                        }
+                    })
+                    .subscribe();
+
+                // Subscribe to announcements table
+                const announcementsChannel = window.emergencySystem.supabase
+                    .channel('super-user-announcements')
+                    .on('postgres_changes', {
+                        event: '*',
+                        schema: 'public',
+                        table: 'announcements'
+                    }, (payload) => {
+                        console.log('📢 Announcement updated:', payload);
+                        loadActiveAlerts();
+                    })
+                    .subscribe();
+
+                console.log('✅ Real-time notifications enabled for super user dashboard');
+            } catch (error) {
+                console.error('❌ Failed to setup real-time notifications:', error);
+            }
+        }
+
+        // Sync notifications for current user
+        async function syncNotifications() {
+            try {
+                const { data, error } = await window.emergencySystem.supabase.functions.invoke(
+                    'sync-notifications',
+                    {
+                        body: { 
+                            limit: 20, 
+                            unreadOnly: false 
+                        }
+                    }
+                );
+
+                if (error) throw error;
+                
+                console.log('✅ Synced notifications:', data);
+                return data;
+            } catch (error) {
+                console.error('❌ Failed to sync notifications:', error);
+                return null;
+            }
+        }
+
+        // Show notification toast
+        function showNotificationToast(notification) {
+            const toast = document.createElement('div');
+            toast.style.cssText = `
+                position: fixed;
+                top: 80px;
+                right: 20px;
+                background: white;
+                border-left: 4px solid #dc3545;
+                padding: 15px 20px;
+                border-radius: 8px;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+                max-width: 400px;
+                z-index: 10000;
+                animation: slideIn 0.3s ease-out;
+            `;
+            
+            toast.innerHTML = `
+                <div style="display: flex; align-items: start; gap: 10px;">
+                    <div style="font-size: 24px;">🔔</div>
+                    <div style="flex: 1;">
+                        <div style="font-weight: 600; margin-bottom: 5px;">${notification.title || 'New Notification'}</div>
+                        <div style="font-size: 14px; color: #666;">${notification.message || ''}</div>
+                    </div>
+                    <button onclick="this.parentElement.parentElement.remove()" style="border: none; background: none; cursor: pointer; font-size: 20px; color: #999;">&times;</button>
+                </div>
+            `;
+            
+            document.body.appendChild(toast);
+            
+            setTimeout(() => {
+                if (toast.parentElement) {
+                    toast.style.animation = 'slideOut 0.3s ease-out';
+                    setTimeout(() => toast.remove(), 300);
+                }
+            }, 5000);
+        }
+
+        // Load statistics
+        async function loadStats() {
+            try {
+                // Get all users
+                const { data: users, error: usersError } = await window.emergencySystem.supabase.functions.invoke('get-users', {
+                    body: {}
+                });
+                
+                if (!usersError && users?.users) {
+                    const totalUsers = users.users.length;
+                    const citizens = users.users.filter(u => 
+                        (u.role || u.user_metadata?.role || 'citizen') === 'citizen'
+                    ).length;
+                    
+                    document.getElementById('totalUsers').textContent = totalUsers;
+                    document.getElementById('totalCitizens').textContent = citizens;
+                }
+                
+                // Get active reports (for stats only)
+                const reports = await window.emergencySystem.getReports();
+                if (reports) {
+                    const activeReports = reports.filter(r => r.status !== 'resolved' && r.status !== 'closed');
+                    document.getElementById('activeReports').textContent = activeReports.length;
+                }
+            } catch (error) {
+                console.error('Error loading stats:', error);
+            }
+        }
+
+        // Common helper to create an announcement that is visible
+        // to all citizen users (web + mobile) via the announcements system.
+        async function sendNotificationsToAllCitizens({ title, message, alertType, buildingName, quickTemplate = null }) {
+            try {
+                const currentUser = window.emergencySystem.user;
+
+                const announcementType = mapAlertTypeToAnnouncementType(alertType);
+                const priority = mapAlertTypeToPriority(alertType);
+
+                const announcementPayload = {
+                    title,
+                    message,
+                    type: announcementType,
+                    priority,
+                    // IMPORTANT: target_audience is constrained in the database.
+                    // Allowed values (based on announcements.html and edge function):
+                    // - all, students, faculty, staff, responders
+                    // For super-user broadcasts we always target everyone.
+                    target_audience: 'all',
+                    status: 'active'
+                };
+
+                if (currentUser?.id) {
+                    announcementPayload.created_by = currentUser.id;
+                }
+
+                const { data: createdAnnouncement, error: announcementError } = await window.emergencySystem.supabase
+                    .from('announcements')
+                    .insert([announcementPayload])
+                    .select()
+                    .single();
+
+                if (announcementError) {
+                    console.error('Error creating announcement:', announcementError);
+                    throw announcementError;
+                }
+                
+                console.log('✅ Super user announcement created:', createdAnnouncement);
+                
+                // Send notifications via Edge Function
+                if (createdAnnouncement && createdAnnouncement.id) {
+                    try {
+                        const { data: sessionData } = await window.emergencySystem.supabase.auth.getSession();
+                        const token = sessionData?.session?.access_token;
+                        
+                        // Use hardcoded Supabase URL and key (same as in supabase.js)
+                        const supabaseUrl = 'https://hmolyqzbvxxliemclrld.supabase.co';
+                        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imhtb2x5cXpidnh4bGllbWNscmxkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjAyNDY5NzAsImV4cCI6MjA3NTgyMjk3MH0.G2AOT-8zZ5sk8qGQUBifFqq5ww2W7Hxvtux0tlQ0Q-4';
+                        
+                        const notifyResponse = await fetch(`${supabaseUrl}/functions/v1/announcement-notify`, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Authorization': `Bearer ${token || supabaseKey}`,
+                                'apikey': supabaseKey
+                            },
+                            body: JSON.stringify({ announcementId: createdAnnouncement.id })
+                        });
+                        
+                        if (notifyResponse.ok) {
+                            const notifyResult = await notifyResponse.json();
+                            console.log('✅ Notifications sent:', notifyResult);
+                        } else {
+                            const errorText = await notifyResponse.text();
+                            console.warn('⚠️ Failed to send notifications:', notifyResponse.status, errorText);
+                        }
+                    } catch (notifyError) {
+                        console.warn('⚠️ Error calling announcement-notify:', notifyError);
+                        // Don't fail the announcement creation if notification fails
+                    }
+                }
+                
+                window.emergencySystem.showSuccess('✅ Announcement created and sent to all users!');
+               
+                // Reload stats and active alerts
+                await loadStats();
+                await loadActiveAlerts();
+                
+            } catch (error) {
+                console.error('Error sending broadcast:', error);
+                window.emergencySystem.showError('Failed to send broadcast: ' + (error.message || 'Unknown error'));
+            }
+        }
+
+        // Quick one-tap alerts (no form)
+        async function sendQuickNotification(templateKey) {
+            const buildingName = 'all_buildings';
+            
+            const templates = {
+                fire: {
+                    title: 'Fire Emergency Alert',
+                    message: '🔥 FIRE EMERGENCY: A fire-related hazard has been reported on campus. Stay calm, move away from the affected area, and follow instructions from emergency personnel and campus authorities.',
+                    alertType: 'fire'
+                },
+                earthquake: {
+                    title: 'Earthquake Safety Alert',
+                    message: '⚠️ EARTHQUAKE ALERT: If you feel strong shaking, DROP, COVER, and HOLD ON. After the shaking stops, move calmly to an open, safe area and wait for instructions from authorities.',
+                    alertType: 'earthquake'
+                }
+            };
+            
+            const template = templates[templateKey];
+            if (!template) return;
+            
+            const confirmed = window.confirm(`Send this alert to all users?\n\n"${template.title}"`);
+            if (!confirmed) return;
+            
+            await sendNotificationsToAllCitizens({
+                title: template.title,
+                message: template.message,
+                alertType: template.alertType,
+                buildingName,
+                quickTemplate: templateKey
+            });
+        }
+
+        // Load critical alerts for super user visibility (active + recently resolved)
+        async function loadActiveAlerts() {
+            try {
+                const container = document.getElementById('activeAlertsContainer');
+                if (!container) return;
+
+                const { data, error } = await window.emergencySystem.supabase
+                    .from('announcements')
+                    .select('*')
+                    .order('created_at', { ascending: false })
+                    .limit(20);
+
+                if (error) {
+                    console.warn('Error loading active alerts:', error);
+                    container.innerHTML = '<p style="color:#6b7280;font-size:0.9rem;">Failed to load active alerts.</p>';
+                    return;
+                }
+
+                const critical = (data || []).filter(a => a.type === 'emergency' || a.priority === 'critical');
+
+                if (!critical.length) {
+                    container.innerHTML = '<p style="color:#6b7280;font-size:0.9rem;">No critical alerts at this time.</p>';
+                    return;
+                }
+
+                container.innerHTML = critical.map(a => `
+                    <div data-alert-id="${a.id}" style="display:flex;justify-content:space-between;align-items:flex-start;padding:0.5rem 0;border-bottom:1px solid #e5e7eb;gap:0.75rem;">
+                        <div style="flex:1;min-width:0;">
+                            <div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.25rem;">
+                                <span style="font-size:1.2rem;">${getAnnouncementIcon(a.type)}</span>
+                                <strong style="font-size:0.9rem;color:#111827;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${a.title}</strong>
+                            </div>
+                            <div style="font-size:0.75rem;color:#6b7280;">
+                                Started: ${new Date(a.created_at).toLocaleString()}
+                                ${a.status && a.status !== 'active' ? `<span style="margin-left:0.5rem;padding:0.1rem 0.5rem;border-radius:9999px;background:#e5e7eb;color:#4b5563;font-size:0.7rem;text-transform:uppercase;">${a.status === 'expired' ? 'EXPIRED' : 'RESOLVED'}</span>` : ''}
+                            </div>
+                        </div>
+                        ${a.status === 'active'
+                            ? `<button
+                                onclick="resolveAlert('${a.id}')"
+                                style="white-space:nowrap;font-size:0.75rem;padding:0.35rem 0.75rem;border-radius:9999px;border:none;background:#16a34a;color:white;cursor:pointer;">
+                                Mark as Resolved
+                               </button>`
+                            : `<span style="white-space:nowrap;font-size:0.75rem;padding:0.35rem 0.75rem;border-radius:9999px;border:1px solid #d1d5db;background:#f9fafb;color:#6b7280;">
+                                Done
+                               </span>`
+                        }
+                    </div>
+                `).join('');
+            } catch (e) {
+                console.warn('loadActiveAlerts error:', e);
+            }
+        }
+
+        // Mark an announcement as resolved (status -> inactive)
+        async function resolveAlert(announcementId) {
+            if (!announcementId) return;
+            const confirmStop = window.confirm('Mark this alert as resolved for all users?');
+            if (!confirmStop) return;
+
+            try {
+                const { error } = await window.emergencySystem.supabase
+                    .from('announcements')
+                    // Use returning: 'minimal' so PostgREST does not try to
+                    // SELECT the updated row (which can be blocked by RLS
+                    // once status changes from active -> inactive).
+                    .update({ status: 'inactive' }, { returning: 'minimal' })
+                    .eq('id', announcementId);
+
+                if (error) {
+                    console.error('Failed to resolve alert:', error);
+                    window.emergencySystem.showError('Failed to resolve alert');
+                    return;
+                }
+
+                window.emergencySystem.showSuccess('Alert marked as resolved.');
+                await loadActiveAlerts();
+            } catch (e) {
+                console.error('resolveAlert exception:', e);
+                window.emergencySystem.showError('Failed to resolve alert');
+            }
+        }
+
+        // Logout functions
+        function showLogoutConfirm() {
+            document.getElementById('logoutModal').classList.remove('hidden');
+        }
+
+        function closeLogoutModal() {
+            document.getElementById('logoutModal').classList.add('hidden');
+        }
+
+        async function confirmLogout() {
+            try {
+                await window.emergencySystem.signOut();
+                window.location.href = 'login.html';
+            } catch (error) {
+                console.error('Logout error:', error);
+                window.emergencySystem.showError('Failed to logout');
+            }
+        }
+        
+        // Get announcement icon (mirror of user.html for active alerts list)
+        function getAnnouncementIcon(type) {
+            const icons = {
+                'emergency': '🚨',
+                'weather': '🌤️',
+                'general': '📢',
+                'maintenance': '🔧',
+                'safety': '🛡️'
+            };
+            return icons[type] || '📢';
+        }
+
+        // Map alert types from this dashboard to announcement types
+        // used by the announcements system (web + mobile).
+        function mapAlertTypeToAnnouncementType(alertType) {
+            switch (alertType) {
+                case 'fire':
+                case 'earthquake':
+                case 'lockdown':
+                    return 'emergency';
+                case 'storm':
+                case 'extreme_heat':
+                    return 'weather';
+                case 'broken_trees':
+                case 'maintenance':
+                    return 'maintenance';
+                case 'safety':
+                    return 'safety';
+                case 'notification':
+                default:
+                    return 'general';
+            }
+        }
+
+        // Map alert types to announcement priority levels so they
+        // render correctly in citizen UIs.
+        function mapAlertTypeToPriority(alertType) {
+            switch (alertType) {
+                case 'fire':
+                case 'earthquake':
+                case 'lockdown':
+                    return 'critical';
+                case 'storm':
+                case 'extreme_heat':
+                    return 'high';
+                case 'broken_trees':
+                case 'maintenance':
+                    return 'medium';
+                case 'safety':
+                case 'notification':
+                default:
+                    return 'medium';
+            }
+        }
+    </script>
+</body>
+</html>
+

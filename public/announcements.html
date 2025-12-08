@@ -1,0 +1,2037 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Announcements Management - LSPU Emergency Response System</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/system-status.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/supabase@2"></script>
+    <script src="js/supabase.js"></script>
+    <style>
+        .announcement-card {
+            border-left: 5px solid;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            border-radius: 16px;
+            overflow: hidden;
+            position: relative;
+            background: white;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.06);
+        }
+        
+        .announcement-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 100%;
+            background: linear-gradient(135deg, transparent 0%, rgba(255, 255, 255, 0.1) 100%);
+            opacity: 0;
+            transition: opacity 0.4s ease;
+            pointer-events: none;
+        }
+        
+        .announcement-card:hover::before {
+            opacity: 1;
+        }
+        
+        .announcement-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 
+                        0 10px 10px -5px rgba(0, 0, 0, 0.04),
+                        0 0 0 1px rgba(0, 0, 0, 0.05);
+        }
+        
+        .announcement-card.emergency {
+            border-left-color: #dc2626;
+            background: linear-gradient(135deg, #ffffff 0%, #fef2f2 50%, #ffffff 100%);
+        }
+        
+        .announcement-card.emergency:hover {
+            box-shadow: 0 20px 25px -5px rgba(220, 38, 38, 0.15), 
+                        0 10px 10px -5px rgba(220, 38, 38, 0.1);
+        }
+        
+        .announcement-card.weather {
+            border-left-color: #3b82f6;
+            background: linear-gradient(135deg, #ffffff 0%, #eff6ff 50%, #ffffff 100%);
+        }
+        
+        .announcement-card.weather:hover {
+            box-shadow: 0 20px 25px -5px rgba(59, 130, 246, 0.15), 
+                        0 10px 10px -5px rgba(59, 130, 246, 0.1);
+        }
+        
+        .announcement-card.general {
+            border-left-color: #10b981;
+            background: linear-gradient(135deg, #ffffff 0%, #f0fdf4 50%, #ffffff 100%);
+        }
+        
+        .announcement-card.general:hover {
+            box-shadow: 0 20px 25px -5px rgba(16, 185, 129, 0.15), 
+                        0 10px 10px -5px rgba(16, 185, 129, 0.1);
+        }
+        
+        .announcement-card.maintenance {
+            border-left-color: #f59e0b;
+            background: linear-gradient(135deg, #ffffff 0%, #fffbeb 50%, #ffffff 100%);
+        }
+        
+        .announcement-card.maintenance:hover {
+            box-shadow: 0 20px 25px -5px rgba(245, 158, 11, 0.15), 
+                        0 10px 10px -5px rgba(245, 158, 11, 0.1);
+        }
+        
+        .announcement-card.safety {
+            border-left-color: #8b5cf6;
+            background: linear-gradient(135deg, #ffffff 0%, #faf5ff 50%, #ffffff 100%);
+        }
+        
+        .announcement-card.safety:hover {
+            box-shadow: 0 20px 25px -5px rgba(139, 92, 246, 0.15), 
+                        0 10px 10px -5px rgba(139, 92, 246, 0.1);
+        }
+        .priority-badge {
+            font-size: 0.75rem;
+            padding: 0.375rem 0.75rem;
+            border-radius: 20px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.25rem;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            transition: all 0.2s ease;
+        }
+        
+        .priority-badge:hover {
+            transform: scale(1.05);
+        }
+        
+        .priority-critical {
+            background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+            color: white;
+        }
+        .priority-high {
+            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+            color: white;
+        }
+        .priority-medium {
+            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+            color: white;
+        }
+        .priority-low {
+            background: linear-gradient(135deg, #6b7280 0%, #4b5563 100%);
+            color: white;
+        }
+        
+        .status-badge {
+            font-size: 0.75rem;
+            padding: 0.375rem 0.75rem;
+            border-radius: 20px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.25rem;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            transition: all 0.2s ease;
+        }
+        
+        .status-badge:hover {
+            transform: scale(1.05);
+        }
+        
+        /* Modal Styles */
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        
+        .modal.hidden {
+            display: none;
+        }
+        
+        .modal-content {
+            background: white;
+            border-radius: 12px;
+            padding: 0;
+            max-width: 600px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        }
+        
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1.5rem;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        
+        .modal-header h2 {
+            margin: 0;
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #111827;
+        }
+        
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: #6b7280;
+            padding: 0.5rem;
+            border-radius: 0.375rem;
+            transition: all 0.2s;
+        }
+        
+        .modal-close:hover {
+            background-color: #f3f4f6;
+            color: #374151;
+        }
+        
+        .modal form {
+            padding: 1.5rem;
+        }
+        .status-active {
+            background-color: #10b981;
+            color: white;
+        }
+        .status-inactive {
+            background-color: #6b7280;
+            color: white;
+        }
+        .status-expired {
+            background-color: #dc2626;
+            color: white;
+        }
+        .create-announcement-btn {
+            background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+            border: none;
+            color: white;
+            padding: 1rem 2rem;
+            border-radius: 12px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
+        }
+        .create-announcement-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(59, 130, 246, 0.4);
+        }
+        .announcement-actions {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+        
+        .action-btn {
+            padding: 0.625rem;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 40px;
+            height: 40px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .action-btn::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.3);
+            transform: translate(-50%, -50%);
+            transition: width 0.3s ease, height 0.3s ease;
+        }
+        
+        .action-btn:hover::before {
+            width: 100%;
+            height: 100%;
+        }
+        
+        .action-btn:hover {
+            transform: translateY(-2px) scale(1.05);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+        
+        .action-btn:active {
+            transform: translateY(0) scale(0.98);
+        }
+        
+        .action-btn i {
+            position: relative;
+            z-index: 1;
+            font-size: 1.1rem;
+        }
+        
+        .edit-btn {
+            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+            color: white;
+        }
+        .edit-btn:hover {
+            background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+        }
+        
+        .delete-btn {
+            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+            color: white;
+        }
+        .delete-btn:hover {
+            background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+        }
+        
+        .toggle-btn {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white;
+        }
+        .toggle-btn:hover {
+            background: linear-gradient(135deg, #059669 0%, #047857 100%);
+        }
+        .toggle-btn.inactive {
+            background: linear-gradient(135deg, #6b7280 0%, #4b5563 100%);
+        }
+        .toggle-btn.inactive:hover {
+            background: linear-gradient(135deg, #4b5563 0%, #374151 100%);
+        }
+        
+        /* Modern Stat Cards */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        
+        .stat-card {
+            background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+            border-radius: 16px;
+            padding: 1.75rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 
+                        0 2px 4px -1px rgba(0, 0, 0, 0.06),
+                        0 0 0 1px rgba(0, 0, 0, 0.05);
+            border: none;
+            display: flex;
+            align-items: center;
+            gap: 1.25rem;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+            cursor: pointer;
+        }
+        
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.8), transparent);
+            opacity: 0;
+            transition: opacity 0.4s ease;
+        }
+        
+        .stat-card:hover::before {
+            opacity: 1;
+        }
+        
+        .stat-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 
+                        0 10px 10px -5px rgba(0, 0, 0, 0.04),
+                        0 0 0 1px rgba(59, 130, 246, 0.1);
+        }
+        
+        .stat-card::after {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255, 255, 255, 0.1) 0%, transparent 70%);
+            opacity: 0;
+            transition: opacity 0.4s ease;
+        }
+        
+        .stat-card:hover::after {
+            opacity: 1;
+        }
+        
+        .stat-icon {
+            width: 72px;
+            height: 72px;
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+            color: white;
+            flex-shrink: 0;
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .stat-icon::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: linear-gradient(45deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+            transform: rotate(45deg);
+            transition: all 0.6s ease;
+        }
+        
+        .stat-card:hover .stat-icon::before {
+            animation: shine 0.6s ease;
+        }
+        
+        .stat-card:hover .stat-icon {
+            transform: scale(1.1) rotate(5deg);
+            box-shadow: 0 12px 24px rgba(0, 0, 0, 0.2);
+        }
+        
+        @keyframes shine {
+            0% { transform: translateX(-100%) translateY(-100%) rotate(45deg); }
+            100% { transform: translateX(100%) translateY(100%) rotate(45deg); }
+        }
+        
+        .stat-icon i {
+            font-size: 28px;
+            position: relative;
+            z-index: 1;
+        }
+        
+        .stat-content {
+            flex: 1;
+            min-width: 0;
+        }
+        
+        .stat-number {
+            font-size: 2.75rem;
+            font-weight: 800;
+            line-height: 1;
+            margin-bottom: 0.5rem;
+            background: linear-gradient(135deg, #1f2937 0%, #111827 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            letter-spacing: -0.02em;
+            transition: all 0.3s ease;
+        }
+        
+        .stat-card:hover .stat-number {
+            transform: scale(1.05);
+        }
+        
+        .stat-label {
+            font-size: 0.9375rem;
+            font-weight: 600;
+            color: #374151;
+            margin-bottom: 0.375rem;
+            letter-spacing: 0.01em;
+        }
+        
+        .stat-trend {
+            font-size: 0.8125rem;
+            font-weight: 500;
+            color: #6b7280;
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+        }
+        
+        .stat-trend::before {
+            content: '';
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: currentColor;
+            opacity: 0.6;
+        }
+        
+        .stat-trend.positive {
+            color: #10b981;
+        }
+        
+        .stat-trend.negative {
+            color: #ef4444;
+        }
+        
+        /* Specific card color enhancements */
+        .stat-card:nth-child(1) .stat-icon {
+            background: linear-gradient(135deg, #dc2626 0%, #b91c1c 50%, #991b1b 100%);
+        }
+        
+        .stat-card:nth-child(2) .stat-icon {
+            background: linear-gradient(135deg, #10b981 0%, #059669 50%, #047857 100%);
+        }
+        
+        .stat-card:nth-child(3) .stat-icon {
+            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 50%, #1d4ed8 100%);
+        }
+        
+        .stat-card:nth-child(4) .stat-icon {
+            background: linear-gradient(135deg, #f59e0b 0%, #d97706 50%, #b45309 100%);
+        }
+        
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .stats-grid {
+                grid-template-columns: 1fr;
+                gap: 1rem;
+            }
+            
+            .stat-card {
+                padding: 1.5rem;
+            }
+            
+            .stat-icon {
+                width: 64px;
+                height: 64px;
+                font-size: 24px;
+            }
+            
+            .stat-number {
+                font-size: 2.25rem;
+            }
+        }
+        
+        /* Reduce height of Announcements Management card */
+        .announcements-header-card .card-body {
+            padding: 16px 20px;
+        }
+        
+        .announcements-header-card .card-body .flex {
+            margin-bottom: 0;
+        }
+        
+        /* Quick Action Buttons */
+        .quick-actions-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.75rem;
+            margin-top: 1rem;
+        }
+        
+        .quick-action-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.625rem 1rem;
+            border-radius: 8px;
+            font-size: 0.875rem;
+            font-weight: 500;
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        
+        .quick-action-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+        }
+        
+        .quick-action-btn.emergency {
+            background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+            color: white;
+        }
+        
+        .quick-action-btn.weather {
+            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+            color: white;
+        }
+        
+        .quick-action-btn.general {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white;
+        }
+        
+        .quick-action-btn.maintenance {
+            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+            color: white;
+        }
+        
+        .quick-action-btn.safety {
+            background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+            color: white;
+        }
+        
+        .quick-action-btn i {
+            font-size: 1rem;
+        }
+
+        /* Toast Notification Styles */
+        .toast-notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            min-width: 300px;
+            max-width: 500px;
+            padding: 1rem 1.5rem;
+            border-radius: 12px;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3), 0 8px 10px -6px rgba(0, 0, 0, 0.2);
+            z-index: 10002 !important; /* Above modals */
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            animation: slideInRight 0.3s ease, fadeOut 0.3s ease 2.7s forwards;
+            font-weight: 500;
+            font-size: 0.9375rem;
+            pointer-events: auto;
+        }
+
+        .toast-notification.success {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white;
+            border-left: 4px solid #047857;
+        }
+
+        .toast-notification.error {
+            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+            color: white;
+            border-left: 4px solid #b91c1c;
+        }
+
+        .toast-notification.info {
+            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+            color: white;
+            border-left: 4px solid #1d4ed8;
+        }
+
+        .toast-notification.warning {
+            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+            color: white;
+            border-left: 4px solid #b45309;
+        }
+
+        .toast-icon {
+            font-size: 1.5rem;
+            flex-shrink: 0;
+        }
+
+        .toast-message {
+            flex: 1;
+            line-height: 1.5;
+        }
+
+        .toast-close {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 1.25rem;
+            cursor: pointer;
+            padding: 0;
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0.8;
+            transition: opacity 0.2s;
+            flex-shrink: 0;
+        }
+
+        .toast-close:hover {
+            opacity: 1;
+        }
+
+        @keyframes slideInRight {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        @keyframes fadeOut {
+            from {
+                opacity: 1;
+                transform: translateX(0);
+            }
+            to {
+                opacity: 0;
+                transform: translateX(100%);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard-container">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <div class="sidebar-logo">
+                    <img src="images/udrrmo image.jpg" alt="UDRRMO Logo" 
+                         style="width: 50px; height: 50px; object-fit: contain; border-radius: 50%; border: 2px solid white; display: block;">
+                    <div class="logo-text">
+                        <h3>Kapiyu Admin</h3>
+                        <p>Emergency Response</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="system-status">
+                <div class="status-indicator">
+                    <span class="status-dot online"></span>
+                    <span>System Status: Online</span>
+                </div>
+            </div>
+
+            <nav class="sidebar-nav">
+                <a href="admin.html" class="nav-item">
+                    <i class="bi bi-house"></i> Dashboard
+                </a>
+                <a href="reports.html" class="nav-item">
+                    <i class="bi bi-file-text"></i> Reports
+                </a>
+                <a href="announcements.html" class="nav-item active">
+                    <i class="bi bi-megaphone"></i> Announcements
+                </a>
+                <a href="early-warning-dashboard.html" class="nav-item">
+                    <i class="bi bi-shield-exclamation"></i> Early Warning
+                </a>
+                <a href="map.html" class="nav-item">
+                    <i class="bi bi-map"></i> Map View
+                </a>
+                <a href="evacuation-guide.html" class="nav-item">
+                    <i class="bi bi-shield-check"></i> Evacuation Guide
+                </a>
+                <a href="archive.html" class="nav-item">
+                    <i class="bi bi-folder"></i> Archived
+                </a>
+                <a href="analytics.html" class="nav-item">
+                    <i class="bi bi-graph-up"></i> Analytics
+                </a>
+                <a href="user-management.html" class="nav-item">
+                    <i class="bi bi-people"></i> User Management
+                </a>
+                <a href="lsm-admin.html" class="nav-item">
+                    <i class="bi bi-journal-bookmark"></i> Learning Modules
+                </a>
+            </nav>
+            
+            <div class="sidebar-footer" style="margin-top: auto; padding: 1rem; border-top: 1px solid rgba(255, 255, 255, 0.1);">
+                <div class="user-info-card" style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1rem; padding: 0.75rem; background: rgba(255, 255, 255, 0.1); border-radius: 8px;">
+                    <div class="user-avatar" style="width: 40px; height: 40px; background: rgba(255, 255, 255, 0.2); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 1.125rem;">A</div>
+                    <div class="user-details">
+                        <h4 style="margin: 0; font-size: 0.875rem; font-weight: 600; color: white;">Admin User</h4>
+                        <p style="margin: 0; font-size: 0.75rem; color: rgba(255, 255, 255, 0.7);">Kapiyu Command</p>
+                    </div>
+                </div>
+                <button class="logout-btn" onclick="showLogoutConfirm()" style="width: 100%;padding: 0.75rem 1rem;background: rgba(239, 68, 68, 0.1);border: 1px solid rgba(239, 68, 68, 0.3);color: #fca5a5;border-radius: 8px;font-size: 0.875rem;font-weight: 500;cursor: pointer;transition: all 0.2s ease;display: flex;align-items: center;gap: 0.5rem;margin-left: 0px;">
+                    <i class="bi bi-box-arrow-right"></i> Logout
+                </button>
+            </div>
+        </div>
+
+        <style>
+            .logout-btn:hover {
+                background: #EF4444 !important;
+                border-color: #EF4444 !important;
+                color: white !important;
+            }
+            
+            .logout-btn:hover i {
+                color: white !important;
+            }
+            
+            /* Modern Header Card for Announcements Page */
+            .announcements-header-card {
+                border-radius: 16px;
+                box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 
+                            0 2px 4px -1px rgba(0, 0, 0, 0.06),
+                            0 0 0 1px rgba(0, 0, 0, 0.05);
+                border: 1px solid rgba(226, 232, 240, 0.8);
+                margin-bottom: 1.5rem;
+                overflow: hidden;
+                background: white;
+            }
+            
+            .announcements-header-card .card-header {
+                background: linear-gradient(135deg, #f8fafc 0%, #ffffff 100%);
+                border-bottom: 1px solid rgba(226, 232, 240, 0.8);
+                padding: 1.5rem 1.75rem;
+                position: relative;
+            }
+            
+            .announcements-header-card .card-header::after {
+                content: '';
+                position: absolute;
+                bottom: 0;
+                left: 0;
+                right: 0;
+                height: 2px;
+                background: linear-gradient(90deg, transparent, rgba(59, 130, 246, 0.3), transparent);
+            }
+            
+            .announcements-header-card .card-title {
+                font-size: 1.75rem !important;
+                font-weight: 800 !important;
+                color: #1e293b !important;
+                margin: 0 !important;
+                letter-spacing: -0.02em;
+                background: none !important;
+                -webkit-background-clip: unset !important;
+                -webkit-text-fill-color: #1e293b !important;
+                background-clip: unset !important;
+                text-shadow: none !important;
+            }
+            
+            .announcements-header-card .card-subtitle {
+                font-size: 0.9375rem !important;
+                color: #64748b !important;
+                margin: 0.5rem 0 0 0 !important;
+                font-weight: 400 !important;
+                line-height: 1.5;
+            }
+        </style>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Alerts Container -->
+            <div class="alerts-container"></div>
+
+            <!-- Announcements Section -->
+            <div class="admin-section active">
+                <!-- Header Section -->
+                <div class="card announcements-header-card">
+                    <div class="card-header">
+                        <h2 class="card-title">Announcements Management</h2>
+                        <p class="card-subtitle">Create and manage emergency alerts, weather updates, and general announcements</p>
+                    </div>
+                    <div class="card-body">
+                        <div class="flex gap-4" style="flex-direction: column;">
+                            <button onclick="showCreateAnnouncementModal()" class="create-announcement-btn" style="width: fit-content;">
+                                <i class="bi bi-plus-circle"></i> Create Announcement
+                            </button>
+                            <div style="margin-top: 0.5rem;">
+                                <label style="font-size: 0.875rem; font-weight: 600; color: #374151; margin-bottom: 0.5rem; display: block;">Quick Actions:</label>
+                                <div class="quick-actions-container">
+                                    <button type="button" onclick="quickAction('emergency')" class="quick-action-btn emergency">
+                                        <i class="bi bi-exclamation-triangle"></i> Emergency Alert
+                                    </button>
+                                    <button type="button" onclick="quickAction('weather')" class="quick-action-btn weather">
+                                        <i class="bi bi-cloud-rain"></i> Weather Update
+                                    </button>
+                                    <button type="button" onclick="quickAction('general')" class="quick-action-btn general">
+                                        <i class="bi bi-megaphone"></i> General Announcement
+                                    </button>
+                                    <button type="button" onclick="quickAction('maintenance')" class="quick-action-btn maintenance">
+                                        <i class="bi bi-tools"></i> Maintenance Notice
+                                    </button>
+                                    <button type="button" onclick="quickAction('safety')" class="quick-action-btn safety">
+                                        <i class="bi bi-shield-check"></i> Safety Alert
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Statistics Cards -->
+                <div class="stats-grid mb-6">
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="bi bi-exclamation-triangle"></i>
+                        </div>
+                        <div class="stat-content">
+                            <div class="stat-number" id="totalAnnouncements">0</div>
+                            <div class="stat-label">Total Announcements</div>
+                            <div class="stat-trend">All announcements</div>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="bi bi-check-circle"></i>
+                        </div>
+                        <div class="stat-content">
+                            <div class="stat-number" id="activeAnnouncements">0</div>
+                            <div class="stat-label">Active</div>
+                            <div class="stat-trend">Currently active</div>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="bi bi-cloud-rain"></i>
+                        </div>
+                        <div class="stat-content">
+                            <div class="stat-number" id="weatherAlerts">0</div>
+                            <div class="stat-label">Weather Alerts</div>
+                            <div class="stat-trend">Weather notifications</div>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="bi bi-exclamation-circle"></i>
+                        </div>
+                        <div class="stat-content">
+                            <div class="stat-number" id="emergencyAlerts">0</div>
+                            <div class="stat-label">Emergency Alerts</div>
+                            <div class="stat-trend">Emergency notifications</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Announcements List -->
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">Announcements</h3>
+                    </div>
+                    <div class="card-body">
+                        <div id="announcementsList" class="space-y-4" style="max-height: 60vh; overflow-y: auto; padding-right: 8px;">
+                            <!-- Announcements will be loaded here -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Create/Edit Announcement Modal -->
+    <div id="announcementModal" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modalTitle">Create Announcement</h2>
+                <button onclick="closeAnnouncementModal()" class="modal-close">&times;</button>
+            </div>
+            <form id="announcementForm" class="space-y-6">
+                <input type="hidden" id="announcementId" value="">
+                
+                <div class="form-group">
+                    <label class="form-label">Title *</label>
+                    <input type="text" id="announcementTitle" class="form-input" placeholder="Enter announcement title" required>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Message *</label>
+                    <textarea id="announcementMessage" class="form-input form-textarea" rows="4" placeholder="Enter announcement message" required></textarea>
+                </div>
+
+                <div class="form-group" id="imageUrlGroup" style="display: none;">
+                    <label class="form-label">
+                        <i class="bi bi-image"></i> Image URL (Optional)
+                    </label>
+                    <input type="url" id="announcementImageUrl" class="form-input" placeholder="https://example.com/weather-image.jpg">
+                    <small class="form-text text-muted" style="display: block; margin-top: 0.25rem; color: #6b7280; font-size: 0.875rem;">
+                        Enter a direct link to a weather image (e.g., radar, satellite, forecast map)
+                    </small>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="form-group">
+                        <label class="form-label">Type *</label>
+                        <select id="announcementType" class="form-input" required>
+                            <option value="">Select Type</option>
+                            <option value="emergency">🚨 Emergency</option>
+                            <option value="weather">🌤️ Weather</option>
+                            <option value="general">📢 General</option>
+                            <option value="maintenance">🔧 Maintenance</option>
+                            <option value="safety">🛡️ Safety</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Priority *</label>
+                        <select id="announcementPriority" class="form-input" required>
+                            <option value="">Select Priority</option>
+                            <option value="critical">🔴 Critical</option>
+                            <option value="high">🟠 High</option>
+                            <option value="medium">🟡 Medium</option>
+                            <option value="low">🟢 Low</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="form-group">
+                        <label class="form-label">Target Audience</label>
+                        <select id="announcementAudience" class="form-input">
+                            <option value="all">👥 All Users</option>
+                            <option value="students">🎓 Students</option>
+                            <option value="faculty">👨‍🏫 Faculty</option>
+                            <option value="staff">👨‍💼 Staff</option>
+                            <option value="responders">🚨 Responders</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Expires At (Optional)</label>
+                        <input type="datetime-local" id="announcementExpires" class="form-input">
+                    </div>
+                </div>
+
+                <div class="flex gap-4 justify-end">
+                    <button type="button" onclick="closeAnnouncementModal()" class="btn btn-outline">Cancel</button>
+                    <button type="submit" class="btn btn-primary">
+                        <span id="submitText">Create Announcement</span>
+                        <span id="submitLoading" class="hidden">
+                            <div class="loading"></div>
+                            Processing...
+                        </span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        let announcements = [];
+        let filteredAnnouncements = [];
+
+        // Toast notification function
+        function showToast(message, type = 'info') {
+            // Remove any existing toasts
+            const existingToasts = document.querySelectorAll('.toast-notification');
+            existingToasts.forEach(toast => toast.remove());
+
+            // Create toast element
+            const toast = document.createElement('div');
+            toast.className = `toast-notification ${type}`;
+            
+            // Icons for different types
+            const icons = {
+                success: '<i class="bi bi-check-circle-fill"></i>',
+                error: '<i class="bi bi-x-circle-fill"></i>',
+                info: '<i class="bi bi-info-circle-fill"></i>',
+                warning: '<i class="bi bi-exclamation-triangle-fill"></i>'
+            };
+
+            toast.innerHTML = `
+                <div class="toast-icon">${icons[type] || icons.info}</div>
+                <div class="toast-message">${message}</div>
+                <button class="toast-close" onclick="this.parentElement.remove()">
+                    <i class="bi bi-x"></i>
+                </button>
+            `;
+
+            // Add to body
+            document.body.appendChild(toast);
+
+            // Auto remove after 3 seconds
+            setTimeout(() => {
+                if (toast.parentElement) {
+                    toast.style.animation = 'fadeOut 0.3s ease forwards';
+                    setTimeout(() => toast.remove(), 300);
+                }
+            }, 3000);
+        }
+
+        // Initialize page
+        document.addEventListener('DOMContentLoaded', async () => {
+            console.log('Initializing announcements page...');
+            
+            // Remove any existing alert elements from emergencySystem
+            const existingAlerts = document.querySelectorAll('.alert');
+            existingAlerts.forEach(alert => alert.remove());
+            
+            // Wait for system initialization
+            await new Promise(resolve => {
+                const checkInit = () => {
+                    if (typeof emergencySystem !== 'undefined' && emergencySystem.isInitialized) {
+                        console.log('Emergency system initialized');
+                        resolve();
+                    } else {
+                        console.log('Waiting for emergency system...');
+                        setTimeout(checkInit, 100);
+                    }
+                };
+                checkInit();
+            });
+
+            // Override emergencySystem alert methods to prevent showing alerts
+            if (window.emergencySystem) {
+                window.emergencySystem.showAlert = function() { /* Disabled */ };
+                window.emergencySystem.showSuccess = function() { /* Disabled */ };
+                window.emergencySystem.showError = function() { /* Disabled */ };
+                window.emergencySystem.showInfo = function() { /* Disabled */ };
+            }
+
+            // Check if user is admin
+            const userRole = emergencySystem.user?.user_metadata?.role;
+            if (!emergencySystem.user || (userRole !== 'admin' && userRole !== 'super_user')) {
+                console.log('User not admin, redirecting to login');
+                window.location.href = 'login.html';
+                return;
+            }
+
+            console.log('User is admin, loading data...');
+            // Load announcements
+            await loadAnnouncements();
+            
+            // Set up form submission handler
+            document.getElementById('announcementForm').addEventListener('submit', async (e) => {
+                e.preventDefault();
+                await handleAnnouncementSubmit();
+            });
+            
+            // Show/hide image URL field based on type selection
+            document.getElementById('announcementType').addEventListener('change', function() {
+                const imageUrlGroup = document.getElementById('imageUrlGroup');
+                if (this.value === 'weather') {
+                    imageUrlGroup.style.display = 'block';
+                } else {
+                    imageUrlGroup.style.display = 'none';
+                    document.getElementById('announcementImageUrl').value = '';
+                }
+            });
+            
+            // Weather monitoring moved to early-warning-dashboard.html
+            
+            // Set up filters
+            setupFilters();
+            
+            console.log('Announcements page initialized successfully');
+        });
+
+        // Load announcements
+        async function loadAnnouncements() {
+            try {
+                console.log('Loading announcements...');
+                const { data, error } = await emergencySystem.supabase
+                    .from('announcements')
+                    .select('*')
+                    .order('created_at', { ascending: false });
+
+                if (error) {
+                    console.error('Database error:', error);
+                    throw error;
+                }
+
+                // Before displaying, automatically expire any announcements
+                // whose expires_at is in the past but are still marked active.
+                await autoExpireAnnouncements(data || []);
+
+                console.log('Announcements loaded:', data);
+                announcements = data || [];
+                filteredAnnouncements = [...announcements];
+                displayAnnouncements();
+                updateStatistics();
+            } catch (error) {
+                console.error('Failed to load announcements:', error);
+                // Error logged to console
+            }
+        }
+
+        // Display announcements
+        function displayAnnouncements() {
+            const container = document.getElementById('announcementsList');
+            
+            if (filteredAnnouncements.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center py-12">
+                        <div class="text-6xl mb-4 text-gray-300">
+                            <i class="bi bi-megaphone"></i>
+                        </div>
+                        <h3 class="text-xl font-semibold text-gray-600 mb-2">No Announcements</h3>
+                        <p class="text-gray-500">Create your first announcement to get started</p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = filteredAnnouncements.map(announcement => {
+                const title = announcement.title || 'Untitled announcement';
+                const message = announcement.message || 'No message provided.';
+                const type = announcement.type || 'general';
+                const status = announcement.status || 'active';
+                const priority = announcement.priority || 'medium';
+                const audience = announcement.target_audience || 'all';
+                const createdAt = announcement.created_at ? formatDate(announcement.created_at) : 'Unknown time';
+                const imageUrl = getSafeImageUrl(announcement.image_url);
+
+                // Very simple, high-contrast card so content is guaranteed visible
+                return `
+                    <div style="margin-bottom: 1rem; border-radius: 12px; border: 1px solid #e5e7eb; background: #ffffff; padding: 1rem; box-shadow: 0 1px 3px rgba(0,0,0,0.08);">
+                        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:0.75rem;">
+                            <div style="flex:1;min-width:0;">
+                                <h3 style="margin:0 0 0.25rem 0;font-size:1rem;font-weight:600;color:#111827;">
+                                    ${title}
+                                </h3>
+                                <div style="font-size:0.8125rem;color:#6b7280;margin-bottom:0.5rem;">
+                                    <span><strong>Type:</strong> ${type}</span> · 
+                                    <span><strong>Status:</strong> ${status}</span> · 
+                                    <span><strong>Priority:</strong> ${priority}</span> · 
+                                    <span><strong>Audience:</strong> ${audience}</span> · 
+                                    <span><strong>Created:</strong> ${createdAt}</span>
+                                </div>
+                                <p style="margin:0;font-size:0.9rem;color:#374151;white-space:pre-wrap;word-wrap:break-word;">
+                                    ${message}
+                                </p>
+                                ${imageUrl ? `
+                                    <div style="margin-top:0.75rem;border-radius:8px;overflow:hidden;max-width:100%;">
+                                        <img src="${imageUrl}"
+                                             alt="Announcement Image"
+                                             style="width:100%;max-width:600px;height:auto;display:block;"
+                                             referrerpolicy="no-referrer"
+                                             onerror="this.style.display='none'; console.warn('Announcement image failed to load, hiding image element. Original URL:', '${announcement.image_url}');">
+                                    </div>
+                                ` : ''}
+                            </div>
+                            <div class="announcement-actions">
+                                <button onclick="editAnnouncement('${announcement.id}')" class="action-btn edit-btn" title="Edit">
+                                    <i class="bi bi-pencil"></i>
+                                </button>
+                                <button onclick="toggleAnnouncementStatus('${announcement.id}', '${status}')" 
+                                        class="action-btn toggle-btn ${status === 'inactive' ? 'inactive' : ''}" 
+                                        title="${status === 'active' ? 'Deactivate' : 'Activate'}">
+                                    <i class="bi bi-${status === 'active' ? 'pause' : 'play'}"></i>
+                                </button>
+                                <button onclick="deleteAnnouncement('${announcement.id}')" class="action-btn delete-btn" title="Delete">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // Update statistics
+        function updateStatistics() {
+            const total = announcements.length;
+            const active = announcements.filter(a => a.status === 'active').length;
+            const weather = announcements.filter(a => a.type === 'weather').length;
+            const emergency = announcements.filter(a => a.type === 'emergency').length;
+
+            document.getElementById('totalAnnouncements').textContent = total;
+            document.getElementById('activeAnnouncements').textContent = active;
+            document.getElementById('weatherAlerts').textContent = weather;
+            document.getElementById('emergencyAlerts').textContent = emergency;
+        }
+
+        // Setup filters
+        function setupFilters() {
+            const searchInput = document.getElementById('searchInput');
+            const typeFilter = document.getElementById('typeFilter');
+            const priorityFilter = document.getElementById('priorityFilter');
+            const statusFilter = document.getElementById('statusFilter');
+
+            // Some pages or layouts might not include all filter elements.
+            // Only attach listeners to elements that actually exist to avoid
+            // "Cannot read properties of null (reading 'addEventListener')" errors.
+            [searchInput, typeFilter, priorityFilter, statusFilter]
+                .filter(el => el !== null)
+                .forEach(element => {
+                    element.addEventListener('input', applyFilters);
+                });
+        }
+
+        // Apply filters
+        function applyFilters() {
+            const searchTerm = (document.getElementById('searchInput')?.value || '').toLowerCase();
+            const typeFilter = document.getElementById('typeFilter')?.value || '';
+            const priorityFilter = document.getElementById('priorityFilter')?.value || '';
+            const statusFilter = document.getElementById('statusFilter')?.value || '';
+
+            filteredAnnouncements = announcements.filter(announcement => {
+                const matchesSearch = announcement.title.toLowerCase().includes(searchTerm) ||
+                                    announcement.message.toLowerCase().includes(searchTerm);
+                const matchesType = !typeFilter || announcement.type === typeFilter;
+                const matchesPriority = !priorityFilter || announcement.priority === priorityFilter;
+                const matchesStatus = !statusFilter || announcement.status === statusFilter;
+
+                return matchesSearch && matchesType && matchesPriority && matchesStatus;
+            });
+
+            displayAnnouncements();
+        }
+
+        // Show create announcement modal
+        function showCreateAnnouncementModal() {
+            console.log('Opening create announcement modal');
+            try {
+                document.getElementById('modalTitle').textContent = 'Create Announcement';
+                document.getElementById('announcementForm').reset();
+                document.getElementById('announcementId').value = '';
+                document.getElementById('announcementImageUrl').value = '';
+                document.getElementById('imageUrlGroup').style.display = 'none';
+                document.getElementById('submitText').textContent = 'Create Announcement';
+                document.getElementById('announcementModal').classList.remove('hidden');
+                console.log('Modal opened successfully');
+            } catch (error) {
+                console.error('Error opening modal:', error);
+                // Error logged to console
+            }
+        }
+
+        // Close announcement modal
+        function closeAnnouncementModal() {
+            const modal = document.getElementById('announcementModal');
+            modal.classList.add('hidden');
+            modal.style.display = 'none'; // Fallback method
+            console.log('Modal closed');
+        }
+
+        // Edit announcement
+        function editAnnouncement(id) {
+            const announcement = announcements.find(a => a.id === id);
+            if (!announcement) return;
+
+            document.getElementById('modalTitle').textContent = 'Edit Announcement';
+            document.getElementById('announcementId').value = announcement.id;
+            document.getElementById('announcementTitle').value = announcement.title;
+            document.getElementById('announcementMessage').value = announcement.message;
+            document.getElementById('announcementType').value = announcement.type;
+            document.getElementById('announcementPriority').value = announcement.priority;
+            document.getElementById('announcementAudience').value = announcement.target_audience;
+            // Convert stored UTC time back to local time for the datetime-local input
+            if (announcement.expires_at) {
+                const expiresDate = new Date(announcement.expires_at);
+                const pad = (n) => String(n).padStart(2, '0');
+                const year = expiresDate.getFullYear();
+                const month = pad(expiresDate.getMonth() + 1);
+                const day = pad(expiresDate.getDate());
+                const hours = pad(expiresDate.getHours());
+                const minutes = pad(expiresDate.getMinutes());
+                document.getElementById('announcementExpires').value =
+                    `${year}-${month}-${day}T${hours}:${minutes}`;
+            } else {
+                document.getElementById('announcementExpires').value = '';
+            }
+            document.getElementById('announcementImageUrl').value = announcement.image_url || '';
+            
+            // Show/hide image URL field based on type
+            const imageUrlGroup = document.getElementById('imageUrlGroup');
+            if (announcement.type === 'weather') {
+                imageUrlGroup.style.display = 'block';
+            } else {
+                imageUrlGroup.style.display = 'none';
+            }
+            
+            document.getElementById('submitText').textContent = 'Update Announcement';
+            document.getElementById('announcementModal').classList.remove('hidden');
+        }
+
+        // Automatically set status to "expired" when past the expires_at time
+        async function autoExpireAnnouncements(data) {
+            try {
+                const now = new Date();
+                const toExpire = (data || []).filter(a =>
+                    a.expires_at &&
+                    a.status === 'active' &&
+                    new Date(a.expires_at) <= now
+                );
+
+                if (!toExpire.length) {
+                    return;
+                }
+
+                const ids = toExpire.map(a => a.id);
+                console.log('Auto-expiring announcements:', ids);
+
+                const { error } = await emergencySystem.supabase
+                    .from('announcements')
+                    .update({ status: 'expired' })
+                    .in('id', ids);
+
+                if (error) {
+                    console.error('Failed to auto-expire announcements:', error);
+                } else {
+                    // Update local data so UI matches the new status
+                    toExpire.forEach(a => { a.status = 'expired'; });
+                }
+            } catch (err) {
+                console.error('autoExpireAnnouncements error:', err);
+            }
+        }
+
+        // Toggle announcement status (manual activate/deactivate)
+        async function toggleAnnouncementStatus(id, currentStatus) {
+            try {
+                const newStatus = currentStatus === 'active' ? 'inactive' : 'active';
+                
+                const { error } = await emergencySystem.supabase
+                    .from('announcements')
+                    .update({ status: newStatus })
+                    .eq('id', id);
+                
+                if (error) throw error;
+                
+                const action = newStatus === 'active' ? 'activated' : 'deactivated';
+                showToast(`Announcement ${action} successfully!`, 'success');
+                await loadAnnouncements();
+                
+            } catch (error) {
+                console.error('Failed to toggle announcement status:', error);
+                showToast('Failed to update announcement status', 'error');
+            }
+        }
+
+        // Delete announcement
+        async function deleteAnnouncement(id) {
+            if (!confirm('Are you sure you want to delete this announcement?')) return;
+            
+            try {
+                const { error } = await emergencySystem.supabase
+                    .from('announcements')
+                    .delete()
+                    .eq('id', id);
+                
+                if (error) throw error;
+                
+                showToast('Announcement deleted successfully!', 'success');
+                await loadAnnouncements();
+                
+            } catch (error) {
+                console.error('Failed to delete announcement:', error);
+                showToast('Failed to delete announcement', 'error');
+            }
+        }
+
+        // Handle announcement form submission
+        async function handleAnnouncementSubmit() {
+            const submitBtn = document.getElementById('submitText');
+            const submitLoading = document.getElementById('submitLoading');
+            const form = document.getElementById('announcementForm');
+            
+            // Show loading state
+            submitBtn.classList.add('hidden');
+            submitLoading.classList.remove('hidden');
+            
+            try {
+                const formData = {
+                    title: document.getElementById('announcementTitle').value,
+                    message: document.getElementById('announcementMessage').value,
+                    type: document.getElementById('announcementType').value,
+                    priority: document.getElementById('announcementPriority').value,
+                    target_audience: document.getElementById('announcementAudience').value,
+                    status: 'active',
+                    created_by: emergencySystem.user.id
+                };
+                
+                // Add expiration date if provided
+                const expiresAt = document.getElementById('announcementExpires').value;
+                if (expiresAt) {
+                    // Convert local datetime-local value to UTC ISO string so that
+                    // it round-trips correctly and displays the same local time.
+                    const localDate = new Date(expiresAt);
+                    formData.expires_at = localDate.toISOString();
+                }
+                
+                // Add image URL if provided (for weather announcements), but only if it's safe
+                const rawImageUrl = document.getElementById('announcementImageUrl').value.trim();
+                const safeImageUrl = getSafeImageUrl(rawImageUrl);
+                if (safeImageUrl) {
+                    formData.image_url = safeImageUrl;
+                } else if (rawImageUrl) {
+                    console.warn('Ignoring unsafe or invalid announcement image URL:', rawImageUrl);
+                }
+                
+                const announcementId = document.getElementById('announcementId').value;
+                
+                if (announcementId) {
+                    // Update existing announcement
+                    const { data, error } = await emergencySystem.supabase
+                        .from('announcements')
+                        .update(formData)
+                        .eq('id', announcementId)
+                        .select();
+                    
+                    if (error) {
+                        console.error('Update error:', error);
+                        throw new Error(`Update failed: ${error.message}`);
+                    }
+                    showToast('Announcement updated successfully!', 'success');
+                } else {
+                    // Create new announcement
+                    console.log('Creating announcement with data:', formData);
+                    const { data, error } = await emergencySystem.supabase
+                        .from('announcements')
+                        .insert([formData])
+                        .select();
+                    
+                    if (error) {
+                        console.error('Insert error:', error);
+                        if (error.code === '42501' || error.message.includes('403')) {
+                            throw new Error('Permission denied. Please check if you have admin privileges and the announcements table has proper RLS policies.');
+                        }
+                        throw new Error(`Insert failed: ${error.message}`);
+                    }
+                    console.log('Announcement created successfully:', data);
+                    
+                    // Send notifications via Edge Function
+                    if (data && data.length > 0 && data[0].id) {
+                        try {
+                            const { data: sessionData } = await emergencySystem.supabase.auth.getSession();
+                            const token = sessionData?.session?.access_token;
+                            
+                            // Use hardcoded Supabase URL and key (same as in supabase.js)
+                            const supabaseUrl = 'https://hmolyqzbvxxliemclrld.supabase.co';
+                            const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imhtb2x5cXpidnh4bGllbWNscmxkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjAyNDY5NzAsImV4cCI6MjA3NTgyMjk3MH0.G2AOT-8zZ5sk8qGQUBifFqq5ww2W7Hxvtux0tlQ0Q-4';
+                            
+                            const notifyResponse = await fetch(`${supabaseUrl}/functions/v1/announcement-notify`, {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'Authorization': `Bearer ${token || supabaseKey}`,
+                                    'apikey': supabaseKey
+                                },
+                                body: JSON.stringify({ announcementId: data[0].id })
+                            });
+                            
+                            if (notifyResponse.ok) {
+                                const notifyResult = await notifyResponse.json();
+                                console.log('✅ Notifications sent:', notifyResult);
+                            } else {
+                                console.warn('⚠️ Failed to send notifications:', notifyResponse.status);
+                            }
+                        } catch (notifyError) {
+                            console.warn('⚠️ Error calling announcement-notify:', notifyError);
+                            // Don't fail the announcement creation if notification fails
+                        }
+                    }
+                    
+                    showToast('Announcement created successfully!', 'success');
+                }
+                
+                // Close modal and refresh list
+                closeAnnouncementModal();
+                await loadAnnouncements();
+                
+            } catch (error) {
+                console.error('Error saving announcement:', error);
+                showToast('Failed to save announcement: ' + error.message, 'error');
+            } finally {
+                // Hide loading state
+                submitBtn.classList.remove('hidden');
+                submitLoading.classList.add('hidden');
+            }
+        }
+
+        // Safely validate and normalize announcement image URLs.
+        // This prevents loading images from providers that block hotlinking
+        // (like some Facebook CDN URLs) which were causing 403 errors.
+        function getSafeImageUrl(url) {
+            if (!url) return null;
+
+            try {
+                const parsed = new URL(url, window.location.origin);
+
+                // Block known-problematic hosts that frequently return 403s
+                // or require authentication/cookies we don't have in this app.
+                const blockedHosts = ['facebook.com', 'fbcdn.net', 'scontent.'];
+                if (blockedHosts.some(host => parsed.hostname.includes(host))) {
+                    console.warn('Blocked external announcement image URL (host not allowed):', parsed.href);
+                    return null;
+                }
+
+                // Only allow http/https URLs
+                if (!/^https?:$/.test(parsed.protocol)) {
+                    console.warn('Blocked non-http(s) announcement image URL:', parsed.href);
+                    return null;
+                }
+
+                return parsed.href;
+            } catch (err) {
+                console.warn('Invalid announcement image URL, skipping image:', url, err);
+                return null;
+            }
+        }
+
+        // Show create announcement modal
+        function showCreateAnnouncementModal() {
+            console.log('Opening create announcement modal...');
+            
+            const modal = document.getElementById('announcementModal');
+            if (!modal) {
+                console.error('Modal element not found!');
+                // Error logged to console
+                return;
+            }
+            
+            document.getElementById('modalTitle').textContent = 'Create New Announcement';
+            document.getElementById('announcementForm').reset();
+            document.getElementById('announcementId').value = '';
+            document.getElementById('announcementTitle').value = '';
+            document.getElementById('announcementMessage').value = '';
+            document.getElementById('announcementType').value = 'general';
+            document.getElementById('announcementPriority').value = 'medium';
+            document.getElementById('announcementAudience').value = 'all';
+            document.getElementById('submitText').textContent = 'Create Announcement';
+            
+            // Remove hidden class to show modal
+            modal.classList.remove('hidden');
+            modal.style.display = 'flex'; // Fallback method
+            console.log('Modal should now be visible');
+            
+            // Double-check modal is visible
+            setTimeout(() => {
+                if (modal.classList.contains('hidden')) {
+                    console.error('Modal still hidden after removal attempt');
+                    // Error logged to console
+                } else {
+                    console.log('Modal successfully opened');
+                }
+            }, 100);
+        }
+
+        // Close announcement modal
+        function closeAnnouncementModal() {
+            const modal = document.getElementById('announcementModal');
+            modal.classList.add('hidden');
+            modal.style.display = 'none'; // Fallback method
+            console.log('Modal closed');
+        }
+
+        // Show notification modal
+        function showNotificationModal() {
+            document.getElementById('modalTitle').textContent = 'Send Notification';
+            document.getElementById('announcementForm').reset();
+            document.getElementById('announcementId').value = '';
+            document.getElementById('announcementTitle').value = '📢 Important Notification';
+            document.getElementById('announcementType').value = 'general';
+            document.getElementById('announcementPriority').value = 'medium';
+            document.getElementById('announcementAudience').value = 'all';
+            document.getElementById('submitText').textContent = 'Send Notification';
+            document.getElementById('announcementModal').classList.remove('hidden');
+        }
+
+        // Show emergency alert modal
+        function showEmergencyAlertModal() {
+            document.getElementById('modalTitle').textContent = 'Emergency Alert';
+            document.getElementById('announcementForm').reset();
+            document.getElementById('announcementId').value = '';
+            document.getElementById('announcementTitle').value = '🚨 EMERGENCY ALERT';
+            document.getElementById('announcementType').value = 'emergency';
+            document.getElementById('announcementPriority').value = 'critical';
+            document.getElementById('announcementAudience').value = 'all';
+            document.getElementById('submitText').textContent = 'Send Emergency Alert';
+            document.getElementById('announcementModal').classList.remove('hidden');
+        }
+
+        // Helper functions
+        function getTypeIcon(type) {
+            const icons = {
+                emergency: '🚨',
+                weather: '🌤️',
+                general: '📢',
+                maintenance: '🔧',
+                safety: '🛡️'
+            };
+            return icons[type] || '📢';
+        }
+
+        function formatDate(dateString) {
+            return new Date(dateString).toLocaleString();
+        }
+
+        // Check weather alerts function
+        function checkWeatherAlerts() {
+            console.log('🌤️ Checking weather alerts...');
+            // Redirect to weather dashboard
+            window.location.href = 'early-warning-dashboard.html';
+        }
+
+        // Quick Action function - populates form with templates
+        function quickAction(type) {
+            const templates = {
+                emergency: {
+                    title: '🚨 EMERGENCY ALERT',
+                    message: 'URGENT: This is an emergency alert. Please take immediate action as instructed.\n\n' +
+                             '⚠️ IMPORTANT INFORMATION:\n' +
+                             '• Follow all safety protocols\n' +
+                             '• Stay calm and follow instructions\n' +
+                             '• Do not panic\n' +
+                             '• Monitor official channels for updates\n\n' +
+                             'Your safety is our priority. Please remain vigilant and follow all guidance from emergency personnel.',
+                    type: 'emergency',
+                    priority: 'critical',
+                    audience: 'all'
+                },
+                weather: {
+                    title: '🌤️ Weather Update',
+                    message: 'WEATHER NOTIFICATION\n\n' +
+                             'Current weather conditions require your attention.\n\n' +
+                             '📊 WEATHER INFORMATION:\n' +
+                             '• Monitor weather conditions closely\n' +
+                             '• Take necessary precautions\n' +
+                             '• Stay informed through official channels\n' +
+                             '• Prepare for potential weather changes\n\n' +
+                             'Please stay safe and informed about the latest weather developments.',
+                    type: 'weather',
+                    priority: 'high',
+                    audience: 'all'
+                },
+                general: {
+                    title: '📢 General Announcement',
+                    message: 'ANNOUNCEMENT\n\n' +
+                             'This is a general announcement for all members of the community.\n\n' +
+                             '📋 INFORMATION:\n' +
+                             '• Please review the following information\n' +
+                             '• Take note of any important dates or deadlines\n' +
+                             '• Contact the administration if you have questions\n\n' +
+                             'Thank you for your attention.',
+                    type: 'general',
+                    priority: 'medium',
+                    audience: 'all'
+                },
+                maintenance: {
+                    title: '🔧 Maintenance Notice',
+                    message: 'MAINTENANCE NOTIFICATION\n\n' +
+                             'Scheduled maintenance will be performed on the following systems/services.\n\n' +
+                             '⚙️ MAINTENANCE DETAILS:\n' +
+                             '• System maintenance scheduled\n' +
+                             '• Services may be temporarily unavailable\n' +
+                             '• Expected duration: [To be specified]\n' +
+                             '• Alternative arrangements will be communicated\n\n' +
+                             'We apologize for any inconvenience and appreciate your patience.',
+                    type: 'maintenance',
+                    priority: 'medium',
+                    audience: 'all'
+                },
+                safety: {
+                    title: '🛡️ Safety Alert',
+                    message: 'SAFETY NOTIFICATION\n\n' +
+                             'Important safety information for all community members.\n\n' +
+                             '⚠️ SAFETY REMINDERS:\n' +
+                             '• Please follow all safety protocols\n' +
+                             '• Report any safety concerns immediately\n' +
+                             '• Stay aware of your surroundings\n' +
+                             '• Follow emergency procedures if needed\n\n' +
+                             'Your safety is our top priority. Please remain vigilant.',
+                    type: 'safety',
+                    priority: 'high',
+                    audience: 'all'
+                }
+            };
+            
+            const template = templates[type];
+            if (!template) return;
+            
+            // Open the modal first
+            showCreateAnnouncementModal();
+            
+            // Populate form fields after a brief delay to ensure modal is open
+            setTimeout(() => {
+                document.getElementById('announcementTitle').value = template.title;
+                document.getElementById('announcementMessage').value = template.message;
+                document.getElementById('announcementType').value = template.type;
+                document.getElementById('announcementPriority').value = template.priority;
+                document.getElementById('announcementAudience').value = template.audience;
+                document.getElementById('announcementId').value = ''; // Ensure it's a new announcement
+                document.getElementById('announcementImageUrl').value = '';
+                
+                // Show/hide image URL field based on type
+                const imageUrlGroup = document.getElementById('imageUrlGroup');
+                if (template.type === 'weather') {
+                    imageUrlGroup.style.display = 'block';
+                } else {
+                    imageUrlGroup.style.display = 'none';
+                }
+                
+                document.getElementById('submitText').textContent = 'Create Announcement';
+            }, 100);
+        }
+        
+        // Make functions globally available
+        window.showCreateAnnouncementModal = showCreateAnnouncementModal;
+        window.closeAnnouncementModal = closeAnnouncementModal;
+        window.editAnnouncement = editAnnouncement;
+        window.toggleAnnouncementStatus = toggleAnnouncementStatus;
+        window.deleteAnnouncement = deleteAnnouncement;
+        window.showNotificationModal = showNotificationModal;
+        window.showEmergencyAlertModal = showEmergencyAlertModal;
+        window.checkWeatherAlerts = checkWeatherAlerts;
+        window.quickAction = quickAction;
+    </script>
+    <script>
+        // Show logout confirmation modal
+        function showLogoutConfirm() {
+            const modal = document.getElementById('logoutModal');
+            modal.classList.remove('hidden');
+        }
+        
+        // Close logout modal
+        function closeLogoutModal() {
+            const modal = document.getElementById('logoutModal');
+            modal.classList.add('hidden');
+        }
+        
+        // Confirm and execute logout
+        async function confirmLogout() {
+            try {
+                // Close modal first
+                closeLogoutModal();
+                
+                // Perform logout
+                await window.emergencySystem.signOut();
+                window.location.href = 'login.html';
+            } catch (error) {
+                console.error('Logout error:', error);
+                alert('Failed to logout. Please try again.');
+            }
+        }
+        
+        // Close modal when clicking outside
+        document.addEventListener('click', function(event) {
+            const modal = document.getElementById('logoutModal');
+            if (event.target === modal) {
+                closeLogoutModal();
+            }
+        });
+        
+        // Close modal with Escape key
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'Escape') {
+                const modal = document.getElementById('logoutModal');
+                if (!modal.classList.contains('hidden')) {
+                    closeLogoutModal();
+                }
+            }
+        });
+    </script>
+
+    <!-- Logout Confirmation Modal -->
+    <div id="logoutModal" class="logout-modal hidden">
+        <div class="logout-modal-overlay" onclick="closeLogoutModal()"></div>
+        <div class="logout-modal-content">
+            <div class="logout-modal-icon">
+                <i class="bi bi-exclamation-triangle"></i>
+            </div>
+            <h3 class="logout-modal-title">Confirm Logout</h3>
+            <p class="logout-modal-message">Are you sure you want to logout? You'll need to sign in again to access the system.</p>
+            <div class="logout-modal-buttons">
+                <button class="logout-modal-btn cancel" onclick="closeLogoutModal()">
+                    <i class="bi bi-x-circle"></i> Cancel
+                </button>
+                <button class="logout-modal-btn confirm" onclick="confirmLogout()">
+                    <i class="bi bi-box-arrow-right"></i> Logout
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <style>
+        /* Logout Confirmation Modal */
+        .logout-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 10000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            animation: fadeIn 0.2s ease;
+        }
+        
+        .logout-modal.hidden {
+            display: none;
+        }
+        
+        .logout-modal-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(4px);
+        }
+        
+        .logout-modal-content {
+            position: relative;
+            background: white;
+            border-radius: 16px;
+            padding: 2rem;
+            max-width: 420px;
+            width: 90%;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3), 0 10px 10px -5px rgba(0, 0, 0, 0.2);
+            animation: slideUp 0.3s ease;
+            text-align: center;
+        }
+        
+        .logout-modal-icon {
+            width: 64px;
+            height: 64px;
+            margin: 0 auto 1.5rem;
+            background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 3px solid #fca5a5;
+        }
+        
+        .logout-modal-icon i {
+            font-size: 2rem;
+            color: #ef4444;
+        }
+        
+        .logout-modal-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #111827;
+            margin: 0 0 0.75rem 0;
+        }
+        
+        .logout-modal-message {
+            font-size: 0.9375rem;
+            color: #6b7280;
+            line-height: 1.6;
+            margin: 0 0 1.75rem 0;
+        }
+        
+        .logout-modal-buttons {
+            display: flex;
+            gap: 0.75rem;
+            justify-content: center;
+        }
+        
+        .logout-modal-btn {
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            font-size: 0.875rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            border: 2px solid transparent;
+        }
+        
+        .logout-modal-btn.cancel {
+            background: #f3f4f6;
+            color: #374151;
+            border-color: #e5e7eb;
+        }
+        
+        .logout-modal-btn.cancel:hover {
+            background: #e5e7eb;
+            border-color: #d1d5db;
+            transform: translateY(-1px);
+        }
+        
+        .logout-modal-btn.confirm {
+            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+            color: white;
+            border-color: #ef4444;
+            box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3);
+        }
+        
+        .logout-modal-btn.confirm:hover {
+            background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4);
+        }
+        
+        .logout-modal-btn:active {
+            transform: translateY(0);
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px) scale(0.95);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        /* Hide emergencySystem alert elements */
+        .alert {
+            display: none !important;
+        }
+
+        .alerts-container {
+            display: none !important;
+        }
+
+        /* Modern announcement card content styling */
+        #announcementsList {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        /* Improved empty state */
+        .text-center {
+            text-align: center;
+        }
+
+        .py-12 {
+            padding-top: 3rem;
+            padding-bottom: 3rem;
+        }
+
+        .text-6xl {
+            font-size: 4rem;
+        }
+
+        .mb-4 {
+            margin-bottom: 1rem;
+        }
+
+        .text-gray-300 {
+            color: #d1d5db;
+        }
+
+        .text-xl {
+            font-size: 1.25rem;
+        }
+
+        .font-semibold {
+            font-weight: 600;
+        }
+
+        .text-gray-600 {
+            color: #4b5563;
+        }
+
+        .mb-2 {
+            margin-bottom: 0.5rem;
+        }
+
+        .text-gray-500 {
+            color: #6b7280;
+        }
+    </style>
+</body>
+</html>

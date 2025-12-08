@@ -1,0 +1,960 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Archived Reports - LSPU Emergency Response System</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/system-status.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <script src="https://cdn.jsdelivr.net/npm/supabase@2"></script>
+    <script src="js/supabase.js"></script>
+</head>
+<body>
+    <div class="dashboard-container">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <div class="sidebar-logo">
+                    <img src="images/udrrmo image.jpg" alt="UDRRMO Logo" 
+                         style="width: 50px; height: 50px; object-fit: contain; border-radius: 50%; border: 2px solid white; display: block;">
+                    <div class="logo-text">
+                        <h3>Kapiyu Admin</h3>
+                        <p>Emergency Response</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="system-status">
+                <div class="status-indicator">
+                    <span class="status-dot online"></span>
+                    <span>System Status: Online</span>
+                </div>
+            </div>
+            
+            <nav class="sidebar-nav">
+                <a href="admin.html" class="nav-item">
+                    <i class="bi bi-house"></i> Dashboard
+                </a>
+                <a href="reports.html" class="nav-item">
+                    <i class="bi bi-file-text"></i> Reports
+                </a>
+                <a href="announcements.html" class="nav-item">
+                    <i class="bi bi-megaphone"></i> Announcements
+                </a>
+                <a href="early-warning-dashboard.html" class="nav-item">
+                    <i class="bi bi-shield-exclamation"></i> Early Warning
+                </a>
+                <a href="map.html" class="nav-item">
+                    <i class="bi bi-map"></i> Map View
+                </a>
+                <a href="evacuation-guide.html" class="nav-item">
+                    <i class="bi bi-shield-check"></i> Evacuation Guide
+                </a>
+                <a href="archive.html" class="nav-item active">
+                    <i class="bi bi-folder"></i> Archived
+                </a>
+                <a href="analytics.html" class="nav-item">
+                    <i class="bi bi-graph-up"></i> Analytics
+                </a>
+                <a href="user-management.html" class="nav-item">
+                    <i class="bi bi-people"></i> User Management
+                </a>
+                <a href="lsm-admin.html" class="nav-item">
+                    <i class="bi bi-journal-bookmark"></i> Learning Modules
+                </a>
+            </nav>
+            
+            <div class="sidebar-footer">
+                <div class="user-info-card">
+                    <div class="user-avatar">A</div>
+                    <div class="user-details">
+                        <h4>Admin User</h4>
+                        <p>Kapiyu Command</p>
+                    </div>
+                </div>
+                <button class="logout-btn" onclick="showLogoutConfirm()" style="width: 100%;padding: 0.75rem 1rem;background: rgba(239, 68, 68, 0.1);border: 1px solid rgba(239, 68, 68, 0.3);color: #fca5a5;border-radius: 8px;font-size: 0.875rem;font-weight: 500;cursor: pointer;transition: all 0.2s ease;display: flex;align-items: center;gap: 0.5rem;margin-left: 0px;">
+                    <i class="bi bi-box-arrow-right"></i> Logout
+                </button>
+            </div>
+        </div>
+
+        <style>
+            .logout-btn:hover {
+                background: #EF4444 !important;
+                border-color: #EF4444 !important;
+                color: white !important;
+            }
+            
+            .logout-btn:hover i {
+                color: white !important;
+            }
+            
+            /* Modern Header Card for Archive Page */
+            .admin-section .card:first-child .card-title {
+                font-size: 1.75rem !important;
+                font-weight: 800 !important;
+                color: #1e293b !important;
+                margin: 0 !important;
+                letter-spacing: -0.02em;
+                background: none !important;
+                -webkit-background-clip: unset !important;
+                -webkit-text-fill-color: #1e293b !important;
+                background-clip: unset !important;
+                text-shadow: none !important;
+            }
+            
+            .admin-section .card:first-child .card-subtitle {
+                font-size: 0.9375rem !important;
+                color: #64748b !important;
+                margin: 0.5rem 0 0 0 !important;
+                font-weight: 400 !important;
+                line-height: 1.5;
+            }
+        </style>
+        
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Archived Section -->
+            <div class="admin-section active">
+                
+                
+                <!-- Archived Users -->
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">Archived Users</h3>
+                        <p class="card-subtitle">View and manage archived user accounts</p>
+                    </div>
+                    <div class="card-body">
+                        <div class="flex justify-between items-center mb-4">
+                            <div class="flex gap-2">
+                                <button onclick="loadArchivedUsers()" class="btn btn-primary">
+                                    <i class="bi bi-arrow-clockwise"></i> Refresh Users
+                                </button>
+                                <button onclick="clearAllArchivedUsers()" class="btn btn-danger">
+                                    <i class="bi bi-trash"></i> Clear All Archived Users
+                                </button>
+                            </div>
+                            <div class="text-sm text-muted">
+                                <span id="archivedUsersCount">0</span> archived users
+                            </div>
+                        </div>
+                        
+                        <div id="archivedUsers" class="archived-users-container">
+                            <div class="loading-spinner"></div>
+                            <p>Loading archived users...</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Archived Reports -->
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">Archived Reports</h3>
+                        <p class="card-subtitle">View and manage archived emergency reports</p>
+                    </div>
+                    <div class="card-body">
+                        <div class="flex justify-between items-center mb-4">
+                            <div class="flex gap-2">
+                                <button onclick="loadArchivedReports()" class="btn btn-primary">
+                                    <i class="bi bi-arrow-clockwise"></i> Refresh
+                                </button>
+                                <button onclick="clearAllArchived()" class="btn btn-danger">
+                                    <i class="bi bi-trash"></i> Clear All Archived
+                                </button>
+                            </div>
+                            <div class="text-sm text-muted">
+                                <span id="archivedCount">0</span> archived reports
+                            </div>
+                        </div>
+                        
+                        <!-- Archive Filters -->
+                        <div class="archive-filters">
+                            <div class="filter-group">
+                                <label for="typeFilter" class="filter-label">Filter by Type:</label>
+                                <select id="typeFilter" onchange="filterArchivedReports()" class="filter-select">
+                                    <option value="">All Types</option>
+                                    <option value="fire">🔥 Fire</option>
+                                    <option value="flood">🌊 Flood</option>
+                                    <option value="accident">🚗 Accident</option>
+                                    <option value="medical">🏥 Medical</option>
+                                    <option value="other">⚠️ Other</option>
+                                </select>
+                            </div>
+                            
+                            <div class="filter-group">
+                                <label for="priorityFilter" class="filter-label">Filter by Priority:</label>
+                                <select id="priorityFilter" onchange="filterArchivedReports()" class="filter-select">
+                                    <option value="">All Priorities</option>
+                                    <option value="1">Critical</option>
+                                    <option value="2">High</option>
+                                    <option value="3">Medium</option>
+                                    <option value="4">Low</option>
+                                </select>
+                            </div>
+                            
+                            <div class="filter-group">
+                                <label for="dateFilter" class="filter-label">Filter by Date:</label>
+                                <select id="dateFilter" onchange="filterArchivedReports()" class="filter-select">
+                                    <option value="">All Dates</option>
+                                    <option value="today">Today</option>
+                                    <option value="week">This Week</option>
+                                    <option value="month">This Month</option>
+                                    <option value="older">Older</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div id="archivedReports" class="archived-reports-container">
+                            <div class="loading-spinner"></div>
+                            <p>Loading archived reports...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Initialize the system when the page loads
+        document.addEventListener('DOMContentLoaded', async function() {
+            try {
+                // Initialize the emergency system
+                await window.emergencySystem.initialize();
+                
+                // Load archived reports and users
+                await loadArchivedReports();
+                await loadArchivedUsers();
+                
+                console.log('✅ Archive page initialized successfully');
+            } catch (error) {
+                console.error('❌ Error initializing archive page:', error);
+            }
+        });
+
+        // Load archived reports
+        async function loadArchivedReports() {
+            try {
+                showLoadingIndicator();
+                
+                const archivedReports = await window.emergencySystem.getArchivedReports();
+                displayArchivedReports(archivedReports || []);
+                
+                hideLoadingIndicator();
+            } catch (error) {
+                console.error('Error loading archived reports:', error);
+                hideLoadingIndicator();
+            }
+        }
+
+        // Store original reports and users for filtering
+        let allArchivedReports = [];
+        let allArchivedUsers = [];
+
+        // Display archived reports
+        function displayArchivedReports(reports) {
+            allArchivedReports = reports || [];
+            const container = document.getElementById('archivedReports');
+            document.getElementById('archivedCount').textContent = reports.length;
+            
+            if (reports.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">
+                            <i class="bi bi-archive"></i>
+                        </div>
+                        <h3 class="empty-state-title">No Archived Reports</h3>
+                        <p class="empty-state-subtitle">There are no archived reports to display at this time.</p>
+                        <a href="reports.html" class="empty-state-action">
+                            <i class="bi bi-file-text"></i>
+                            View Active Reports
+                        </a>
+                    </div>
+                `;
+                return;
+            }
+            
+            container.innerHTML = reports.map(report => `
+                <div class="archived-report-item" data-type="${report.type}" data-priority="${report.priority || 4}" data-date="${getDateCategory(report.created_at)}">
+                    <div class="report-header">
+                        <div class="report-type">
+                            <span class="badge badge-${report.type}">${getEmergencyIcon(report.type)} ${report.type.toUpperCase()}</span>
+                        </div>
+                        <div class="report-actions">
+                            <button onclick="viewArchivedReport('${report.id}')" class="btn btn-sm btn-info" title="View Details">
+                                <i class="bi bi-eye"></i>
+                            </button>
+                            <button onclick="restoreFromArchive('${report.id}')" class="btn btn-sm btn-success" title="Restore">
+                                <i class="bi bi-arrow-counterclockwise"></i>
+                            </button>
+                            <button onclick="deleteArchivedReport('${report.id}')" class="btn btn-sm btn-danger" title="Delete Permanently">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="report-content">
+                        <div class="report-details">
+                            <h4>${report.reporter_name || 'Anonymous'}</h4>
+                            <p class="report-message">${report.message || 'No message provided'}</p>
+                            <p class="report-location">📍 ${report.location?.address || 'Location detected'}</p>
+                        </div>
+                        
+                        <div class="report-meta">
+                            <div class="meta-item">
+                                <span class="meta-label">Priority:</span>
+                                <span class="badge badge-priority-${report.priority || 4}">${getPriorityText(report.priority || 4)}</span>
+                            </div>
+                            <div class="meta-item">
+                                <span class="meta-label">Archived:</span>
+                                <span class="meta-value">${formatDate(report.archived_at || report.last_update || report.updated_at || report.created_at)}</span>
+                            </div>
+                            <div class="meta-item">
+                                <span class="meta-label">Original Date:</span>
+                                <span class="meta-value">${formatDate(report.created_at)}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Filter archived reports
+        function filterArchivedReports() {
+            const typeFilter = document.getElementById('typeFilter').value;
+            const priorityFilter = document.getElementById('priorityFilter').value;
+            const dateFilter = document.getElementById('dateFilter').value;
+            
+            const filteredReports = allArchivedReports.filter(report => {
+                const typeMatch = !typeFilter || report.type === typeFilter;
+                const priorityMatch = !priorityFilter || (report.priority || 4) == priorityFilter;
+                const dateMatch = !dateFilter || getDateCategory(report.created_at) === dateFilter;
+                
+                return typeMatch && priorityMatch && dateMatch;
+            });
+            
+            displayArchivedReports(filteredReports);
+        }
+
+        // Get date category for filtering
+        function getDateCategory(dateString) {
+            if (!dateString) return 'older';
+            
+            const reportDate = new Date(dateString);
+            const now = new Date();
+            const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+            const reportDay = new Date(reportDate.getFullYear(), reportDate.getMonth(), reportDate.getDate());
+            
+            const diffTime = today - reportDay;
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+            
+            if (diffDays === 0) return 'today';
+            if (diffDays <= 7) return 'week';
+            if (diffDays <= 30) return 'month';
+            return 'older';
+        }
+
+        // View archived report
+        function viewArchivedReport(reportId) {
+            window.location.href = `view-report.html?id=${reportId}&archived=true`;
+        }
+
+        // Restore from archive
+        async function restoreFromArchive(reportId) {
+            if (!confirm('Are you sure you want to restore this report from the archive?')) {
+                return;
+            }
+
+            try {
+                await window.emergencySystem.restoreFromArchive(reportId);
+                await loadArchivedReports();
+                window.emergencySystem.showSuccess('Report restored successfully!');
+            } catch (error) {
+                console.error('Error restoring report:', error);
+                window.emergencySystem.showError('Failed to restore report: ' + error.message);
+            }
+        }
+
+        // Delete archived report permanently
+        async function deleteArchivedReport(reportId) {
+            if (!confirm('Are you sure you want to permanently delete this archived report? This action cannot be undone.')) {
+                return;
+            }
+
+            try {
+                await window.emergencySystem.deleteArchivedReport(reportId);
+                await loadArchivedReports();
+                window.emergencySystem.showSuccess('Archived report deleted permanently!');
+            } catch (error) {
+                console.error('Error deleting archived report:', error);
+                window.emergencySystem.showError('Failed to delete archived report: ' + error.message);
+            }
+        }
+
+        // Clear all archived reports
+        async function clearAllArchived() {
+            if (!confirm('Are you sure you want to permanently delete ALL archived reports? This action cannot be undone.')) {
+                return;
+            }
+
+            try {
+                await window.emergencySystem.clearAllArchived();
+                await loadArchivedReports();
+                window.emergencySystem.showSuccess('All archived reports cleared!');
+            } catch (error) {
+                console.error('Error clearing archived reports:', error);
+                window.emergencySystem.showError('Failed to clear archived reports: ' + error.message);
+            }
+        }
+
+        // Load archived users from Edge Function
+        async function loadArchivedUsers() {
+            try {
+                showLoadingIndicatorUsers();
+                const { data, error } = await window.emergencySystem.supabase.functions.invoke('list-archived-users', { body: {} });
+                if (error) throw error;
+                const users = (data?.users || []).map(u => {
+                    const first = (u.name || '').split(' ')[0] || '';
+                    const last = (u.name || '').split(' ').slice(1).join(' ') || '';
+                    return {
+                        id: u.user_id,
+                        username: u.name || '',
+                        firstname: first,
+                        lastname: last,
+                        gmail: '',
+                        studentNumber: u.student_number || '',
+                        contactNumber: u.phone || '',
+                        role: (u.role || 'citizen').toLowerCase(),
+                        created: u.created_at || new Date().toISOString(),
+                        archivedAt: u.archived_at || new Date().toISOString()
+                    };
+                });
+                displayArchivedUsers(users);
+                hideLoadingIndicatorUsers();
+            } catch (error) {
+                console.error('Error loading archived users:', error);
+                hideLoadingIndicatorUsers();
+            }
+        }
+
+        // Display archived users
+        function displayArchivedUsers(users) {
+            allArchivedUsers = users || [];
+            const container = document.getElementById('archivedUsers');
+            document.getElementById('archivedUsersCount').textContent = users.length;
+            
+            if (users.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">
+                            <i class="bi bi-person-x"></i>
+                        </div>
+                        <h3 class="empty-state-title">No Archived Users</h3>
+                        <p class="empty-state-subtitle">There are no archived users to display at this time.</p>
+                        <a href="user-management.html" class="empty-state-action">
+                            <i class="bi bi-people"></i>
+                            Manage Users
+                        </a>
+                    </div>
+                `;
+                return;
+            }
+            
+            container.innerHTML = users.map(user => `
+                <div class="archived-user-item">
+                    <div class="user-header">
+                        <div class="user-info">
+                            <div class="user-avatar" style="width: 40px; height: 40px; background: #6b7280; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 1.125rem; color: white;">
+                                ${user.firstname ? user.firstname.charAt(0).toUpperCase() : 'U'}
+                            </div>
+                            <div class="user-details">
+                                <h4>${user.firstname} ${user.lastname}</h4>
+                                <p class="user-email">${user.gmail || user.username}</p>
+                                <p class="user-student">Student No: ${user.studentNumber || 'N/A'}</p>
+                            </div>
+                        </div>
+                        <div class="user-actions">
+                            <button onclick="viewArchivedUser('${user.id}')" class="btn btn-sm btn-info" title="View Details">
+                                <i class="bi bi-eye"></i>
+                            </button>
+                            <button onclick="restoreUserFromArchive('${user.id}')" class="btn btn-sm btn-success" title="Restore User">
+                                <i class="bi bi-arrow-counterclockwise"></i>
+                            </button>
+                            <button onclick="deleteArchivedUser('${user.id}')" class="btn btn-sm btn-danger" title="Delete Permanently">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="user-meta">
+                        <div class="meta-item">
+                            <span class="meta-label">Role:</span>
+                            <span class="badge badge-${user.role}">${user.role.toUpperCase()}</span>
+                        </div>
+                        <div class="meta-item">
+                            <span class="meta-label">Contact:</span>
+                            <span class="meta-value">${user.contactNumber || 'N/A'}</span>
+                        </div>
+                        <div class="meta-item">
+                            <span class="meta-label">Archived:</span>
+                            <span class="meta-value">${formatDate(user.archivedAt || new Date().toISOString())}</span>
+                        </div>
+                        <div class="meta-item">
+                            <span class="meta-label">Original Created:</span>
+                            <span class="meta-value">${formatDate(user.created)}</span>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // View archived user details
+        function viewArchivedUser(userId) {
+            const user = allArchivedUsers.find(u => u.id === userId);
+            if (!user) return;
+
+            const modal = document.createElement('div');
+            modal.className = 'modal';
+            modal.innerHTML = `
+                <div class="modal-content" style="max-width: 600px;">
+                    <div class="modal-header">
+                        <h2>Archived User Details</h2>
+                        <button onclick="this.closest('.modal').remove()" class="modal-close">&times;</button>
+                    </div>
+                    <div style="padding: 1.5rem;">
+                        <div class="user-details-modal">
+                            <div class="flex items-center gap-4 mb-6">
+                                <div class="user-avatar-large" style="width: 80px; height: 80px; background: #6b7280; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 2rem; color: white;">
+                                    ${user.firstname ? user.firstname.charAt(0).toUpperCase() : 'U'}
+                                </div>
+                                <div>
+                                    <h3 class="text-2xl font-bold">${user.firstname} ${user.lastname}</h3>
+                                    <p class="text-gray-600">${user.gmail || user.username}</p>
+                                    <span class="badge badge-${user.role}" style="background-color: #6b7280; color: white; padding: 0.5rem 1rem; border-radius: 9999px; font-size: 0.875rem;">
+                                        ARCHIVED - ${user.role.toUpperCase()}
+                                    </span>
+                                </div>
+                            </div>
+                            
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div class="space-y-4">
+                                    <div>
+                                        <label class="text-sm font-medium text-gray-500">Gmail</label>
+                                        <p class="text-lg">${user.gmail || 'Not provided'}</p>
+                                    </div>
+                                    <div>
+                                        <label class="text-sm font-medium text-gray-500">Student Number</label>
+                                        <p class="text-lg">${user.studentNumber || 'Not provided'}</p>
+                                    </div>
+                                    <div>
+                                        <label class="text-sm font-medium text-gray-500">Contact Number</label>
+                                        <p class="text-lg">${user.contactNumber || 'Not provided'}</p>
+                                    </div>
+                                </div>
+                                <div class="space-y-4">
+                                    <div>
+                                        <label class="text-sm font-medium text-gray-500">Account Created</label>
+                                        <p class="text-lg">${formatDate(user.created)}</p>
+                                    </div>
+                                    <div>
+                                        <label class="text-sm font-medium text-gray-500">Archived Date</label>
+                                        <p class="text-lg">${formatDate(user.archivedAt || new Date().toISOString())}</p>
+                                    </div>
+                                    <div>
+                                        <label class="text-sm font-medium text-gray-500">User ID</label>
+                                        <p class="text-sm font-mono text-gray-600">${user.id}</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            document.body.appendChild(modal);
+        }
+
+        // Restore user from archive
+        async function restoreUserFromArchive(userId) {
+            if (!confirm('Are you sure you want to restore this user from the archive?')) {
+                return;
+            }
+
+            try {
+                // Try Edge Function first
+                try {
+                    const { error } = await window.emergencySystem.supabase.functions.invoke('update-user', {
+                        body: { userId, isActive: true }
+                    });
+                    if (error) throw error;
+                } catch (fnErr) {
+                    console.warn('Edge restore failed, falling back to client-side restore:', fnErr);
+                    // Fallback: move row client-side (tables are unrestricted)
+                    const { data: archived, error: getErr } = await window.emergencySystem.supabase
+                        .from('user_profiles_archived')
+                        .select('*')
+                        .eq('user_id', userId)
+                        .single();
+                    if (getErr) throw getErr;
+                    const toInsert = {
+                        user_id: archived.user_id,
+                        role: archived.role,
+                        name: archived.name,
+                        phone: archived.phone,
+                        student_number: archived.student_number,
+                        is_active: true,
+                        created_at: archived.created_at
+                    };
+                    const { error: insErr } = await window.emergencySystem.supabase
+                        .from('user_profiles')
+                        .insert([toInsert]);
+                    if (insErr) {
+                        // Try update if exists
+                        const { error: updErr } = await window.emergencySystem.supabase
+                            .from('user_profiles')
+                            .update(toInsert)
+                            .eq('user_id', userId);
+                        if (updErr) throw updErr;
+                    }
+                    const { error: delErr } = await window.emergencySystem.supabase
+                        .from('user_profiles_archived')
+                        .delete()
+                        .eq('user_id', userId);
+                    if (delErr) throw delErr;
+                }
+                await loadArchivedUsers();
+                window.emergencySystem.showSuccess('User restored successfully!');
+            } catch (error) {
+                console.error('Error restoring user:', error);
+                window.emergencySystem.showError('Failed to restore user: ' + error.message);
+            }
+        }
+
+        // Delete archived user permanently (from both database and Auth)
+        async function deleteArchivedUser(userId) {
+            if (!confirm('Are you sure you want to permanently delete this archived user? This will delete the user from the database AND authentication. This action cannot be undone.')) {
+                return;
+            }
+
+            try {
+                // Permanent delete: removes from database and Supabase Auth
+                const { data, error } = await window.emergencySystem.supabase.functions.invoke('delete-user', {
+                    body: { userId }
+                });
+                if (error) throw error;
+                await loadArchivedUsers();
+                window.emergencySystem.showSuccess('Archived user deleted permanently from database and authentication!');
+            } catch (error) {
+                console.error('Error deleting archived user:', error);
+                window.emergencySystem.showError('Failed to delete archived user: ' + (error.message || 'Unknown error'));
+            }
+        }
+
+        // Clear all archived users
+        async function clearAllArchivedUsers() {
+            if (!confirm('Are you sure you want to permanently delete ALL archived users? This action cannot be undone.')) {
+                return;
+            }
+
+            try {
+                const { error } = await window.emergencySystem.supabase
+                    .from('user_profiles_archived')
+                    .delete()
+                    .neq('user_id', '00000000-0000-0000-0000-000000000000');
+                if (error) throw error;
+                await loadArchivedUsers();
+                window.emergencySystem.showSuccess('All archived users cleared!');
+            } catch (error) {
+                console.error('Error clearing archived users:', error);
+                window.emergencySystem.showError('Failed to clear archived users: ' + error.message);
+            }
+        }
+
+        // Loading indicators for users
+        function showLoadingIndicatorUsers() {
+            const container = document.getElementById('archivedUsers');
+            if (container) {
+                container.innerHTML = `
+                    <div class="text-center py-8">
+                        <div class="loading-spinner-enhanced">
+                            <div class="spinner-ring"></div>
+                            <div class="spinner-ring"></div>
+                            <div class="spinner-ring"></div>
+                        </div>
+                        <p class="loading-text">Loading archived users...</p>
+                        <p class="loading-subtext">Please wait while we fetch your data</p>
+                    </div>
+                `;
+            }
+        }
+
+        function hideLoadingIndicatorUsers() {
+            // Loading indicator will be replaced by displayArchivedUsers()
+        }
+
+        // Utility functions
+        function getEmergencyIcon(type) {
+            const icons = {
+                fire: '🔥',
+                flood: '🌊',
+                accident: '🚗',
+                medical: '🏥',
+                other: '⚠️'
+            };
+            return icons[type] || '⚠️';
+        }
+
+        function getPriorityText(priority) {
+            const priorities = {
+                1: 'Critical',
+                2: 'High',
+                3: 'Medium',
+                4: 'Low'
+            };
+            return priorities[priority] || 'Low';
+        }
+
+        function formatDate(dateString) {
+            if (!dateString) return 'Unknown';
+            
+            try {
+                const date = new Date(dateString);
+                if (isNaN(date.getTime())) return 'Invalid Date';
+                return date.toLocaleDateString() + ' ' + date.toLocaleTimeString();
+            } catch (error) {
+                return 'Invalid Date';
+            }
+        }
+
+        function showLoadingIndicator() {
+            const container = document.getElementById('archivedReports');
+            if (container) {
+                container.innerHTML = `
+                    <div class="text-center py-8">
+                        <div class="loading-spinner-enhanced">
+                            <div class="spinner-ring"></div>
+                            <div class="spinner-ring"></div>
+                            <div class="spinner-ring"></div>
+                        </div>
+                        <p class="loading-text">Loading archived reports...</p>
+                        <p class="loading-subtext">Please wait while we fetch your data</p>
+                    </div>
+                `;
+            }
+        }
+
+        function hideLoadingIndicator() {
+            // Loading indicator will be replaced by displayArchivedReports()
+        }
+
+        // Show logout confirmation modal
+        function showLogoutConfirm() {
+            const modal = document.getElementById('logoutModal');
+            modal.classList.remove('hidden');
+        }
+        
+        // Close logout modal
+        function closeLogoutModal() {
+            const modal = document.getElementById('logoutModal');
+            modal.classList.add('hidden');
+        }
+        
+        // Confirm and execute logout
+        async function confirmLogout() {
+            try {
+                // Close modal first
+                closeLogoutModal();
+                
+                // Show loading state (optional)
+                if (window.emergencySystem && window.emergencySystem.showSuccess) {
+                    window.emergencySystem.showSuccess('Logging out...');
+                }
+                
+                // Perform logout
+                await window.emergencySystem.signOut();
+                window.location.href = 'login.html';
+            } catch (error) {
+                console.error('Logout error:', error);
+                if (window.emergencySystem && window.emergencySystem.showError) {
+                    window.emergencySystem.showError('Failed to logout. Please try again.');
+                }
+            }
+        }
+        
+        // Close modal when clicking outside
+        document.addEventListener('click', function(event) {
+            const modal = document.getElementById('logoutModal');
+            if (event.target === modal) {
+                closeLogoutModal();
+            }
+        });
+        
+        // Close modal with Escape key
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'Escape') {
+                const modal = document.getElementById('logoutModal');
+                if (!modal.classList.contains('hidden')) {
+                    closeLogoutModal();
+                }
+            }
+        });
+    </script>
+
+    <!-- Logout Confirmation Modal -->
+    <div id="logoutModal" class="logout-modal hidden">
+        <div class="logout-modal-overlay" onclick="closeLogoutModal()"></div>
+        <div class="logout-modal-content">
+            <div class="logout-modal-icon">
+                <i class="bi bi-exclamation-triangle"></i>
+            </div>
+            <h3 class="logout-modal-title">Confirm Logout</h3>
+            <p class="logout-modal-message">Are you sure you want to logout? You'll need to sign in again to access the system.</p>
+            <div class="logout-modal-buttons">
+                <button class="logout-modal-btn cancel" onclick="closeLogoutModal()">
+                    <i class="bi bi-x-circle"></i> Cancel
+                </button>
+                <button class="logout-modal-btn confirm" onclick="confirmLogout()">
+                    <i class="bi bi-box-arrow-right"></i> Logout
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <style>
+        /* Logout Confirmation Modal */
+        .logout-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 10000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            animation: fadeIn 0.2s ease;
+        }
+        
+        .logout-modal.hidden {
+            display: none;
+        }
+        
+        .logout-modal-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(4px);
+        }
+        
+        .logout-modal-content {
+            position: relative;
+            background: white;
+            border-radius: 16px;
+            padding: 2rem;
+            max-width: 420px;
+            width: 90%;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3), 0 10px 10px -5px rgba(0, 0, 0, 0.2);
+            animation: slideUp 0.3s ease;
+            text-align: center;
+        }
+        
+        .logout-modal-icon {
+            width: 64px;
+            height: 64px;
+            margin: 0 auto 1.5rem;
+            background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 3px solid #fca5a5;
+        }
+        
+        .logout-modal-icon i {
+            font-size: 2rem;
+            color: #ef4444;
+        }
+        
+        .logout-modal-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #111827;
+            margin: 0 0 0.75rem 0;
+        }
+        
+        .logout-modal-message {
+            font-size: 0.9375rem;
+            color: #6b7280;
+            line-height: 1.6;
+            margin: 0 0 1.75rem 0;
+        }
+        
+        .logout-modal-buttons {
+            display: flex;
+            gap: 0.75rem;
+            justify-content: center;
+        }
+        
+        .logout-modal-btn {
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            font-size: 0.875rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            border: 2px solid transparent;
+        }
+        
+        .logout-modal-btn.cancel {
+            background: #f3f4f6;
+            color: #374151;
+            border-color: #e5e7eb;
+        }
+        
+        .logout-modal-btn.cancel:hover {
+            background: #e5e7eb;
+            border-color: #d1d5db;
+            transform: translateY(-1px);
+        }
+        
+        .logout-modal-btn.confirm {
+            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+            color: white;
+            border-color: #ef4444;
+            box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3);
+        }
+        
+        .logout-modal-btn.confirm:hover {
+            background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4);
+        }
+        
+        .logout-modal-btn:active {
+            transform: translateY(0);
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px) scale(0.95);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+    </style>
+</body>
+</html>

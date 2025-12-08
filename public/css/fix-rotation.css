@@ -1,0 +1,270 @@
+/* Fix for rotated content issues in view and edit pages */
+
+/* Reset all transforms and positioning */
+.view-page,
+.edit-page,
+.view-page body,
+.edit-page body,
+.view-page html,
+.edit-page html {
+    transform: none !important;
+    position: relative !important;
+    width: 100% !important;
+    height: auto !important;
+    overflow-x: visible !important;
+    overflow-y: visible !important;
+}
+
+/* Fix cards */
+.view-page .card,
+.edit-page .card {
+    transform: none !important;
+    position: relative !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    overflow: visible !important;
+}
+
+.view-page .card-body,
+.edit-page .card-body {
+    transform: none !important;
+    position: relative !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    overflow: visible !important;
+}
+
+/* Fix grids */
+.view-page .detail-grid,
+.edit-page .form-grid {
+    transform: none !important;
+    position: relative !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    overflow: visible !important;
+}
+
+/* Fix sections */
+.view-page .detail-section,
+.edit-page .form-section {
+    transform: none !important;
+    position: relative !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    overflow: visible !important;
+}
+
+/* Fix items */
+.view-page .detail-item,
+.edit-page .form-group {
+    transform: none !important;
+    position: relative !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    overflow: visible !important;
+}
+
+/* Ensure text is not rotated */
+.view-page *,
+.edit-page * {
+    writing-mode: horizontal-tb !important;
+    text-orientation: mixed !important;
+    transform: none !important;
+}
+
+/* Fix main content */
+.view-page .main-content,
+.edit-page .main-content {
+    transform: none !important;
+    position: relative !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    overflow: visible !important;
+}
+
+/* Fix dashboard container */
+.view-page .dashboard-container,
+.edit-page .dashboard-container {
+    transform: none !important;
+    position: relative !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    overflow: visible !important;
+}
+
+/* Fix text overlap and clipping issues */
+.view-page .card-header,
+.edit-page .card-header {
+    position: relative !important;
+    z-index: 1 !important;
+    background: white !important;
+    padding: 20px 24px !important;
+    border-bottom: 1px solid #e5e7eb !important;
+}
+
+.view-page .card-body,
+.edit-page .card-body {
+    position: relative !important;
+    z-index: 0 !important;
+    padding: 24px !important;
+    background: white !important;
+}
+
+.view-page .detail-section,
+.edit-page .form-section {
+    margin-bottom: 20px !important;
+    padding: 20px !important;
+    background: #f9fafb !important;
+    border: 1px solid #e5e7eb !important;
+    border-radius: 8px !important;
+}
+
+.view-page .detail-item,
+.edit-page .form-group {
+    margin-bottom: 16px !important;
+    padding: 0 !important;
+    background: transparent !important;
+}
+
+.view-page .detail-item label,
+.edit-page .form-label {
+    display: block !important;
+    margin-bottom: 4px !important;
+    font-size: 12px !important;
+    font-weight: 600 !important;
+    color: #6b7280 !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.5px !important;
+}
+
+.view-page .detail-value,
+.edit-page .form-input,
+.edit-page .form-select,
+.edit-page .form-textarea {
+    display: block !important;
+    width: 100% !important;
+    padding: 8px 12px !important;
+    margin-bottom: 8px !important;
+    background: white !important;
+    border: 1px solid #d1d5db !important;
+    border-radius: 6px !important;
+    font-size: 14px !important;
+    color: #111827 !important;
+}
+
+/* Fix badge positioning */
+.view-page .emergency-type-badge,
+.view-page .status-badge,
+.view-page .priority-badge,
+.view-page .severity-badge {
+    display: inline-block !important;
+    margin: 2px 4px 2px 0 !important;
+    padding: 4px 8px !important;
+    border-radius: 4px !important;
+    font-size: 11px !important;
+    font-weight: 600 !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.5px !important;
+}
+
+/* Fix grid layout */
+.view-page .detail-grid,
+.edit-page .form-grid {
+    display: grid !important;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)) !important;
+    gap: 20px !important;
+    margin: 0 !important;
+    padding: 0 !important;
+}
+
+/* Fix full-width items */
+.view-page .detail-item.full-width,
+.edit-page .form-group.full-width {
+    grid-column: 1 / -1 !important;
+}
+
+/* Ensure proper spacing */
+.view-page .report-details-grid,
+.edit-page .edit-form {
+    margin: 0 !important;
+    padding: 0 !important;
+    background: transparent !important;
+}
+
+/* Fix action buttons */
+.view-page .report-actions,
+.edit-page .form-actions {
+    display: flex !important;
+    gap: 12px !important;
+    margin-top: 20px !important;
+    padding-top: 20px !important;
+    border-top: 1px solid #e5e7eb !important;
+}
+
+.view-page .report-actions .btn,
+.edit-page .form-actions .btn {
+    padding: 8px 16px !important;
+    border-radius: 6px !important;
+    font-size: 14px !important;
+    font-weight: 500 !important;
+    text-decoration: none !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 6px !important;
+}
+
+/* Additional fixes for text overlap */
+.view-page .card-header h2,
+.view-page .card-header h3,
+.edit-page .card-header h2,
+.edit-page .card-header h3 {
+    margin: 0 0 8px 0 !important;
+    padding: 0 !important;
+    font-size: 18px !important;
+    font-weight: 600 !important;
+    color: #111827 !important;
+    line-height: 1.4 !important;
+}
+
+.view-page .card-header p,
+.edit-page .card-header p {
+    margin: 0 !important;
+    padding: 0 !important;
+    font-size: 14px !important;
+    color: #6b7280 !important;
+    line-height: 1.4 !important;
+}
+
+/* Fix detail title spacing */
+.view-page .detail-title,
+.edit-page .form-section-title {
+    margin: 0 0 16px 0 !important;
+    padding: 0 0 8px 0 !important;
+    font-size: 16px !important;
+    font-weight: 600 !important;
+    color: #111827 !important;
+    border-bottom: 2px solid #3b82f6 !important;
+    line-height: 1.4 !important;
+}
+
+/* Ensure proper line height for all text */
+.view-page *,
+.edit-page * {
+    line-height: 1.4 !important;
+}
+
+/* Fix any potential z-index issues */
+.view-page .card,
+.edit-page .card {
+    position: relative !important;
+    z-index: 1 !important;
+    overflow: visible !important;
+}
+
+/* Fix main content spacing */
+.view-page .main-content,
+.edit-page .main-content {
+    padding: 20px !important;
+    background: #f9fafb !important;
+    min-height: calc(100vh - 60px) !important;
+}

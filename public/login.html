@@ -1,0 +1,971 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LSPU Emergency Response - Login</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="manifest" href="manifest.json">
+    <link rel="icon" type="image/x-icon" href="images/favicon.ico">
+    <!-- Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* Split Panel Login Design */
+        .login-container {
+            min-height: 100vh;
+            display: flex;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        /* Left Panel - Welcome Back with Image Slider */
+        .welcome-panel {
+            flex: 0 0 45%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 3rem;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        /* Background Image Slider */
+        .slider-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+        
+        .slider-image {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            opacity: 0;
+            transition: opacity 1s ease-in-out;
+        }
+        
+        .slider-image.active {
+            opacity: 1;
+        }
+        
+        /* Overlay for better text readability */
+        .welcome-panel::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, rgba(59, 130, 246, 0.7) 0%, rgba(29, 78, 216, 0.8) 50%, rgba(30, 64, 175, 0.9) 100%);
+            z-index: 2;
+        }
+        
+        .welcome-panel::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="dots" width="20" height="20" patternUnits="userSpaceOnUse"><circle cx="10" cy="10" r="2" fill="rgba(255,255,255,0.1)"/></pattern></defs><rect width="100" height="100" fill="url(%23dots)"/></svg>');
+            opacity: 0.3;
+        }
+        
+        .welcome-content {
+            position: relative;
+            z-index: 3;
+            text-align: center;
+            color: white;
+        }
+        
+        .welcome-logo {
+            width: 90px;
+            height: 90px;
+            background: white;
+            border-radius: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 1.5rem;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+        
+        .welcome-logo:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 35px rgba(0, 0, 0, 0.2);
+        }
+        
+        .welcome-logo img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            border-radius: 14px;
+        }
+        
+        .welcome-title {
+            font-size: 2.2rem;
+            font-weight: 700;
+            margin-bottom: 0.8rem;
+            letter-spacing: -0.025em;
+        }
+        
+        .welcome-subtitle {
+            font-size: 1.1rem;
+            opacity: 0.9;
+            margin-bottom: 3rem;
+            line-height: 1.6;
+        }
+        
+        .signin-btn {
+            background: white;
+            color: #1d4ed8;
+            border: 2px solid white;
+            padding: 1rem 2.5rem;
+            border-radius: 50px;
+            font-weight: 600;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        
+        .signin-btn:hover {
+            background: transparent;
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+        }
+        
+        /* Right Panel - Create Account */
+        .form-panel {
+            flex: 1;
+            background: white;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            padding: 3rem;
+            position: relative;
+        }
+        
+        .form-container {
+            max-width: 400px;
+            width: 100%;
+            margin: 0 auto;
+        }
+        
+        .form-title {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #1f2937;
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+        
+        .social-login {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+        
+        .social-btn {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: white;
+            border: 1px solid #e5e7eb;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        
+        .social-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.15);
+        }
+        
+        .social-btn.facebook { color: #1877f2; }
+        .social-btn.google { color: #db4437; }
+        .social-btn.linkedin { color: #0077b5; }
+        
+        .divider {
+            text-align: center;
+            color: #9ca3af;
+            font-size: 0.9rem;
+            margin-bottom: 2rem;
+            position: relative;
+        }
+        
+        .divider::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: #e5e7eb;
+            z-index: 1;
+        }
+        
+        .divider span {
+            background: white;
+            padding: 0 1rem;
+            position: relative;
+            z-index: 2;
+        }
+        
+        .form-group {
+            margin-bottom: 1.5rem;
+            position: relative;
+        }
+        
+        .form-input {
+            width: 100%;
+            padding: 1rem 1rem 1rem 3rem;
+            border: 2px solid #e5e7eb;
+            border-radius: 12px;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            background: #f9fafb;
+        }
+        
+        .form-input:focus {
+            outline: none;
+            border-color: #3b82f6;
+            background: white;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+        
+        .input-icon {
+            position: absolute;
+            left: 1rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #9ca3af;
+            font-size: 1.2rem;
+        }
+        
+        .signup-btn {
+            width: 100%;
+            background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+            color: white;
+            border: none;
+            padding: 1rem 2rem;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
+        }
+        
+        .signup-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(59, 130, 246, 0.4);
+        }
+        
+        .login-link {
+            text-align: center;
+            margin-top: 2rem;
+            color: #6b7280;
+        }
+        
+        .login-link a {
+            color: #3b82f6;
+            text-decoration: none;
+            font-weight: 500;
+        }
+        
+        .login-link a:hover {
+            text-decoration: underline;
+        }
+        
+        /* Form Content Transitions */
+        .form-content {
+            transition: all 0.3s ease;
+        }
+        
+        .form-content.hidden {
+            display: none;
+        }
+        
+        /* Decorative Elements */
+        .decorative-shape {
+            position: absolute;
+            border-radius: 50%;
+            opacity: 0.1;
+        }
+        
+        .shape-1 {
+            width: 200px;
+            height: 200px;
+            background: #60a5fa;
+            top: -100px;
+            right: -100px;
+        }
+        
+        .shape-2 {
+            width: 150px;
+            height: 150px;
+            background: #93c5fd;
+            bottom: -75px;
+            left: -75px;
+        }
+        
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .login-container {
+                flex-direction: column;
+            }
+            
+            .welcome-panel {
+                flex: 0 0 40%;
+                padding: 2rem;
+            }
+            
+            .welcome-title {
+                font-size: 2rem;
+            }
+            
+            .form-panel {
+                padding: 2rem;
+            }
+        }
+        
+        .logo-container {
+            position: relative;
+            margin-bottom: 2rem;
+        }
+        
+        .logo-placeholder {
+            width: 80px;
+            height: 80px;
+            background: linear-gradient(135deg, #dc2626, #ef4444);
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 1rem;
+            box-shadow: 0 10px 25px rgba(220, 38, 38, 0.3);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        /* UDRRMO Logo Styles */
+        .logo-placeholder img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            border-radius: 20px;
+        }
+        
+        .logo-placeholder::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: linear-gradient(45deg, transparent, rgba(255,255,255,0.2), transparent);
+            animation: shimmer 3s infinite;
+        }
+        
+        @keyframes shimmer {
+            0% { transform: translateX(-100%) translateY(-100%) rotate(45deg); }
+            100% { transform: translateX(100%) translateY(100%) rotate(45deg); }
+        }
+        
+        .logo-icon {
+            font-size: 2.5rem;
+            color: white;
+            z-index: 1;
+        }
+        
+        .title-gradient {
+            background: linear-gradient(135deg, #1f2937, #374151);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            font-weight: 700;
+            letter-spacing: -0.025em;
+        }
+        
+        .subtitle-modern {
+            color: #6b7280;
+            font-weight: 400;
+            letter-spacing: 0.025em;
+        }
+        
+        .form-input-modern {
+            background: rgba(255, 255, 255, 0.8);
+            border: 2px solid rgba(229, 231, 235, 0.5);
+            border-radius: 16px;
+            padding: 1rem 1.25rem;
+            font-size: 1rem;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            backdrop-filter: blur(10px);
+        }
+        
+        .form-input-modern:focus {
+            border-color: #dc2626;
+            background: rgba(255, 255, 255, 0.95);
+            box-shadow: 0 0 0 4px rgba(220, 38, 38, 0.1);
+            transform: translateY(-2px);
+        }
+        
+        .btn-modern {
+            background: linear-gradient(135deg, #dc2626, #ef4444);
+            border: none;
+            border-radius: 16px;
+            padding: 1rem 2rem;
+            font-weight: 600;
+            font-size: 1rem;
+            color: white;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 10px 25px rgba(220, 38, 38, 0.3);
+        }
+        
+        .btn-modern:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 15px 35px rgba(220, 38, 38, 0.4);
+        }
+        
+        .btn-modern:active {
+            transform: translateY(-1px);
+        }
+        
+        .btn-modern::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            transition: left 0.5s;
+        }
+        
+        .btn-modern:hover::before {
+            left: 100%;
+        }
+        
+        .floating-elements {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            pointer-events: none;
+            z-index: 1;
+        }
+        
+        .floating-circle {
+            position: absolute;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.1);
+            animation: float 6s ease-in-out infinite;
+        }
+        
+        .floating-circle:nth-child(1) {
+            width: 80px;
+            height: 80px;
+            top: 20%;
+            left: 10%;
+            animation-delay: 0s;
+        }
+        
+        .floating-circle:nth-child(2) {
+            width: 120px;
+            height: 120px;
+            top: 60%;
+            right: 15%;
+            animation-delay: 2s;
+        }
+        
+        .floating-circle:nth-child(3) {
+            width: 60px;
+            height: 60px;
+            bottom: 20%;
+            left: 20%;
+            animation-delay: 4s;
+        }
+        
+        @keyframes float {
+            0%, 100% { transform: translateY(0px) rotate(0deg); }
+            50% { transform: translateY(-20px) rotate(180deg); }
+        }
+        
+        .mobile-ready-badge {
+            background: rgba(16, 185, 129, 0.1);
+            border: 1px solid rgba(16, 185, 129, 0.2);
+            border-radius: 12px;
+            padding: 0.75rem 1rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: #059669;
+            font-weight: 500;
+            font-size: 0.875rem;
+        }
+        
+        .signup-link {
+            color: #dc2626;
+            text-decoration: none;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            position: relative;
+        }
+        
+        .signup-link:hover {
+            color: #b91c1c;
+        }
+        
+        .signup-link::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 0;
+            width: 0;
+            height: 2px;
+            background: #dc2626;
+            transition: width 0.3s ease;
+        }
+        
+        .signup-link:hover::after {
+            width: 100%;
+        }
+        
+        /* Mobile App Download Section */
+        .mobile-download-section {
+            margin-top: 2rem;
+            padding-top: 1rem;
+        }
+        
+        .mobile-download-btn {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            width: 100%;
+            background: linear-gradient(135deg, #10b981, #059669);
+            color: white;
+            padding: 1.25rem 1.5rem;
+            border-radius: 16px;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);
+            margin-top: 1rem;
+        }
+        
+        .mobile-download-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(16, 185, 129, 0.4);
+            background: linear-gradient(135deg, #059669, #047857);
+        }
+        
+        .mobile-download-btn i:first-child {
+            font-size: 2rem;
+            margin-right: 1rem;
+        }
+        
+        .download-text {
+            flex: 1;
+            text-align: left;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .download-title {
+            font-weight: 600;
+            font-size: 1rem;
+            margin-bottom: 0.25rem;
+        }
+        
+        .download-subtitle {
+            font-size: 0.875rem;
+            opacity: 0.9;
+        }
+        
+        .mobile-download-btn i:last-child {
+            font-size: 1.5rem;
+            animation: bounce 2s infinite;
+        }
+        
+        @keyframes bounce {
+            0%, 20%, 50%, 80%, 100% {
+                transform: translateY(0);
+            }
+            40% {
+                transform: translateY(-5px);
+            }
+            60% {
+                transform: translateY(-3px);
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .login-card {
+                margin: 1rem;
+                border-radius: 20px;
+            }
+            
+            .logo-placeholder {
+                width: 60px;
+                height: 60px;
+            }
+            
+            .logo-icon {
+                font-size: 2rem;
+            }
+            
+            .mobile-download-btn {
+                padding: 1rem 1.25rem;
+            }
+            
+            .mobile-download-btn i:first-child {
+                font-size: 1.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <!-- Left Panel - Welcome Back -->
+        <div class="welcome-panel">
+            <!-- Background Image Slider -->
+            <div class="slider-container">
+                <img src="images/slider-1.jpg" alt="Emergency Response Training" class="slider-image active">
+                <img src="images/slider-2.jpg" alt="Disaster Preparedness Drill" class="slider-image">
+                <img src="images/slider-3.jpg" alt="University Safety Training" class="slider-image">
+                <img src="images/slider-4.jpg" alt="Emergency Response Team" class="slider-image">
+            </div>
+            
+            <div class="decorative-shape shape-1"></div>
+            <div class="decorative-shape shape-2"></div>
+            
+            <div class="welcome-content">
+                <div class="welcome-logo">
+                    <img src="images/udrrmo-logo.jpg" alt="UDRRMO Logo" style="width: 100%; height: 100%; object-fit: contain; border-radius: 15px;">
+                </div>
+                <h1 class="welcome-title">Welcome Back Admin!</h1>
+                <p class="welcome-subtitle">To keep connected with us please login with your personal info</p>
+                <button class="signin-btn" onclick="document.getElementById('loginForm').scrollIntoView({behavior: 'smooth'})">SIGN IN</button>
+            </div>
+        </div>
+
+        <!-- Right Panel - Dynamic Form Container -->
+        <div class="form-panel">
+            <div class="form-container">
+                <!-- Sign In Form (Default) -->
+                <div id="signInForm" class="form-content">
+                    <h2 class="form-title">Sign In</h2>
+                    
+                    <form id="loginForm" class="space-y-4">
+                        <div class="form-group">
+                            <div class="input-icon"><i class="bi bi-envelope"></i></div>
+                            <input type="email" id="email" class="form-input" placeholder="Email" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <div class="input-icon"><i class="bi bi-lock"></i></div>
+                            <input type="password" id="password" class="form-input" placeholder="Password" required>
+                        </div>
+                        
+                        <button type="submit" class="signup-btn">
+                            <span id="submitText">SIGN IN</span>
+                            <span id="submitLoading" class="hidden">
+                                <div class="loading"></div>
+                                Signing in...
+                            </span>
+                        </button>
+                    </form>
+                    
+                    <div class="login-link">
+                        Don't have an account? <a href="#" onclick="switchToSignUp()">Sign up here</a>
+                    </div>
+                    
+                    <!-- Mobile App Download Section -->
+                    <div class="mobile-download-section">
+                        <div class="divider">
+                            <span>Or use our mobile app</span>
+                        </div>
+                        <a href="https://github.com/456123qwertasdf-prog/lspu_dres/raw/master/public/lspu-emergency-response.apk" download class="mobile-download-btn">
+                            <i class="bi bi-android2"></i>
+                            <div class="download-text">
+                                <span class="download-title">Download Android App</span>
+                                <span class="download-subtitle">Get the mobile experience</span>
+                            </div>
+                            <i class="bi bi-download"></i>
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Create Account Form (Hidden by default) -->
+                <div id="createAccountForm" class="form-content hidden">
+                    <h2 class="form-title">Create Account</h2>
+                    
+                    <!-- Social Login Buttons -->
+                    <div class="social-login">
+                        <div class="social-btn facebook" onclick="socialLogin('facebook')">
+                            <span style="font-weight: bold;">f</span>
+                        </div>
+                        <div class="social-btn google" onclick="socialLogin('google')">
+                            <span style="font-weight: bold;">G+</span>
+                        </div>
+                        <div class="social-btn linkedin" onclick="socialLogin('linkedin')">
+                            <span style="font-weight: bold;">in</span>
+                        </div>
+                    </div>
+                    
+                    <div class="divider">
+                        <span>or use your email for registration:</span>
+                    </div>
+                    
+                    <!-- Registration Form -->
+                    <form id="signUpForm" class="space-y-4">
+                        <div class="form-group">
+                            <div class="input-icon"><i class="bi bi-person"></i></div>
+                            <input type="text" id="signupName" class="form-input" placeholder="Name" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <div class="input-icon"><i class="bi bi-envelope"></i></div>
+                            <input type="email" id="signupEmail" class="form-input" placeholder="Email" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <div class="input-icon"><i class="bi bi-lock"></i></div>
+                            <input type="password" id="signupPassword" class="form-input" placeholder="Password" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <div class="input-icon"><i class="bi bi-lock-fill"></i></div>
+                            <input type="password" id="signupConfirmPassword" class="form-input" placeholder="Confirm Password" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <div class="input-icon"><i class="bi bi-people"></i></div>
+                            <select id="signupRole" class="form-input" style="padding-left: 3rem;">
+                                <option value="citizen">Citizen - Report Emergencies</option>
+                                <option value="responder">Responder - Emergency Response</option>
+                                <option value="admin">Admin - System Management</option>
+                            </select>
+                        </div>
+                        
+                        <button type="submit" class="signup-btn">
+                            <span id="signupText">SIGN UP</span>
+                            <span id="signupLoading" class="hidden">
+                                <div class="loading"></div>
+                                Creating account...
+                            </span>
+                        </button>
+                    </form>
+                    
+                    <div class="login-link">
+                        Already have an account? <a href="#" onclick="switchToSignIn()">Sign in here</a>
+                    </div>
+                    
+                    <!-- Mobile App Download Section -->
+                    <div class="mobile-download-section">
+                        <div class="divider">
+                            <span>Or use our mobile app</span>
+                        </div>
+                        <a href="https://github.com/456123qwertasdf-prog/lspu_dres/raw/master/public/lspu-emergency-response.apk" download class="mobile-download-btn">
+                            <i class="bi bi-android2"></i>
+                            <div class="download-text">
+                                <span class="download-title">Download Android App</span>
+                                <span class="download-subtitle">Get the mobile experience</span>
+                            </div>
+                            <i class="bi bi-download"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- Alerts Container -->
+    <div class="alerts-container fixed top-4 right-4 z-50"></div>
+
+    <!-- Scripts -->
+    <script src="js/supabase.js"></script>
+    <script>
+        // Initialize login system
+        document.addEventListener('DOMContentLoaded', async () => {
+            // Wait for system initialization
+            await new Promise(resolve => {
+                const checkInit = () => {
+                    if (emergencySystem.isInitialized) {
+                        resolve();
+                    } else {
+                        setTimeout(checkInit, 100);
+                    }
+                };
+                checkInit();
+            });
+
+            // Set up form handlers
+            document.getElementById('loginForm').addEventListener('submit', handleLogin);
+            document.getElementById('signUpForm').addEventListener('submit', handleSignUp);
+        });
+
+        // Handle login
+        async function handleLogin(e) {
+            e.preventDefault();
+            
+            const submitBtn = document.querySelector('#loginForm button[type="submit"]');
+            const submitText = document.getElementById('submitText');
+            const submitLoading = document.getElementById('submitLoading');
+            
+            try {
+                // Show loading state
+                submitBtn.disabled = true;
+                submitText.classList.add('hidden');
+                submitLoading.classList.remove('hidden');
+
+                const email = document.getElementById('email').value;
+                const password = document.getElementById('password').value;
+
+                // Sign in with Supabase
+                await emergencySystem.signIn(email, password);
+                
+                // Get user role from metadata
+                const userRole = emergencySystem.user?.user_metadata?.role || 'citizen';
+                
+                // Redirect based on actual user role
+                redirectToDashboard(userRole);
+                
+            } catch (error) {
+                console.error('Login failed:', error);
+                emergencySystem.showError('Login failed: ' + error.message);
+            } finally {
+                // Hide loading state
+                submitBtn.disabled = false;
+                submitText.classList.remove('hidden');
+                submitLoading.classList.add('hidden');
+            }
+        }
+
+        // Handle sign up
+        async function handleSignUp(e) {
+            e.preventDefault();
+            
+            const submitBtn = document.querySelector('#signUpForm button[type="submit"]');
+            const signupText = document.getElementById('signupText');
+            const signupLoading = document.getElementById('signupLoading');
+            
+            try {
+                // Show loading state
+                submitBtn.disabled = true;
+                signupText.classList.add('hidden');
+                signupLoading.classList.remove('hidden');
+                
+                const name = document.getElementById('signupName').value;
+                const email = document.getElementById('signupEmail').value;
+                const password = document.getElementById('signupPassword').value;
+                const confirmPassword = document.getElementById('signupConfirmPassword').value;
+                const role = document.getElementById('signupRole').value;
+
+                if (password !== confirmPassword) {
+                    emergencySystem.showError('Passwords do not match');
+                    return;
+                }
+
+                // Sign up with Supabase
+                await emergencySystem.signUp(email, password, {
+                    full_name: name,
+                    role: role
+                });
+                
+                emergencySystem.showSuccess('Account created! Please check your email to verify your account.');
+                
+            } catch (error) {
+                console.error('Sign up failed:', error);
+                emergencySystem.showError('Sign up failed: ' + error.message);
+            } finally {
+                // Hide loading state
+                submitBtn.disabled = false;
+                signupText.classList.remove('hidden');
+                signupLoading.classList.add('hidden');
+            }
+        }
+
+        // Redirect to appropriate dashboard based on user role
+        function redirectToDashboard(role) {
+            switch (role) {
+                case 'citizen':
+                    window.location.href = 'user.html';
+                    break;
+                case 'responder':
+                    window.location.href = 'responder.html';
+                    break;
+                case 'admin':
+                    window.location.href = 'admin.html';
+                    break;
+                case 'super_user':
+                    window.location.href = 'super-user.html';
+                    break;
+                default:
+                    window.location.href = 'user.html';
+            }
+        }
+
+        // Switch to sign up form
+        function switchToSignUp() {
+            document.getElementById('signInForm').classList.add('hidden');
+            document.getElementById('createAccountForm').classList.remove('hidden');
+        }
+
+        // Switch to sign in form
+        function switchToSignIn() {
+            document.getElementById('createAccountForm').classList.add('hidden');
+            document.getElementById('signInForm').classList.remove('hidden');
+        }
+
+        // Social login handlers
+        function socialLogin(provider) {
+            emergencySystem.showInfo(`Social login with ${provider} coming soon!`);
+        }
+
+        // Background Image Slider
+        function initImageSlider() {
+            const images = document.querySelectorAll('.slider-image');
+            let currentIndex = 0;
+            
+            function showNextImage() {
+                // Remove active class from current image
+                images[currentIndex].classList.remove('active');
+                
+                // Move to next image
+                currentIndex = (currentIndex + 1) % images.length;
+                
+                // Add active class to next image
+                images[currentIndex].classList.add('active');
+            }
+            
+            // Start the slider (change image every 4 seconds)
+            setInterval(showNextImage, 4000);
+        }
+
+        // Initialize slider when page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            initImageSlider();
+        });
+    </script>
+</body>
+</html>

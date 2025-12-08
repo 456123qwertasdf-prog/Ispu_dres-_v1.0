@@ -1,0 +1,1911 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Management - LSPU Emergency Application System</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/system-status.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <style>
+        .registration-form {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 2rem;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        
+        .form-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #374151;
+            margin: 0;
+        }
+        
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .form-label {
+            font-weight: 500;
+            color: #374151;
+            margin-bottom: 0.5rem;
+            font-size: 0.875rem;
+        }
+        
+        .form-input {
+            padding: 0.75rem;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            font-size: 0.875rem;
+            transition: border-color 0.2s;
+        }
+        
+        .form-input:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+        
+        .form-select {
+            padding: 0.75rem;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            font-size: 0.875rem;
+            background-color: white;
+            cursor: pointer;
+        }
+        
+        .form-select:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+        
+        .form-hint {
+            font-size: 0.75rem;
+            color: #6b7280;
+            margin-top: 0.25rem;
+        }
+        
+        .button-group {
+            display: flex;
+            gap: 1rem;
+            justify-content: flex-start;
+        }
+        
+        .btn-add {
+            background-color: #1c8ef8;
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 6px;
+            font-weight: 500;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: background-color 0.2s;
+        }
+        
+        .btn-add:hover {
+            background-color: #1c8ef8;
+        }
+        
+        .btn-cancel {
+            background-color: #6b7280;
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 6px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        
+        .btn-cancel:hover {
+            background-color: #4b5563;
+        }
+        
+        /* Header Card Styles */
+        .header-card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            margin-bottom: 2rem;
+            overflow: hidden;
+        }
+        
+        .header-content {
+            background: #f8f9fa;
+            padding: 2rem;
+            border-radius: 12px;
+            margin: 0.5rem;
+        }
+        
+        .header-title {
+            font-size: 1.75rem !important;
+            font-weight: 800 !important;
+            color: #1e293b !important;
+            margin: 0 !important;
+            letter-spacing: -0.02em;
+            background: none !important;
+            -webkit-background-clip: unset !important;
+            -webkit-text-fill-color: #1e293b !important;
+            background-clip: unset !important;
+            text-shadow: none !important;
+        }
+        
+        .header-subtitle {
+            font-size: 0.9375rem !important;
+            color: #64748b !important;
+            margin: 0.5rem 0 0 0 !important;
+            font-weight: 400 !important;
+            line-height: 1.5;
+        }
+        
+        /* Users Section Styles */
+        .users-section {
+            margin-top: 2rem;
+        }
+        
+        .section-header {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+        }
+        
+        .section-header-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        .section-header h3 {
+            font-size: 1.75rem !important;
+            font-weight: 800 !important;
+            color: #1e293b !important;
+            margin: 0 !important;
+            flex-shrink: 0;
+            letter-spacing: -0.02em;
+            background: none !important;
+            -webkit-background-clip: unset !important;
+            -webkit-text-fill-color: #1e293b !important;
+            background-clip: unset !important;
+            text-shadow: none !important;
+        }
+        
+        .section-header p {
+            font-size: 0.9375rem !important;
+            color: #64748b !important;
+            margin: 0.5rem 0 0 0 !important;
+            font-weight: 400 !important;
+            line-height: 1.5;
+        }
+        
+        .table-container {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+        
+        .users-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        .users-table thead {
+            background: #f8f9fa;
+        }
+        
+        .users-table th {
+            padding: 1rem;
+            text-align: left;
+            font-weight: 600;
+            color: #495057;
+            border-bottom: 1px solid #dee2e6;
+            font-size: 0.875rem;
+        }
+        
+        .users-table td {
+            padding: 1rem;
+            border-bottom: 1px solid #f1f3f4;
+            font-size: 0.875rem;
+            color: #495057;
+        }
+        
+        .users-table tbody tr:hover {
+            background-color: #f8f9fa;
+        }
+        
+        .no-data {
+            text-align: center;
+            color: #6c757d;
+            font-style: italic;
+            padding: 2rem;
+        }
+        
+        .role-badge {
+            display: inline-block;
+            padding: 0.25rem 0.5rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+        
+        .role-admin {
+            background-color: #fef2f2;
+            color: #dc2626;
+        }
+        
+        .role-responder {
+            background-color: #faf5ff;
+            color: #8b5cf6;
+        }
+        
+        .role-citizen {
+            background-color: #eff6ff;
+            color: #3b82f6;
+        }
+        
+        .role-super_user {
+            background-color: #fef2f2;
+            color: #dc2626;
+            border: 2px solid #dc2626;
+            font-weight: 600;
+        }
+        
+        .status-badge {
+            display: inline-block;
+            padding: 0.25rem 0.5rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+        
+        .status-active {
+            background-color: #f0fdf4;
+            color: #16a34a;
+        }
+        
+        .status-inactive {
+            background-color: #f3f4f6;
+            color: #6b7280;
+        }
+        
+        .action-buttons {
+            display: flex;
+            gap: 0.5rem;
+        }
+        
+        .btn-edit {
+            background-color: #3b82f6;
+            color: white;
+            border: none;
+            padding: 0.375rem 0.75rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        
+        .btn-edit:hover {
+            background-color: #2563eb;
+        }
+        
+        .btn-delete {
+            background-color: #ef4444;
+            color: white;
+            border: none;
+            padding: 0.375rem 0.75rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        
+        .btn-delete:hover {
+            background-color: #dc2626;
+        }
+        
+        .btn-archive {
+            background-color: #f59e0b;
+            color: white;
+            border: none;
+            padding: 0.375rem 0.75rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        
+        .btn-archive:hover {
+            background-color: #d97706;
+        }
+        
+        /* Form Minimize/Maximize Styles */
+        .form-header-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+        
+        .form-toggle-btn {
+            background: none;
+            border: none;
+            color: #6b7280;
+            cursor: pointer;
+            padding: 0.5rem;
+            border-radius: 6px;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.875rem;
+        }
+        
+        .form-toggle-btn:hover {
+            background-color: #f3f4f6;
+            color: #374151;
+        }
+        
+        .form-content-wrapper {
+            overflow: hidden;
+            transition: max-height 0.3s ease-out, opacity 0.3s ease-out;
+            max-height: 2000px;
+            opacity: 1;
+        }
+        
+        .form-content-wrapper.collapsed {
+            max-height: 0;
+            opacity: 0;
+            margin: 0;
+            padding: 0;
+        }
+        
+        .registration-form {
+            position: relative;
+        }
+        
+        /* Search Bar Styles */
+        .search-container {
+            flex: 1;
+            max-width: 600px;
+            margin-left: auto;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+        
+        .filter-dropdown {
+            padding: 0.625rem 0.75rem;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            font-size: 0.875rem;
+            background-color: white;
+            cursor: pointer;
+            color: #374151;
+            min-width: 140px;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+        
+        .filter-dropdown:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+        
+        .search-wrapper {
+            position: relative;
+            display: flex;
+            align-items: center;
+            flex: 1;
+        }
+        
+        .search-icon {
+            position: absolute;
+            left: 1rem;
+            color: #6b7280;
+            font-size: 1.125rem;
+            pointer-events: none;
+        }
+        
+        .search-input {
+            width: 100%;
+            padding: 0.625rem 1rem 0.625rem 2.75rem;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            font-size: 0.875rem;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+        
+        .search-input:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+        
+        .search-input::placeholder {
+            color: #9ca3af;
+        }
+        
+        .search-clear-btn {
+            position: absolute;
+            right: 0.75rem;
+            background: none;
+            border: none;
+            color: #6b7280;
+            cursor: pointer;
+            padding: 0.25rem;
+            border-radius: 4px;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+        
+        .search-clear-btn:hover {
+            background-color: #f3f4f6;
+            color: #374151;
+        }
+        
+        .search-clear-btn.visible {
+            display: flex;
+        }
+        
+        .search-results-info {
+            margin-top: 0.5rem;
+            font-size: 0.75rem;
+            color: #6b7280;
+        }
+
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/supabase@2"></script>
+    <script src="js/supabase.js"></script>
+</head>
+<body>
+    <div class="dashboard-container">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <div class="sidebar-logo">
+                    <img src="images/udrrmo image.jpg" alt="UDRRMO Logo" 
+                         style="width: 50px; height: 50px; object-fit: contain; border-radius: 50%; border: 2px solid white; display: block;">
+                    <div class="logo-text">
+                        <h3>Kapiyu Admin</h3>
+                        <p>Emergency Response</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="system-status">
+                <div class="status-indicator">
+                    <span class="status-dot online"></span>
+                    <span>System Status: Online</span>
+                </div>
+            </div>
+
+            <nav class="sidebar-nav">
+                <a href="admin.html" class="nav-item">
+                    <i class="bi bi-house"></i> Dashboard
+                </a>
+                <a href="reports.html" class="nav-item">
+                    <i class="bi bi-file-text"></i> Reports
+                </a>
+                <a href="announcements.html" class="nav-item">
+                    <i class="bi bi-megaphone"></i> Announcements
+                </a>
+                <a href="early-warning-dashboard.html" class="nav-item">
+                    <i class="bi bi-shield-exclamation"></i> Early Warning
+                </a>
+                <a href="map.html" class="nav-item">
+                    <i class="bi bi-map"></i> Map View
+                </a>
+                <a href="evacuation-guide.html" class="nav-item">
+                    <i class="bi bi-shield-check"></i> Evacuation Guide
+                </a>
+                <a href="archive.html" class="nav-item">
+                    <i class="bi bi-folder"></i> Archived
+                </a>
+                <a href="analytics.html" class="nav-item">
+                    <i class="bi bi-graph-up"></i> Analytics
+                </a>
+                <a href="user-management.html" class="nav-item active">
+                    <i class="bi bi-people"></i> User Management
+                </a>
+                <a href="lsm-admin.html" class="nav-item">
+                    <i class="bi bi-journal-bookmark"></i> Learning Modules
+                </a>
+            </nav>
+            
+            <div class="sidebar-footer" style="margin-top: auto; padding: 1rem; border-top: 1px solid rgba(255, 255, 255, 0.1);">
+                <div class="user-info-card" style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1rem; padding: 0.75rem; background: rgba(255, 255, 255, 0.1); border-radius: 8px;">
+                    <div class="user-avatar" style="width: 40px; height: 40px; background: rgba(255, 255, 255, 0.2); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 1.125rem;">A</div>
+                    <div class="user-details">
+                        <h4 style="margin: 0; font-size: 0.875rem; font-weight: 600; color: white;">Admin User</h4>
+                        <p style="margin: 0; font-size: 0.75rem; color: rgba(255, 255, 255, 0.7);">Kapiyu Command</p>
+                    </div>
+                </div>
+                <button class="logout-btn" onclick="showLogoutConfirm()" style="width: 100%;padding: 0.75rem 1rem;background: rgba(239, 68, 68, 0.1);border: 1px solid rgba(239, 68, 68, 0.3);color: #fca5a5;border-radius: 8px;font-size: 0.875rem;font-weight: 500;cursor: pointer;transition: all 0.2s ease;display: flex;align-items: center;gap: 0.5rem;margin-left: 0px;">
+                    <i class="bi bi-box-arrow-right"></i> Logout
+                </button>
+            </div>
+        </div>
+
+        <!-- User Created Success Modal -->
+        <div id="userCreatedModal" class="user-created-modal hidden">
+            <div class="user-created-modal-overlay" onclick="closeUserCreatedModal()"></div>
+            <div class="user-created-modal-content">
+                <div class="user-created-modal-icon">
+                    <i class="bi bi-check-circle-fill"></i>
+                </div>
+                <h3 class="user-created-modal-title">User Created Successfully!</h3>
+                <div class="user-created-modal-body">
+                    <div class="credentials-section">
+                        <div class="credential-item">
+                            <span class="credential-label">📧 Email:</span>
+                            <span class="credential-value" id="modalUserEmail">-</span>
+                        </div>
+                        <div class="credential-item">
+                            <span class="credential-label">🔑 Password:</span>
+                            <span class="credential-value" id="modalUserPassword">-</span>
+                        </div>
+                    </div>
+                    <div class="credentials-status" id="modalCredentialsStatus">
+                        <i class="bi bi-check-circle"></i>
+                        <span>Credentials have been sent to the user's email</span>
+                    </div>
+                    <div class="important-note">
+                        <i class="bi bi-exclamation-triangle"></i>
+                        <div>
+                            <strong>IMPORTANT:</strong>
+                            <ul id="modalImportantNotes">
+                                <li>User will receive email with credentials</li>
+                                <li>User should change password after first login</li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="verification-link" id="modalVerificationLink" style="display: none;">
+                        <span class="link-label">Verification Link:</span>
+                        <a href="#" id="modalVerificationLinkUrl" target="_blank" class="link-value">-</a>
+                    </div>
+                </div>
+                <div class="user-created-modal-buttons">
+                    <button class="user-created-modal-btn primary" onclick="closeUserCreatedModal()">
+                        <i class="bi bi-check-circle"></i> OK
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Logout Confirmation Modal -->
+        <div id="logoutModal" class="logout-modal hidden">
+            <div class="logout-modal-overlay" onclick="closeLogoutModal()"></div>
+            <div class="logout-modal-content">
+                <div class="logout-modal-icon">
+                    <i class="bi bi-exclamation-triangle"></i>
+                </div>
+                <h3 class="logout-modal-title">Confirm Logout</h3>
+                <p class="logout-modal-message">Are you sure you want to logout? You'll need to sign in again to access the system.</p>
+                <div class="logout-modal-buttons">
+                    <button class="logout-modal-btn cancel" onclick="closeLogoutModal()">
+                        <i class="bi bi-x-circle"></i> Cancel
+                    </button>
+                    <button class="logout-modal-btn confirm" onclick="confirmLogout()">
+                        <i class="bi bi-box-arrow-right"></i> Logout
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <style>
+            /* Modern Logout Button */
+            .logout-btn {
+                width: 100%;
+                padding: 0.875rem 1rem;
+                background: linear-gradient(135deg, rgba(239, 68, 68, 0.15) 0%, rgba(220, 38, 38, 0.1) 100%);
+                border: 2px solid rgba(239, 68, 68, 0.4);
+                border-radius: 10px;
+                font-size: 0.875rem;
+                font-weight: 600;
+                cursor: pointer;
+                transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                gap: 0.625rem;
+                color: #fee2e2;
+                position: relative;
+                overflow: hidden;
+                box-shadow: 0 2px 8px rgba(239, 68, 68, 0.15);
+            }
+            
+            .logout-btn::before {
+                content: '';
+                position: absolute;
+                top: 0;
+                left: -100%;
+                width: 100%;
+                height: 100%;
+                background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+                transition: left 0.5s;
+            }
+            
+            .logout-btn:hover::before {
+                left: 100%;
+            }
+            
+            .logout-btn:hover {
+                background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+                border-color: #ef4444;
+                color: white;
+                transform: translateY(-2px);
+                box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4);
+            }
+            
+            .logout-btn:active {
+                transform: translateY(0);
+                box-shadow: 0 2px 6px rgba(239, 68, 68, 0.3);
+            }
+            
+            .logout-btn i {
+                font-size: 1rem;
+                transition: transform 0.3s ease;
+            }
+            
+            .logout-btn:hover i {
+                transform: translateX(2px);
+            }
+            
+            /* Logout Confirmation Modal */
+            .logout-modal {
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                z-index: 10000;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                animation: fadeIn 0.2s ease;
+            }
+            
+            .logout-modal.hidden {
+                display: none;
+            }
+            
+            .logout-modal-overlay {
+                position: absolute;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: rgba(0, 0, 0, 0.6);
+                backdrop-filter: blur(4px);
+            }
+            
+            .logout-modal-content {
+                position: relative;
+                background: white;
+                border-radius: 16px;
+                padding: 2rem;
+                max-width: 420px;
+                width: 90%;
+                box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3), 0 10px 10px -5px rgba(0, 0, 0, 0.2);
+                animation: slideUp 0.3s ease;
+                text-align: center;
+            }
+            
+            .logout-modal-icon {
+                width: 64px;
+                height: 64px;
+                margin: 0 auto 1.5rem;
+                background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
+                border-radius: 50%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                border: 3px solid #fca5a5;
+            }
+            
+            .logout-modal-icon i {
+                font-size: 2rem;
+                color: #ef4444;
+            }
+            
+            .logout-modal-title {
+                font-size: 1.5rem;
+                font-weight: 700;
+                color: #111827;
+                margin: 0 0 0.75rem 0;
+            }
+            
+            .logout-modal-message {
+                font-size: 0.9375rem;
+                color: #6b7280;
+                line-height: 1.6;
+                margin: 0 0 1.75rem 0;
+            }
+            
+            .logout-modal-buttons {
+                display: flex;
+                gap: 0.75rem;
+                justify-content: center;
+            }
+            
+            .logout-modal-btn {
+                padding: 0.75rem 1.5rem;
+                border-radius: 8px;
+                font-size: 0.875rem;
+                font-weight: 600;
+                cursor: pointer;
+                transition: all 0.2s ease;
+                display: flex;
+                align-items: center;
+                gap: 0.5rem;
+                border: 2px solid transparent;
+            }
+            
+            .logout-modal-btn.cancel {
+                background: #f3f4f6;
+                color: #374151;
+                border-color: #e5e7eb;
+            }
+            
+            .logout-modal-btn.cancel:hover {
+                background: #e5e7eb;
+                border-color: #d1d5db;
+                transform: translateY(-1px);
+            }
+            
+            .logout-modal-btn.confirm {
+                background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+                color: white;
+                border-color: #ef4444;
+                box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3);
+            }
+            
+            .logout-modal-btn.confirm:hover {
+                background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+                transform: translateY(-1px);
+                box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4);
+            }
+            
+            .logout-modal-btn:active {
+                transform: translateY(0);
+            }
+            
+            @keyframes fadeIn {
+                from { opacity: 0; }
+                to { opacity: 1; }
+            }
+            
+            @keyframes slideUp {
+                from {
+                    opacity: 0;
+                    transform: translateY(20px) scale(0.95);
+                }
+                to {
+                    opacity: 1;
+                    transform: translateY(0) scale(1);
+                }
+            }
+            
+            /* User Created Success Modal */
+            .user-created-modal {
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                z-index: 10000;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                animation: fadeIn 0.2s ease;
+            }
+            
+            .user-created-modal.hidden {
+                display: none;
+            }
+            
+            .user-created-modal-overlay {
+                position: absolute;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: rgba(0, 0, 0, 0.6);
+                backdrop-filter: blur(4px);
+            }
+            
+            .user-created-modal-content {
+                position: relative;
+                background: white;
+                border-radius: 16px;
+                padding: 2rem;
+                max-width: 500px;
+                width: 90%;
+                max-height: 90vh;
+                overflow-y: auto;
+                box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3), 0 10px 10px -5px rgba(0, 0, 0, 0.2);
+                animation: slideUp 0.3s ease;
+                text-align: center;
+            }
+            
+            .user-created-modal-icon {
+                width: 64px;
+                height: 64px;
+                margin: 0 auto 1.5rem;
+                background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
+                border-radius: 50%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                border: 3px solid #10b981;
+            }
+            
+            .user-created-modal-icon i {
+                font-size: 2rem;
+                color: #059669;
+            }
+            
+            .user-created-modal-title {
+                font-size: 1.5rem;
+                font-weight: 700;
+                color: #111827;
+                margin: 0 0 1.5rem 0;
+            }
+            
+            .user-created-modal-body {
+                text-align: left;
+                margin-bottom: 1.5rem;
+            }
+            
+            .credentials-section {
+                background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+                border-radius: 12px;
+                padding: 1.25rem;
+                margin-bottom: 1.25rem;
+                border: 1px solid #e2e8f0;
+            }
+            
+            .credential-item {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                padding: 0.75rem 0;
+                border-bottom: 1px solid #e2e8f0;
+            }
+            
+            .credential-item:last-child {
+                border-bottom: none;
+            }
+            
+            .credential-label {
+                font-weight: 600;
+                color: #374151;
+                font-size: 0.9375rem;
+            }
+            
+            .credential-value {
+                font-weight: 700;
+                color: #111827;
+                font-size: 0.9375rem;
+                word-break: break-all;
+                text-align: right;
+                flex: 1;
+                margin-left: 1rem;
+            }
+            
+            .credentials-status {
+                display: flex;
+                align-items: center;
+                gap: 0.5rem;
+                padding: 0.75rem 1rem;
+                border-radius: 8px;
+                margin-bottom: 1rem;
+                font-size: 0.875rem;
+                font-weight: 600;
+            }
+            
+            .credentials-status.success {
+                background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
+                color: #065f46;
+                border: 1px solid #10b981;
+            }
+            
+            .credentials-status.warning {
+                background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+                color: #92400e;
+                border: 1px solid #f59e0b;
+            }
+            
+            .credentials-status i {
+                font-size: 1.125rem;
+            }
+            
+            .important-note {
+                display: flex;
+                gap: 0.75rem;
+                padding: 1rem;
+                background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);
+                border-radius: 8px;
+                border-left: 4px solid #f59e0b;
+                margin-bottom: 1rem;
+            }
+            
+            .important-note i {
+                font-size: 1.25rem;
+                color: #d97706;
+                flex-shrink: 0;
+                margin-top: 0.125rem;
+            }
+            
+            .important-note strong {
+                color: #92400e;
+                display: block;
+                margin-bottom: 0.5rem;
+                font-size: 0.9375rem;
+            }
+            
+            .important-note ul {
+                margin: 0;
+                padding-left: 1.25rem;
+                color: #78350f;
+                font-size: 0.875rem;
+                line-height: 1.6;
+            }
+            
+            .important-note li {
+                margin-bottom: 0.25rem;
+            }
+            
+            .verification-link {
+                padding: 0.75rem 1rem;
+                background: #f8fafc;
+                border-radius: 8px;
+                border: 1px solid #e2e8f0;
+                font-size: 0.875rem;
+            }
+            
+            .link-label {
+                color: #64748b;
+                font-weight: 600;
+                margin-right: 0.5rem;
+            }
+            
+            .link-value {
+                color: #3b82f6;
+                text-decoration: none;
+                word-break: break-all;
+            }
+            
+            .link-value:hover {
+                text-decoration: underline;
+            }
+            
+            .user-created-modal-buttons {
+                display: flex;
+                gap: 0.75rem;
+                justify-content: center;
+            }
+            
+            .user-created-modal-btn {
+                padding: 0.75rem 1.5rem;
+                border-radius: 8px;
+                font-size: 0.875rem;
+                font-weight: 600;
+                cursor: pointer;
+                transition: all 0.2s ease;
+                display: flex;
+                align-items: center;
+                gap: 0.5rem;
+                border: 2px solid transparent;
+            }
+            
+            .user-created-modal-btn.primary {
+                background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+                color: white;
+                border-color: #10b981;
+                box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
+            }
+            
+            .user-created-modal-btn.primary:hover {
+                background: linear-gradient(135deg, #059669 0%, #047857 100%);
+                transform: translateY(-1px);
+                box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
+            }
+            
+            .user-created-modal-btn:active {
+                transform: translateY(0);
+            }
+        </style>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Alerts Container -->
+            <div class="alerts-container"></div>
+
+            <!-- User Management Section -->
+            <div class="admin-section active">
+                <!-- Header Card -->
+                <div class="header-card">
+                    <div class="header-content">
+                        <h2 class="header-title">User Management</h2>
+                        <p class="header-subtitle">Create and manage user accounts for the emergency response system</p>
+                    </div>
+                </div>
+                
+                <div class="registration-form">
+                    <div class="form-header-container">
+                        <h2 class="form-title" id="formTitle">Registration Form</h2>
+                        <button type="button" class="form-toggle-btn" id="formToggleBtn" onclick="toggleForm()">
+                            <i class="bi bi-chevron-up" id="formToggleIcon"></i>
+                            <span id="formToggleText">Minimize</span>
+                        </button>
+                    </div>
+                    
+                    <div class="form-content-wrapper" id="formContentWrapper">
+                        <div id="editModeIndicator" style="display: none; padding: 0.75rem 1rem; background: #fef3c7; border-left: 4px solid #f59e0b; border-radius: 6px; margin-bottom: 1rem; color: #92400e;">
+                            <i class="bi bi-pencil-square"></i> <strong>Edit Mode:</strong> You are currently editing a user account. Click "Cancel" to exit edit mode.
+                        </div>
+                        
+                        <form id="userRegistrationForm">
+                        <div class="form-grid">
+                            <!-- Left Column -->
+                            <div class="form-group">
+                                <label class="form-label">User Type</label>
+                                <input type="text" id="displayUsername" class="form-input" placeholder="User Type" readonly style="background-color: #f3f4f6; cursor: not-allowed;">
+                                <small class="form-text" style="color: #6b7280; font-size: 0.75rem; margin-top: 0.25rem; display: block;">Current user type from database (read-only)</small>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label class="form-label">Change User Type</label>
+                                <select id="username" class="form-select" required>
+                                    <option value="">Select Type</option>
+                                    <option value="student">Student</option>
+                                    <option value="instructor">Instructor</option>
+                                    <option value="faculty_staff">Faculty Staff</option>
+                                    <option value="security_guard">Security Guard</option>
+                                </select>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label class="form-label">ID Number</label>
+                                <input type="text" id="studentNumber" class="form-input" placeholder="Enter ID number" required>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label class="form-label">Firstname</label>
+                                <input type="text" id="firstname" class="form-input" placeholder="Firstname" required>
+                            </div>
+                            
+                            <!-- Right Column -->
+                            <div class="form-group">
+                                <label class="form-label">Lastname</label>
+                                <input type="text" id="lastname" class="form-input" placeholder="Lastname" required>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label class="form-label">Gmail</label>
+                                <input type="email" id="gmail" class="form-input" placeholder="Enter Gmail address" required>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label class="form-label">Password <span id="passwordHint" style="color: #6b7280; font-weight: normal;">(Optional - will generate secure password if not provided)</span></label>
+                                <input type="password" id="password" class="form-input" placeholder="Leave empty to auto-generate">
+                                <div class="form-hint" id="passwordHintText">If left empty, a secure temporary password will be generated and sent via email</div>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label class="form-label">Contact Number</label>
+                                <input type="tel" id="contactNumber" class="form-input" placeholder="Contact Number" required>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label class="form-label">Role</label>
+                                <select id="userRole" class="form-select" required>
+                                    <option value="">Select Role</option>
+                                    <option value="citizen">Citizen</option>
+                                    <option value="responder">Responder</option>
+                                    <option value="admin">Admin</option>
+                                    <option value="super_user">Super User</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div class="button-group">
+                            <button type="submit" id="submitButton" class="btn-add">
+                                <i class="bi bi-pencil"></i>
+                                <span id="submitButtonText">Add</span>
+                            </button>
+                            <button type="button" onclick="clearForm()" class="btn-cancel">
+                                Cancel
+                            </button>
+                        </div>
+                    </form>
+                    </div>
+                </div>
+                
+                <!-- Users List Section -->
+                <div class="users-section">
+                    <div class="section-header">
+                        <div class="section-header-top">
+                            <div>
+                                <h3>Registered Users</h3>
+                            </div>
+                            <!-- Filter and Search Bar -->
+                            <div class="search-container">
+                                <select id="roleFilterDropdown" class="filter-dropdown" onchange="filterUsers()">
+                                    <option value="">All Roles</option>
+                                    <option value="citizen">Citizen</option>
+                                    <option value="responder">Responder</option>
+                                    <option value="admin">Admin</option>
+                                    <option value="super_user">Super User</option>
+                                </select>
+                                <div class="search-wrapper">
+                                    <i class="bi bi-search search-icon"></i>
+                                    <input type="text" 
+                                           id="userSearchInput" 
+                                           class="search-input" 
+                                           placeholder="Search users by name, email, ID number, role, or contact..."
+                                           oninput="filterUsers()">
+                                    <button type="button" 
+                                            id="searchClearBtn" 
+                                            class="search-clear-btn" 
+                                            onclick="clearSearch()"
+                                            title="Clear search">
+                                        <i class="bi bi-x-lg"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        <p>Manage and monitor user accounts</p>
+                        <div class="search-results-info" id="searchResultsInfo"></div>
+                    </div>
+                    
+                    <div class="table-container">
+                        <table class="users-table">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>User Type</th>
+                                    <th>Full Name</th>
+                                    <th>Gmail</th>
+                                    <th>ID Number</th>
+                                    <th>Role</th>
+                                    <th>Contact</th>
+                                    <th>Created</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="usersTableBody">
+                                <tr>
+                                    <td colspan="9" class="no-data">No users registered yet</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Initialize the system when the page loads
+        document.addEventListener('DOMContentLoaded', async function() {
+            try {
+                // Initialize the emergency system
+                await window.emergencySystem.initialize();
+                
+                // Check if user is admin or super_user
+                const userRole = window.emergencySystem.user?.user_metadata?.role;
+                if (!window.emergencySystem.user || (userRole !== 'admin' && userRole !== 'super_user')) {
+                    console.log('User not admin or super_user, redirecting to login');
+                    window.location.href = 'login.html';
+                    return;
+                }
+
+                // Load users and populate table
+                await loadUsers();
+                
+                console.log('✅ User management page initialized successfully');
+            } catch (error) {
+                console.error('❌ Error initializing user management page:', error);
+            }
+        });
+
+        // User Management Functions
+        let allUsers = [];
+
+        // Load users and populate table via Edge Function
+        async function loadUsers() {
+            try {
+                console.log('Loading users from Edge Function...');
+                const { data, error } = await window.emergencySystem.supabase.functions.invoke('get-users', {
+                    body: {}
+                });
+                if (error) throw error;
+                const users = data?.users || [];
+
+                allUsers = users.map(u => {
+                    // Get user type from multiple possible locations
+                    let userType = null;
+                    
+                    // Try direct property first (from get-users edge function)
+                    if (u.user_type && u.user_type !== 'null' && u.user_type !== '') {
+                        userType = u.user_type;
+                    }
+                    // Try from user_metadata object (nested)
+                    else if (u.user_metadata?.user_type && u.user_metadata.user_type !== 'null' && u.user_metadata.user_type !== '') {
+                        userType = u.user_metadata.user_type;
+                    }
+                    // Try from raw_user_meta_data if available
+                    else if (u.raw_user_meta_data?.user_type && u.raw_user_meta_data.user_type !== 'null' && u.raw_user_meta_data.user_type !== '') {
+                        userType = u.raw_user_meta_data.user_type;
+                    }
+                    // Fallback: try to infer from email or other fields
+                    else {
+                        const email = (u.email || '').toLowerCase();
+                        if (email.includes('student') || email.includes('stud')) {
+                            userType = 'student';
+                        } else if (email.includes('instructor') || email.includes('instruct')) {
+                            userType = 'instructor';
+                        } else if (email.includes('faculty') || email.includes('staff')) {
+                            userType = 'faculty_staff';
+                        } else if (email.includes('teacher') || email.includes('teach')) {
+                            userType = 'instructor'; // Legacy support for teacher emails
+                        } else if (email.includes('guard') || email.includes('security')) {
+                            userType = 'security_guard';
+                        } else {
+                            // Default to student if has student_number, otherwise infer from role
+                            if (u.student_number) {
+                                userType = 'student';
+                            } else if (u.role === 'admin') {
+                                userType = 'admin'; // Admins should show as Admin
+                            } else if (u.role === 'super_user') {
+                                userType = 'admin'; // Super users should show as Admin
+                            } else {
+                                userType = 'student'; // Default to student for citizens/responders
+                            }
+                        }
+                    }
+                    
+                    // Ensure userType is a string and handle null/undefined
+                    userType = (userType && userType !== 'null' && userType !== '') ? userType : 'student'; // Default to student instead of Unknown
+                    
+                    // Format user type for display (capitalize first letter, replace underscores with spaces)
+                    // Special handling for admin and super_user roles - always show as "Admin" or "Super User" regardless of user_type
+                    let formattedUserType;
+                    if (u.role === 'admin') {
+                        formattedUserType = 'Admin';
+                    } else if (u.role === 'super_user') {
+                        formattedUserType = 'Super User';
+                    } else {
+                        formattedUserType = userType
+                            .split('_')
+                            .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+                            .join(' ');
+                    }
+                    
+                    // Store formatted user type for display in table
+                    // The username field will now show user type instead
+                    
+                    return {
+                        id: u.user_id || u.id,
+                        username: formattedUserType, // Display user type in username column
+                        userType: userType, // Store raw type for form editing
+                        displayName: u.name || u.user_metadata?.full_name || u.email?.split('@')[0] || 'Unknown', // Store actual name separately
+                        firstname: (u.name || '').split(' ')[0] || '',
+                        lastname: (u.name || '').split(' ').slice(1).join(' ') || '',
+                        gmail: u.email || '',
+                        studentNumber: u.student_number || '',
+                        role: (u.role || 'citizen').toLowerCase(),
+                        contactNumber: u.phone || '',
+                        status: u.is_active === false ? 'inactive' : 'active',
+                        created: u.created_at || new Date().toISOString()
+                    };
+                })
+                // only show active users in this table
+                .filter(u => u.status === 'active');
+
+                displayUsersTable();
+                console.log('Users loaded successfully:', allUsers.length);
+            } catch (error) {
+                console.error('Failed to load users:', error);
+                window.emergencySystem.showError('Failed to load users: ' + (error.message || 'Unknown error'));
+            }
+        }
+
+        // Display users in table
+        function displayUsersTable(usersToDisplay = null) {
+            const tbody = document.getElementById('usersTableBody');
+            const users = usersToDisplay || allUsers;
+            
+            if (users.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="9" class="no-data">No users found</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = users.map(user => `
+                <tr>
+                    <td>${user.id.substring(0, 8)}...</td>
+                    <td>${user.username || 'N/A'}</td>
+                    <td>${user.firstname} ${user.lastname}</td>
+                    <td>${user.gmail || 'N/A'}</td>
+                    <td>${user.studentNumber || 'N/A'}</td>
+                    <td><span class="role-badge role-${user.role}">${user.role.toUpperCase()}</span></td>
+                    <td>${user.contactNumber || 'N/A'}</td>
+                    <td>${formatDate(user.created)}</td>
+                    <td>
+                        <div class="action-buttons">
+                            <button class="btn-edit" onclick="editUser('${user.id}')">Edit</button>
+                            <button class="btn-archive" onclick="archiveUser('${user.id}')">Archive</button>
+                            <button class="btn-delete" onclick="deleteUser('${user.id}')">Delete</button>
+                        </div>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        // Format date helper
+        function formatDate(dateString) {
+            return new Date(dateString).toLocaleDateString();
+        }
+
+        // Edit user
+        function editUser(userId) {
+            const user = allUsers.find(u => u.id === userId);
+            if (!user) {
+                window.emergencySystem.showError('User not found');
+                return;
+            }
+
+            // Fill form with user data
+            // Get userType from stored userType field (which is the raw value)
+            let userTypeValue = user.userType;
+            if (!userTypeValue && user.username && user.username !== 'Unknown') {
+                // Convert formatted display back to form value (e.g., "Student" -> "student", "Security Guard" -> "security_guard")
+                userTypeValue = user.username.toLowerCase().replace(/\s+/g, '_');
+            }
+            // Handle legacy 'teacher' value - convert to 'instructor'
+            if (userTypeValue === 'teacher') {
+                userTypeValue = 'instructor';
+            }
+            // If still no value, default to student if they have student number
+            if (!userTypeValue || userTypeValue === 'Unknown') {
+                userTypeValue = user.studentNumber ? 'student' : '';
+            }
+            
+            // Display formatted user type from database
+            // The username field now contains the formatted user type
+            let displayUserType = user.username || '';
+            if (!displayUserType && user.userType) {
+                // Format user type for display if username not available
+                if (user.role === 'admin') {
+                    displayUserType = 'Admin';
+                } else if (user.role === 'super_user') {
+                    displayUserType = 'Super User';
+                } else {
+                    displayUserType = user.userType
+                        .split('_')
+                        .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+                        .join(' ');
+                }
+            }
+            document.getElementById('displayUsername').value = displayUserType || 'N/A';
+            document.getElementById('username').value = userTypeValue; // Set user type for editing
+            document.getElementById('firstname').value = user.firstname;
+            document.getElementById('lastname').value = user.lastname;
+            document.getElementById('gmail').value = user.gmail || '';
+            document.getElementById('studentNumber').value = user.studentNumber || '';
+            document.getElementById('contactNumber').value = user.contactNumber || '';
+            document.getElementById('userRole').value = user.role;
+            document.getElementById('password').value = ''; // Clear password field for security
+
+            // Attach the editing user id to the form for update
+            document.getElementById('userRegistrationForm').dataset.editUserId = userId;
+
+            // Update UI to show edit mode
+            enterEditMode(userId);
+            
+            // Ensure form is expanded when editing
+            const formContent = document.getElementById('formContentWrapper');
+            if (formContent.classList.contains('collapsed')) {
+                formContent.classList.remove('collapsed');
+                document.getElementById('formToggleIcon').className = 'bi bi-chevron-up';
+                document.getElementById('formToggleText').textContent = 'Minimize';
+            }
+            
+            // Scroll to form
+            document.querySelector('.registration-form').scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+
+        // Enter edit mode - update UI
+        function enterEditMode(userId) {
+            const formTitle = document.getElementById('formTitle');
+            const submitButton = document.getElementById('submitButton');
+            const submitButtonText = document.getElementById('submitButtonText');
+            const editIndicator = document.getElementById('editModeIndicator');
+            const passwordHint = document.getElementById('passwordHint');
+            const passwordHintText = document.getElementById('passwordHintText');
+
+            // Update form title
+            formTitle.textContent = 'Edit User Account';
+            formTitle.style.color = '#f59e0b';
+
+            // Update submit button
+            submitButtonText.textContent = 'Update';
+            submitButton.querySelector('i').className = 'bi bi-check-circle';
+            
+            // Show edit mode indicator
+            editIndicator.style.display = 'block';
+
+            // Update password hint for edit mode
+            passwordHint.textContent = '(Optional - leave empty to keep current password)';
+            passwordHintText.textContent = 'Leave empty to keep the current password. Enter a new password to change it.';
+        }
+
+        // Exit edit mode - reset UI
+        function exitEditMode() {
+            const formTitle = document.getElementById('formTitle');
+            const submitButton = document.getElementById('submitButton');
+            const submitButtonText = document.getElementById('submitButtonText');
+            const editIndicator = document.getElementById('editModeIndicator');
+            const passwordHint = document.getElementById('passwordHint');
+            const passwordHintText = document.getElementById('passwordHintText');
+
+            // Reset form title
+            formTitle.textContent = 'Registration Form';
+            formTitle.style.color = '';
+
+            // Reset submit button
+            submitButtonText.textContent = 'Add';
+            submitButton.querySelector('i').className = 'bi bi-pencil';
+
+            // Hide edit mode indicator
+            editIndicator.style.display = 'none';
+
+            // Reset password hint
+            passwordHint.textContent = '(Optional - will generate secure password if not provided)';
+            passwordHintText.textContent = 'If left empty, a secure temporary password will be generated and sent via email';
+            
+            // Clear username display field
+            const displayUsernameField = document.getElementById('displayUsername');
+            if (displayUsernameField) {
+                displayUsernameField.value = '';
+            }
+        }
+
+        // Archive user (server-side)
+        async function archiveUser(userId) {
+            if (!confirm('Are you sure you want to archive this user?')) return;
+            try {
+                const { error } = await window.emergencySystem.supabase.functions.invoke('update-user', {
+                    body: { userId, isActive: false }
+                });
+                if (error) throw error;
+                window.emergencySystem.showSuccess('User archived successfully');
+                await loadUsers();
+            } catch (err) {
+                console.error('Archive failed:', err);
+                window.emergencySystem.showError('Failed to archive user: ' + (err.message || 'Unknown error'));
+            }
+        }
+
+        // Delete user permanently (from both database and Auth)
+        async function deleteUser(userId) {
+            if (!confirm('Are you sure you want to permanently delete this user? This will delete the user from the database AND authentication. This action cannot be undone.')) return;
+            try {
+                // Permanent delete: removes from database and Supabase Auth
+                const { data, error } = await window.emergencySystem.supabase.functions.invoke('delete-user', {
+                    body: { userId }
+                });
+                if (error) throw error;
+                window.emergencySystem.showSuccess('User deleted permanently from database and authentication');
+                await loadUsers();
+            } catch (error) {
+                console.error('Failed to delete user:', error);
+                window.emergencySystem.showError('Failed to delete user: ' + (error.message || 'Unknown error'));
+            }
+        }
+
+        // Handle form submission: create user via Edge Function (service role)
+        document.getElementById('userRegistrationForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            try {
+                // Get user type from dropdown
+                let userType = document.getElementById('username').value;
+                
+                // Validate user type is selected
+                if (!userType || userType.trim() === '') {
+                    window.emergencySystem.showError('Please select a User Type');
+                    return;
+                }
+                
+                const formData = {
+                    userType: userType, // This is actually user type (student/instructor/faculty_staff/security_guard)
+                    password: document.getElementById('password').value,
+                    firstname: document.getElementById('firstname').value,
+                    lastname: document.getElementById('lastname').value,
+                    gmail: document.getElementById('gmail').value,
+                    studentNumber: document.getElementById('studentNumber').value,
+                    contactNumber: document.getElementById('contactNumber').value,
+                    role: document.getElementById('userRole').value
+                };
+
+                const editingUserId = document.getElementById('userRegistrationForm').dataset.editUserId;
+                if (editingUserId) {
+                    // Ensure userType is provided - if empty, try to infer from student number
+                    let userTypeToUpdate = formData.userType;
+                    if (!userTypeToUpdate || userTypeToUpdate.trim() === '') {
+                        // If user type is empty, infer from student number
+                        userTypeToUpdate = formData.studentNumber ? 'student' : 'student'; // Default to student if has student number
+                    }
+                    
+                    console.log('Updating user with data:', {
+                        userId: editingUserId,
+                        userType: userTypeToUpdate,
+                        ...formData
+                    });
+                    
+                    // Update existing user via Edge Function
+                    const { error } = await window.emergencySystem.supabase.functions.invoke('update-user', {
+                        body: {
+                            userId: editingUserId,
+                            email: formData.gmail,
+                            firstName: formData.firstname,
+                            lastName: formData.lastname,
+                            role: formData.role,
+                            phone: formData.contactNumber,
+                            studentNumber: formData.studentNumber,
+                            password: formData.password || undefined,
+                            userType: userTypeToUpdate // Include user type in update (always set a value)
+                        }
+                    });
+                    if (error) throw error;
+                    window.emergencySystem.showSuccess('User updated successfully');
+                    
+                    // Clear edit mode and reset form
+                    delete document.getElementById('userRegistrationForm').dataset.editUserId;
+                    exitEditMode();
+                    document.getElementById('userRegistrationForm').reset();
+                    
+                    // Reload users to show updated data
+                    await loadUsers();
+                    
+                    // Scroll to top to show success message
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                    return;
+                }
+
+                console.log('Creating user with data:', formData);
+
+                const { data, error } = await window.emergencySystem.supabase.functions.invoke('create-user', {
+                    body: {
+                        email: formData.gmail,
+                        password: formData.password || undefined, // Pass undefined if empty to trigger auto-generation
+                        firstName: formData.firstname,
+                        lastName: formData.lastname,
+                        role: formData.role,
+                        phone: formData.contactNumber,
+                        studentNumber: formData.studentNumber,
+                        userType: formData.userType || 'student' // Send user type (student/teacher/security_guard), default to student
+                    }
+                });
+                
+                // Handle edge function errors more gracefully
+                if (error) {
+                    console.error('Edge function error:', error);
+                    // Try to extract error message from response
+                    let errorMessage = error.message || 'Unknown error';
+                    if (error.context && error.context.body) {
+                        try {
+                            const errorBody = typeof error.context.body === 'string' 
+                                ? JSON.parse(error.context.body) 
+                                : error.context.body;
+                            if (errorBody.error) {
+                                errorMessage = errorBody.error;
+                            } else if (errorBody.details) {
+                                errorMessage = errorBody.details;
+                            } else if (errorBody.message) {
+                                errorMessage = errorBody.message;
+                            }
+                        } catch (e) {
+                            // If parsing fails, use original message
+                        }
+                    }
+                    throw new Error(errorMessage);
+                }
+                
+                // Check if response indicates an error
+                if (data && data.error) {
+                    throw new Error(data.error + (data.details ? ': ' + data.details : ''));
+                }
+
+                // Extract credentials from response
+                const userEmail = data?.email || formData.gmail;
+                const userPassword = data?.password || data?.credentials?.password || formData.password;
+                
+                // Check if email was sent with credentials
+                const emailSentWithCredentials = data?.email_content?.html && data?.email_content?.html.includes(userPassword || '');
+                const credentialsWarning = emailSentWithCredentials 
+                    ? '✅ Credentials have been sent to the user\'s email'
+                    : '⚠️ WARNING: Credentials are NOT in the email! You must share them manually with the user.';
+                
+                // Show credentials in a styled modal
+                showUserCreatedModal({
+                    email: userEmail,
+                    password: userPassword || 'Not available - check email',
+                    emailSent: emailSentWithCredentials,
+                    verificationLink: data?.verification_link || 'Generated and sent via email'
+                });
+                
+                // Success message is shown in the modal, no need for additional toast
+                
+                // Log credentials to console for easy copying
+                console.log('=== USER CREDENTIALS ===');
+                console.log('Email:', userEmail);
+                console.log('Password:', userPassword || 'See alert above');
+                console.log('=======================');
+                
+                clearForm();
+                await loadUsers();
+                
+            } catch (error) {
+                console.error('Failed to register user:', error);
+                // Extract full error message
+                let errorMessage = 'Unknown error';
+                if (error.message) {
+                    errorMessage = error.message;
+                } else if (error.error) {
+                    errorMessage = error.error;
+                } else if (typeof error === 'string') {
+                    errorMessage = error;
+                }
+                
+                // Show full error message
+                window.emergencySystem.showError('Failed to register user: ' + errorMessage);
+            }
+        });
+
+        // Clear form
+        function clearForm() {
+            document.getElementById('userRegistrationForm').reset();
+            document.getElementById('displayUsername').value = ''; // Clear username display field
+            
+            // Clear edit mode
+            delete document.getElementById('userRegistrationForm').dataset.editUserId;
+            exitEditMode();
+        }
+        
+        // Toggle form minimize/maximize
+        function toggleForm() {
+            const formContent = document.getElementById('formContentWrapper');
+            const toggleIcon = document.getElementById('formToggleIcon');
+            const toggleText = document.getElementById('formToggleText');
+            
+            if (formContent.classList.contains('collapsed')) {
+                // Expand form
+                formContent.classList.remove('collapsed');
+                toggleIcon.className = 'bi bi-chevron-up';
+                toggleText.textContent = 'Minimize';
+            } else {
+                // Collapse form
+                formContent.classList.add('collapsed');
+                toggleIcon.className = 'bi bi-chevron-down';
+                toggleText.textContent = 'Expand';
+            }
+        }
+        
+        // Filter users based on search input and role filter
+        function filterUsers() {
+            const searchInput = document.getElementById('userSearchInput');
+            const roleFilter = document.getElementById('roleFilterDropdown');
+            const searchClearBtn = document.getElementById('searchClearBtn');
+            const searchResultsInfo = document.getElementById('searchResultsInfo');
+            const searchTerm = searchInput.value.toLowerCase().trim();
+            const selectedRole = roleFilter.value.toLowerCase();
+            
+            // Show/hide clear button (show if search term exists or role is selected)
+            if (searchTerm || selectedRole) {
+                searchClearBtn.classList.add('visible');
+            } else {
+                searchClearBtn.classList.remove('visible');
+            }
+            
+            // Start with all users
+            let filteredUsers = [...allUsers];
+            
+            // Filter by role first
+            if (selectedRole) {
+                filteredUsers = filteredUsers.filter(user => user.role === selectedRole);
+            }
+            
+            // Then filter by search term
+            if (searchTerm) {
+                filteredUsers = filteredUsers.filter(user => {
+                    const searchableFields = [
+                        user.username,
+                        user.firstname,
+                        user.lastname,
+                        `${user.firstname} ${user.lastname}`,
+                        user.gmail,
+                        user.studentNumber,
+                        user.role,
+                        user.contactNumber
+                    ].filter(field => field).map(field => field.toString().toLowerCase());
+                    
+                    return searchableFields.some(field => field.includes(searchTerm));
+                });
+            }
+            
+            // Display filtered users
+            displayUsersTable(filteredUsers);
+            
+            // Update results info
+            const hasFilters = searchTerm || selectedRole;
+            if (filteredUsers.length === 0 && hasFilters) {
+                searchResultsInfo.textContent = 'No users found matching your filters.';
+                searchResultsInfo.style.color = '#ef4444';
+            } else if (hasFilters) {
+                const roleText = selectedRole ? ` with role "${selectedRole}"` : '';
+                const searchText = searchTerm ? ` matching "${searchInput.value}"` : '';
+                searchResultsInfo.textContent = `Found ${filteredUsers.length} user${filteredUsers.length === 1 ? '' : 's'}${roleText}${searchText}`;
+                searchResultsInfo.style.color = '#6b7280';
+            } else {
+                searchResultsInfo.textContent = '';
+            }
+        }
+        
+        // Clear search and filters
+        function clearSearch() {
+            const searchInput = document.getElementById('userSearchInput');
+            const roleFilter = document.getElementById('roleFilterDropdown');
+            const searchClearBtn = document.getElementById('searchClearBtn');
+            const searchResultsInfo = document.getElementById('searchResultsInfo');
+            
+            searchInput.value = '';
+            roleFilter.value = '';
+            searchClearBtn.classList.remove('visible');
+            searchResultsInfo.textContent = '';
+            
+            // Display all users
+            displayUsersTable();
+        }
+
+
+        // Show user created success modal
+        function showUserCreatedModal(credentials) {
+            const modal = document.getElementById('userCreatedModal');
+            const emailEl = document.getElementById('modalUserEmail');
+            const passwordEl = document.getElementById('modalUserPassword');
+            const statusEl = document.getElementById('modalCredentialsStatus');
+            const notesEl = document.getElementById('modalImportantNotes');
+            const verificationEl = document.getElementById('modalVerificationLink');
+            const verificationLinkEl = document.getElementById('modalVerificationLinkUrl');
+            
+            // Set email and password
+            emailEl.textContent = credentials.email;
+            passwordEl.textContent = credentials.password;
+            
+            // Update credentials status
+            if (credentials.emailSent) {
+                statusEl.className = 'credentials-status success';
+                statusEl.innerHTML = '<i class="bi bi-check-circle"></i><span>Credentials have been sent to the user\'s email</span>';
+                notesEl.innerHTML = `
+                    <li>User will receive email with credentials</li>
+                    <li>User should change password after first login</li>
+                `;
+            } else {
+                statusEl.className = 'credentials-status warning';
+                statusEl.innerHTML = '<i class="bi bi-exclamation-triangle"></i><span>WARNING: Credentials are NOT in the email! You must share them manually with the user.</span>';
+                notesEl.innerHTML = `
+                    <li>Resend API is NOT configured - credentials NOT in email</li>
+                    <li>YOU MUST SHARE THESE CREDENTIALS MANUALLY</li>
+                    <li>To fix: Add RESEND_API_KEY to Supabase Edge Functions Secrets</li>
+                    <li>User should change password after first login</li>
+                `;
+            }
+            
+            // Show verification link if available
+            if (credentials.verificationLink && credentials.verificationLink !== 'Generated and sent via email') {
+                verificationEl.style.display = 'block';
+                verificationLinkEl.href = credentials.verificationLink;
+                verificationLinkEl.textContent = credentials.verificationLink;
+            } else {
+                verificationEl.style.display = 'none';
+            }
+            
+            modal.classList.remove('hidden');
+        }
+        
+        // Close user created modal
+        function closeUserCreatedModal() {
+            const modal = document.getElementById('userCreatedModal');
+            modal.classList.add('hidden');
+        }
+        
+        // Show logout confirmation modal
+        function showLogoutConfirm() {
+            const modal = document.getElementById('logoutModal');
+            modal.classList.remove('hidden');
+        }
+        
+        // Close logout modal
+        function closeLogoutModal() {
+            const modal = document.getElementById('logoutModal');
+            modal.classList.add('hidden');
+        }
+        
+        // Confirm and execute logout
+        async function confirmLogout() {
+            try {
+                // Close modal first
+                closeLogoutModal();
+                
+                // Show loading state (optional)
+                if (window.emergencySystem && window.emergencySystem.showSuccess) {
+                    window.emergencySystem.showSuccess('Logging out...');
+                }
+                
+                // Perform logout
+                await window.emergencySystem.signOut();
+                window.location.href = 'login.html';
+            } catch (error) {
+                console.error('Logout error:', error);
+                if (window.emergencySystem && window.emergencySystem.showError) {
+                    window.emergencySystem.showError('Failed to logout. Please try again.');
+                }
+            }
+        }
+        
+        // Close modals when clicking outside
+        document.addEventListener('click', function(event) {
+            const logoutModal = document.getElementById('logoutModal');
+            const userCreatedModal = document.getElementById('userCreatedModal');
+            
+            if (event.target === logoutModal) {
+                closeLogoutModal();
+            }
+            if (event.target === userCreatedModal) {
+                closeUserCreatedModal();
+            }
+        });
+        
+        // Close modals with Escape key
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'Escape') {
+                const logoutModal = document.getElementById('logoutModal');
+                const userCreatedModal = document.getElementById('userCreatedModal');
+                
+                if (!logoutModal.classList.contains('hidden')) {
+                    closeLogoutModal();
+                }
+                if (!userCreatedModal.classList.contains('hidden')) {
+                    closeUserCreatedModal();
+                }
+            }
+        });
+    </script>
+</body>
+</html>
