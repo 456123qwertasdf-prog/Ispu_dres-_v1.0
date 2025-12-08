@@ -51,3 +51,47 @@ build/
 # Temporary files
 tmp/
 temp/
+
+# Flutter/Dart
+*.iml
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+.pub-cache/
+.pub/
+pubspec.lock
+
+# Android
+*.apk
+*.aab
+*.ap_
+*.dex
+*.class
+local.properties
+*.keystore
+*.jks
+hs_err_pid*.log
+replay_pid*.log
+
+# iOS
+*.ipa
+*.dSYM.zip
+*.dSYM
+DerivedData/
+*.xcuserstate
+*.xcworkspace
+!default.xcworkspace
+
+# Build directories
+mobile_app/build/
+mobile_app/android/build/
+mobile_app/android/app/build/
+mobile_app/ios/build/
+mobile_app/.dart_tool/
+
+# Analytics and test results
+analytics-results.json
+
+# APK build directory
+lspu_dres.v1.0.0/
