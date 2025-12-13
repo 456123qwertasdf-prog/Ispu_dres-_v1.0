@@ -502,10 +502,15 @@
                     document.getElementById('totalCitizens').textContent = citizens;
                 }
                 
-                // Get active reports (for stats only)
+                // Get active reports (for stats only) - exclude non_emergency
                 const reports = await window.emergencySystem.getReports();
                 if (reports) {
-                    const activeReports = reports.filter(r => r.status !== 'resolved' && r.status !== 'closed');
+                    // Filter out non-emergency reports - only count actual emergencies
+                    const emergencyReports = reports.filter(r => {
+                        const effectiveType = (r.corrected_type || r.type || '').toLowerCase().trim();
+                        return effectiveType !== 'non_emergency';
+                    });
+                    const activeReports = emergencyReports.filter(r => r.status !== 'resolved' && r.status !== 'closed');
                     document.getElementById('activeReports').textContent = activeReports.length;
                 }
             } catch (error) {

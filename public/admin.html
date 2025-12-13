@@ -1511,16 +1511,27 @@
             }
         }
 
+        // Helper function to filter out non-emergency reports
+        function filterEmergencyReports(reports) {
+            return (reports || []).filter(report => {
+                const effectiveType = (report.corrected_type || report.type || '').toLowerCase().trim();
+                return effectiveType !== 'non_emergency';
+            });
+        }
+
         // Update dashboard statistics
         function updateDashboardStats(reports, responders, users) {
+            // Filter out non-emergency reports - only count actual emergencies
+            const emergencyReports = filterEmergencyReports(reports);
+            
             // Count all emergency reports (active cases)
-            const activeCases = reports.length;
+            const activeCases = emergencyReports.length;
 
             // Count total users (excluding responders - only citizens)
             const totalUsers = users.filter(user => user.role === 'citizen').length;
             
-            // Count completed reports
-            const totalCompleted = reports.filter(report => report.status === 'completed').length;
+            // Count completed reports (only emergencies)
+            const totalCompleted = emergencyReports.filter(report => report.status === 'completed').length;
             
             // Count active responders
             const totalActiveResponders = responders.filter(responder => responder.status === 'active').length;
@@ -1537,13 +1548,15 @@
             document.getElementById('completedTrend').textContent = `${totalCompleted} completed reports`;
             document.getElementById('activeRespondersTrend').textContent = `${totalActiveResponders} active responders`;
             
-            // Update emergency analytics
-            updateEmergencyAnalytics(reports);
+            // Update emergency analytics (only emergency reports)
+            updateEmergencyAnalytics(emergencyReports);
         }
 
         // Update emergency analytics
         function updateEmergencyAnalytics(reports) {
-            const total = reports.length;
+            // Filter out non-emergency reports - only count actual emergencies
+            const emergencyReports = filterEmergencyReports(reports);
+            const total = emergencyReports.length;
             
             // Helper function to get the effective type (corrected_type takes precedence)
             const getEffectiveType = (report) => {
@@ -1552,14 +1565,14 @@
                 return effectiveType;
             };
             
-            // Count each type using the effective type
-            const flood = reports.filter(r => {
+            // Count each type using the effective type (only emergency reports)
+            const flood = emergencyReports.filter(r => {
                 const type = getEffectiveType(r);
                 return type === 'flood' || 
                        (type === '' && r.ai_description && r.ai_description.toLowerCase().includes('flood'));
             }).length;
             
-            const accident = reports.filter(r => {
+            const accident = emergencyReports.filter(r => {
                 const type = getEffectiveType(r);
                 return type === 'accident' || 
                        type === 'vehicle' || 
@@ -1571,13 +1584,13 @@
                        ));
             }).length;
             
-            const fire = reports.filter(r => {
+            const fire = emergencyReports.filter(r => {
                 const type = getEffectiveType(r);
                 return type === 'fire' || 
                        (type === '' && r.ai_description && r.ai_description.toLowerCase().includes('fire'));
             }).length;
             
-            const medical = reports.filter(r => {
+            const medical = emergencyReports.filter(r => {
                 const type = getEffectiveType(r);
                 return type === 'medical' || 
                        type === 'health' ||
@@ -1589,10 +1602,10 @@
                        ));
             }).length;
             
-            const other = reports.filter(r => {
+            const other = emergencyReports.filter(r => {
                 const type = getEffectiveType(r);
-                // Exclude the specific types we're tracking
-                return !['flood', 'accident', 'vehicle', 'traffic', 'fire', 'medical', 'health'].includes(type);
+                // Exclude the specific types we're tracking AND non_emergency
+                return !['flood', 'accident', 'vehicle', 'traffic', 'fire', 'medical', 'health', 'non_emergency'].includes(type);
             }).length;
             
             if (total > 0) {
@@ -1666,15 +1679,18 @@
             const container = document.querySelector('.active-reports-grid');
             if (!container) return;
 
-            // Consider any report that is not completed/cancelled as active
-            const activeReports = (reports || []).filter(report => {
+            // Filter out non-emergency reports first
+            const emergencyReports = filterEmergencyReports(reports);
+
+            // Consider any report that is not completed/cancelled as active (only emergencies)
+            const activeReports = emergencyReports.filter(report => {
                 const status = (report.status || '').toLowerCase();
                 return status !== 'completed' && status !== 'cancelled';
             });
 
-            // If no active found, fallback to show latest reports to avoid empty state
-            if (activeReports.length === 0 && (reports || []).length > 0) {
-                activeReports.push(...(reports.slice(0, 5)));
+            // If no active found, fallback to show latest emergency reports to avoid empty state
+            if (activeReports.length === 0 && emergencyReports.length > 0) {
+                activeReports.push(...(emergencyReports.slice(0, 5)));
             }
 
             if (activeReports.length === 0) {

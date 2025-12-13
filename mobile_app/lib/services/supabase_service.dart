@@ -34,6 +34,27 @@ class SupabaseService {
     );
   }
 
+  // Sign up for citizens only with metadata including user type
+  static Future<AuthResponse> signUpAsCitizen({
+    required String email,
+    required String password,
+    required String fullName,
+    String? userType,
+    String? studentNumber,
+  }) async {
+    return await client.auth.signUp(
+      email: email,
+      password: password,
+      data: {
+        'full_name': fullName,
+        'role': 'citizen',
+        'user_type': userType ?? 'student', // Default to student if not specified
+        if (studentNumber != null && studentNumber.isNotEmpty)
+          'student_number': studentNumber,
+      },
+    );
+  }
+
   static Future<void> signOut() async {
     await client.auth.signOut();
   }
@@ -50,5 +71,15 @@ class SupabaseService {
 
   // Get current user email
   static String? get currentUserEmail => client.auth.currentUser?.email;
+
+  // Resend email verification
+  static Future<void> resendEmailVerification({
+    required String email,
+  }) async {
+    await client.auth.resend(
+      type: OtpType.signup,
+      email: email,
+    );
+  }
 }
 

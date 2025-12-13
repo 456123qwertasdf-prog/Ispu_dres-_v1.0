@@ -355,7 +355,7 @@ async function getAssignmentDetailsForEvent(
         responder_id,
         status,
         assigned_at,
-        reports!inner(
+        reports!report_id(
           id,
           type,
           message,

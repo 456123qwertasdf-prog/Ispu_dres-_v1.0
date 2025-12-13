@@ -132,7 +132,7 @@ async function getAssignmentDetails(
       assigned_at,
       accepted_at,
       completed_at,
-      reports!inner(
+      reports!report_id(
         id,
         type,
         message,

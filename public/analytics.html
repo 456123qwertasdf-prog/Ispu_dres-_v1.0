@@ -1085,24 +1085,35 @@
             });
         }
 
+        // Helper function to filter out non-emergency reports
+        function filterEmergencyReports(reports) {
+            return (reports || []).filter(report => {
+                const effectiveType = (report.corrected_type || report.type || '').toLowerCase().trim();
+                return effectiveType !== 'non_emergency';
+            });
+        }
+
         // Update charts with real data
         function updateCharts() {
             const reports = analyticsData.reports;
             
+            // Filter out non-emergency reports - only count actual emergencies
+            const emergencyReports = filterEmergencyReports(reports);
+            
             // Emergency Type Distribution
             // Use corrected_type if available, otherwise use type
             const typeCounts = {
-                fire: reports.filter(r => {
+                fire: emergencyReports.filter(r => {
                     const effectiveType = (r.corrected_type || r.type || '').toLowerCase().trim();
                     return effectiveType === 'fire' || 
                            (effectiveType === '' && r.ai_description && r.ai_description.toLowerCase().includes('fire'));
                 }).length,
-                flood: reports.filter(r => {
+                flood: emergencyReports.filter(r => {
                     const effectiveType = (r.corrected_type || r.type || '').toLowerCase().trim();
                     return effectiveType === 'flood' || 
                            (effectiveType === '' && r.ai_description && r.ai_description.toLowerCase().includes('flood'));
                 }).length,
-                accident: reports.filter(r => {
+                accident: emergencyReports.filter(r => {
                     const effectiveType = (r.corrected_type || r.type || '').toLowerCase().trim();
                     return effectiveType === 'accident' || 
                            effectiveType === 'vehicle' || 
@@ -1113,7 +1124,7 @@
                                r.ai_description.toLowerCase().includes('traffic')
                            ));
                 }).length,
-                medical: reports.filter(r => {
+                medical: emergencyReports.filter(r => {
                     const effectiveType = (r.corrected_type || r.type || '').toLowerCase().trim();
                     return effectiveType === 'medical' || 
                            effectiveType === 'health' ||
@@ -1124,9 +1135,10 @@
                                r.ai_description.toLowerCase().includes('hospital')
                            ));
                 }).length,
-                other: reports.filter(r => {
+                other: emergencyReports.filter(r => {
                     const effectiveType = (r.corrected_type || r.type || '').toLowerCase().trim();
-                    return !['fire', 'flood', 'accident', 'vehicle', 'traffic', 'medical', 'health'].includes(effectiveType);
+                    // Exclude the specific types we're tracking AND non_emergency
+                    return !['fire', 'flood', 'accident', 'vehicle', 'traffic', 'medical', 'health', 'non_emergency'].includes(effectiveType);
                 }).length
             };
             
@@ -1140,17 +1152,17 @@
             charts.emergencyType.update();
 
 
-            // Monthly Trends
-            const monthlyData = calculateMonthlyTrends(reports);
+            // Monthly Trends (only emergency reports)
+            const monthlyData = calculateMonthlyTrends(emergencyReports);
             charts.monthlyTrends.data.datasets[0].data = monthlyData;
             charts.monthlyTrends.update();
 
-            // Priority Distribution
+            // Priority Distribution (only emergency reports)
             const priorityCounts = {
-                1: reports.filter(r => r.priority === 1).length,
-                2: reports.filter(r => r.priority === 2).length,
-                3: reports.filter(r => r.priority === 3).length,
-                4: reports.filter(r => r.priority === 4 || !r.priority).length
+                1: emergencyReports.filter(r => r.priority === 1).length,
+                2: emergencyReports.filter(r => r.priority === 2).length,
+                3: emergencyReports.filter(r => r.priority === 3).length,
+                4: emergencyReports.filter(r => r.priority === 4 || !r.priority).length
             };
             
             charts.priority.data.datasets[0].data = [

@@ -426,6 +426,25 @@ class _ReportDetailEditScreenState extends State<ReportDetailEditScreen> {
                         ),
                       ],
                     ),
+                  const SizedBox(height: 16),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton.icon(
+                      onPressed: _showAssignResponderDialog,
+                      icon: Icon(responderName != null ? Icons.refresh : Icons.person_add),
+                      label: Text(responderName != null ? 'Change Responder' : 'Assign Responder'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: responderName != null 
+                            ? const Color(0xFF3b82f6)
+                            : const Color(0xFF16a34a),
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -745,6 +764,215 @@ class _ReportDetailEditScreenState extends State<ReportDetailEditScreen> {
       return DateFormat('MMM d, yyyy • h:mm a').format(date.toLocal());
     } catch (e) {
       return 'Unknown';
+    }
+  }
+
+  Future<void> _showAssignResponderDialog() async {
+    if (_responders.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('No responders available'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      return;
+    }
+
+    String? selectedResponderId;
+    final reportId = widget.report['id']?.toString();
+    
+    await showDialog(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          title: const Text('Assign Responder'),
+          content: SizedBox(
+            width: double.maxFinite,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Select a responder to assign to this report.',
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Colors.grey.shade700,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'This will automatically update the status to "Assigned" and lifecycle status to "Assigned".',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Colors.grey.shade600,
+                    fontStyle: FontStyle.italic,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                DropdownButtonFormField<String?>(
+                  value: selectedResponderId,
+                  decoration: const InputDecoration(
+                    labelText: 'Responder',
+                    border: OutlineInputBorder(),
+                    contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 16),
+                  ),
+                  items: [
+                    const DropdownMenuItem<String?>(
+                      value: null,
+                      child: Text('-- Select Responder --'),
+                    ),
+                    ..._responders.map((responder) {
+                      final name = responder['name']?.toString() ?? 'Unknown';
+                      final role = responder['role']?.toString() ?? '';
+                      final isAvailable = responder['is_available'] == true;
+                      return DropdownMenuItem<String?>(
+                        value: responder['id']?.toString(),
+                        child: Text(
+                          '$name ($role)${isAvailable ? '' : ' - Busy'}',
+                        ),
+                      );
+                    }),
+                  ],
+                  onChanged: (value) {
+                    setDialogState(() {
+                      selectedResponderId = value;
+                    });
+                  },
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: selectedResponderId == null
+                  ? null
+                  : () async {
+                      Navigator.of(context).pop();
+                      await _assignResponder(reportId, selectedResponderId!);
+                    },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF16a34a),
+                foregroundColor: Colors.white,
+              ),
+              child: const Text('Assign'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _assignResponder(String? reportId, String responderId) async {
+    if (reportId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Report ID is missing'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    // Show loading indicator
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const Center(
+        child: CircularProgressIndicator(),
+      ),
+    );
+
+    try {
+      // Check if report already has an active assignment
+      final existingAssignments = await SupabaseService.client
+          .from('assignment')
+          .select('id, status, responder_id')
+          .eq('report_id', reportId)
+          .inFilter('status', ['assigned', 'accepted', 'enroute', 'on_scene'])
+          .limit(1);
+
+      if (existingAssignments != null && existingAssignments.isNotEmpty) {
+        final existing = existingAssignments[0];
+        if (mounted) {
+          Navigator.of(context).pop(); // Close loading
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                'Report already has an active assignment (status: ${existing['status']}). Please cancel the existing assignment first.',
+              ),
+              backgroundColor: Colors.orange,
+              duration: const Duration(seconds: 5),
+            ),
+          );
+        }
+        return;
+      }
+
+      // Get current user ID
+      final currentUser = SupabaseService.client.auth.currentUser;
+      if (currentUser == null) {
+        throw Exception('User not authenticated');
+      }
+
+      debugPrint('🚀 Calling assign-responder Edge Function for report $reportId');
+
+      // Call the assign-responder Edge Function
+      final response = await SupabaseService.client.functions.invoke(
+        'assign-responder',
+        body: {
+          'report_id': reportId,
+          'responder_id': responderId,
+          'assigned_by': currentUser.id,
+        },
+      );
+
+      debugPrint('📦 Edge Function response: ${response.data}');
+
+      if (response.data == null || response.data['success'] != true) {
+        throw Exception(response.data?['error'] ?? response.data?['message'] ?? 'Failed to assign responder');
+      }
+
+      // Update the report status to 'assigned' (lifecycle_status is already updated by Edge Function)
+      await SupabaseService.client
+          .from('reports')
+          .update({
+            'status': 'assigned',
+            'last_update': DateTime.now().toIso8601String(),
+          })
+          .eq('id', reportId);
+
+      debugPrint('✅ Assignment successful');
+
+      // Reload assignment data
+      await _loadAssignment();
+
+      if (mounted) {
+        Navigator.of(context).pop(); // Close loading
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Responder assigned successfully!'),
+            backgroundColor: Colors.green,
+          ),
+        );
+        // Refresh the view
+        setState(() {});
+      }
+    } catch (e) {
+      debugPrint('❌ Error assigning responder: $e');
+      if (mounted) {
+        Navigator.of(context).pop(); // Close loading
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to assign responder: ${e.toString()}'),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 5),
+          ),
+        );
+      }
     }
   }
 }

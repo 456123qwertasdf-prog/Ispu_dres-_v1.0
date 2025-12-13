@@ -107,6 +107,7 @@ Deno.serve(async (req) => {
         name: displayName || (email.split('@')[0] || 'Unknown'),
         phone: phone ?? '',
         student_number: studentNumber ?? '',
+        user_type: userType ?? 'student', // Add user_type to profile
         is_active: true
       }])
       .select()

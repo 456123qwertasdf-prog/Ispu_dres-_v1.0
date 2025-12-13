@@ -426,6 +426,42 @@
             background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
             color: #374151;
         }
+        /* Filter Buttons */
+        .filter-controls {
+            margin-top: 1rem;
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+        .filter-btn {
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 0.875rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border: 2px solid transparent;
+            background: #f1f5f9;
+            color: #64748b;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .filter-btn:hover {
+            background: #e2e8f0;
+            color: #475569;
+            transform: translateY(-1px);
+        }
+        .filter-btn.active {
+            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+            color: white;
+            border-color: #2563eb;
+            box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
+        }
+        .filter-btn.active:hover {
+            background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+        }
         .assigned-info {
             display: block;
             color: #8b5cf6;
@@ -881,6 +917,18 @@
                                 </button>
                             </div>
                         </div>
+                        <!-- Filter Buttons -->
+                        <div class="filter-controls">
+                            <button class="filter-btn active" data-filter="all" onclick="setFilter('all')" id="filterAll">
+                                <i class="bi bi-list-ul"></i> All Emergencies
+                            </button>
+                            <button class="filter-btn" data-filter="active" onclick="setFilter('active')" id="filterActive">
+                                <i class="bi bi-exclamation-circle"></i> Active Only
+                            </button>
+                            <button class="filter-btn" data-filter="completed" onclick="setFilter('completed')" id="filterCompleted">
+                                <i class="bi bi-check-circle"></i> Completed
+                            </button>
+                        </div>
                     </div>
                     <div class="card-body">
                         <div id="map" style="height: 500px; width: 100%; border-radius: 10px; background: #f0f0f0; border: 2px solid #ddd;"></div>
@@ -892,7 +940,7 @@
                     <!-- Active Emergencies -->
                     <div class="card">
                         <div class="card-header">
-                            <h3 class="card-title">🚨 Active Emergencies</h3>
+                            <h3 class="card-title" id="emergenciesTitle">🚨 All Emergencies</h3>
                             <span class="badge badge-danger" id="activeCount">0</span>
                         </div>
                         <div class="card-body">
@@ -927,6 +975,8 @@
         let responderMarkers = [];
         let markerClusterGroup;
         let realtimeChannels = [];
+        let allReports = []; // Store all reports
+        let currentFilter = 'all'; // 'all', 'active', 'completed'
 
         // Get URL parameter
         function getUrlParameter(name) {
@@ -1054,19 +1104,23 @@
                     window.emergencySystem.getResponders()
                 ]);
                 
+                // Store all reports
+                allReports = reports || [];
+                
                 console.log('📊 Loaded data:', {
-                    reports: reports?.length || 0,
+                    reports: allReports.length,
                     responders: responders?.length || 0
                 });
                 
-                // Update map with data
-                updateMapWithReports(reports || []);
+                // Apply current filter and update map
+                applyFilter();
+                
+                // Update map with responders
                 updateMapWithResponders(responders || []);
                 
                 // Update UI
-                updateActiveEmergencies(reports || []);
                 updateResponseTeams(responders || []);
-                updateSummaryCards(reports || [], responders || []);
+                updateSummaryCards(allReports, responders || []);
                 
                 console.log('✅ Map data loaded successfully');
                 
@@ -1105,6 +1159,84 @@
             }
         }
 
+        // Helper function to filter out non-emergency reports
+        function filterEmergencyReports(reports) {
+            return (reports || []).filter(report => {
+                const effectiveType = (report.corrected_type || report.type || '').toLowerCase().trim();
+                return effectiveType !== 'non_emergency';
+            });
+        }
+
+        // Filter reports based on current filter (only emergency reports)
+        function getFilteredReports() {
+            if (!allReports || allReports.length === 0) return [];
+            
+            // First filter out non-emergency reports
+            const emergencyReports = filterEmergencyReports(allReports);
+            
+            switch (currentFilter) {
+                case 'active':
+                    return emergencyReports.filter(report => {
+                        const status = report.status?.toLowerCase();
+                        return status === 'pending' || 
+                               status === 'processing' || 
+                               status === 'classified' ||
+                               status === 'assigned' ||
+                               status === 'in-progress';
+                    });
+                case 'completed':
+                    return emergencyReports.filter(report => {
+                        const status = report.status?.toLowerCase();
+                        return status === 'completed' || 
+                               status === 'resolved' ||
+                               status === 'cancelled';
+                    });
+                case 'all':
+                default:
+                    return emergencyReports;
+            }
+        }
+
+        // Set filter and update display
+        async function setFilter(filter) {
+            currentFilter = filter;
+            
+            // Update button states
+            document.querySelectorAll('.filter-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            document.getElementById(`filter${filter.charAt(0).toUpperCase() + filter.slice(1)}`).classList.add('active');
+            
+            // Update title
+            const titleEl = document.getElementById('emergenciesTitle');
+            if (filter === 'active') {
+                titleEl.textContent = '🚨 Active Emergencies';
+            } else if (filter === 'completed') {
+                titleEl.textContent = '✅ Completed Emergencies';
+            } else {
+                titleEl.textContent = '🚨 All Emergencies';
+            }
+            
+            // Apply filter
+            applyFilter();
+            
+            // Update summary cards with current filter
+            try {
+                const responders = await window.emergencySystem.getResponders();
+                updateSummaryCards(allReports, responders || []);
+            } catch (error) {
+                console.warn('Could not update responders for summary:', error);
+                updateSummaryCards(allReports, []);
+            }
+        }
+
+        // Apply current filter to map and list
+        function applyFilter() {
+            const filteredReports = getFilteredReports();
+            updateMapWithReports(filteredReports);
+            updateActiveEmergencies(filteredReports);
+        }
+
         // Update map with reports
         function updateMapWithReports(reports) {
             // Check if map is ready
@@ -1117,7 +1249,7 @@
             markerClusterGroup.clearLayers();
             emergencyMarkers = [];
             
-            console.log('🗺️ Adding emergency markers for', reports.length, 'reports');
+            console.log(`🗺️ Adding emergency markers for ${reports.length} reports (filter: ${currentFilter})`);
             
             if (reports.length === 0) {
                 console.warn('⚠️ No reports to display on map');
@@ -1251,32 +1383,57 @@
 
         // Update active emergencies
         function updateActiveEmergencies(reports) {
-            const allReports = reports || [];
+            // Filter out non-emergency reports first
+            const emergencyReports = filterEmergencyReports(allReports);
+            const filteredReports = reports || [];
             
-            // Count active emergencies
-            const activeCount = allReports.filter(report => 
-                report.status === 'pending' || 
-                report.status === 'processing' || 
-                report.status === 'classified' ||
-                report.status === 'assigned' ||
-                report.status === 'in-progress'
-            ).length;
+            // Count active emergencies from emergency reports only (not just filtered)
+            const activeCount = emergencyReports.filter(report => {
+                const status = report.status?.toLowerCase();
+                return status === 'pending' || 
+                       status === 'processing' || 
+                       status === 'classified' ||
+                       status === 'assigned' ||
+                       status === 'in-progress';
+            }).length;
             
-            document.getElementById('activeCount').textContent = activeCount;
+            // Count completed emergencies from emergency reports only
+            const completedCount = emergencyReports.filter(report => {
+                const status = report.status?.toLowerCase();
+                return status === 'completed' || 
+                       status === 'resolved' ||
+                       status === 'cancelled';
+            }).length;
+            
+            // Update badge based on filter
+            let badgeText = activeCount;
+            if (currentFilter === 'completed') {
+                badgeText = completedCount;
+            } else if (currentFilter === 'all') {
+                badgeText = filteredReports.length;
+            }
+            document.getElementById('activeCount').textContent = badgeText;
             
             const container = document.getElementById('activeEmergencies');
-            if (allReports.length === 0) {
-                container.innerHTML = '<p class="text-muted">No emergencies found</p>';
+            if (filteredReports.length === 0) {
+                let message = 'No emergencies found';
+                if (currentFilter === 'active') {
+                    message = 'No active emergencies';
+                } else if (currentFilter === 'completed') {
+                    message = 'No completed emergencies';
+                }
+                container.innerHTML = `<p class="text-muted">${message}</p>`;
                 return;
             }
             
-            // Show all reports, but highlight active ones
-            container.innerHTML = allReports.map((report, index) => {
-                const isActive = report.status === 'pending' || 
-                                report.status === 'processing' || 
-                                report.status === 'classified' ||
-                                report.status === 'assigned' ||
-                                report.status === 'in-progress';
+            // Show filtered reports, highlight active ones
+            container.innerHTML = filteredReports.map((report, index) => {
+                const status = report.status?.toLowerCase();
+                const isActive = status === 'pending' || 
+                                status === 'processing' || 
+                                status === 'classified' ||
+                                status === 'assigned' ||
+                                status === 'in-progress';
                 
                 // Get location address for display
                 let locationText = 'Location detected';
@@ -1338,7 +1495,34 @@
 
         // Update summary cards
         function updateSummaryCards(reports, responders) {
-            document.getElementById('totalEmergencies').textContent = reports.length;
+            // Filter out non-emergency reports - only count actual emergencies
+            const emergencyReports = filterEmergencyReports(reports);
+            const totalReports = emergencyReports.length;
+            const activeReports = emergencyReports.filter(report => {
+                const status = report.status?.toLowerCase();
+                return status === 'pending' || 
+                       status === 'processing' || 
+                       status === 'classified' ||
+                       status === 'assigned' ||
+                       status === 'in-progress';
+            }).length;
+            const completedReports = emergencyReports.filter(report => {
+                const status = report.status?.toLowerCase();
+                return status === 'completed' || 
+                       status === 'resolved' ||
+                       status === 'cancelled';
+            }).length;
+            
+            // Update total emergencies card to show active/completed breakdown
+            const totalEmergenciesEl = document.getElementById('totalEmergencies');
+            if (currentFilter === 'active') {
+                totalEmergenciesEl.textContent = activeReports;
+            } else if (currentFilter === 'completed') {
+                totalEmergenciesEl.textContent = completedReports;
+            } else {
+                totalEmergenciesEl.textContent = totalReports;
+            }
+            
             document.getElementById('totalResponders').textContent = responders.filter(r => r.is_available).length;
             document.getElementById('avgResponseTime').textContent = '--';
             document.getElementById('coverageRadius').textContent = '8km';
@@ -1381,7 +1565,7 @@
 
         // Action functions for popup buttons
         function viewReport(reportId) {
-            window.location.href = `view-report.html?id=${reportId}`;
+            window.location.href = `super-user-view-report.html?id=${reportId}`;
         }
 
         // Focus on a specific report on the map (called from emergency list)
@@ -1439,10 +1623,10 @@
                         table: 'reports'
                     }, async (payload) => {
                         console.log('📥 New report created:', payload.new);
-                        const reports = await window.emergencySystem.getReports();
-                        updateMapWithReports(reports || []);
-                        updateActiveEmergencies(reports || []);
-                        updateSummaryCards(reports || [], await window.emergencySystem.getResponders() || []);
+                        allReports = await window.emergencySystem.getReports();
+                        applyFilter();
+                        const responders = await window.emergencySystem.getResponders();
+                        updateSummaryCards(allReports || [], responders || []);
                     })
                     .on('postgres_changes', {
                         event: 'UPDATE',
@@ -1450,10 +1634,10 @@
                         table: 'reports'
                     }, async (payload) => {
                         console.log('📝 Report updated:', payload.new);
-                        const reports = await window.emergencySystem.getReports();
-                        updateMapWithReports(reports || []);
-                        updateActiveEmergencies(reports || []);
-                        updateSummaryCards(reports || [], await window.emergencySystem.getResponders() || []);
+                        allReports = await window.emergencySystem.getReports();
+                        applyFilter();
+                        const responders = await window.emergencySystem.getResponders();
+                        updateSummaryCards(allReports || [], responders || []);
                     })
                     .on('postgres_changes', {
                         event: 'DELETE',
@@ -1466,9 +1650,10 @@
                             markerClusterGroup.removeLayer(marker);
                             emergencyMarkers = emergencyMarkers.filter(m => m.reportId !== payload.old.id);
                         }
-                        const reports = await window.emergencySystem.getReports();
-                        updateActiveEmergencies(reports || []);
-                        updateSummaryCards(reports || [], await window.emergencySystem.getResponders() || []);
+                        allReports = await window.emergencySystem.getReports();
+                        applyFilter();
+                        const responders = await window.emergencySystem.getResponders();
+                        updateSummaryCards(allReports || [], responders || []);
                     })
                     .subscribe((status) => {
                         if (status === 'SUBSCRIBED') {
@@ -1526,9 +1711,8 @@
                         table: 'assignment'
                     }, async (payload) => {
                         console.log('📋 Assignment changed:', payload);
-                        const reports = await window.emergencySystem.getReports();
-                        updateMapWithReports(reports || []);
-                        updateActiveEmergencies(reports || []);
+                        allReports = await window.emergencySystem.getReports();
+                        applyFilter();
                     })
                     .subscribe((status) => {
                         if (status === 'SUBSCRIBED') {
