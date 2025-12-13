@@ -81,5 +81,29 @@ class SupabaseService {
       email: email,
     );
   }
+
+  // Reset password
+  static Future<void> resetPassword({
+    required String email,
+  }) async {
+    // For mobile, we'll use a deep link that can be handled by the app
+    // The app should handle the reset token and show a password reset screen
+    await client.auth.resetPasswordForEmail(
+      email,
+      redirectTo: 'io.supabase.lspu_dres://reset-password',
+    );
+  }
+  
+  // Update password (used after clicking reset link)
+  static Future<void> updatePassword({
+    required String newPassword,
+  }) async {
+    final response = await client.auth.updateUser(
+      UserAttributes(password: newPassword),
+    );
+    if (response.user == null) {
+      throw Exception('Failed to update password');
+    }
+  }
 }
 

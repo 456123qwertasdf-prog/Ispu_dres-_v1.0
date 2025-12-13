@@ -7,10 +7,9 @@
 
 class AzureVisionAPI {
   constructor() {
-    // API key should be set via environment variable
-    // For production, use: Deno.env.get("AZURE_VISION_KEY")
-    // For browser/client-side, use a secure API endpoint instead
-    this.apiKey = process.env.AZURE_VISION_KEY || "";
+    // API key should be loaded from environment variables
+    // For production, use: process.env.AZURE_VISION_KEY
+    this.apiKey = process.env.AZURE_VISION_KEY || "YOUR_AZURE_VISION_KEY_HERE";
     this.endpoint = process.env.AZURE_VISION_ENDPOINT || "https://ew09.cognitiveservices.azure.com";
   }
 

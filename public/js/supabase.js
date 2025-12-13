@@ -344,6 +344,23 @@ class EmergencyResponseSystem {
     }
   }
 
+  async resetPassword(email) {
+    try {
+      const { data, error } = await this.supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `https://dres-lspu-edu-ph.456123qwert-asdf.workers.dev/reset-password.html`,
+      });
+
+      if (error) throw error;
+
+      this.showSuccess('Password reset email sent! Please check your inbox and follow the instructions.');
+      return data;
+    } catch (error) {
+      console.error('❌ Password reset failed:', error);
+      this.showError('Password reset failed: ' + error.message);
+      throw error;
+    }
+  }
+
   async signOut() {
     try {
       console.log('🚪 Signing out...');

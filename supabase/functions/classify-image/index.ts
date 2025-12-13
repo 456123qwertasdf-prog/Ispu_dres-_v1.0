@@ -13,7 +13,7 @@ const HF_DESCRIPTION_MODEL = Deno.env.get("HF_DESCRIPTION_MODEL") ?? "Salesforce
 const HF_OBJECT_MODEL = Deno.env.get("HF_OBJECT_MODEL") ?? "facebook/detr-resnet-50";
 
 // Azure Image Analysis v4.0 Configuration
-// Read from environment variables only (no hardcoded fallback for security)
+// Read from environment variables - no fallback for security
 const AZURE_VISION_KEY = Deno.env.get("AZURE_VISION_KEY") || "";
 const AZURE_VISION_ENDPOINT = Deno.env.get("AZURE_VISION_ENDPOINT") || "https://ew09.cognitiveservices.azure.com";
 // Force Azure path now that v4 secrets are set; prevents heuristic flood defaults

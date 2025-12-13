@@ -805,6 +805,70 @@
                 transform: translateY(0) scale(1);
             }
         }
+        /* Responder marker smooth movement styles */
+        .responder-marker {
+            transition: transform 0.3s ease;
+        }
+        .responder-marker:hover {
+            transform: scale(1.1);
+            z-index: 1000;
+        }
+        .responder-icon {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+            color: white;
+            border: 2px solid white;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0%, 100% {
+                box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+            }
+            50% {
+                box-shadow: 0 2px 16px rgba(59, 130, 246, 0.6);
+            }
+        }
+        /* Smooth marker movement */
+        .leaflet-marker-icon {
+            transition: transform 0.3s ease;
+        }
+        /* Assignment connection lines */
+        .assignment-connection {
+            cursor: pointer;
+            transition: opacity 0.3s ease;
+        }
+        .assignment-connection:hover {
+            opacity: 1 !important;
+            stroke-width: 5;
+        }
+        /* Assignment popup styling */
+        .assignment-popup {
+            min-width: 200px;
+        }
+        .assignment-popup h4 {
+            margin: 0 0 10px 0;
+            color: #1e293b;
+            font-size: 1rem;
+        }
+        .assignment-popup p {
+            margin: 5px 0;
+            font-size: 0.875rem;
+        }
+        /* Ensure responder markers are always visible and on top */
+        .responder-marker {
+            z-index: 1000 !important;
+            position: relative;
+        }
+        .leaflet-marker-icon.responder-marker {
+            z-index: 1000 !important;
+        }
     </style>
 </head>
 <body class="map-page">
@@ -919,10 +983,10 @@
                         </div>
                         <!-- Filter Buttons -->
                         <div class="filter-controls">
-                            <button class="filter-btn active" data-filter="all" onclick="setFilter('all')" id="filterAll">
+                            <button class="filter-btn" data-filter="all" onclick="setFilter('all')" id="filterAll">
                                 <i class="bi bi-list-ul"></i> All Emergencies
                             </button>
-                            <button class="filter-btn" data-filter="active" onclick="setFilter('active')" id="filterActive">
+                            <button class="filter-btn active" data-filter="active" onclick="setFilter('active')" id="filterActive">
                                 <i class="bi bi-exclamation-circle"></i> Active Only
                             </button>
                             <button class="filter-btn" data-filter="completed" onclick="setFilter('completed')" id="filterCompleted">
@@ -940,7 +1004,7 @@
                     <!-- Active Emergencies -->
                     <div class="card">
                         <div class="card-header">
-                            <h3 class="card-title" id="emergenciesTitle">🚨 All Emergencies</h3>
+                            <h3 class="card-title" id="emergenciesTitle">🚨 Active Emergencies</h3>
                             <span class="badge badge-danger" id="activeCount">0</span>
                         </div>
                         <div class="card-body">
@@ -973,10 +1037,13 @@
         let map;
         let emergencyMarkers = [];
         let responderMarkers = [];
+        let responderMarkersMap = new Map(); // Map responder ID to marker for smooth updates
         let markerClusterGroup;
         let realtimeChannels = [];
         let allReports = []; // Store all reports
-        let currentFilter = 'all'; // 'all', 'active', 'completed'
+        let currentFilter = 'active'; // 'all', 'active', 'completed' - default to 'active' to show active emergencies with responders
+        let assignmentsData = []; // Store all active assignments
+        let assignmentLines = []; // Store polylines connecting responders to assignments
 
         // Get URL parameter
         function getUrlParameter(name) {
@@ -1098,7 +1165,7 @@
             try {
                 console.log('🔄 Loading map data...');
                 
-                // Load reports and responders
+                // Load reports, responders, and assignments
                 const [reports, responders] = await Promise.all([
                     window.emergencySystem.getReports(),
                     window.emergencySystem.getResponders()
@@ -1112,21 +1179,158 @@
                     responders: responders?.length || 0
                 });
                 
+                // Load assignments
+                await loadAssignments();
+                
                 // Apply current filter and update map
                 applyFilter();
                 
-                // Update map with responders
+                // Update map with responders (this will now show assignment status)
                 updateMapWithResponders(responders || []);
                 
                 // Update UI
                 updateResponseTeams(responders || []);
                 updateSummaryCards(allReports, responders || []);
                 
+                // Auto-fit map to show active emergencies and responders
+                setTimeout(() => {
+                    fitToActiveEmergenciesAndResponders();
+                }, 500);
+                
                 console.log('✅ Map data loaded successfully');
                 
             } catch (error) {
                 console.error('❌ Error loading map data:', error);
             }
+        }
+
+        // Load assignments with responder and report information
+        async function loadAssignments() {
+            try {
+                console.log('📋 Loading assignments...');
+                
+                const { data: assignments, error } = await window.emergencySystem.supabase
+                    .from('assignment')
+                    .select(`
+                        id,
+                        status,
+                        assigned_at,
+                        accepted_at,
+                        completed_at,
+                        report_id,
+                        responder_id,
+                        reports:reports!assignment_report_id_fkey (
+                            id,
+                            type,
+                            message,
+                            location,
+                            status
+                        ),
+                        responder:responder!assignment_responder_id_fkey (
+                            id,
+                            name,
+                            role,
+                            last_location,
+                            is_available
+                        )
+                    `)
+                    .in('status', ['assigned', 'accepted', 'enroute', 'on_scene']);
+                
+                if (error) throw error;
+                
+                assignmentsData = assignments || [];
+                console.log(`✅ Loaded ${assignmentsData.length} active assignments`);
+                
+                // Update map with assignment connections
+                updateAssignmentConnections();
+                
+            } catch (error) {
+                console.error('❌ Error loading assignments:', error);
+            }
+        }
+
+        // Update assignment connections on map
+        function updateAssignmentConnections() {
+            // Remove existing assignment lines
+            assignmentLines.forEach(line => map.removeLayer(line));
+            assignmentLines = [];
+            
+            console.log('🔗 Drawing assignment connections...');
+            
+            assignmentsData.forEach(assignment => {
+                if (!assignment.reports || !assignment.responder) return;
+                
+                const report = assignment.reports;
+                const responder = assignment.responder;
+                
+                // Get report location
+                const reportLocation = parseResponderLocation(report.location);
+                if (!reportLocation) return;
+                
+                // Get responder location
+                const responderLocation = parseResponderLocation(responder.last_location);
+                if (!responderLocation) return;
+                
+                // Determine line color and style based on assignment status
+                const statusConfig = {
+                    'assigned': { color: '#f59e0b', dashArray: '10, 5', opacity: 0.6 },    // Amber - dashed
+                    'accepted': { color: '#3b82f6', dashArray: '15, 5', opacity: 0.7 },     // Blue - dashed
+                    'enroute': { color: '#06b6d4', dashArray: '20, 5', opacity: 0.8 },      // Cyan - dashed (moving)
+                    'on_scene': { color: '#10b981', dashArray: null, opacity: 0.9 }          // Green - solid
+                };
+                
+                const config = statusConfig[assignment.status] || { color: '#6b7280', dashArray: '5, 5', opacity: 0.5 };
+                
+                // Create polyline connecting responder to emergency
+                const polylineOptions = {
+                    color: config.color,
+                    weight: 4,
+                    opacity: config.opacity,
+                    className: 'assignment-connection'
+                };
+                
+                if (config.dashArray) {
+                    polylineOptions.dashArray = config.dashArray;
+                }
+                
+                const polyline = L.polyline(
+                    [[responderLocation.lat, responderLocation.lng], [reportLocation.lat, reportLocation.lng]],
+                    polylineOptions
+                ).addTo(map);
+                
+                // Add popup to line
+                const statusText = assignment.status.charAt(0).toUpperCase() + assignment.status.slice(1).replace('_', ' ');
+                const assignedTime = assignment.assigned_at ? new Date(assignment.assigned_at).toLocaleString() : 'N/A';
+                
+                polyline.bindPopup(`
+                    <div class="assignment-popup">
+                        <h4>Assignment Connection</h4>
+                        <p><strong>Responder:</strong> ${responder.name}</p>
+                        <p><strong>Emergency:</strong> ${(report.type || 'Unknown').toUpperCase()}</p>
+                        <p><strong>Status:</strong> <span style="color: ${config.color}; font-weight: bold;">${statusText}</span></p>
+                        <p><strong>Assigned:</strong> ${assignedTime}</p>
+                        <button onclick="viewReport('${report.id}')" class="btn btn-sm btn-primary" style="margin-top: 8px;">
+                            View Emergency
+                        </button>
+                    </div>
+                `);
+                
+                assignmentLines.push(polyline);
+            });
+            
+            console.log(`✅ Created ${assignmentLines.length} assignment connections`);
+        }
+
+        // Helper function for time since
+        function getTimeSince(date) {
+            const seconds = Math.floor((new Date() - date) / 1000);
+            if (seconds < 60) return `${seconds} seconds ago`;
+            const minutes = Math.floor(seconds / 60);
+            if (minutes < 60) return `${minutes} minutes ago`;
+            const hours = Math.floor(minutes / 60);
+            if (hours < 24) return `${hours} hours ago`;
+            const days = Math.floor(hours / 24);
+            return `${days} days ago`;
         }
 
         // Focus on specific report
@@ -1217,8 +1421,72 @@
                 titleEl.textContent = '🚨 All Emergencies';
             }
             
-            // Apply filter
-            applyFilter();
+            // Apply filter (this will also update responders)
+            await applyFilter();
+            
+            // If active filter, ensure responders are visible and fit map
+            if (filter === 'active') {
+                // Force update responders for active filter
+                try {
+                    const responders = await window.emergencySystem.getResponders();
+                    console.log('🔄 Active filter: Force updating responders:', responders?.length || 0);
+                    updateMapWithResponders(responders || []);
+                    await loadAssignments();
+                    
+                    // Ensure all responder markers are visible and on top
+                    responderMarkers.forEach(marker => {
+                        if (marker) {
+                            if (!map.hasLayer(marker)) {
+                                console.warn('⚠️ Active filter: Responder marker not on map, re-adding...');
+                                marker.addTo(map);
+                            }
+                            if (marker && typeof marker.bringToFront === 'function') {
+                                try {
+                                    marker.bringToFront();
+                                } catch (e) {
+                                    console.warn('Could not bring marker to front:', e);
+                                }
+                            }
+                        }
+                    });
+                    
+                    // Ensure all responder markers are visible and on top BEFORE fitting
+                    responderMarkers.forEach(marker => {
+                        if (marker) {
+                            if (!map.hasLayer(marker)) {
+                                console.warn('⚠️ Active filter: Responder marker not on map, re-adding...');
+                                marker.addTo(map);
+                            }
+                            if (marker && typeof marker.bringToFront === 'function') {
+                                marker.bringToFront();
+                                console.log(`  ✅ Brought responder marker to front:`, marker.getLatLng(), `(visible: ${map.hasLayer(marker)})`);
+                            }
+                        }
+                    });
+                    
+                    // Wait a bit for markers to render, then fit map
+                    setTimeout(() => {
+                        console.log('📍 Active filter: Fitting map to show emergencies and responders');
+                        console.log(`📍 Emergency markers: ${emergencyMarkers.length}, Responder markers: ${responderMarkers.length}`);
+                        console.log(`📍 Responder markers on map: ${responderMarkers.filter(m => m && map.hasLayer(m)).length}`);
+                        
+                        // Double-check responders are still on map before fitting
+                        responderMarkers.forEach(marker => {
+                            if (marker && !map.hasLayer(marker)) {
+                                console.error('❌ CRITICAL: Responder marker lost from map! Re-adding...');
+                                marker.addTo(map);
+                                if (marker && typeof marker.bringToFront === 'function') {
+                                    marker.bringToFront();
+                                }
+                            }
+                        });
+                        
+                        fitToActiveEmergenciesAndResponders();
+                    }, 1000);
+                } catch (error) {
+                    console.warn('Could not update responders for active filter:', error);
+                }
+            }
             
             // Update summary cards with current filter
             try {
@@ -1231,10 +1499,29 @@
         }
 
         // Apply current filter to map and list
-        function applyFilter() {
+        async function applyFilter() {
             const filteredReports = getFilteredReports();
+            
+            // IMPORTANT: Update responders FIRST before updating emergency markers
+            // This ensures responders are always visible regardless of filter
+            try {
+                const responders = await window.emergencySystem.getResponders();
+                console.log(`🔄 applyFilter: Updating ${responders?.length || 0} responders for filter: ${currentFilter}`);
+                updateMapWithResponders(responders || []);
+            } catch (error) {
+                console.warn('Could not update responders for filter:', error);
+            }
+            
+            // Then update emergency markers
             updateMapWithReports(filteredReports);
             updateActiveEmergencies(filteredReports);
+            
+            // Reload assignments to show connections
+            try {
+                await loadAssignments();
+            } catch (error) {
+                console.warn('Could not reload assignments:', error);
+            }
         }
 
         // Update map with reports
@@ -1245,8 +1532,13 @@
                 return;
             }
             
-            // Clear existing markers from cluster group
-            markerClusterGroup.clearLayers();
+            // Clear existing emergency markers from cluster group ONLY
+            // Don't clear responder markers - they should always be visible
+            emergencyMarkers.forEach(marker => {
+                if (markerClusterGroup.hasLayer(marker)) {
+                    markerClusterGroup.removeLayer(marker);
+                }
+            });
             emergencyMarkers = [];
             
             console.log(`🗺️ Adding emergency markers for ${reports.length} reports (filter: ${currentFilter})`);
@@ -1320,65 +1612,333 @@
             console.log(`🗺️ Total emergency markers added: ${emergencyMarkers.length}`);
         }
 
+        // Helper function to parse responder location (handles GeoJSON and regular formats)
+        function parseResponderLocation(location) {
+            let lat, lng;
+            
+            if (!location) {
+                console.warn('⚠️ parseResponderLocation: No location provided');
+                return null;
+            }
+            
+            // Log the location format for debugging
+            console.log('🔍 Parsing location:', typeof location, location);
+            
+            if (typeof location === 'string') {
+                try {
+                    const locationData = JSON.parse(location);
+                    // Check if it's GeoJSON format
+                    if (locationData.type === 'Point' && locationData.coordinates && Array.isArray(locationData.coordinates)) {
+                        // GeoJSON: [longitude, latitude]
+                        lng = parseFloat(locationData.coordinates[0]);
+                        lat = parseFloat(locationData.coordinates[1]);
+                        console.log('✅ Parsed GeoJSON string format:', { lat, lng });
+                    } else if (locationData.coordinates && Array.isArray(locationData.coordinates)) {
+                        // Alternative GeoJSON format
+                        lng = parseFloat(locationData.coordinates[0]);
+                        lat = parseFloat(locationData.coordinates[1]);
+                        console.log('✅ Parsed alternative GeoJSON string format:', { lat, lng });
+                    } else {
+                        // Regular JSON format
+                        lat = parseFloat(locationData.latitude || locationData.lat);
+                        lng = parseFloat(locationData.longitude || locationData.lng);
+                        console.log('✅ Parsed regular JSON string format:', { lat, lng });
+                    }
+                } catch (e) {
+                    console.error('❌ Failed to parse location string:', e, location);
+                    return null;
+                }
+            } else if (typeof location === 'object' && location !== null) {
+                // Check if it's GeoJSON format
+                if (location.type === 'Point' && location.coordinates && Array.isArray(location.coordinates)) {
+                    // GeoJSON: [longitude, latitude]
+                    lng = parseFloat(location.coordinates[0]);
+                    lat = parseFloat(location.coordinates[1]);
+                    console.log('✅ Parsed GeoJSON object format:', { lat, lng });
+                } else if (location.coordinates && Array.isArray(location.coordinates) && location.coordinates.length >= 2) {
+                    // Alternative GeoJSON format without type
+                    lng = parseFloat(location.coordinates[0]);
+                    lat = parseFloat(location.coordinates[1]);
+                    console.log('✅ Parsed alternative GeoJSON object format:', { lat, lng });
+                } else if (location.latitude !== undefined || location.lat !== undefined) {
+                    // Regular object format
+                    lat = parseFloat(location.latitude || location.lat);
+                    lng = parseFloat(location.longitude || location.lng);
+                    console.log('✅ Parsed regular object format:', { lat, lng });
+                } else {
+                    console.warn('⚠️ Unknown location object format:', location);
+                    return null;
+                }
+            } else {
+                console.warn('⚠️ Unsupported location type:', typeof location, location);
+                return null;
+            }
+            
+            // Validate coordinates
+            if (isNaN(lat) || isNaN(lng) || lat < -90 || lat > 90 || lng < -180 || lng > 180) {
+                console.error('❌ Invalid coordinates:', { lat, lng });
+                return null;
+            }
+            
+            console.log('✅ Successfully parsed location:', { lat, lng });
+            return { lat, lng };
+        }
+
         // Update map with responders
         function updateMapWithResponders(responders) {
-            // Clear existing markers
-            responderMarkers.forEach(marker => map.removeLayer(marker));
-            responderMarkers = [];
+            console.log(`👮 Updating responder markers for ${responders.length} responders (current filter: ${currentFilter})`);
+            console.log('👮 Responders data:', responders);
             
-            console.log('👮 Adding responder markers for', responders.length, 'responders');
+            // Ensure we're not removing responders when filter is active
+            if (responders.length === 0) {
+                console.warn('⚠️ No responders to display!');
+                return;
+            }
             
-            responders.forEach((responder, index) => {
-                let lat, lng;
+            responders.forEach((responder) => {
+                console.log(`🔍 Processing responder: ${responder.name || responder.id}`, responder);
+                console.log(`📍 Responder last_location:`, responder.last_location);
                 
-                // Try different location data formats
-                if (responder.last_location) {
-                    if (typeof responder.last_location === 'string') {
-                        try {
-                            const locationData = JSON.parse(responder.last_location);
-                            lat = parseFloat(locationData.latitude || locationData.lat);
-                            lng = parseFloat(locationData.longitude || locationData.lng);
-                        } catch (e) {
-                            console.warn(`⚠️ Failed to parse responder location string for ${responder.name || responder.id}:`, responder.last_location, e);
-                        }
-                    } else if (typeof responder.last_location === 'object') {
-                        lat = parseFloat(responder.last_location.latitude || responder.last_location.lat);
-                        lng = parseFloat(responder.last_location.longitude || responder.last_location.lng);
-                    }
-                }
+                const location = parseResponderLocation(responder.last_location);
                 
-                // Validate coordinates
-                if (isNaN(lat) || isNaN(lng) || lat < -90 || lat > 90 || lng < -180 || lng > 180) {
-                    console.warn(`⚠️ Skipping responder ${responder.name || responder.id} - invalid or missing coordinates.`);
+                if (!location) {
+                    console.warn(`⚠️ Skipping responder ${responder.name || responder.id} - invalid or missing coordinates. Location data:`, responder.last_location);
                     return;
                 }
                 
-                if (!isNaN(lat) && !isNaN(lng)) {
-                    // Create custom icon for responder
+                console.log(`✅ Responder ${responder.name || responder.id} has valid location:`, location);
+                
+                const responderId = responder.id;
+                const existingMarker = responderMarkersMap.get(responderId);
+                
+                // Find active assignment for this responder
+                const activeAssignment = assignmentsData.find(a => 
+                    a.responder_id === responder.id && 
+                    ['assigned', 'accepted', 'enroute', 'on_scene'].includes(a.status)
+                );
+                
+                // Determine icon based on assignment status
+                let iconColor = '#10b981'; // Green for available
+                let iconEmoji = '👮';
+                let statusText = 'Available';
+                
+                if (activeAssignment) {
+                    const statusConfig = {
+                        'assigned': { color: '#f59e0b', emoji: '📋', text: 'Assigned' },
+                        'accepted': { color: '#3b82f6', emoji: '✅', text: 'Accepted' },
+                        'enroute': { color: '#06b6d4', emoji: '🚑', text: 'En Route' },
+                        'on_scene': { color: '#10b981', emoji: '🚨', text: 'On Scene' }
+                    };
+                    
+                    const config = statusConfig[activeAssignment.status] || { color: '#6b7280', emoji: '👮', text: 'Active' };
+                    iconColor = config.color;
+                    iconEmoji = config.emoji;
+                    statusText = config.text;
+                } else if (!responder.is_available) {
+                    iconColor = '#6b7280'; // Gray for unavailable
+                    statusText = 'Unavailable';
+                }
+                
+                if (existingMarker) {
+                    // Update existing marker position smoothly
+                    const newLatLng = L.latLng(location.lat, location.lng);
+                    const currentLatLng = existingMarker.getLatLng();
+                    
+                    // Only animate if location changed significantly (more than ~10 meters)
+                    const distance = currentLatLng.distanceTo(newLatLng);
+                    if (distance > 10) {
+                        // Smoothly animate marker to new position
+                        existingMarker.setLatLng(newLatLng, {
+                            animate: true,
+                            duration: 1.0, // 1 second animation
+                            easeLinearity: 0.25
+                        });
+                        
+                        console.log(`📍 Moving responder ${responder.name || responderId} to new location (${distance.toFixed(0)}m away)`);
+                    }
+                    
+                    // Update icon if assignment status changed
+                    if (existingMarker.assignmentStatus !== (activeAssignment?.status || 'none')) {
+                        const newIcon = L.divIcon({
+                            className: 'responder-marker',
+                            html: `<div class="responder-icon" style="background: ${iconColor};">${iconEmoji}</div>`,
+                            iconSize: [30, 30],
+                            iconAnchor: [15, 15]
+                        });
+                        existingMarker.setIcon(newIcon);
+                        existingMarker.assignmentStatus = activeAssignment?.status || 'none';
+                    }
+                    
+                    // Ensure marker is brought to front (only if method exists)
+                    if (existingMarker && typeof existingMarker.bringToFront === 'function') {
+                        try {
+                            existingMarker.bringToFront();
+                        } catch (e) {
+                            console.warn('Could not bring marker to front:', e);
+                        }
+                    }
+                    
+                    // Update popup content with latest info including assignment
+                    let popupContent = `
+                        <div class="map-popup">
+                            <h4>${responder.name}</h4>
+                            <p><strong>Role:</strong> ${responder.role || 'Responder'}</p>
+                            <p><strong>Status:</strong> <span style="color: ${iconColor}; font-weight: bold;">${statusText}</span></p>
+                            <p><strong>Available:</strong> ${responder.is_available ? 'Yes' : 'No'}</p>
+                            <p><strong>Last Update:</strong> ${responder.updated_at ? new Date(responder.updated_at).toLocaleTimeString() : 'Just now'}</p>
+                    `;
+                    
+                    if (activeAssignment) {
+                        const report = activeAssignment.reports;
+                        const assignedTime = activeAssignment.assigned_at ? 
+                            new Date(activeAssignment.assigned_at).toLocaleString() : 'N/A';
+                        const timeSince = activeAssignment.assigned_at ? 
+                            getTimeSince(new Date(activeAssignment.assigned_at)) : '';
+                        
+                        popupContent += `
+                            <hr style="margin: 10px 0; border: 1px solid #e5e7eb;">
+                            <h5 style="margin: 10px 0 5px 0; color: ${iconColor};">Current Assignment</h5>
+                            <p><strong>Emergency:</strong> ${(report.type || 'Unknown').toUpperCase()}</p>
+                            <p><strong>Assignment Status:</strong> <span style="color: ${iconColor};">${statusText}</span></p>
+                            <p><strong>Assigned:</strong> ${assignedTime}</p>
+                            ${timeSince ? `<p><strong>Time Since:</strong> ${timeSince}</p>` : ''}
+                            <button onclick="viewReport('${report.id}')" class="btn btn-sm btn-primary" style="margin-top: 8px;">
+                                View Emergency
+                            </button>
+                        `;
+                    }
+                    
+                    popupContent += `</div>`;
+                    existingMarker.setPopupContent(popupContent);
+                    
+                } else {
+                    // Create new marker for responder
                     const icon = L.divIcon({
                         className: 'responder-marker',
-                        html: '<div class="responder-icon">👮</div>',
+                        html: `<div class="responder-icon" style="background: ${iconColor};">${iconEmoji}</div>`,
                         iconSize: [30, 30],
                         iconAnchor: [15, 15]
                     });
                     
-                    const marker = L.marker([lat, lng], { icon }).addTo(map);
+                    const marker = L.marker([location.lat, location.lng], { 
+                        icon,
+                        zIndexOffset: 1000, // Ensure responder markers are always on top
+                        riseOnHover: true
+                    });
                     
-                    const popupContent = `
+                    // Add to map and ensure visibility
+                    marker.addTo(map);
+                    
+                    // Only call bringToFront if it exists (Leaflet marker method)
+                    if (marker && typeof marker.bringToFront === 'function') {
+                        marker.bringToFront();
+                    }
+                    
+                    // Force update z-index via DOM if needed
+                    setTimeout(() => {
+                        const markerElement = marker.getElement();
+                        if (markerElement) {
+                            markerElement.style.zIndex = '1000';
+                            markerElement.style.position = 'relative';
+                            console.log(`  ✅ Set z-index for responder marker: ${responder.name || responderId}`);
+                        }
+                    }, 100);
+                    
+                    // Store responder ID and assignment status on marker
+                    marker.responderId = responderId;
+                    marker.assignmentStatus = activeAssignment?.status || 'none';
+                    
+                    let popupContent = `
                         <div class="map-popup">
                             <h4>${responder.name}</h4>
-                            <p><strong>Role:</strong> ${responder.role}</p>
-                            <p><strong>Status:</strong> ${responder.status}</p>
+                            <p><strong>Role:</strong> ${responder.role || 'Responder'}</p>
+                            <p><strong>Status:</strong> <span style="color: ${iconColor}; font-weight: bold;">${statusText}</span></p>
                             <p><strong>Available:</strong> ${responder.is_available ? 'Yes' : 'No'}</p>
-                        </div>
+                            <p><strong>Last Update:</strong> ${responder.updated_at ? new Date(responder.updated_at).toLocaleTimeString() : 'Just now'}</p>
                     `;
                     
+                    if (activeAssignment) {
+                        const report = activeAssignment.reports;
+                        const assignedTime = activeAssignment.assigned_at ? 
+                            new Date(activeAssignment.assigned_at).toLocaleString() : 'N/A';
+                        const timeSince = activeAssignment.assigned_at ? 
+                            getTimeSince(new Date(activeAssignment.assigned_at)) : '';
+                        
+                        popupContent += `
+                            <hr style="margin: 10px 0; border: 1px solid #e5e7eb;">
+                            <h5 style="margin: 10px 0 5px 0; color: ${iconColor};">Current Assignment</h5>
+                            <p><strong>Emergency:</strong> ${(report.type || 'Unknown').toUpperCase()}</p>
+                            <p><strong>Assignment Status:</strong> <span style="color: ${iconColor};">${statusText}</span></p>
+                            <p><strong>Assigned:</strong> ${assignedTime}</p>
+                            ${timeSince ? `<p><strong>Time Since:</strong> ${timeSince}</p>` : ''}
+                            <button onclick="viewReport('${report.id}')" class="btn btn-sm btn-primary" style="margin-top: 8px;">
+                                View Emergency
+                            </button>
+                        `;
+                    }
+                    
+                    popupContent += `</div>`;
+                    
                     marker.bindPopup(popupContent);
+                    
+                    // Store in both array and map
                     responderMarkers.push(marker);
+                    responderMarkersMap.set(responderId, marker);
+                    
+                    console.log(`✅ Added new responder marker: ${responder.name || responderId}`);
                 }
             });
             
-            console.log(`👮 Total responder markers added: ${responderMarkers.length}`);
+            // Remove markers for responders that are no longer in the list
+            const currentResponderIds = new Set(responders.map(r => r.id));
+            responderMarkersMap.forEach((marker, responderId) => {
+                if (!currentResponderIds.has(responderId)) {
+                    if (map.hasLayer(marker)) {
+                        map.removeLayer(marker);
+                    }
+                    responderMarkersMap.delete(responderId);
+                    const index = responderMarkers.findIndex(m => m.responderId === responderId);
+                    if (index > -1) {
+                        responderMarkers.splice(index, 1);
+                    }
+                    console.log(`🗑️ Removed responder marker: ${responderId}`);
+                } else {
+                    // Ensure existing marker is still on the map and visible
+                    if (marker && !map.hasLayer(marker)) {
+                        console.warn(`⚠️ Responder marker ${responderId} not on map! Re-adding...`);
+                        marker.addTo(map);
+                        if (marker && typeof marker.bringToFront === 'function') {
+                            try {
+                                marker.bringToFront();
+                            } catch (e) {
+                                console.warn('Could not bring marker to front:', e);
+                            }
+                        }
+                    } else if (marker) {
+                        // Always bring to front to ensure visibility
+                        if (typeof marker.bringToFront === 'function') {
+                            try {
+                                marker.bringToFront();
+                            } catch (e) {
+                                console.warn('Could not bring marker to front:', e);
+                            }
+                        }
+                    }
+                }
+            });
+            
+            console.log(`👮 Total responder markers: ${responderMarkers.length} (filter: ${currentFilter})`);
+            
+            // Debug: Verify all responder markers are on the map
+            let markersOnMap = 0;
+            responderMarkers.forEach((marker, index) => {
+                if (marker && map.hasLayer(marker)) {
+                    markersOnMap++;
+                } else {
+                    console.error(`❌ Responder marker ${index} is NOT on map!`);
+                }
+            });
+            console.log(`👮 Responder markers actually on map: ${markersOnMap}/${responderMarkers.length}`);
         }
 
         // Update active emergencies
@@ -1605,6 +2165,84 @@
             }
         }
 
+        // Fit map to show active emergencies and responders
+        function fitToActiveEmergenciesAndResponders() {
+            const allMarkers = [];
+            
+            console.log('🔍 fitToActiveEmergenciesAndResponders called');
+            console.log(`  Emergency markers: ${emergencyMarkers.length}`);
+            console.log(`  Responder markers: ${responderMarkers.length}`);
+            
+            // Add active emergency markers (only those currently visible based on filter)
+            emergencyMarkers.forEach(marker => {
+                if (marker && marker.getLatLng) {
+                    allMarkers.push(marker);
+                }
+            });
+            
+            // Always add all responder markers (they should always be visible)
+            // Especially important for active filter to see responders with assignments
+            responderMarkers.forEach(marker => {
+                if (marker && marker.getLatLng) {
+                    // Ensure marker is on map
+                    if (!map.hasLayer(marker)) {
+                        console.warn('⚠️ Responder marker not on map, re-adding...');
+                        marker.addTo(map);
+                    }
+                    // Bring to front and ensure visibility
+                    if (marker && typeof marker.bringToFront === 'function') {
+                        try {
+                            marker.bringToFront();
+                        } catch (e) {
+                            console.warn('Could not bring marker to front:', e);
+                        }
+                    }
+                    
+                    // Force visibility via DOM manipulation if needed
+                    const markerElement = marker.getElement();
+                    if (markerElement) {
+                        markerElement.style.zIndex = '1000';
+                        markerElement.style.display = 'block';
+                        markerElement.style.visibility = 'visible';
+                        markerElement.style.opacity = '1';
+                    }
+                    
+                    allMarkers.push(marker);
+                    console.log(`  ✅ Added responder marker at:`, marker.getLatLng(), `(on map: ${map.hasLayer(marker)})`);
+                }
+            });
+            
+            console.log(`  Total markers to fit: ${allMarkers.length}`);
+            
+            if (allMarkers.length > 0) {
+                const group = new L.featureGroup(allMarkers);
+                const bounds = group.getBounds();
+                
+                // Only fit if we have valid bounds
+                if (bounds.isValid()) {
+                    map.fitBounds(bounds.pad(0.2), {
+                        maxZoom: 16 // Don't zoom in too much
+                    });
+                    console.log(`✅ Map fitted to ${emergencyMarkers.length} active emergencies and ${responderMarkers.length} responders`);
+                } else {
+                    console.warn('⚠️ Invalid bounds, trying fallback');
+                    // Fallback: fit to all emergency markers
+                    if (emergencyMarkers.length > 0) {
+                        const emergencyGroup = new L.featureGroup(emergencyMarkers);
+                        map.fitBounds(emergencyGroup.getBounds().pad(0.2));
+                    } else if (responderMarkers.length > 0) {
+                        // If no emergencies but we have responders, fit to responders
+                        const responderGroup = new L.featureGroup(responderMarkers);
+                        map.fitBounds(responderGroup.getBounds().pad(0.2));
+                        console.log('✅ Fitted to responders only');
+                    }
+                }
+            } else {
+                // If no markers, keep default view (LSPU coordinates)
+                console.log('ℹ️ No active emergencies or responders to fit map to');
+            }
+        }
+
         function refreshMap() {
             loadMapData();
         }
@@ -1624,7 +2262,7 @@
                     }, async (payload) => {
                         console.log('📥 New report created:', payload.new);
                         allReports = await window.emergencySystem.getReports();
-                        applyFilter();
+                        await applyFilter();
                         const responders = await window.emergencySystem.getResponders();
                         updateSummaryCards(allReports || [], responders || []);
                     })
@@ -1635,7 +2273,7 @@
                     }, async (payload) => {
                         console.log('📝 Report updated:', payload.new);
                         allReports = await window.emergencySystem.getReports();
-                        applyFilter();
+                        await applyFilter();
                         const responders = await window.emergencySystem.getResponders();
                         updateSummaryCards(allReports || [], responders || []);
                     })
@@ -1651,7 +2289,7 @@
                             emergencyMarkers = emergencyMarkers.filter(m => m.reportId !== payload.old.id);
                         }
                         allReports = await window.emergencySystem.getReports();
-                        applyFilter();
+                        await applyFilter();
                         const responders = await window.emergencySystem.getResponders();
                         updateSummaryCards(allReports || [], responders || []);
                     })
@@ -1673,12 +2311,68 @@
                         schema: 'public',
                         table: 'responder'
                     }, async (payload) => {
-                        console.log('👮 Responder updated:', payload.new);
-                        const responders = await window.emergencySystem.getResponders();
-                        updateMapWithResponders(responders || []);
-                        updateResponseTeams(responders || []);
-                        const reports = await window.emergencySystem.getReports();
-                        updateSummaryCards(reports || [], responders || []);
+                        console.log('👮 Responder updated:', payload.new.id);
+                        
+                        // Check if this is a location update
+                        if (payload.new.last_location) {
+                            // Get updated responder data
+                            const { data: updatedResponder, error } = await window.emergencySystem.supabase
+                                .from('responder')
+                                .select('*')
+                                .eq('id', payload.new.id)
+                                .single();
+                            
+                            if (!error && updatedResponder) {
+                                // Update just this responder's marker smoothly
+                                const marker = responderMarkersMap.get(updatedResponder.id);
+                                if (marker) {
+                                    const location = parseResponderLocation(updatedResponder.last_location);
+                                    
+                                    if (location) {
+                                        const newLatLng = L.latLng(location.lat, location.lng);
+                                        const currentLatLng = marker.getLatLng();
+                                        const distance = currentLatLng.distanceTo(newLatLng);
+                                        
+                                        if (distance > 5) { // Only animate if moved more than 5 meters
+                                            marker.setLatLng(newLatLng, {
+                                                animate: true,
+                                                duration: 1.0,
+                                                easeLinearity: 0.25
+                                            });
+                                            
+                                            console.log(`📍 Smoothly moving responder ${updatedResponder.name || updatedResponder.id} (${distance.toFixed(0)}m)`);
+                                        }
+                                        
+                                        // Update popup
+                                        const popupContent = `
+                                            <div class="map-popup">
+                                                <h4>${updatedResponder.name}</h4>
+                                                <p><strong>Role:</strong> ${updatedResponder.role || 'Responder'}</p>
+                                                <p><strong>Status:</strong> ${updatedResponder.status || 'active'}</p>
+                                                <p><strong>Available:</strong> ${updatedResponder.is_available ? 'Yes' : 'No'}</p>
+                                                <p><strong>Last Update:</strong> ${new Date().toLocaleTimeString()}</p>
+                                            </div>
+                                        `;
+                                        marker.setPopupContent(popupContent);
+                                    }
+                                } else {
+                                    // Marker doesn't exist yet, reload all responders
+                                    const responders = await window.emergencySystem.getResponders();
+                                    updateMapWithResponders(responders || []);
+                                }
+                            }
+                            
+                            // Update team list
+                            const responders = await window.emergencySystem.getResponders();
+                            updateResponseTeams(responders || []);
+                        } else {
+                            // Handle other updates (availability, status, etc.)
+                            const responders = await window.emergencySystem.getResponders();
+                            updateMapWithResponders(responders || []); // This will update popup content
+                            updateResponseTeams(responders || []);
+                            const reports = await window.emergencySystem.getReports();
+                            updateSummaryCards(reports || [], responders || []);
+                        }
                     })
                     .on('postgres_changes', {
                         event: 'INSERT',
@@ -1711,8 +2405,12 @@
                         table: 'assignment'
                     }, async (payload) => {
                         console.log('📋 Assignment changed:', payload);
+                        // Reload assignments and update map
+                        await loadAssignments();
+                        const responders = await window.emergencySystem.getResponders();
+                        updateMapWithResponders(responders || []);
                         allReports = await window.emergencySystem.getReports();
-                        applyFilter();
+                        await applyFilter();
                     })
                     .subscribe((status) => {
                         if (status === 'SUBSCRIBED') {

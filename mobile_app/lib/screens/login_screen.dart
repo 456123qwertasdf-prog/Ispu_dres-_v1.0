@@ -32,6 +32,9 @@ class _LoginScreenState extends State<LoginScreen> {
   bool _showSignupForm = false;
   int _currentSlide = 0;
   String? _selectedUserType = 'student'; // Default to student
+  String _passwordStrength = ''; // Password strength indicator
+  final _forgotPasswordEmailController = TextEditingController();
+  bool _isForgotPasswordLoading = false;
 
   // Background slider images
   final List<String> _backgroundImages = [
@@ -50,6 +53,7 @@ class _LoginScreenState extends State<LoginScreen> {
     _signupPasswordController.dispose();
     _signupConfirmPasswordController.dispose();
     _signupStudentNumberController.dispose();
+    _forgotPasswordEmailController.dispose();
     super.dispose();
   }
 
@@ -150,6 +154,255 @@ class _LoginScreenState extends State<LoginScreen> {
 
     if (!mounted) return;
     Navigator.of(context).pushReplacementNamed(destination);
+  }
+
+  // Password strength validation
+  String? _validatePassword(String? value) {
+    if (value == null || value.isEmpty) {
+      return 'Please enter your password';
+    }
+    
+    if (value.length < 8) {
+      return 'Password must be at least 8 characters';
+    }
+    
+    if (!value.contains(RegExp(r'[A-Z]'))) {
+      return 'Password must contain at least one uppercase letter';
+    }
+    
+    if (!value.contains(RegExp(r'[a-z]'))) {
+      return 'Password must contain at least one lowercase letter';
+    }
+    
+    if (!value.contains(RegExp(r'[0-9]'))) {
+      return 'Password must contain at least one number';
+    }
+    
+    if (!value.contains(RegExp(r'[!@#$%^&*(),.?":{}|<>]'))) {
+      return 'Password must contain at least one special character (!@#\$%^&*...)';
+    }
+    
+    return null;
+  }
+  
+  // Calculate password strength
+  void _calculatePasswordStrength(String password) {
+    if (password.isEmpty) {
+      setState(() {
+        _passwordStrength = '';
+      });
+      return;
+    }
+    
+    int strength = 0;
+    String feedback = '';
+    
+    if (password.length >= 8) strength++;
+    if (password.length >= 12) strength++;
+    if (password.contains(RegExp(r'[A-Z]'))) strength++;
+    if (password.contains(RegExp(r'[a-z]'))) strength++;
+    if (password.contains(RegExp(r'[0-9]'))) strength++;
+    if (password.contains(RegExp(r'[!@#$%^&*(),.?":{}|<>]'))) strength++;
+    
+    if (strength <= 2) {
+      feedback = 'Weak';
+    } else if (strength <= 4) {
+      feedback = 'Fair';
+    } else if (strength <= 5) {
+      feedback = 'Good';
+    } else {
+      feedback = 'Strong';
+    }
+    
+    setState(() {
+      _passwordStrength = feedback;
+    });
+  }
+
+  void _showForgotPasswordDialogFunc() {
+    _forgotPasswordEmailController.clear();
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return Dialog(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.all(24.0),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text(
+                          'Reset Password',
+                          style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.close),
+                          onPressed: () {
+                            Navigator.of(context).pop();
+                            _forgotPasswordEmailController.clear();
+                          },
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    const Text(
+                      'Enter your email address and we\'ll send you a link to reset your password.',
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Colors.grey,
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                    TextField(
+                      controller: _forgotPasswordEmailController,
+                      keyboardType: TextInputType.emailAddress,
+                      decoration: InputDecoration(
+                        labelText: 'Email',
+                        hintText: 'Enter your email',
+                        prefixIcon: const Icon(Icons.email_outlined),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        filled: true,
+                        fillColor: Colors.grey.shade50,
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        TextButton(
+                          onPressed: _isForgotPasswordLoading
+                              ? null
+                              : () {
+                                  Navigator.of(context).pop();
+                                  _forgotPasswordEmailController.clear();
+                                },
+                          child: const Text('Cancel'),
+                        ),
+                        const SizedBox(width: 8),
+                        ElevatedButton(
+                          onPressed: _isForgotPasswordLoading
+                              ? null
+                              : () async {
+                                  await _handleForgotPassword(setDialogState, context);
+                                },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.blue.shade700,
+                            foregroundColor: Colors.white,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                          child: _isForgotPasswordLoading
+                              ? const SizedBox(
+                                  height: 20,
+                                  width: 20,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    valueColor: AlwaysStoppedAnimation<Color>(
+                                      Colors.white,
+                                    ),
+                                  ),
+                                )
+                              : const Text('Send Reset Link'),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Future<void> _handleForgotPassword(StateSetter setDialogState, BuildContext dialogContext) async {
+    final email = _forgotPasswordEmailController.text.trim();
+    
+    if (email.isEmpty) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Please enter your email address'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+      return;
+    }
+    
+    // Basic email validation
+    final emailRegex = RegExp(r'^[^\s@]+@[^\s@]+\.[^\s@]+$');
+    if (!emailRegex.hasMatch(email)) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Please enter a valid email address'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+      return;
+    }
+    
+    setDialogState(() {
+      _isForgotPasswordLoading = true;
+    });
+    
+    try {
+      await SupabaseService.resetPassword(email: email);
+      
+      if (mounted) {
+        Navigator.of(dialogContext).pop();
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Password reset email sent! Please check your inbox.'),
+            backgroundColor: Colors.green,
+            duration: Duration(seconds: 4),
+          ),
+        );
+        _forgotPasswordEmailController.clear();
+      }
+    } catch (e) {
+      if (mounted) {
+        String errorMessage = 'Failed to send reset email';
+        if (e.toString().contains('User not found')) {
+          errorMessage = 'No account found with this email address';
+        } else if (e.toString().contains('rate limit')) {
+          errorMessage = 'Too many requests. Please try again later.';
+        } else {
+          errorMessage = e.toString().replaceFirst('Exception: ', '');
+        }
+        
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(errorMessage),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 4),
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setDialogState(() {
+          _isForgotPasswordLoading = false;
+        });
+      }
+    }
   }
 
   Future<void> _handleSignUp() async {
@@ -681,11 +934,7 @@ class _LoginScreenState extends State<LoginScreen> {
               alignment: Alignment.centerRight,
               child: TextButton(
                 onPressed: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Forgot password feature coming soon'),
-                    ),
-                  );
+                  _showForgotPasswordDialogFunc();
                 },
                 child: const Text('Forgot Password?'),
               ),
@@ -905,9 +1154,14 @@ class _LoginScreenState extends State<LoginScreen> {
               TextFormField(
                 controller: _signupPasswordController,
                 obscureText: _obscureSignupPassword,
+                onChanged: (value) {
+                  _calculatePasswordStrength(value);
+                },
                 decoration: InputDecoration(
                   labelText: 'Password',
-                  hintText: 'Enter your password',
+                  hintText: 'Enter a strong password',
+                  helperText: 'Must contain: 8+ chars, uppercase, lowercase, number, special char',
+                  helperMaxLines: 2,
                   prefixIcon: const Icon(Icons.lock_outlined),
                   suffixIcon: IconButton(
                     icon: Icon(
@@ -927,16 +1181,61 @@ class _LoginScreenState extends State<LoginScreen> {
                   filled: true,
                   fillColor: Colors.grey.shade50,
                 ),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter your password';
-                  }
-                  if (value.length < 6) {
-                    return 'Password must be at least 6 characters';
-                  }
-                  return null;
-                },
+                validator: _validatePassword,
               ),
+              // Password Strength Indicator
+              if (_passwordStrength.isNotEmpty)
+                Padding(
+                  padding: const EdgeInsets.only(top: 8.0),
+                  child: Row(
+                    children: [
+                      Text(
+                        'Password Strength: ',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.grey.shade600,
+                        ),
+                      ),
+                      Text(
+                        _passwordStrength,
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                          color: _passwordStrength == 'Strong'
+                              ? Colors.green
+                              : _passwordStrength == 'Good'
+                                  ? Colors.blue
+                                  : _passwordStrength == 'Fair'
+                                      ? Colors.orange
+                                      : Colors.red,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: LinearProgressIndicator(
+                          value: _passwordStrength == 'Strong'
+                              ? 1.0
+                              : _passwordStrength == 'Good'
+                                  ? 0.75
+                                  : _passwordStrength == 'Fair'
+                                      ? 0.5
+                                      : 0.25,
+                          backgroundColor: Colors.grey.shade300,
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                            _passwordStrength == 'Strong'
+                                ? Colors.green
+                                : _passwordStrength == 'Good'
+                                    ? Colors.blue
+                                    : _passwordStrength == 'Fair'
+                                        ? Colors.orange
+                                        : Colors.red,
+                          ),
+                          minHeight: 4,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               const SizedBox(height: 20),
               
               // Confirm Password Field
