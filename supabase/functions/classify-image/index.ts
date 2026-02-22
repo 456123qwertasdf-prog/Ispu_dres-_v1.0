@@ -13,8 +13,8 @@ const HF_DESCRIPTION_MODEL = Deno.env.get("HF_DESCRIPTION_MODEL") ?? "Salesforce
 const HF_OBJECT_MODEL = Deno.env.get("HF_OBJECT_MODEL") ?? "facebook/detr-resnet-50";
 
 // Azure Image Analysis v4.0 Configuration
-// Read from environment variables - no fallback for security
-const AZURE_VISION_KEY = Deno.env.get("AZURE_VISION_KEY") || "";
+// Read from environment; fallback only for local dev
+const AZURE_VISION_KEY = Deno.env.get("AZURE_VISION_KEY");
 const AZURE_VISION_ENDPOINT = Deno.env.get("AZURE_VISION_ENDPOINT") || "https://ew09.cognitiveservices.azure.com";
 // Force Azure path now that v4 secrets are set; prevents heuristic flood defaults
 const FORCE_AZURE = true;
@@ -47,6 +47,11 @@ async function notifySuperUsersIfCritical(
   severityAnalysis: any
 ): Promise<void> {
   try {
+    // False alarms are never critical - do not send "NEW CRITICAL REPORT" notification
+    if (severityAnalysis.type === 'false_alarm') {
+      console.log(`Report ${reportId} is false alarm. Skipping super user critical notification.`);
+      return;
+    }
     // Check if report is critical/high priority
     const isCritical = 
       severityAnalysis.priority <= 2 || 
@@ -167,6 +172,15 @@ function calculateSeverityFromImage(classification: any, azureResult: any, image
       emergencyColor = '#32CD32';
       emergencyIcon = '🌿';
       break;
+
+    case 'false_alarm':
+      // False alarms are never critical - no emergency, no notification as critical
+      priority = 4;
+      responseTime = 'No response needed';
+      emergencyColor = '#9CA3AF';
+      emergencyIcon = '🚫';
+      severityScore = 0.2; // Force low severity
+      break;
       
     default:
       priority = 4;
@@ -175,8 +189,10 @@ function calculateSeverityFromImage(classification: any, azureResult: any, image
       emergencyIcon = '❓';
   }
   
-  // Determine severity level based on final score
-  if (severityScore >= 0.9) {
+  // Determine severity level based on final score (false_alarm already forced low above)
+  if (type === 'false_alarm') {
+    severityLevel = 'LOW';
+  } else if (severityScore >= 0.9) {
     severityLevel = 'CRITICAL';
   } else if (severityScore >= 0.7) {
     severityLevel = 'HIGH';
@@ -190,6 +206,7 @@ function calculateSeverityFromImage(classification: any, azureResult: any, image
   const recommendations = generateSeverityRecommendations(type, severityLevel, peopleCount);
   
   return {
+    type,
     severity: severityLevel,
     priority,
     responseTime,
@@ -346,6 +363,39 @@ function generateSeverityRecommendations(type: string, severity: string, peopleC
     console.log("🔍 Objects detected:", JSON.stringify(objects.map((o: any) => o.object)));
     console.log("🔍 Tags detected:", JSON.stringify(tags.map((t: any) => t.name)));
     console.log("🔍 Caption:", caption);
+
+  // FALSE POSITIVE: If caption clearly describes a benign scene, return false alarm immediately
+  const captionLower = String(caption || '').toLowerCase();
+  const benignPatterns = [
+    /(curtain|curtains|drapes|drapery|fabric|textile|cloth|material)/,
+    /(window|windows|glass pane|pane)/,
+    /(art|artwork|painting|picture|photo|image|decorative|decoration)/,
+    /(furniture|chair|table|sofa|couch|bed|desk|shelf)/,
+    /(indoor|interior|room|living room|bedroom|kitchen|office)/,
+    /(peaceful|calm|quiet|normal|everyday|routine|ordinary|regular)/,
+    // Ceiling/wall/floor/surface - often misclassified as medical or other emergency
+    /(ceiling|ceiling tile|wall|walls|floor|flooring|surface|textured|texture|plaster|drywall|indoor surface)/,
+    /(close-up of|close up of)\s+(a\s+)?(hole|surface|ceiling|wall|floor|sand|ground)/,
+    /(a sand with|sand with a hole|hole in (a )?sand)/
+  ];
+  const hasBenignCaption = benignPatterns.some(p => p.test(captionLower));
+  const hasEmergencyInCaption = /(emergency|fire|flood|accident|storm|earthquake|medical|injury|damage|disaster|crash|collision|smoke|flame|burning|fallen|broken|collapsed)/.test(captionLower);
+
+  if (hasBenignCaption && !hasEmergencyInCaption) {
+    return {
+      type: 'false_alarm',
+      confidence: 0.85,
+      detailedTitle: 'False Alarm - No Emergency',
+      details: ['No emergency detected', 'Image shows benign scene', 'False alarm - no response needed'],
+      analysis: `Caption indicates benign scene: "${(caption || '').slice(0, 60)}..."`,
+      reasoning: ['Caption describes non-emergency scene; classified as false alarm'],
+      scores: { fire: 0, medical: 0, accident: 0, flood: 0, earthquake: 0, storm: 0, false_alarm: 0.85, other: 0, uncertain: 0 },
+      needs_manual_review: false,
+      manual_review_reasons: [],
+      imageAnalysis: { tags, caption, objects, people, ocrText, denseCaptions },
+      detailedReport: 'False alarm - no emergency'
+    };
+  }
   
     // CRITICAL: Explicit pattern matching BEFORE scoring - catch obvious cases immediately
   // This prevents "other" from winning when Azure Vision doesn't return good results
@@ -553,7 +603,7 @@ function generateSeverityRecommendations(type: string, severity: string, peopleC
     medical: 0,
     earthquake: 0,
     storm: 0,
-    non_emergency: 0,
+    false_alarm: 0,
     uncertain: 0,
     other: 0
   };
@@ -653,7 +703,7 @@ function generateSeverityRecommendations(type: string, severity: string, peopleC
   // CRITICAL: If predictedType is "other" but we have any emergency scores > 0.15, force re-evaluation
   if (predictedType === 'other' && maxScore > 0.15) {
     // Find the highest non-other score
-    const emergencyScores = Object.keys(scores).filter(k => k !== 'other' && k !== 'non_emergency' && k !== 'uncertain');
+    const emergencyScores = Object.keys(scores).filter(k => k !== 'other' && k !== 'false_alarm' && k !== 'uncertain');
     const highestEmergency = emergencyScores.reduce((a, b) => scores[a] > scores[b] ? a : b);
     if (scores[highestEmergency] > 0.15) {
       predictedType = highestEmergency;
@@ -684,17 +734,17 @@ function generateSeverityRecommendations(type: string, severity: string, peopleC
     const newMax = Math.max(...(Object.values(scores) as number[]));
   }
   
-  // ENHANCED: Structural damage override - if ceiling collapse/debris detected, prioritize EARTHQUAKE over NON_EMERGENCY
+  // ENHANCED: Structural damage override - if ceiling collapse/debris detected, prioritize EARTHQUAKE over FALSE_ALARM
   const hasStructuralDamageIndicators = /(ceiling.*collapse|collapsed.*ceiling|hanging.*ceiling|damaged.*ceiling|fallen.*ceiling|ceiling.*tile|debris|rubble|structural.*damage|building.*damage|exposed.*(wire|pipe)|hanging.*(light|fixture|pipe|wire)|broken.*(ceiling|structure|infrastructure))/.test(allText);
   const isInteriorSpace = /(room|interior|indoor|inside|classroom|office|building|hall)/.test(allText);
   
   if (hasStructuralDamageIndicators && isInteriorSpace) {
-    // Structural damage should be EARTHQUAKE, not NON_EMERGENCY
-    if (scores.earthquake >= 0.3 && (scores.non_emergency >= scores.earthquake || predictedType === 'non_emergency')) {
+    // Structural damage should be EARTHQUAKE, not FALSE_ALARM
+    if (scores.earthquake >= 0.3 && (scores.false_alarm >= scores.earthquake || predictedType === 'false_alarm')) {
       // Boost earthquake score significantly if structural damage is detected
-      scores.earthquake = Math.max(scores.earthquake + 0.3, (scores.non_emergency || 0) + 0.2);
-      scores.non_emergency = Math.max(0, (scores.non_emergency || 0) - 0.3); // Penalize non-emergency
-      reasoning.push('Structural damage detected (ceiling collapse/debris) - prioritizing earthquake over non-emergency classification');
+      scores.earthquake = Math.max(scores.earthquake + 0.3, (scores.false_alarm || 0) + 0.2);
+      scores.false_alarm = Math.max(0, (scores.false_alarm || 0) - 0.3); // Penalize false alarm
+      reasoning.push('Structural damage detected (ceiling collapse/debris) - prioritizing earthquake over false alarm classification');
     }
     // Recalculate after boost
     const newMaxScore = Math.max(...(Object.values(scores) as number[]));
@@ -737,11 +787,11 @@ function generateSeverityRecommendations(type: string, severity: string, peopleC
   const hasNormalActivity = /(smiling|calm|organized|peaceful|relaxed|discussing|conversation|group.*photo|group.*picture|team|teamwork)/.test(allText);
   const hasNoEmergencyIndicators = !/(crashed|collision|overturned|damaged|injured|emergency|ambulance|police|fire|smoke|flood|water|accident|disaster|destruction|chaos|panic|distress|alarm|siren|warning|danger|hazard|traffic.*cone|road.*accident|vehicle.*accident|motorcycle.*accident|car.*crash|traffic.*incident|road.*incident|traffic.*accident|road.*collision|vehicle.*collision|traffic.*collision|road.*crash|vehicle.*crash|traffic.*crash|road.*damage|vehicle.*damage|traffic.*damage|road.*emergency|vehicle.*emergency|traffic.*emergency|road.*disaster|vehicle.*disaster|traffic.*disaster|road.*chaos|vehicle.*chaos|traffic.*chaos|road.*panic|vehicle.*panic|traffic.*panic|road.*distress|vehicle.*distress|traffic.*distress|road.*alarm|vehicle.*alarm|traffic.*alarm|road.*siren|vehicle.*siren|traffic.*siren|road.*warning|vehicle.*warning|traffic.*warning|road.*danger|vehicle.*danger|traffic.*danger|road.*hazard|vehicle.*hazard|traffic.*hazard)/.test(allText);
   
-  // Only classify as non-emergency if it's clearly educational AND no emergency indicators
+  // Only classify as false alarm if it's clearly educational AND no emergency indicators
   if (hasSchoolContext && hasEducationalSetting && hasNoEmergencyIndicators && maxScore < 0.4 && !hasInjuryIndicators) {
-    predictedType = 'non_emergency';
-    scores.non_emergency = Math.max(scores.non_emergency, 0.9);
-    reasoning.push('School/campus non-emergency scenario detected - classified as non_emergency');
+    predictedType = 'false_alarm';
+    scores.false_alarm = Math.max(scores.false_alarm, 0.9);
+    reasoning.push('School/campus non-emergency scenario detected - classified as false alarm');
   }
   
   // STRONG training scenario detection - prioritize over emergency signals
@@ -761,9 +811,9 @@ function generateSeverityRecommendations(type: string, severity: string, peopleC
   
   // OVERRIDE emergency classification if training indicators are strong
   if (isTrainingScenario) {
-    predictedType = 'non_emergency';
-    scores.non_emergency = Math.max(scores.non_emergency, 0.95); // Very high confidence
-    reasoning.push('Fire safety training scenario detected - classified as non_emergency');
+    predictedType = 'false_alarm';
+    scores.false_alarm = Math.max(scores.false_alarm, 0.95); // Very high confidence
+    reasoning.push('Fire safety training scenario detected - classified as false alarm');
   }
 
   // Check for uncertain classification conditions
@@ -795,23 +845,23 @@ function generateSeverityRecommendations(type: string, severity: string, peopleC
   }
   
     // Advanced confidence calculation based on image analysis quality
-  // Non-emergency heuristic: if no category has meaningful evidence, classify as non_emergency
-  // BUT: Do NOT classify as non-emergency if there's evidence of structural damage, fire, medical emergency, etc.
+  // False alarm heuristic: if no category has meaningful evidence, classify as false_alarm
+  // BUT: Do NOT classify as false_alarm if there's evidence of structural damage, fire, medical emergency, etc.
   const weakEvidence = maxScore < 0.35;
   const crowdWords = /(student|students|school|campus|classroom|crowd|assembly|group photo)/.test(allText);
   
-  // Check for structural damage indicators BEFORE classifying as non-emergency
+  // Check for structural damage indicators BEFORE classifying as false alarm
   const hasStructuralDamage = /(collapse|collapsed|damaged|debris|hanging|broken|exposed|structural.*damage|ceiling.*collapse|building.*damage)/.test(allText);
   const hasEmergencyIndicators = scores.earthquake > 0.3 || scores.fire > 0.3 || scores.medical > 0.3 || 
                                  scores.accident > 0.3 || scores.flood > 0.3 || scores.storm > 0.3;
   
-  // Only classify as non-emergency if:
+  // Only classify as false alarm if:
   // 1. Weak evidence AND
   // 2. Crowd/school words present AND
   // 3. NO structural damage indicators AND
   // 4. NO other emergency indicators
   if (weakEvidence && crowdWords && !hasStructuralDamage && !hasEmergencyIndicators) {
-    predictedType = 'non_emergency';
+    predictedType = 'false_alarm';
   }
 
   // Reduce medical if no hard indicators
@@ -821,7 +871,7 @@ function generateSeverityRecommendations(type: string, severity: string, peopleC
     predictedType = Object.keys(scores).find(key => scores[key] === newMax);
   }
 
-  let confidence = predictedType === 'non_emergency'
+  let confidence = predictedType === 'false_alarm'
     ? Math.min(Math.max(0.55, maxScore), 0.7)
     : calculateAdvancedConfidence(azureResult, Math.max(...(Object.values(scores) as number[])), String(predictedType || 'other'));
 
@@ -1041,12 +1091,12 @@ function generateSeverityRecommendations(type: string, severity: string, peopleC
         if (/(fallen tree|downed tree|tree down|broken tree)/.test(allText)) return 'Storm Emergency - Fallen Tree';
         return 'Storm Emergency - Severe Weather';
         
-      case 'non_emergency':
-        // Non-emergency doesn't need "Emergency" prefix
+      case 'false_alarm':
+        // False alarm - no emergency
         if (/(student|school|classroom|campus)/.test(allText)) {
-          return 'Non-Emergency - School Activity';
+          return 'False Alarm - School Activity';
         }
-        return 'Non-Emergency - No Immediate Threat';
+        return 'False Alarm - No Emergency';
         
       default:
         return `${predictedType.charAt(0).toUpperCase() + predictedType.slice(1)} Emergency - Incident Detected`;
@@ -1412,6 +1462,26 @@ function generateSeverityRecommendations(type: string, severity: string, peopleC
       'crutch', 'crutches', 'bandage', 'bandaged', 'brace', 'cast', 'splint', 'sling',
       'lying down', 'on ground', 'down on', 'prostrate', 'reclining'
     ];
+
+    // FALSE POSITIVE: Ceiling/wall/floor/surface with no people = not medical (e.g. ceiling photo misclassified)
+    const peopleCount = (azureResult?.faces?.length ?? azureResult?.people ?? 0);
+    const ceilingWallSurfacePatterns = [
+      /(ceiling|ceiling tile|wall|walls|floor|flooring|surface|textured|texture|plaster|drywall|indoor surface)/,
+      /(close-up of|close up of)\s+(a\s+)?(hole|surface|ceiling|wall|floor|sand|ground)/,
+      /(a sand with|sand with a hole|hole in (a )?sand)/,
+      /(fog|outdoor)\s+(a\s+)?(sand|surface|hole)/  // e.g. "fog outdoor a sand with a hole"
+    ];
+    const captionOrDesc = String(azureResult?.description?.text || azureResult?.caption || '').toLowerCase();
+    const hasCeilingWallSurface = ceilingWallSurfacePatterns.some(p => p.test(allText)) || ceilingWallSurfacePatterns.some(p => p.test(captionOrDesc));
+    const hasStrongMedicalTerms = /(ambulance|stretcher|blood|wound|paramedic|hospital|doctor|nurse|patient|first aid|bandage|crutch|injury|injured|bruise|swollen)/.test(allText);
+    if (hasCeilingWallSurface && peopleCount === 0 && !hasStrongMedicalTerms) {
+      return {
+        score: 0,
+        analysis: 'Medical analysis: image appears to be ceiling/wall/surface with no people - false positive',
+        hasIndicators: false,
+        detectedFeatures: []
+      };
+    }
     
     let score = 0;
 
@@ -1459,7 +1529,6 @@ function generateSeverityRecommendations(type: string, severity: string, peopleC
     }
 
     // People present with injury indicators (15% weight) - INCREASED
-    const peopleCount = (azureResult?.faces?.length ?? azureResult?.people ?? 0);
     const hasMedicalIndicators = keywordMatches > 0 || medicalObjects > 0 || visualInjuryMatches > 0;
     if (hasMedicalIndicators && peopleCount > 0) {
       score += Math.min(peopleCount * 0.15, 0.4); // Increased boost for people + injury indicators
@@ -1831,6 +1900,25 @@ function generateSeverityRecommendations(type: string, severity: string, peopleC
     if (String(azureResult?.description?.text || azureResult?.caption || '').toLowerCase().match(/storm|weather/)) {
       score += 0.15;
     }
+
+    // FALSE POSITIVE: Caption clearly benign -> not storm
+    const capText = String(azureResult?.description?.text || azureResult?.caption || '').toLowerCase();
+    const benignIndicators = [
+      /(curtain|curtains|drapes|drapery|fabric|textile|cloth|material)/,
+      /(window|windows|glass pane|pane)/,
+      /(art|artwork|painting|picture|photo|image|decorative|decoration)/,
+      /(furniture|chair|table|sofa|couch|bed|desk|shelf)/,
+      /(peaceful|calm|quiet|normal|everyday|routine|ordinary|regular)/
+    ];
+    const hasBenignCaption = benignIndicators.some(p => p.test(capText));
+    const hasStormInCaption = /(storm|weather|wind|hurricane|typhoon|tornado|fallen|broken|damage)/.test(capText);
+    if (hasBenignCaption && !hasStormInCaption) {
+      return {
+        score: 0,
+        analysis: 'Storm analysis: caption describes benign scene - false positive',
+        detectedFeatures: []
+      };
+    }
     
     // Collect detected features for detailed description
     const detectedFeatures: string[] = [];
@@ -2145,6 +2233,12 @@ function generateEmergencyDetails(type: string, azureResult: any) {
       "Human presence identified",
       "Emergency medical situation"
     ],
+    false_alarm: [
+      "No emergency detected",
+      "False alarm - benign scene",
+      "No response needed",
+      "Image does not show an emergency"
+    ],
     other: [
       "General emergency situation",
       "Unspecified emergency type",
@@ -2434,7 +2528,7 @@ function mapLabelsToEmergency(labels: any[] = []) {
       priority: 6
     },
     {
-      type: "non_emergency",
+      type: "false_alarm",
       keywords: [
         "student", "school", "campus", "group photo", "crowd", "assembly", "meeting", "conference",
         "graduation", "ceremony", "event", "party", "celebration", "festival", "gathering", "social",

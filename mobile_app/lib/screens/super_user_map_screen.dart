@@ -81,10 +81,10 @@ class _SuperUserMapScreenState extends State<SuperUserMapScreen> {
   }
 
   void _applyFilter() {
-    // Filter out non-emergency reports first
+    // Filter out false alarm and non-emergency reports (only show real emergencies)
     final emergencyReports = _allReports.where((report) {
       final effectiveType = (report['corrected_type'] ?? report['type'] ?? '').toString().toLowerCase().trim();
-      return effectiveType != 'non_emergency';
+      return effectiveType != 'non_emergency' && effectiveType != 'false_alarm';
     }).toList();
 
     switch (_currentFilter) {

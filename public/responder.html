@@ -3775,6 +3775,7 @@
                 flood: '🌊',
                 earthquake: '🌍',
                 storm: '⛈️',
+                false_alarm: '🚫',
                 other: '⚠️',
                 unknown: '❓'
             };
@@ -3815,8 +3816,9 @@
                 flood: '#3b82f6',     // Blue for floods (water color)
                 earthquake: '#8b5cf6', // Purple for earthquakes
                 storm: '#6366f1',     // Indigo for storms
+                false_alarm: '#9ca3af', // Gray for false alarm
                 other: '#6b7280',     // Gray for other
-                unknown: '#6b7280'    // Gray for unknown
+                unknown: '#6b7280'   // Gray for unknown
             };
             return colors[type.toLowerCase()] || '#ef4444';
         }

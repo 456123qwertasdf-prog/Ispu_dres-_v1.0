@@ -1363,11 +1363,11 @@
             }
         }
 
-        // Helper function to filter out non-emergency reports
+        // Helper function to filter out false alarm and non-emergency reports (only show real emergencies)
         function filterEmergencyReports(reports) {
             return (reports || []).filter(report => {
                 const effectiveType = (report.corrected_type || report.type || '').toLowerCase().trim();
-                return effectiveType !== 'non_emergency';
+                return effectiveType !== 'non_emergency' && effectiveType !== 'false_alarm';
             });
         }
 
@@ -2095,6 +2095,9 @@
                 flood: '🌊',
                 accident: '🚗',
                 medical: '🏥',
+                earthquake: '🌍',
+                storm: '⛈️',
+                false_alarm: '🚫',
                 other: '⚠️'
             };
             return icons[type || 'other'] || '⚠️';

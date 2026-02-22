@@ -10,10 +10,10 @@ const HF_TOKEN = Deno.env.get("HF_TOKEN")!;
 
 // Enhanced AI Models Configuration
 const AI_MODELS = {
-  // Primary Azure Computer Vision
+  // Primary Azure Computer Vision (key from AZURE_VISION_KEY secret)
   azure: {
     endpoint: Deno.env.get("AZURE_VISION_ENDPOINT") || "https://ew09.cognitiveservices.azure.com",
-    key: Deno.env.get("AZURE_VISION_KEY") || "",
+    get key() { return Deno.env.get("AZURE_VISION_KEY") ?? ""; },
     // Azure AI Vision Image Analysis v4.0 features
     v4Features: [
       "Caption",

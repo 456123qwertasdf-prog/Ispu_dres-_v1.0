@@ -64,7 +64,6 @@ pubspec.lock
 
 # Android
 *.apk
-!public/lspu-emergency-response.apk
 *.aab
 *.ap_
 *.dex

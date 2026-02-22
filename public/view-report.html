@@ -1083,10 +1083,18 @@
                 flood: '🌊',
                 accident: '🚗',
                 medical: '🏥',
+                earthquake: '🌍',
+                storm: '⛈️',
+                false_alarm: '🚫',
                 other: '⚠️'
             };
+            const labels = {
+                false_alarm: 'False Alarm',
+                non_emergency: 'Non-Emergency'
+            };
             const icon = icons[type] || '⚠️';
-            return `<span class="emergency-type type-${type}">${icon} ${type.toUpperCase()}</span>`;
+            const label = labels[type] || (type || 'other').toUpperCase().replace('_', ' ');
+            return `<span class="emergency-type type-${type}">${icon} ${label}</span>`;
         }
 
         // Get status badge
@@ -1619,7 +1627,7 @@
                             <option value="medical">Medical</option>
                             <option value="earthquake">Earthquake</option>
                             <option value="storm">Storm</option>
-                            <option value="non_emergency">Non-Emergency</option>
+                            <option value="false_alarm">False Alarm</option>
                             <option value="other">Other</option>
                         </select>
                     </div>

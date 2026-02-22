@@ -1085,11 +1085,11 @@
             });
         }
 
-        // Helper function to filter out non-emergency reports
+        // Helper function to filter out false alarm and non-emergency reports
         function filterEmergencyReports(reports) {
             return (reports || []).filter(report => {
                 const effectiveType = (report.corrected_type || report.type || '').toLowerCase().trim();
-                return effectiveType !== 'non_emergency';
+                return effectiveType !== 'non_emergency' && effectiveType !== 'false_alarm';
             });
         }
 
@@ -1138,7 +1138,7 @@
                 other: emergencyReports.filter(r => {
                     const effectiveType = (r.corrected_type || r.type || '').toLowerCase().trim();
                     // Exclude the specific types we're tracking AND non_emergency
-                    return !['fire', 'flood', 'accident', 'vehicle', 'traffic', 'medical', 'health', 'non_emergency'].includes(effectiveType);
+                    return !['fire', 'flood', 'accident', 'vehicle', 'traffic', 'medical', 'health', 'non_emergency', 'false_alarm'].includes(effectiveType);
                 }).length
             };
             

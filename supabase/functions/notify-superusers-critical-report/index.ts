@@ -57,12 +57,26 @@ serve(async (req) => {
     // Get report details
     const { data: report, error: reportError } = await supabaseClient
       .from('reports')
-      .select('id, type, message, location, priority, severity, response_time, emergency_icon, reporter_name, created_at')
+      .select('id, type, corrected_type, message, location, priority, severity, response_time, emergency_icon, reporter_name, created_at')
       .eq('id', report_id)
       .single()
 
     if (reportError || !report) {
       throw new Error('Report not found')
+    }
+
+    // False alarms are never critical - do not send "NEW CRITICAL REPORT"
+    const effectiveType = (report.corrected_type || report.type || '').toString().toLowerCase().trim()
+    if (effectiveType === 'false_alarm' || effectiveType === 'non_emergency') {
+      console.log(`Report ${report_id} is false alarm / non-emergency. Skipping critical notification.`)
+      return new Response(
+        JSON.stringify({
+          success: true,
+          sent: 0,
+          message: 'False alarm / non-emergency report - no critical notification sent'
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
+      )
     }
 
     // Check if report is critical/high priority

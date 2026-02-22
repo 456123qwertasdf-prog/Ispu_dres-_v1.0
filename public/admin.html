@@ -1511,11 +1511,11 @@
             }
         }
 
-        // Helper function to filter out non-emergency reports
+        // Helper function to filter out false alarm and non-emergency reports
         function filterEmergencyReports(reports) {
             return (reports || []).filter(report => {
                 const effectiveType = (report.corrected_type || report.type || '').toLowerCase().trim();
-                return effectiveType !== 'non_emergency';
+                return effectiveType !== 'non_emergency' && effectiveType !== 'false_alarm';
             });
         }
 
@@ -1605,7 +1605,7 @@
             const other = emergencyReports.filter(r => {
                 const type = getEffectiveType(r);
                 // Exclude the specific types we're tracking AND non_emergency
-                return !['flood', 'accident', 'vehicle', 'traffic', 'fire', 'medical', 'health', 'non_emergency'].includes(type);
+                return !['flood', 'accident', 'vehicle', 'traffic', 'fire', 'medical', 'health', 'non_emergency', 'false_alarm'].includes(type);
             }).length;
             
             if (total > 0) {
@@ -2154,7 +2154,7 @@
                         <option value="medical">Medical</option>
                         <option value="earthquake">Earthquake</option>
                         <option value="storm">Storm</option>
-                        <option value="non_emergency">Non-Emergency</option>
+                        <option value="false_alarm">False Alarm</option>
                         <option value="other">Other</option>
                     </select>
                 </div>

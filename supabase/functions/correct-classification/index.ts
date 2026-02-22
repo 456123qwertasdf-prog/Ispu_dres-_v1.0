@@ -119,7 +119,7 @@ Deno.serve(async (req) => {
     }
 
     // Validate emergency type
-    const validTypes = ['flood', 'accident', 'fire', 'medical', 'earthquake', 'storm', 'non_emergency', 'other'];
+    const validTypes = ['flood', 'accident', 'fire', 'medical', 'earthquake', 'storm', 'false_alarm', 'other'];
     if (!validTypes.includes(corrected_type)) {
       return new Response(
         JSON.stringify({ error: `Invalid emergency type. Must be one of: ${validTypes.join(', ')}` }),
@@ -175,7 +175,7 @@ Deno.serve(async (req) => {
       medical: 'Medical',
       earthquake: 'Earthquake',
       storm: 'Storm',
-      non_emergency: 'Non-Emergency',
+      false_alarm: 'False Alarm',
       other: 'Other'
     };
     

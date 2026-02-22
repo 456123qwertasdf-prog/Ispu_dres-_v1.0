@@ -7,10 +7,9 @@
 
 class AzureVisionAPI {
   constructor() {
-    // API key should be loaded from environment variables
-    // For production, use: process.env.AZURE_VISION_KEY
-    this.apiKey = process.env.AZURE_VISION_KEY || "YOUR_AZURE_VISION_KEY_HERE";
-    this.endpoint = process.env.AZURE_VISION_ENDPOINT || "https://ew09.cognitiveservices.azure.com";
+    // Set via environment: AZURE_VISION_KEY, AZURE_VISION_ENDPOINT
+    this.apiKey = typeof process !== "undefined" && process.env?.AZURE_VISION_KEY || "YOUR_AZURE_VISION_KEY";
+    this.endpoint = typeof process !== "undefined" && process.env?.AZURE_VISION_ENDPOINT || "https://YOUR_REGION.cognitiveservices.azure.com";
   }
 
   /**
