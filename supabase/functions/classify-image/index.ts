@@ -376,12 +376,30 @@ function generateSeverityRecommendations(type: string, severity: string, peopleC
     // Ceiling/wall/floor/surface - often misclassified as medical or other emergency
     /(ceiling|ceiling tile|wall|walls|floor|flooring|surface|textured|texture|plaster|drywall|indoor surface)/,
     /(close-up of|close up of)\s+(a\s+)?(hole|surface|ceiling|wall|floor|sand|ground)/,
-    /(a sand with|sand with a hole|hole in (a )?sand)/
+    /(a sand with|sand with a hole|hole in (a )?sand)/,
+    // Person with headphones / normal portrait - not an emergency
+    /(wearing headphones|headphones|headphone|earphones|earphone)/,
+    /(a (man|woman|person) wearing)/,  // e.g. "a man wearing headphones"
+    // Screenshot / dark surface / cleaning object - not medical
+    /(screenshot)/,
+    /(darkness|black line|dark line|black and red mop|mop eau|mop\s|plastic)/,
+    /(a black and red|black and red mop)/,
+    // Normal electronics / power strip / outlet - not fire (red LED is not flame)
+    /(power strip|power adapter|adapter plugged|plugged into|electronic device|electronics|computer.*output|output device)/,
+    /(a power strip|power strip with)/
   ];
   const hasBenignCaption = benignPatterns.some(p => p.test(captionLower));
+  // Also check allText (tags + objects + caption) for strong non-emergency cues
+  const allTextLower = allText.toLowerCase();
+  const hasNormalElectronics = /(power strip|power adapter|adapter|plugged into|electronic device|electronics|computer|output device|wall.*sitting|indoor)/.test(allTextLower) &&
+    !/(fire|flame|burning|ablaze|smoke|spark|sparking)/.test(allTextLower);
+  const hasBenignInAnalysis = (/(screenshot|darkness|black line|dark line|mop|plastic)/.test(allTextLower) ||
+    hasNormalElectronics) &&
+    !/(ambulance|stretcher|blood|wound|paramedic|hospital|first aid|bandage|injury|injured|patient)/.test(allTextLower) &&
+    !/(fire|flame|burning|ablaze|smoke)/.test(allTextLower);  // for electronics: don't treat as fire
   const hasEmergencyInCaption = /(emergency|fire|flood|accident|storm|earthquake|medical|injury|damage|disaster|crash|collision|smoke|flame|burning|fallen|broken|collapsed)/.test(captionLower);
 
-  if (hasBenignCaption && !hasEmergencyInCaption) {
+  if ((hasBenignCaption || hasBenignInAnalysis) && !hasEmergencyInCaption) {
     return {
       type: 'false_alarm',
       confidence: 0.85,
@@ -574,12 +592,13 @@ function generateSeverityRecommendations(type: string, severity: string, peopleC
     };
   }
   
-  const hasFirstAidIndicators = /(first aid|administering|attending|treating|medical assistance|helping|person.*helping|gloves|medical gloves|bandage|gauze)/.test(allText) ||
+  // Require actual first-aid keywords or objects - do NOT use "people >= 2" alone (single person with headphones can be counted as 2)
+  const hasFirstAidIndicators = /(first aid|administering|attending|treating|medical assistance|helping|person.*helping|assisting|medical personnel|gloves|medical gloves|bandage|gauze)/.test(allText) ||
                                hasObjectPattern(['gloves', 'bandage', 'gauze', 'medical']) ||
-                               hasTagPattern(['medical', 'first aid', 'bandage']) ||
-                               (people >= 2); // Two or more people often indicates first aid scene
+                               hasTagPattern(['medical', 'first aid', 'bandage']);
+  const hasBenignPortrait = /(headphones|headphone|earphones|wearing headphones)/.test(allText); // Person with headphones = normal portrait, not medical
   
-  if (hasFirstAidIndicators) {
+  if (hasFirstAidIndicators && !hasBenignPortrait) {
     return {
       type: 'medical',
       confidence: 0.75,
@@ -1299,6 +1318,17 @@ function generateSeverityRecommendations(type: string, severity: string, peopleC
 
   // Advanced fire emergency analysis
   function analyzeFireEmergency(azureResult: any, allText: string): { score: number; analysis: string; detectedFeatures: string[] } {
+    // FALSE POSITIVE: Normal electronics (power strip, adapter, outlet) with no fire/smoke - red LED is not a flame
+    const hasNormalElectronicsOnly = /(power strip|power adapter|adapter|plugged into|electronic device|electronics|computer|output device|wall.*sitting|indoor)/.test(allText) &&
+      !/(fire|flame|burning|ablaze|smoke|spark|sparking|smoke rising)/.test(allText);
+    if (hasNormalElectronicsOnly) {
+      return {
+        score: 0,
+        analysis: 'Fire analysis: image appears to be normal electronics (e.g. power strip, adapter) with no fire/smoke - false positive',
+        detectedFeatures: []
+      };
+    }
+
     const fireKeywords = [
       'fire', 'smoke', 'flame', 'burn', 'burning', 'hot', 'blaze', 'combustion', 'ash',
       'emergency', 'rescue', 'firefighter', 'fire truck', 'alarm', 'inferno', 'conflagration',
@@ -1469,7 +1499,9 @@ function generateSeverityRecommendations(type: string, severity: string, peopleC
       /(ceiling|ceiling tile|wall|walls|floor|flooring|surface|textured|texture|plaster|drywall|indoor surface)/,
       /(close-up of|close up of)\s+(a\s+)?(hole|surface|ceiling|wall|floor|sand|ground)/,
       /(a sand with|sand with a hole|hole in (a )?sand)/,
-      /(fog|outdoor)\s+(a\s+)?(sand|surface|hole)/  // e.g. "fog outdoor a sand with a hole"
+      /(fog|outdoor)\s+(a\s+)?(sand|surface|hole)/,  // e.g. "fog outdoor a sand with a hole"
+      // Screenshot / dark surface / mop / plastic - not medical
+      /(screenshot|darkness|black line|dark line|black and red mop|mop eau|mop\s|plastic)/
     ];
     const captionOrDesc = String(azureResult?.description?.text || azureResult?.caption || '').toLowerCase();
     const hasCeilingWallSurface = ceilingWallSurfacePatterns.some(p => p.test(allText)) || ceilingWallSurfacePatterns.some(p => p.test(captionOrDesc));
@@ -1478,6 +1510,18 @@ function generateSeverityRecommendations(type: string, severity: string, peopleC
       return {
         score: 0,
         analysis: 'Medical analysis: image appears to be ceiling/wall/surface with no people - false positive',
+        hasIndicators: false,
+        detectedFeatures: []
+      };
+    }
+
+    // FALSE POSITIVE: Normal portrait - person with headphones, no injury/medical terms
+    const hasHeadphonesPortrait = /(headphones|headphone|earphones|wearing headphones)/.test(allText);
+    if (hasHeadphonesPortrait && peopleCount >= 1 && !hasStrongMedicalTerms &&
+        !/(injury|injured|hurt|pain|wound|bandage|first aid|lying down|on the ground)/.test(allText)) {
+      return {
+        score: 0,
+        analysis: 'Medical analysis: image appears to be normal portrait (e.g. person with headphones) - false positive',
         hasIndicators: false,
         detectedFeatures: []
       };

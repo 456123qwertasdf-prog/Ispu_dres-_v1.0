@@ -52,6 +52,9 @@
                 <button onclick="showSection('assignments')" class="nav-item" id="nav-assignments">
                     <i class="bi bi-clipboard-check"></i> My Assignments
                 </button>
+                <button onclick="showSection('ongoing')" class="nav-item" id="nav-ongoing" style="display: none;">
+                    <i class="bi bi-broadcast"></i> Ongoing Incidents
+                </button>
                 <button onclick="showSection('map')" class="nav-item" id="nav-map">
                     <i class="bi bi-map"></i> Map View
                 </button>
@@ -131,6 +134,17 @@
                             <div class="stat-trend" id="coverageTrend">Active</div>
                 </div>
             </div>
+                </div>
+
+                <!-- Readiness Synopsis (Prepare / be ready / inspect) -->
+                <div class="card" style="margin-bottom: 1.5rem; background: linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 100%); border-left: 4px solid #059669;">
+                    <div class="card-header">
+                        <h3 class="card-title"><i class="bi bi-shield-check"></i> Readiness Notice</h3>
+                        <p class="card-subtitle">Based on recent system reports (last 30 days)</p>
+                    </div>
+                    <div class="card-body">
+                        <p id="responderSynopsisMessage" style="margin: 0; color: #374151; font-size: 0.95rem; line-height: 1.5;">Loading...</p>
+                    </div>
                 </div>
                 
                 <!-- Dashboard Cards Row -->
@@ -240,7 +254,22 @@
                     </div>
                 </div>
                             </div>
-                            
+
+            <!-- Ongoing Incidents Section (Security Guard awareness) -->
+            <div id="ongoing-section" class="admin-section">
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">📡 Ongoing Incidents</h3>
+                        <p class="card-subtitle">All active emergencies — stay aware and cooperate with response teams</p>
+                    </div>
+                    <div class="card-body">
+                        <div class="emergency-list" id="ongoingIncidentsList">
+                            <div class="loading-spinner"></div>
+                            <p>Loading ongoing incidents...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
 
             <!-- Map Section -->
             <div id="map-section" class="admin-section">
@@ -301,6 +330,7 @@
     <script>
         // Responder Dashboard JavaScript
         let currentReports = [];
+        let ongoingIncidents = [];
         let notificationChannel = null;
         let responderMap = null;
         let routingControl = null;
@@ -428,6 +458,13 @@
 
                 // Get responder ID
                 await getResponderId();
+
+                // Show "Ongoing incidents" for security guards (awareness / cooperation)
+                const userType = emergencySystem.user?.user_metadata?.user_type || '';
+                if (userType === 'security_guard') {
+                    const navOngoing = document.getElementById('nav-ongoing');
+                    if (navOngoing) navOngoing.style.display = '';
+                }
 
                 // Load dashboard data
                 await loadDashboardData();
@@ -577,6 +614,17 @@
                 
                 // Update responder statistics
                 updateResponderStatistics();
+
+                // Load readiness synopsis (prepare / be ready / inspect) from all recent reports
+                try {
+                    const reports = await emergencySystem.getReports();
+                    const synopsis = emergencySystem.getSynopsisForRole(reports || [], 'responder');
+                    const el = document.getElementById('responderSynopsisMessage');
+                    if (el) el.textContent = synopsis.responderMessage;
+                } catch (e) {
+                    const el = document.getElementById('responderSynopsisMessage');
+                    if (el) el.textContent = 'Keep equipment inspected and stay ready for anything.';
+                }
                 
             } catch (error) {
                 console.error('Error loading dashboard data:', error);
@@ -733,6 +781,54 @@
                     </div>
                                 </div>
             `).join('');
+        }
+
+        // Load and display all ongoing incidents (for security guards — awareness / cooperation)
+        async function loadOngoingIncidents() {
+            const container = document.getElementById('ongoingIncidentsList');
+            if (!container) return;
+            container.innerHTML = '<div class="loading-spinner"></div><p>Loading ongoing incidents...</p>';
+            try {
+                const reports = await emergencySystem.getReports();
+                const ongoingStatuses = ['pending', 'processing', 'classified', 'assigned', 'in-progress'];
+                const ongoing = (reports || []).filter(r => ongoingStatuses.includes((r.status || '').toLowerCase()));
+                ongoing.sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
+                ongoingIncidents = ongoing;
+                if (ongoing.length === 0) {
+                    container.innerHTML = '<div class="text-center p-4 text-gray-500">No ongoing incidents at the moment.</div>';
+                    return;
+                }
+                container.innerHTML = ongoing.map(report => {
+                    const responderName = report.responder?.name || report.responder_name || null;
+                    return `
+                        <div class="emergency-item" onclick="focusOngoingOnMap('${report.id}')">
+                            <div class="emergency-icon">${getEmergencyIcon(report.type)}</div>
+                            <div class="emergency-details">
+                                <h4 class="emergency-title">${(report.type || 'Emergency').toUpperCase()}</h4>
+                                <p class="emergency-location">${formatLocation(report.location)}</p>
+                                <p class="emergency-time">Reported: ${new Date(report.created_at).toLocaleString()}</p>
+                                <span class="badge badge-${report.status || 'pending'}">${(report.status || 'pending').toUpperCase()}</span>
+                                ${responderName ? `<p class="emergency-assignee"><strong>Assigned to:</strong> ${responderName}</p>` : '<p class="text-muted">Unassigned</p>'}
+                                ${report.reporter_name ? `<p class="emergency-reporter"><strong>Reporter:</strong> ${report.reporter_name}</p>` : ''}
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            } catch (e) {
+                console.error('Failed to load ongoing incidents:', e);
+                container.innerHTML = '<div class="alert alert-warning">Unable to load ongoing incidents. Please try again.</div>';
+            }
+        }
+
+        function focusOngoingOnMap(reportId) {
+            showSection('map');
+            const report = ongoingIncidents.find(r => r.id === reportId) || currentReports.find(r => r.id === reportId);
+            if (report && report.location) setTimeout(() => showAssignmentOnMap(report), 300);
+            else {
+                emergencySystem.supabase.from('reports').select('*').eq('id', reportId).single().then(({ data }) => {
+                    if (data && data.location) showAssignmentOnMap(data);
+                });
+            }
         }
 
         // Select an assignment for detailed view
@@ -2877,6 +2973,8 @@
             // Load section-specific data
             if (sectionName === 'assignments') {
                 displayAssignments();
+            } else if (sectionName === 'ongoing') {
+                loadOngoingIncidents();
             } else if (sectionName === 'map') {
                 // Show navigation controls when map is selected
                 const navigationControls = document.getElementById('navigationControls');

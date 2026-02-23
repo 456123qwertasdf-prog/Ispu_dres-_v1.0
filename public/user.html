@@ -352,6 +352,20 @@
             </div>
         </section>
 
+        <!-- Safety Synopsis (Citizen) -->
+        <section id="citizenSynopsisSection" class="card mb-8" style="background: linear-gradient(135deg, #eff6ff 0%, #f0f9ff 100%); border-left: 4px solid #3b82f6;">
+            <div class="card-header">
+                <h2 class="card-title">
+                    <i class="bi bi-info-circle"></i> Safety Notice
+                </h2>
+                <p class="card-subtitle">Based on recent reports in your area</p>
+            </div>
+            <div class="p-6">
+                <p id="citizenSynopsisMessage" class="text-gray-700 leading-relaxed" style="font-size: 1rem;">
+                    Loading...
+                </p>
+            </div>
+        </section>
 
         <!-- Weather Dashboard Section -->
         <section id="weatherSection" class="card mb-8">
@@ -1649,6 +1663,16 @@
                 // Get all reports for all citizens (not just current user)
                 const reports = await emergencySystem.getReports();
                 const reportsList = document.getElementById('reportsList');
+
+                // Update citizen synopsis (be more careful because...)
+                try {
+                    const synopsis = emergencySystem.getSynopsisForRole(reports || [], 'citizen');
+                    const el = document.getElementById('citizenSynopsisMessage');
+                    if (el) el.textContent = synopsis.citizenMessage;
+                } catch (e) {
+                    const el = document.getElementById('citizenSynopsisMessage');
+                    if (el) el.textContent = 'Stay alert and report any real emergency you see.';
+                }
                 
                 if (reports.length === 0) {
                     reportsList.innerHTML = 

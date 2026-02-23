@@ -13,6 +13,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../models/responder_models.dart';
 import '../services/supabase_service.dart';
 import '../services/onesignal_service.dart';
+import '../utils/synopsis_helper.dart';
 
 class ResponderDashboardScreen extends StatefulWidget {
   const ResponderDashboardScreen({super.key});
@@ -46,6 +47,12 @@ class _ResponderDashboardScreenState extends State<ResponderDashboardScreen> {
   String? _routeError;
   double? _routeDistanceKm;
   double? _routeDurationMin;
+
+  String? _responderSynopsisMessage;
+
+  bool _isSecurityGuard = false;
+  List<Map<String, dynamic>> _ongoingReports = [];
+  bool _ongoingLoading = false;
 
   // Realtime subscriptions
   RealtimeChannel? _notificationsChannel;
@@ -206,6 +213,18 @@ class _ResponderDashboardScreenState extends State<ResponderDashboardScreen> {
       final profileMap = Map<String, dynamic>.from(profileRaw);
       final profile = ResponderProfile.fromMap(profileMap);
 
+      // Security guards see "Ongoing incidents" for awareness and cooperation
+      bool isSecurityGuard = false;
+      try {
+        final profileRow = await SupabaseService.client
+            .from('user_profiles')
+            .select('user_type')
+            .eq('user_id', userId)
+            .maybeSingle();
+        final userType = profileRow?['user_type'] as String?;
+        isSecurityGuard = (userType ?? '').toLowerCase() == 'security_guard';
+      } catch (_) {}
+
       final assignmentsResponse = await SupabaseService.client
           .from('assignment')
           .select('''
@@ -240,9 +259,13 @@ class _ResponderDashboardScreenState extends State<ResponderDashboardScreen> {
       setState(() {
         _profile = profile;
         _assignments = assignments;
+        _isSecurityGuard = isSecurityGuard;
         _isLoading = false;
         _isRefreshing = false;
       });
+
+      // Load readiness synopsis (prepare / be ready / inspect)
+      _loadResponderSynopsis();
 
       // Setup realtime subscriptions after profile is loaded
       _setupRealtimeSubscriptions();
@@ -261,6 +284,24 @@ class _ResponderDashboardScreenState extends State<ResponderDashboardScreen> {
         _isLoading = false;
         _isRefreshing = false;
       });
+    }
+  }
+
+  Future<void> _loadResponderSynopsis() async {
+    try {
+      final reports = await SupabaseService.getReportsForSynopsis();
+      final synopsis = SynopsisHelper.getSynopsisForRole(reports, 'responder');
+      if (mounted) {
+        setState(() {
+          _responderSynopsisMessage = synopsis['responderMessage'];
+        });
+      }
+    } catch (_) {
+      if (mounted) {
+        setState(() {
+          _responderSynopsisMessage = 'Keep equipment inspected and stay ready for anything.';
+        });
+      }
     }
   }
 
@@ -507,7 +548,7 @@ class _ResponderDashboardScreenState extends State<ResponderDashboardScreen> {
       _routeError = null;
       _routeDistanceKm = null;
       _routeDurationMin = null;
-      _selectedIndex = 2; // Switch to Map View tab
+      _selectedIndex = _isSecurityGuard ? 3 : 2; // Switch to Map View tab
     });
 
     // Always use the responder phone's live location as origin
@@ -733,11 +774,18 @@ class _ResponderDashboardScreenState extends State<ResponderDashboardScreen> {
       body: SafeArea(
         child: IndexedStack(
           index: _selectedIndex,
-          children: [
-            _buildDashboardTab(),
-            _buildAssignmentsTab(),
-            _buildMapTab(),
-          ],
+          children: _isSecurityGuard
+              ? [
+                  _buildDashboardTab(),
+                  _buildAssignmentsTab(),
+                  _buildOngoingTab(),
+                  _buildMapTab(),
+                ]
+              : [
+                  _buildDashboardTab(),
+                  _buildAssignmentsTab(),
+                  _buildMapTab(),
+                ],
         ),
       ),
       bottomNavigationBar: BottomNavigationBar(
@@ -745,25 +793,47 @@ class _ResponderDashboardScreenState extends State<ResponderDashboardScreen> {
         onTap: (index) {
           setState(() {
             _selectedIndex = index;
+            if (_isSecurityGuard && index == 2 && _ongoingReports.isEmpty && !_ongoingLoading) {
+              _loadOngoingReports();
+            }
           });
         },
         selectedItemColor: const Color(0xFF3b82f6),
         unselectedItemColor: Colors.grey,
         type: BottomNavigationBarType.fixed,
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.dashboard_customize),
-            label: 'Dashboard',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.list_alt),
-            label: 'My Assignments',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.map),
-            label: 'Map View',
-          ),
-        ],
+        items: _isSecurityGuard
+            ? const [
+                BottomNavigationBarItem(
+                  icon: Icon(Icons.dashboard_customize),
+                  label: 'Dashboard',
+                ),
+                BottomNavigationBarItem(
+                  icon: Icon(Icons.list_alt),
+                  label: 'My Assignments',
+                ),
+                BottomNavigationBarItem(
+                  icon: Icon(Icons.campaign_outlined),
+                  label: 'Ongoing',
+                ),
+                BottomNavigationBarItem(
+                  icon: Icon(Icons.map),
+                  label: 'Map View',
+                ),
+              ]
+            : const [
+                BottomNavigationBarItem(
+                  icon: Icon(Icons.dashboard_customize),
+                  label: 'Dashboard',
+                ),
+                BottomNavigationBarItem(
+                  icon: Icon(Icons.list_alt),
+                  label: 'My Assignments',
+                ),
+                BottomNavigationBarItem(
+                  icon: Icon(Icons.map),
+                  label: 'Map View',
+                ),
+              ],
       ),
     );
   }
@@ -776,8 +846,61 @@ class _ResponderDashboardScreenState extends State<ResponderDashboardScreen> {
         const SizedBox(height: 24),
         _buildStatsGrid(),
         const SizedBox(height: 24),
+        _buildReadinessNoticeCard(),
+        const SizedBox(height: 24),
         _buildAvailabilityCard(),
       ],
+    );
+  }
+
+  Widget _buildReadinessNoticeCard() {
+    final message = _responderSynopsisMessage ??
+        'Keep equipment inspected and stay ready for anything.';
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [Color(0xFFf0fdf4), Color(0xFFecfdf5)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(16),
+        border: Border(left: BorderSide(color: const Color(0xFF059669), width: 4)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.shield_outlined, color: const Color(0xFF059669), size: 22),
+              const SizedBox(width: 8),
+              const Text(
+                'Readiness Notice',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF047857),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          Text(
+            'Based on recent system reports (last 30 days)',
+            style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+          ),
+          const SizedBox(height: 10),
+          Text(
+            message,
+            style: const TextStyle(
+              fontSize: 14,
+              color: Color(0xFF374151),
+              height: 1.5,
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -801,6 +924,161 @@ class _ResponderDashboardScreenState extends State<ResponderDashboardScreen> {
         _buildMapCard(),
       ],
     );
+  }
+
+  Widget _buildOngoingTab() {
+    if (_ongoingReports.isEmpty && !_ongoingLoading) {
+      _loadOngoingReports();
+    }
+    return ListView(
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+      children: [
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: const Color(0xFFeff6ff),
+            borderRadius: BorderRadius.circular(16),
+            border: const Border(left: BorderSide(color: Color(0xFF3b82f6), width: 4)),
+          ),
+          child: const Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Ongoing Incidents',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF1e40af)),
+              ),
+              SizedBox(height: 4),
+              Text(
+                'All active emergencies — stay aware and cooperate with response teams.',
+                style: TextStyle(fontSize: 13, color: Color(0xFF374151), height: 1.4),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 20),
+        if (_ongoingLoading)
+          const Padding(
+            padding: EdgeInsets.all(24),
+            child: Center(child: CircularProgressIndicator()),
+          )
+        else if (_ongoingReports.isEmpty)
+          const Padding(
+            padding: EdgeInsets.all(24),
+            child: Center(
+              child: Text(
+                'No ongoing incidents at the moment.',
+                style: TextStyle(color: Colors.grey),
+              ),
+            ),
+          )
+        else
+          ..._ongoingReports.map<Widget>((report) {
+            final type = report['type']?.toString() ?? 'Emergency';
+            final status = report['status']?.toString() ?? 'pending';
+            final location = report['location'];
+            String locationText = 'Location not set';
+            if (location != null) {
+              if (location is Map) {
+                final lat = location['latitude'] ?? location['lat'];
+                final lng = location['longitude'] ?? location['lng'];
+                final addr = location['address'] ?? location['formatted_address'];
+                if (addr != null && addr.toString().isNotEmpty) {
+                  locationText = addr.toString();
+                } else if (lat != null && lng != null) {
+                  locationText = '${lat.toStringAsFixed(5)}, ${lng.toStringAsFixed(5)}';
+                }
+              } else if (location is String) {
+                locationText = location;
+              }
+            }
+            final createdAt = report['created_at'];
+            final timeStr = createdAt != null
+                ? DateFormat('MMM d, h:mm a').format(DateTime.parse(createdAt.toString()))
+                : '—';
+            final responderName = report['responder_name'] ?? (report['responder'] is Map ? (report['responder'] as Map)['name'] : null);
+            return Card(
+              margin: const EdgeInsets.only(bottom: 12),
+              child: ListTile(
+                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                title: Text(
+                  type.toUpperCase(),
+                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                ),
+                subtitle: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const SizedBox(height: 4),
+                    Text(locationText, style: TextStyle(fontSize: 13, color: Colors.grey.shade700)),
+                    Text('Reported: $timeStr • ${status.toUpperCase()}', style: TextStyle(fontSize: 12, color: Colors.grey.shade600)),
+                    if (responderName != null && responderName.toString().isNotEmpty)
+                      Text('Assigned to: $responderName', style: TextStyle(fontSize: 12, color: Colors.blue.shade700)),
+                  ],
+                ),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () {
+                  final loc = report['location'];
+                  latlong.LatLng? coords;
+                  if (loc is Map && loc['latitude'] != null && loc['longitude'] != null) {
+                    coords = latlong.LatLng(
+                      (loc['latitude'] as num).toDouble(),
+                      (loc['longitude'] as num).toDouble(),
+                    );
+                  } else if (loc is Map && loc['lat'] != null && loc['lng'] != null) {
+                    coords = latlong.LatLng(
+                      (loc['lat'] as num).toDouble(),
+                      (loc['lng'] as num).toDouble(),
+                    );
+                  }
+                  if (coords != null) {
+                    setState(() {
+                      _pendingMapTarget = CoordinatePoint(coords.latitude, coords.longitude);
+                      _pendingMapLabel = type;
+                      _selectedIndex = 3;
+                      _routePolyline = [];
+                      _routeError = null;
+                      _routeDistanceKm = null;
+                      _routeDurationMin = null;
+                    });
+                    if (_deviceLocation != null) {
+                      _fetchRoute(_deviceLocation!, CoordinatePoint(coords.latitude, coords.longitude));
+                    }
+                  }
+                },
+              ),
+            );
+          }).toList(),
+      ],
+    );
+  }
+
+  Future<void> _loadOngoingReports() async {
+    if (_ongoingLoading || !mounted) return;
+    setState(() => _ongoingLoading = true);
+    try {
+      const ongoingStatuses = ['pending', 'processing', 'classified', 'assigned', 'in-progress'];
+      final response = await SupabaseService.client
+          .from('reports')
+          .select('id, type, message, status, location, reporter_name, created_at, responder_id, responder:responder_id(id, name)')
+          .inFilter('status', ongoingStatuses)
+          .order('created_at', ascending: false);
+      final list = response as List<dynamic>? ?? [];
+      final maps = list.whereType<Map<String, dynamic>>().toList();
+      if (mounted) {
+        setState(() {
+          _ongoingReports = maps;
+          _ongoingLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _ongoingReports = [];
+          _ongoingLoading = false;
+        });
+      }
+    }
   }
 
   void _autoShowRoutesIfNeeded() {

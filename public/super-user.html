@@ -303,6 +303,13 @@
 
         <!-- Main Content -->
         <div style="max-width: 1200px; margin: 0 auto; padding: 0 2rem 2rem;">
+            <!-- Readiness Synopsis (Prepare / be ready / inspect) -->
+            <div class="broadcast-card" style="margin-bottom: 1.5rem; background: linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 100%); border-left: 4px solid #059669;">
+                <h2 style="margin: 0 0 0.5rem 0; color: #047857; display: flex; align-items: center; gap: 0.5rem;">
+                    <i class="bi bi-shield-check"></i> Readiness Notice
+                </h2>
+                <p style="margin: 0; color: #374151; font-size: 0.95rem; line-height: 1.5;" id="superUserResponderSynopsis">Loading...</p>
+            </div>
             <!-- Quick One-Tap Alerts: FIRST thing on the dashboard -->
             <div class="broadcast-row" style="margin-bottom: 1.5rem;">
                 <div class="broadcast-card broadcast-quick" style="flex: 1 1 100%;">
@@ -512,6 +519,15 @@
                     });
                     const activeReports = emergencyReports.filter(r => r.status !== 'resolved' && r.status !== 'closed');
                     document.getElementById('activeReports').textContent = activeReports.length;
+                    // Readiness synopsis (prepare / be ready / inspect)
+                    try {
+                        const synopsis = window.emergencySystem.getSynopsisForRole(reports, 'super_user');
+                        const el = document.getElementById('superUserResponderSynopsis');
+                        if (el) el.textContent = synopsis.responderMessage;
+                    } catch (e) {
+                        const el = document.getElementById('superUserResponderSynopsis');
+                        if (el) el.textContent = 'Keep equipment inspected and stay ready for anything.';
+                    }
                 }
             } catch (error) {
                 console.error('Error loading stats:', error);

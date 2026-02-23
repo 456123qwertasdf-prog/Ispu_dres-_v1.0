@@ -1228,6 +1228,31 @@
                         </div>
                     </div>
                 </div>
+
+                <!-- Report Synopsis (Admin: both citizen and responder messages) -->
+                <div class="dashboard-panel" style="margin-bottom: 1.5rem;">
+                    <div class="panel-header-modern">
+                        <div class="panel-title">
+                            <i class="bi bi-chat-quote"></i>
+                            <span>Report Synopsis</span>
+                        </div>
+                        <p class="panel-subtitle">Role-based messages from recent reports (last 30 days)</p>
+                    </div>
+                    <div class="panel-body-modern" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem;">
+                        <div style="background: linear-gradient(135deg, #eff6ff 0%, #f0f9ff 100%); border-left: 4px solid #3b82f6; padding: 1rem 1.25rem; border-radius: 8px;">
+                            <div style="font-weight: 600; color: #1e40af; margin-bottom: 0.5rem;">
+                                <i class="bi bi-people"></i> For citizens
+                            </div>
+                            <p id="adminCitizenSynopsis" style="margin: 0; color: #374151; font-size: 0.9rem; line-height: 1.5;">Loading...</p>
+                        </div>
+                        <div style="background: linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 100%); border-left: 4px solid #059669; padding: 1rem 1.25rem; border-radius: 8px;">
+                            <div style="font-weight: 600; color: #047857; margin-bottom: 0.5rem;">
+                                <i class="bi bi-shield-check"></i> For responders / super users
+                            </div>
+                            <p id="adminResponderSynopsis" style="margin: 0; color: #374151; font-size: 0.9rem; line-height: 1.5;">Loading...</p>
+                        </div>
+                    </div>
+                </div>
             
                 <!-- Analytics, Teams, and Reports Container -->
                 <div class="dashboard-panels-container">
@@ -1505,6 +1530,20 @@
 
                 // Update active emergency reports
                 updateActiveReports(reports || []);
+
+                // Update report synopsis (citizen + responder messages)
+                try {
+                    const synopsis = window.emergencySystem.getSynopsisForRole(reports || [], 'admin');
+                    const citizenEl = document.getElementById('adminCitizenSynopsis');
+                    const responderEl = document.getElementById('adminResponderSynopsis');
+                    if (citizenEl) citizenEl.textContent = synopsis.citizenMessage;
+                    if (responderEl) responderEl.textContent = synopsis.responderMessage;
+                } catch (e) {
+                    const citizenEl = document.getElementById('adminCitizenSynopsis');
+                    const responderEl = document.getElementById('adminResponderSynopsis');
+                    if (citizenEl) citizenEl.textContent = 'Stay alert and report real emergencies.';
+                    if (responderEl) responderEl.textContent = 'Keep equipment inspected and stay ready.';
+                }
                 
             } catch (error) {
                 console.error('Error loading dashboard data:', error);

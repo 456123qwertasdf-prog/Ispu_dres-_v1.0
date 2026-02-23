@@ -3,6 +3,30 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { corsHeaders } from '../_shared/cors.ts'
 import { computeImageHash } from '../_shared/imageHash.ts'
 
+// Submissions: rate limit and validation constants
+const MAX_REPORTS_PER_HOUR = 10
+const RATE_LIMIT_WINDOW_HOURS = 1
+const MAX_IMAGE_SIZE_BYTES = 5 * 1024 * 1024   // 5MB
+const MIN_DESCRIPTION_LENGTH = 10
+const MAX_DESCRIPTION_LENGTH = 1000
+const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp']
+
+/** Thrown for invalid input; handler returns 400 */
+class ValidationError extends Error {
+  constructor(message: string) {
+    super(message)
+    this.name = 'ValidationError'
+  }
+}
+
+/** Thrown when rate limit exceeded; handler returns 429 */
+class RateLimitError extends Error {
+  constructor(message: string, public readonly retryAfterSeconds?: number) {
+    super(message)
+    this.name = 'RateLimitError'
+  }
+}
+
 interface ReportSubmission {
   image: File
   reporter_id?: string
@@ -82,6 +106,9 @@ serve(async (req) => {
     // Get or create reporter
     const reporterInfo = await getOrCreateReporter(supabaseClient, reportData)
 
+    // Rate limit: max N reports per hour per reporter
+    await checkRateLimit(supabaseClient, reporterInfo.uid)
+
     // Prepare report data for database
     const reportRecord: ReportData = {
       reporter_uid: reporterInfo.uid,
@@ -127,10 +154,24 @@ serve(async (req) => {
       })
     }
 
-    // Trigger classification (async) - don't await to avoid blocking
-    // The classify-image function will fetch the report from DB, so we ensure image_path is set
-    triggerImageClassification(supabaseClient, insertedReport.id, finalImagePath)
-      .catch(err => console.warn('Background classification error (non-critical):', err))
+    // If image is a duplicate, try to reuse existing classification
+    if (isDuplicate) {
+      const classificationCopied = await copyExistingClassification(supabaseClient, imageHash, insertedReport.id)
+      
+      if (classificationCopied) {
+        console.log(`✅ Reused classification from previous report with same image hash`)
+      } else {
+        // No existing classification found, trigger new one
+        console.log('Duplicate image but no classification found, triggering new analysis')
+        triggerImageClassification(supabaseClient, insertedReport.id, finalImagePath)
+          .catch(err => console.warn('Background classification error (non-critical):', err))
+      }
+    } else {
+      // New unique image - trigger classification
+      console.log('New unique image, triggering AI classification')
+      triggerImageClassification(supabaseClient, insertedReport.id, finalImagePath)
+        .catch(err => console.warn('Background classification error (non-critical):', err))
+    }
 
     // Emit real-time event for new report
     await emitReportCreatedEvent(supabaseClient, insertedReport)
@@ -162,18 +203,22 @@ serve(async (req) => {
     )
 
   } catch (error) {
-    console.error('Error in submit-report function:', error)
-    
-    return new Response(
-      JSON.stringify({
-        success: false,
-        error: error.message || 'Internal server error'
-      }),
-      {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 500
-      }
-    )
+    const err = error instanceof Error ? error : new Error(String(error))
+    console.error('Error in submit-report function:', err)
+
+    const body = { success: false, error: err.message || 'Internal server error' }
+    let status = 500
+    const headers: Record<string, string> = { ...corsHeaders, 'Content-Type': 'application/json' }
+
+    if (err.name === 'ValidationError') {
+      status = 400
+    } else if (err.name === 'RateLimitError') {
+      status = 429
+      const retryAfter = (err as RateLimitError).retryAfterSeconds
+      if (retryAfter != null) headers['Retry-After'] = String(retryAfter)
+    }
+
+    return new Response(JSON.stringify(body), { headers, status })
   }
 })
 
@@ -191,19 +236,20 @@ async function parseReportSubmission(formData: FormData): Promise<ReportSubmissi
   const timestamp = formData.get('timestamp') as string
 
   if (!image) {
-    throw new Error('Image file is required')
+    throw new ValidationError('Image file is required')
   }
 
-  if (!description || description.trim().length === 0) {
-    throw new Error('Description is required')
+  const trimmedDesc = typeof description === 'string' ? description.trim() : ''
+  if (!trimmedDesc) {
+    throw new ValidationError('Description is required')
   }
 
   if (isNaN(lat) || isNaN(lng)) {
-    throw new Error('Valid latitude and longitude are required')
+    throw new ValidationError('Valid latitude and longitude are required')
   }
 
   if (!reporter_id && !phone && !user_id) {
-    throw new Error('Either reporter_id, user_id, or phone is required')
+    throw new ValidationError('Either reporter_id, user_id, or phone is required')
   }
 
   return {
@@ -213,48 +259,78 @@ async function parseReportSubmission(formData: FormData): Promise<ReportSubmissi
     phone: phone || undefined,
     lat,
     lng,
-    description: description.trim(),
+    description: sanitizeDescription(trimmedDesc),
     timestamp: timestamp || new Date().toISOString()
   }
 }
 
 /**
- * Validate report submission data
+ * Sanitize description: normalize whitespace, strip control characters
+ */
+function sanitizeDescription(input: string): string {
+  return input
+    .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim()
+}
+
+/**
+ * Validate report submission data (throws ValidationError on failure)
  */
 function validateReportSubmission(data: ReportSubmission): void {
-  // Validate image file
   if (!data.image || data.image.size === 0) {
-    throw new Error('Image file is required and cannot be empty')
+    throw new ValidationError('Image file is required and cannot be empty')
   }
 
-  // Check image size (max 10MB)
-  const maxSize = 10 * 1024 * 1024 // 10MB
-  if (data.image.size > maxSize) {
-    throw new Error('Image file size must be less than 10MB')
+  if (data.image.size > MAX_IMAGE_SIZE_BYTES) {
+    throw new ValidationError(`Image must be under ${MAX_IMAGE_SIZE_BYTES / (1024 * 1024)}MB`)
   }
 
-  // Check image type
-  const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp']
-  if (!allowedTypes.includes(data.image.type)) {
-    throw new Error('Image must be JPEG, PNG, or WebP format')
+  const type = (data.image.type || '').toLowerCase()
+  if (!ALLOWED_IMAGE_TYPES.includes(type)) {
+    throw new ValidationError('Image must be JPEG, PNG, or WebP')
   }
 
-  // Validate coordinates
   if (data.lat < -90 || data.lat > 90) {
-    throw new Error('Latitude must be between -90 and 90')
+    throw new ValidationError('Latitude must be between -90 and 90')
   }
-
   if (data.lng < -180 || data.lng > 180) {
-    throw new Error('Longitude must be between -180 and 180')
+    throw new ValidationError('Longitude must be between -180 and 180')
   }
 
-  // Validate description length
-  if (data.description.length < 10) {
-    throw new Error('Description must be at least 10 characters long')
+  if (data.description.length < MIN_DESCRIPTION_LENGTH) {
+    throw new ValidationError(`Description must be at least ${MIN_DESCRIPTION_LENGTH} characters`)
+  }
+  if (data.description.length > MAX_DESCRIPTION_LENGTH) {
+    throw new ValidationError(`Description must be at most ${MAX_DESCRIPTION_LENGTH} characters`)
+  }
+}
+
+/**
+ * Enforce rate limit: max MAX_REPORTS_PER_HOUR reports per reporter in the last window.
+ * Uses reporter_uid on reports table. Throws RateLimitError if over limit.
+ */
+async function checkRateLimit(supabaseClient: any, reporterUid: string): Promise<void> {
+  const since = new Date(Date.now() - RATE_LIMIT_WINDOW_HOURS * 60 * 60 * 1000).toISOString()
+
+  const { count, error } = await supabaseClient
+    .from('reports')
+    .select('id', { count: 'exact', head: true })
+    .eq('reporter_uid', reporterUid)
+    .gte('created_at', since)
+
+  if (error) {
+    console.warn('Rate limit check failed:', error.message)
+    return
   }
 
-  if (data.description.length > 1000) {
-    throw new Error('Description must be less than 1000 characters')
+  const n = typeof count === 'number' ? count : 0
+  if (n >= MAX_REPORTS_PER_HOUR) {
+    const retryAfterSeconds = 3600
+    throw new RateLimitError(
+      `Too many reports. Maximum ${MAX_REPORTS_PER_HOUR} per ${RATE_LIMIT_WINDOW_HOURS} hour(s). Try again later.`,
+      retryAfterSeconds
+    )
   }
 }
 
@@ -490,6 +566,131 @@ async function getOrCreateReporter(
 }
 
 /**
+ * Copy classification from an existing report with the same image hash
+ * Returns true if classification was copied, false if no suitable report found
+ */
+async function copyExistingClassification(
+  supabaseClient: any,
+  imageHash: string,
+  newReportId: string
+): Promise<boolean> {
+  try {
+    console.log('🔍 Looking for existing classification for image hash:', imageHash)
+    
+    // Find a report with the same image hash that has been classified
+    const { data: existingReport, error: findError } = await supabaseClient
+      .from('reports')
+      .select('id, type, confidence, ai_labels, priority, severity, emergency_icon, response_time, status')
+      .eq('image_hash', imageHash)
+      .not('type', 'is', null)
+      .not('status', 'eq', 'pending')
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle()
+    
+    if (findError) {
+      console.warn('Error finding existing classification:', findError)
+      return false
+    }
+    
+    if (!existingReport || !existingReport.type) {
+      console.log('No existing classification found for this image hash')
+      return false
+    }
+    
+    console.log('✅ Found existing classification:', {
+      type: existingReport.type,
+      confidence: existingReport.confidence,
+      priority: existingReport.priority,
+      severity: existingReport.severity
+    })
+    
+    // Copy classification fields to new report
+    const updateData: any = {
+      type: existingReport.type,
+      confidence: existingReport.confidence,
+      ai_labels: existingReport.ai_labels,
+      status: 'classified',
+      lifecycle_status: 'classified',
+      last_update: new Date().toISOString()
+    }
+    
+    // Copy priority/severity if available
+    if (existingReport.priority) updateData.priority = existingReport.priority
+    if (existingReport.severity) updateData.severity = existingReport.severity
+    if (existingReport.emergency_icon) updateData.emergency_icon = existingReport.emergency_icon
+    if (existingReport.response_time) updateData.response_time = existingReport.response_time
+    
+    const { error: updateError } = await supabaseClient
+      .from('reports')
+      .update(updateData)
+      .eq('id', newReportId)
+    
+    if (updateError) {
+      console.error('Failed to copy classification:', updateError)
+      return false
+    }
+    
+    console.log(`✅ Successfully copied classification from existing report to new report ${newReportId}`)
+    
+    // If it's a critical/high priority report, still notify super users
+    if (existingReport.priority <= 2 || existingReport.severity === 'CRITICAL' || existingReport.severity === 'HIGH') {
+      console.log('🚨 Critical/High priority duplicate - notifying super users')
+      await notifySuperUsersForCriticalReport(supabaseClient, newReportId, existingReport.type, existingReport.priority, existingReport.severity)
+    }
+    
+    return true
+  } catch (error) {
+    console.error('Error in copyExistingClassification:', error)
+    return false
+  }
+}
+
+/**
+ * Notify super users about critical reports
+ */
+async function notifySuperUsersForCriticalReport(
+  supabaseClient: any,
+  reportId: string,
+  reportType: string,
+  priority: number,
+  severity: string
+): Promise<void> {
+  try {
+    const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? ''
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+    
+    if (!supabaseUrl || !supabaseServiceKey) {
+      console.warn('Supabase URL or Service Key not configured')
+      return
+    }
+
+    const response = await fetch(`${supabaseUrl}/functions/v1/notify-superusers-critical-report`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${supabaseServiceKey}`
+      },
+      body: JSON.stringify({
+        report_id: reportId,
+        report_type: reportType,
+        priority: priority,
+        severity: severity
+      })
+    })
+
+    if (!response.ok) {
+      const errorText = await response.text()
+      console.warn('Failed to notify super users:', response.status, errorText)
+    } else {
+      console.log('✅ Super users notified about critical duplicate report')
+    }
+  } catch (error) {
+    console.warn('Failed to notify super users:', error)
+  }
+}
+
+/**
  * Trigger image classification
  */
 async function triggerImageClassification(
@@ -628,4 +829,4 @@ async function logAuditEvent(
     console.warn('Failed to log audit event:', error)
     // Don't throw error as audit logging is not critical
   }
-}
+} 

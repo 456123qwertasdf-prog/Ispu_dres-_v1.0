@@ -7,9 +7,8 @@
 
 class AzureVisionAPI {
   constructor() {
-    // Set via environment: AZURE_VISION_KEY, AZURE_VISION_ENDPOINT
-    this.apiKey = typeof process !== "undefined" && process.env?.AZURE_VISION_KEY || "YOUR_AZURE_VISION_KEY";
-    this.endpoint = typeof process !== "undefined" && process.env?.AZURE_VISION_ENDPOINT || "https://YOUR_REGION.cognitiveservices.azure.com";
+    this.apiKey = process.env.AZURE_VISION_KEY || "YOUR_AZURE_VISION_KEY";
+    this.endpoint = "https://ew09.cognitiveservices.azure.com";
   }
 
   /**

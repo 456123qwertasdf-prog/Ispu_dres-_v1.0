@@ -10,6 +10,7 @@ import 'package:geocoding/geocoding.dart';
 import '../services/supabase_service.dart';
 import '../services/emergency_sound_service.dart';
 import '../services/onesignal_service.dart';
+import '../utils/synopsis_helper.dart';
 import 'learning_modules_screen.dart';
 import 'notifications_screen.dart';
 
@@ -44,6 +45,10 @@ class _HomeScreenState extends State<HomeScreen> {
   Position? _sosPosition;
   bool _isGettingSosLocation = false;
   bool _sosLocationReady = false;
+
+  // Citizen synopsis (Safety Notice)
+  String? _citizenSynopsisMessage;
+  bool _synopsisLoaded = false;
   
   // Use centralized Supabase service
   String get _supabaseUrl => SupabaseService.supabaseUrl;
@@ -63,6 +68,27 @@ class _HomeScreenState extends State<HomeScreen> {
     _loadActiveEmergencyAlert();
     _subscribeToEmergencyAlerts();
     _startEmergencyPolling();
+    _loadCitizenSynopsis();
+  }
+
+  Future<void> _loadCitizenSynopsis() async {
+    try {
+      final reports = await SupabaseService.getReportsForSynopsis();
+      final synopsis = SynopsisHelper.getSynopsisForRole(reports, 'citizen');
+      if (mounted) {
+        setState(() {
+          _citizenSynopsisMessage = synopsis['citizenMessage'];
+          _synopsisLoaded = true;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _citizenSynopsisMessage = 'Stay alert and report any real emergency you see.';
+          _synopsisLoaded = true;
+        });
+      }
+    }
   }
   
   Future<void> _retrySaveOneSignalPlayerId() async {
@@ -543,6 +569,9 @@ class _HomeScreenState extends State<HomeScreen> {
             _buildEmergencyBanner(),
             const SizedBox(height: 20),
           ],
+          // Safety Notice (citizen synopsis)
+          _buildSafetyNoticeCard(),
+          const SizedBox(height: 20),
           // Daily Weather Outlook
           _buildWeatherDashboard(),
           const SizedBox(height: 24),
@@ -694,6 +723,60 @@ class _HomeScreenState extends State<HomeScreen> {
                 icon: const Icon(Icons.close, color: Colors.white),
               ),
             ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSafetyNoticeCard() {
+    final message = _citizenSynopsisMessage ??
+        (_synopsisLoaded ? 'Stay alert and report any real emergency you see.' : 'Loading...');
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [Color(0xFFeff6ff), Color(0xFFf0f9ff)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(16),
+        border: Border(left: BorderSide(color: const Color(0xFF3b82f6), width: 4)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.info_outline, color: const Color(0xFF3b82f6), size: 22),
+              const SizedBox(width: 8),
+              const Text(
+                'Safety Notice',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF1e40af),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          Text(
+            'Based on recent reports in your area',
+            style: TextStyle(
+              fontSize: 12,
+              color: Colors.grey.shade600,
+            ),
+          ),
+          const SizedBox(height: 10),
+          Text(
+            message,
+            style: const TextStyle(
+              fontSize: 14,
+              color: Color(0xFF374151),
+              height: 1.5,
+            ),
           ),
         ],
       ),

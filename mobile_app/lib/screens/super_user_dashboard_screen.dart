@@ -4,6 +4,7 @@ import 'package:http/http.dart' as http;
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../services/supabase_service.dart';
 import '../services/onesignal_service.dart';
+import '../utils/synopsis_helper.dart';
 import 'super_user_reports_screen.dart';
 import 'super_user_announcements_screen.dart';
 
@@ -27,6 +28,9 @@ class _SuperUserDashboardScreenState extends State<SuperUserDashboardScreen> {
   
   // Active alerts
   List<Map<String, dynamic>> _activeAlerts = [];
+  
+  // Readiness synopsis (prepare / be ready / inspect)
+  String? _responderSynopsisMessage;
   
   // User info
   String _userEmail = 'Super User';
@@ -190,6 +194,19 @@ class _SuperUserDashboardScreenState extends State<SuperUserDashboardScreen> {
         setState(() {
           _activeReports = reports.length;
         });
+      }
+
+      // Load readiness synopsis (prepare / be ready / inspect)
+      try {
+        final synopsisReports = await SupabaseService.getReportsForSynopsis();
+        final synopsis = SynopsisHelper.getSynopsisForRole(synopsisReports, 'super_user');
+        if (mounted) {
+          setState(() => _responderSynopsisMessage = synopsis['responderMessage']);
+        }
+      } catch (_) {
+        if (mounted) {
+          setState(() => _responderSynopsisMessage = 'Keep equipment inspected and stay ready for anything.');
+        }
       }
     } catch (e) {
       debugPrint('Error loading stats: $e');
@@ -715,8 +732,61 @@ class _SuperUserDashboardScreenState extends State<SuperUserDashboardScreen> {
                   ),
                 ],
               ),
+            const SizedBox(height: 24),
+            _buildReadinessNoticeCard(),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildReadinessNoticeCard() {
+    final message = _responderSynopsisMessage ??
+        'Keep equipment inspected and stay ready for anything.';
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [Color(0xFFf0fdf4), Color(0xFFecfdf5)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(16),
+        border: Border(left: BorderSide(color: const Color(0xFF059669), width: 4)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.shield_outlined, color: const Color(0xFF059669), size: 22),
+              const SizedBox(width: 8),
+              const Text(
+                'Readiness Notice',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF047857),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          Text(
+            'Based on recent system reports (last 30 days)',
+            style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+          ),
+          const SizedBox(height: 10),
+          Text(
+            message,
+            style: const TextStyle(
+              fontSize: 14,
+              color: Color(0xFF374151),
+              height: 1.5,
+            ),
+          ),
+        ],
       ),
     );
   }

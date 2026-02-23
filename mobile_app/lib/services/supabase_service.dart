@@ -82,6 +82,24 @@ class SupabaseService {
     );
   }
 
+  /// Fetch recent reports for synopsis (type, corrected_type, created_at). Last 30 days filtered in app.
+  static Future<List<Map<String, dynamic>>> getReportsForSynopsis() async {
+    try {
+      final response = await client
+          .from('reports')
+          .select('id, type, corrected_type, created_at')
+          .order('created_at', ascending: false)
+          .limit(500);
+      final list = response as List<dynamic>? ?? [];
+      return list
+          .whereType<Map<String, dynamic>>()
+          .map((e) => Map<String, dynamic>.from(e))
+          .toList();
+    } catch (e) {
+      return [];
+    }
+  }
+
   // Reset password
   static Future<void> resetPassword({
     required String email,

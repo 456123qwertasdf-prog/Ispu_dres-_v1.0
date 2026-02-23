@@ -757,6 +757,85 @@ class EmergencyResponseSystem {
     }
   }
 
+  /**
+   * Build role-based synopsis from report data.
+   * @param {Array} reports - List of report objects (with type, corrected_type, created_at)
+   * @param {string} role - 'citizen' | 'responder' | 'super_user' | 'admin'
+   * @returns {{ citizenMessage: string, responderMessage: string }}
+   */
+  getSynopsisForRole(reports, role) {
+    const list = Array.isArray(reports) ? reports : [];
+    const now = new Date();
+    const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+    const recent = list.filter(r => new Date(r.created_at || 0) >= thirtyDaysAgo);
+
+    const getEffectiveType = (r) => (r.corrected_type || r.type || '').toLowerCase().trim();
+
+    const emergencies = recent.filter(r => {
+      const t = getEffectiveType(r);
+      return t && t !== 'non_emergency' && t !== 'false_alarm';
+    });
+    const falseAlarms = recent.filter(r => getEffectiveType(r) === 'false_alarm');
+    const nonEmergency = recent.filter(r => getEffectiveType(r) === 'non_emergency');
+
+    const byType = {};
+    emergencies.forEach(r => {
+      const t = getEffectiveType(r) || 'other';
+      const key = ['fire', 'medical', 'flood', 'accident', 'structural', 'environmental'].includes(t) ? t : 'other';
+      byType[key] = (byType[key] || 0) + 1;
+    });
+
+    const typeLabels = {
+      fire: 'fire',
+      medical: 'medical',
+      flood: 'flood',
+      accident: 'accident',
+      structural: 'structural',
+      environmental: 'environmental',
+      other: 'other'
+    };
+    const typesWithCount = Object.entries(byType)
+      .filter(([, n]) => n > 0)
+      .sort((a, b) => b[1] - a[1])
+      .map(([k, n]) => ({ type: k, count: n, label: typeLabels[k] || k }));
+
+    // Citizen message: "Be more careful because ..."
+    let citizenMessage = 'No recent emergency reports. Stay alert and report any real emergency you see.';
+    if (emergencies.length > 0) {
+      const parts = typesWithCount.map(({ label, count }) => `${count} ${label}`).join(', ');
+      const top = typesWithCount[0];
+      let caution = 'Stay alert and follow official advisories.';
+      if (top) {
+        if (top.type === 'medical') caution = 'Know where the nearest clinic or hospital is and how to call for help.';
+        else if (top.type === 'fire') caution = 'Be aware of evacuation routes and avoid open flames.';
+        else if (top.type === 'flood') caution = 'Avoid flooded areas and follow flood advisories.';
+        else if (top.type === 'accident') caution = 'Drive safely and report any hazard you see.';
+      }
+      citizenMessage = `Be more careful: we've had ${parts} incident(s) in the last 30 days. ${caution}`;
+    }
+    if (falseAlarms.length > 0 && falseAlarms.length >= emergencies.length) {
+      citizenMessage += ' Many reports were false alarms—please only report real emergencies so responders can focus on those in need.';
+    }
+
+    // Responder message: "Prepare / be ready / inspect ..."
+    const prepByType = {
+      medical: 'Check first aid kits and AED availability. Be ready for medical calls.',
+      fire: 'Inspect fire equipment and evacuation routes. Prepare extinguishers and muster points.',
+      flood: 'Be ready for flood response: inspect sandbags, life vests, and flood alert procedures.',
+      accident: 'Prepare traffic cones and first aid. Ensure vehicle recovery contacts are ready.',
+      structural: 'Inspect caution tape and hard hats. Be ready for structural assessment support.',
+      environmental: 'Review heat/cold protocols and weather monitoring. Have drinking water and shade ready.',
+      other: 'Review general response kits and communication channels.'
+    };
+    let responderMessage = 'No recent emergencies. Keep equipment inspected and stay ready for anything.';
+    if (typesWithCount.length > 0) {
+      const prepLines = typesWithCount.slice(0, 4).map(({ type }) => prepByType[type] || prepByType.other);
+      responderMessage = 'Prepare and be ready: ' + prepLines.join(' ') + ' Inspect and prepare so you\'re ready when something happens.';
+    }
+
+    return { citizenMessage, responderMessage };
+  }
+
   // Responder Management Functions
   async getResponders(filters = {}) {
     try {
