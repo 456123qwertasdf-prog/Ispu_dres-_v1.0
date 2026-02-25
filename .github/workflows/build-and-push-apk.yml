@@ -49,7 +49,7 @@ jobs:
         run: flutter pub get
         working-directory: mobile_app
 
-      - name: Build APK (version keeps updating: run number used as build number)
+      - name: "Build APK (version keeps updating: run number used as build number)"
         run: |
           VER=$(grep '^version:' pubspec.yaml | sed -n 's/version: *\([0-9]*\.[0-9]*\.[0-9]*\).*/\1/p')
           flutter build apk --release --build-name="$VER" --build-number="${{ github.run_number }}"
