@@ -117,8 +117,8 @@
         
         .form-input:focus {
             outline: none;
-            border-color: #3b82f6;
-            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+            border-color: #1e3a8a;
+            box-shadow: 0 0 0 3px rgba(30, 58, 138, 0.1);
         }
         
         .btn {
@@ -135,12 +135,12 @@
         }
         
         .btn-primary {
-            background-color: #3b82f6;
+            background: linear-gradient(135deg, #1e3a8a, #3b82f6);
             color: white;
         }
         
         .btn-primary:hover {
-            background-color: #2563eb;
+            background: linear-gradient(135deg, #1e40af, #1e3a8a);
         }
         
         .btn-secondary {
@@ -563,19 +563,20 @@
         
         /* Specific card color enhancements */
         .stat-card:nth-child(1) .stat-icon {
-            background: linear-gradient(135deg, #6366f1 0%, #4f46e5 50%, #4338ca 100%);
+            background: linear-gradient(135deg, #0f172a 0%, #1e3a8a 50%, #1e40af 100%);
         }
         
         .stat-card:nth-child(2) .stat-icon {
-            background: linear-gradient(135deg, #10b981 0%, #059669 50%, #047857 100%);
+            background: linear-gradient(135deg, #0f172a 0%, #1e3a8a 50%, #1e40af 100%);
         }
         
         .stat-card:nth-child(3) .stat-icon {
-            background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 50%, #6d28d9 100%);
+            background: linear-gradient(135deg, #0f172a 0%, #1e3a8a 50%, #1e40af 100%);
         }
         
         .stat-card:nth-child(4) .stat-icon {
-            background: linear-gradient(135deg, #f59e0b 0%, #d97706 50%, #b45309 100%);
+            background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 50%, #d97706 100%);
+            color: #0f172a;
         }
         
         /* Responsive adjustments */
@@ -626,9 +627,10 @@
         }
         
         .panel-header-modern {
-            background: linear-gradient(135deg, #f8fafc 0%, #ffffff 100%);
+            background: linear-gradient(135deg, #0f172a 0%, #1e3a8a 100%);
             padding: 1.5rem;
-            border-bottom: 2px solid #f1f5f9;
+            border-bottom: 2px solid #fbbf24;
+            color: white;
         }
         
         .panel-header-modern .panel-title {
@@ -638,22 +640,18 @@
             margin: 0 0 0.5rem 0;
             font-size: 1.25rem;
             font-weight: 700;
-            color: #111827;
+            color: white;
         }
         
         .panel-header-modern .panel-title i {
             font-size: 1.5rem;
-            color: #6366f1;
-            background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
+            color: #fbbf24;
         }
         
         .panel-header-modern .panel-subtitle {
             margin: 0;
             font-size: 0.875rem;
-            color: #6b7280;
+            color: rgba(255, 255, 255, 0.8);
             font-weight: 500;
         }
         
@@ -1104,11 +1102,11 @@
         <div class="sidebar" style="display: flex; flex-direction: column;">
             <div class="sidebar-header">
                 <div class="sidebar-logo">
-                    <img src="images/udrrmo image.jpg" alt="UDRRMO Logo" 
+                    <img src="images/logolspu.jpg" alt="LSPU Logo" 
                          style="width: 50px; height: 50px; object-fit: contain; border-radius: 50%; border: 2px solid white; display: block;">
                     <div class="logo-text">
-                        <h3>Kapiyu Admin</h3>
-                        <p>Emergency Response</p>
+                        <h3>KaPiyu </h3>
+                        <p>Admin Dashboard</p>
                     </div>
                 </div>
             </div>
@@ -1158,7 +1156,7 @@
                     <div class="user-avatar" style="width: 40px; height: 40px; background: rgba(255, 255, 255, 0.2); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 1.125rem;">A</div>
                     <div class="user-details">
                         <h4 style="margin: 0; font-size: 0.875rem; font-weight: 600; color: white;">Admin User</h4>
-                        <p style="margin: 0; font-size: 0.75rem; color: rgba(255, 255, 255, 0.7);">Kapiyu Command</p>
+                        <p style="margin: 0; font-size: 0.75rem; color: rgba(255, 255, 255, 0.7);">LSPU Emergency</p>
                     </div>
                 </div>
                 <button class="logout-btn" onclick="showLogoutConfirm()" style="width: 100%;padding: 0.75rem 1rem;background: rgba(239, 68, 68, 0.1);border: 1px solid rgba(239, 68, 68, 0.3);color: #fca5a5;border-radius: 8px;font-size: 0.875rem;font-weight: 500;cursor: pointer;transition: all 0.2s ease;display: flex;align-items: center;gap: 0.5rem;margin-left: 0px;">
@@ -1177,7 +1175,7 @@
                 <!-- Dashboard Header -->
                 <div class="card">
                     <div class="card-header">
-                        <h2 class="card-title">Admin Dashboard</h2>
+                        <h2 class="card-title">LSPU Emergency - Admin Dashboard</h2>
                         <p class="card-subtitle">Real-time emergency monitoring and response management</p>
                     </div>
                 </div>
@@ -1250,6 +1248,30 @@
                                 <i class="bi bi-shield-check"></i> For responders / super users
                             </div>
                             <p id="adminResponderSynopsis" style="margin: 0; color: #374151; font-size: 0.9rem; line-height: 1.5;">Loading...</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Safety Notice (Citizen) — editable; only admin/super_user can disable showing -->
+                <div class="dashboard-panel" style="margin-bottom: 1.5rem;">
+                    <div class="panel-header-modern">
+                        <div class="panel-title">
+                            <i class="bi bi-info-circle"></i>
+                            <span>Safety Notice (Citizen)</span>
+                        </div>
+                        <p class="panel-subtitle">Shown on citizen home. When disabled, the notice is hidden for all users.</p>
+                    </div>
+                    <div class="panel-body-modern">
+                        <div style="margin-bottom: 1rem;">
+                            <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; font-weight: 500; color: #374151;">
+                                <input type="checkbox" id="adminSafetyNoticeEnabled" checked>
+                                Show safety notice to citizens
+                            </label>
+                        </div>
+                        <textarea id="adminSafetyNoticeMessage" rows="3" placeholder="Leave empty to use auto-generated message from recent reports." style="width:100%;padding:0.75rem;border:1px solid #e5e7eb;border-radius:8px;font-size:0.9rem;resize:vertical;"></textarea>
+                        <div style="margin-top: 0.75rem;">
+                            <button type="button" class="btn btn-primary" id="adminSaveSafetyNoticeBtn" onclick="adminSaveSafetyNotice()">Save Safety Notice</button>
+                            <span id="adminSafetyNoticeStatus" style="margin-left:0.75rem;font-size:0.875rem;color:#6b7280;"></span>
                         </div>
                     </div>
                 </div>
@@ -1373,6 +1395,7 @@
                 
                 // Load dashboard data
                 await loadDashboardData();
+                await loadAdminSafetyNotice();
                 
                 // Set up real-time updates
                 await setupRealTimeUpdates();
@@ -1547,6 +1570,36 @@
                 
             } catch (error) {
                 console.error('Error loading dashboard data:', error);
+            }
+        }
+
+        async function loadAdminSafetyNotice() {
+            try {
+                const notice = await window.emergencySystem.getSafetyNotice();
+                const enabledEl = document.getElementById('adminSafetyNoticeEnabled');
+                const messageEl = document.getElementById('adminSafetyNoticeMessage');
+                if (enabledEl) enabledEl.checked = notice ? notice.enabled !== false : true;
+                if (messageEl) messageEl.value = notice?.message || '';
+            } catch (e) {
+                console.warn('loadAdminSafetyNotice failed:', e);
+            }
+        }
+
+        async function adminSaveSafetyNotice() {
+            const btn = document.getElementById('adminSaveSafetyNoticeBtn');
+            const statusEl = document.getElementById('adminSafetyNoticeStatus');
+            const message = (document.getElementById('adminSafetyNoticeMessage')?.value || '').trim();
+            const enabled = document.getElementById('adminSafetyNoticeEnabled')?.checked !== false;
+            if (btn) btn.disabled = true;
+            if (statusEl) statusEl.textContent = 'Saving...';
+            try {
+                await window.emergencySystem.updateSafetyNotice({ message: message || null, enabled });
+                if (statusEl) statusEl.textContent = 'Saved.';
+                setTimeout(() => { if (statusEl) statusEl.textContent = ''; }, 3000);
+            } catch (e) {
+                if (statusEl) statusEl.textContent = 'Failed: ' + (e?.message || e);
+            } finally {
+                if (btn) btn.disabled = false;
             }
         }
 
@@ -1768,7 +1821,8 @@
                     }
                 }
                 const description = report.message || report.description || 'No description available';
-                const mapsHref = (lat && lng) ? `https://www.google.com/maps?q=${lat},${lng}` : `https://www.google.com/maps/search/${encodeURIComponent(locationText)}`;
+                // Link to local map view with report ID parameter
+                const mapViewHref = `map.html?reportId=${report.id}`;
                 return `
                     <div class="emergency-report-card-modern">
                         <div class="report-header-modern" style="background: linear-gradient(135deg, ${headerColor} 0%, ${headerColor}dd 100%);">
@@ -1783,7 +1837,7 @@
                                 <i class="bi bi-geo-alt"></i>
                                 <div style="flex:1; display:flex; align-items:center; gap:0.5rem;">
                                     <div class="location-field-modern">${locationText}</div>
-                                    <a href="${mapsHref}" target="_blank" rel="noopener" class="map-btn-modern">
+                                    <a href="${mapViewHref}" class="map-btn-modern">
                                         <i class="bi bi-map"></i> Open Map
                                     </a>
                                 </div>

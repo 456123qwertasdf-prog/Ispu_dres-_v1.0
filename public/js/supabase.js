@@ -836,6 +836,41 @@ class EmergencyResponseSystem {
     return { citizenMessage, responderMessage };
   }
 
+  /**
+   * Fetch current safety notice (editable by admin). Returns { id, message, enabled } or null.
+   */
+  async getSafetyNotice() {
+    try {
+      const { data, error } = await this.supabase
+        .from('safety_notice')
+        .select('id, message, enabled, updated_at')
+        .order('updated_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (error) throw error;
+      return data;
+    } catch (e) {
+      console.warn('getSafetyNotice failed:', e);
+      return null;
+    }
+  }
+
+  /**
+   * Update safety notice (admin/super_user only). Pass null to leave unchanged.
+   */
+  async updateSafetyNotice({ message = null, enabled = null }) {
+    const notice = await this.getSafetyNotice();
+    if (!notice || !notice.id) throw new Error('No safety notice row found');
+    const updates = { updated_at: new Date().toISOString() };
+    if (message !== null) updates.message = message;
+    if (enabled !== null) updates.enabled = enabled;
+    const { error } = await this.supabase
+      .from('safety_notice')
+      .update(updates)
+      .eq('id', notice.id);
+    if (error) throw error;
+  }
+
   // Responder Management Functions
   async getResponders(filters = {}) {
     try {
@@ -1066,26 +1101,154 @@ class EmergencyResponseSystem {
   }
 
   showAlert(message, type = 'info') {
-    // Create alert element
-    const alert = document.createElement('div');
-    alert.className = `alert alert-${type}`;
-    alert.innerHTML = `
-      <div class="flex items-center gap-4">
-        <span>${message}</span>
-        <button onclick="this.parentElement.parentElement.remove()" class="ml-auto text-gray-500 hover:text-gray-700">
-          ×
-        </button>
+    // Inject toast styles once
+    if (!document.getElementById('es-toast-styles')) {
+      const style = document.createElement('style');
+      style.id = 'es-toast-styles';
+      style.textContent = `
+        .es-toast-container {
+          position: fixed;
+          top: 1.25rem;
+          right: 1.25rem;
+          z-index: 99999;
+          display: flex;
+          flex-direction: column;
+          gap: 0.5rem;
+          pointer-events: none;
+        }
+        .es-toast {
+          display: flex;
+          align-items: flex-start;
+          gap: 0.75rem;
+          background: #ffffff;
+          border-radius: 12px;
+          padding: 0.875rem 1rem 1.125rem 1rem;
+          box-shadow: 0 8px 32px rgba(0,0,0,0.12), 0 0 0 1px rgba(0,0,0,0.06);
+          min-width: 300px;
+          max-width: 380px;
+          pointer-events: all;
+          transform: translateX(calc(100% + 1.5rem));
+          opacity: 0;
+          transition: transform 0.38s cubic-bezier(0.34, 1.4, 0.64, 1), opacity 0.3s ease;
+          position: relative;
+          overflow: hidden;
+          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', sans-serif;
+        }
+        .es-toast.es-show {
+          transform: translateX(0);
+          opacity: 1;
+        }
+        .es-toast.es-hide {
+          transform: translateX(calc(100% + 1.5rem));
+          opacity: 0;
+          transition: transform 0.3s ease, opacity 0.25s ease;
+        }
+        .es-toast-icon {
+          width: 34px;
+          height: 34px;
+          border-radius: 8px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 1rem;
+          font-weight: 700;
+          flex-shrink: 0;
+          line-height: 1;
+        }
+        .es-toast-success .es-toast-icon { background: #f0fdf4; color: #059669; }
+        .es-toast-error   .es-toast-icon { background: #fef2f2; color: #dc2626; }
+        .es-toast-warning .es-toast-icon { background: #fffbeb; color: #d97706; }
+        .es-toast-info    .es-toast-icon { background: #eff6ff; color: #2563eb; }
+        .es-toast-body { flex: 1; min-width: 0; padding-top: 0.1rem; }
+        .es-toast-title {
+          font-size: 0.8125rem;
+          font-weight: 700;
+          color: #0f172a;
+          margin: 0 0 0.2rem 0;
+          line-height: 1.3;
+        }
+        .es-toast-msg {
+          font-size: 0.8125rem;
+          color: #475569;
+          line-height: 1.55;
+          margin: 0;
+          word-break: break-word;
+        }
+        .es-toast-close {
+          background: none;
+          border: none;
+          color: #94a3b8;
+          cursor: pointer;
+          padding: 0;
+          font-size: 1.125rem;
+          width: 22px;
+          height: 22px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          border-radius: 4px;
+          flex-shrink: 0;
+          margin-top: 0.05rem;
+          transition: background 0.15s, color 0.15s;
+          line-height: 1;
+        }
+        .es-toast-close:hover { background: #f1f5f9; color: #334155; }
+        .es-toast-bar {
+          position: absolute;
+          bottom: 0;
+          left: 0;
+          height: 3px;
+          animation: es-countdown 5s linear forwards;
+        }
+        .es-toast-success .es-toast-bar { background: #059669; }
+        .es-toast-error   .es-toast-bar { background: #dc2626; }
+        .es-toast-warning .es-toast-bar { background: #d97706; }
+        .es-toast-info    .es-toast-bar { background: #2563eb; }
+        @keyframes es-countdown { from { width: 100%; } to { width: 0%; } }
+      `;
+      document.head.appendChild(style);
+    }
+
+    // Get or create toast container
+    let container = document.getElementById('es-toast-container');
+    if (!container) {
+      container = document.createElement('div');
+      container.id = 'es-toast-container';
+      container.className = 'es-toast-container';
+      document.body.appendChild(container);
+    }
+
+    // Config per type
+    const cfg = {
+      success: { icon: '✓', title: 'Success' },
+      error:   { icon: '✕', title: 'Error' },
+      warning: { icon: '!', title: 'Warning' },
+      info:    { icon: 'i', title: 'Info' },
+    };
+    const { icon, title } = cfg[type] || cfg.info;
+
+    const toast = document.createElement('div');
+    toast.className = `es-toast es-toast-${type}`;
+    toast.innerHTML = `
+      <div class="es-toast-icon">${icon}</div>
+      <div class="es-toast-body">
+        <p class="es-toast-title">${title}</p>
+        <p class="es-toast-msg">${message}</p>
       </div>
+      <button class="es-toast-close" onclick="var t=this.closest('.es-toast');t.classList.add('es-hide');setTimeout(()=>t.remove(),350);">&#215;</button>
+      <div class="es-toast-bar"></div>
     `;
 
-    // Add to page
-    const container = document.querySelector('.alerts-container') || document.body;
-    container.insertBefore(alert, container.firstChild);
+    container.appendChild(toast);
 
-    // Auto remove after 5 seconds
+    // Trigger enter animation
+    requestAnimationFrame(() => requestAnimationFrame(() => toast.classList.add('es-show')));
+
+    // Auto-dismiss after 5s
     setTimeout(() => {
-      if (alert.parentElement) {
-        alert.remove();
+      if (toast.isConnected) {
+        toast.classList.add('es-hide');
+        setTimeout(() => toast.remove(), 350);
       }
     }, 5000);
   }

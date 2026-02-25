@@ -92,14 +92,18 @@ class _SuperUserEarlyWarningScreenState
   IconData _getWeatherIcon() {
     if (_weatherData == null) return Icons.wb_sunny;
     final weather = _weatherData!['weather'];
+    final hour = DateTime.now().hour;
+    final isNight = hour < 6 || hour >= 18;
+    final clearIcon = isNight ? Icons.nightlight_round : Icons.wb_sunny;
+    final cloudIcon = isNight ? Icons.nightlight_round : Icons.cloud;
     if (weather is List && weather.isNotEmpty) {
       final main = (weather[0]['main'] ?? '').toString().toLowerCase();
       if (main.contains('rain')) return Icons.grain;
-      if (main.contains('cloud')) return Icons.cloud;
-      if (main.contains('clear')) return Icons.wb_sunny;
+      if (main.contains('cloud')) return cloudIcon;
+      if (main.contains('clear')) return clearIcon;
       if (main.contains('thunderstorm')) return Icons.flash_on;
     }
-    return Icons.wb_sunny;
+    return clearIcon;
   }
 
   Color _getRiskColor(String risk) {

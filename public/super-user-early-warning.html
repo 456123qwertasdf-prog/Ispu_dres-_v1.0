@@ -505,62 +505,76 @@
                 transform: translateX(100%);
             }
         }
+        /* ── Super-User Sidebar Theme ── */
+        .sidebar { background: linear-gradient(180deg, #0f172a 0%, #064e3b 100%) !important; }
+        .nav-item.active { background: rgba(16,185,129,0.2) !important; color: #34d399 !important; border-left: 3px solid #10b981 !important; border-top: none !important; border-right: none !important; border-bottom: none !important; font-weight: 600; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .nav-item:hover { background: rgba(16,185,129,0.1) !important; color: #a7f3d0 !important; border-left-color: rgba(16,185,129,0.4) !important; }
+        .status-dot.online { background: #10b981 !important; box-shadow: 0 0 0 3px rgba(16,185,129,0.25) !important; }
+        .user-avatar { background: rgba(16,185,129,0.25) !important; color: #34d399 !important; }
+        .sidebar-header { border-bottom: 1px solid rgba(16,185,129,0.15) !important; }
+        .system-status { padding: 10px 20px; border-bottom: 1px solid rgba(16,185,129,0.15); }
+        .su-role-badge { display:inline-flex; align-items:center; gap:4px; font-size:0.65rem; font-weight:700; letter-spacing:0.08em; text-transform:uppercase; background:rgba(16,185,129,0.2); color:#34d399; border:1px solid rgba(16,185,129,0.4); border-radius:9999px; padding:2px 8px; margin-top:4px; }
+        .su-logout-btn { width:100%; padding:0.75rem 1rem; background:rgba(239,68,68,0.1); border:1px solid rgba(239,68,68,0.3); color:#fca5a5; border-radius:8px; font-size:0.875rem; font-weight:500; cursor:pointer; transition:all 0.2s ease; display:flex; align-items:center; gap:0.5rem; }
+        .su-logout-btn:hover { background:#EF4444 !important; border-color:#EF4444 !important; color:white !important; }
+        .su-content-header { background:linear-gradient(135deg, #0f172a 0%, #064e3b 100%); color:white; padding:1.5rem 2rem; border-radius:16px; box-shadow:0 8px 24px rgba(0,0,0,0.15); border-left:4px solid #10b981; margin-bottom:1.75rem; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:1rem; }
+        .su-content-header h1 { margin:0; font-size:1.5rem; font-weight:700; display:flex; align-items:center; gap:0.75rem; }
+        .su-content-header h1 i { color:#34d399; }
+        .su-content-header p { margin:0.4rem 0 0 0; font-size:0.875rem; opacity:0.8; }
     </style>
 </head>
 <body>
-    <nav class="su-nav">
-        <div class="su-nav-title">
-            <i class="bi bi-shield-check"></i>
-            <span>LSPU Emergency • Super User</span>
-        </div>
-        <div class="su-nav-links">
-            <a href="super-user.html" class="su-nav-link">
-                <i class="bi bi-grid-fill"></i>
-                Dashboard
-            </a>
-            <a href="super-user-reports.html" class="su-nav-link">
-                <i class="bi bi-clipboard-data"></i>
-                Recent Reports
-            </a>
-            <a href="super-user-early-warning.html" class="su-nav-link active">
-                <i class="bi bi-shield-exclamation"></i>
-                Early Warning
-            </a>
-            <a href="super-user-map.html" class="su-nav-link">
-                <i class="bi bi-map"></i>
-                Map View
-            </a>
-            <a href="super-user-evacuation.html" class="su-nav-link">
-                <i class="bi bi-shield-check"></i>
-                Evacuation Guide
-            </a>
-            <a href="super-user-announcements.html" class="su-nav-link">
-                <i class="bi bi-megaphone-fill"></i>
-                General Announcements
-            </a>
-            <button type="button" onclick="showLogoutConfirm()" class="su-nav-link" style="border:none;background:none;cursor:pointer;">
-                <i class="bi bi-box-arrow-right"></i>
-                Logout
-            </button>
-        </div>
-    </nav>
-    <div class="super-user-container">
-        <div class="super-user-header">
-            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
-                <div>
-                    <h1 style="margin: 0; font-size: 2rem; display: flex; align-items: center; gap: 1rem;">
-                        <i class="bi bi-shield-exclamation"></i>
-                        Early Warning Dashboard
-                        <span class="super-user-badge">
-                            <i class="bi bi-star-fill"></i> Premium Access
-                        </span>
-                    </h1>
-                    <p style="margin: 0.5rem 0 0 0; opacity: 0.9;">Real-time monitoring of weather conditions, air quality, and safety metrics for LSPU Sta. Cruz Campus</p>
+<div class="dashboard-container">
+    <!-- Sidebar -->
+    <div class="sidebar" style="display:flex;flex-direction:column;">
+        <div class="sidebar-header">
+            <div class="sidebar-logo">
+                <img src="images/logolspu.jpg" alt="LSPU Logo"
+                     style="width:50px;height:50px;object-fit:contain;border-radius:50%;border:2px solid rgba(52,211,153,0.6);display:block;">
+                <div class="logo-text">
+                    <h3 style="margin:0;font-size:15px;font-weight:700;color:white;">Super User</h3>
+                    <p style="margin:2px 0 0 0;font-size:11px;color:rgba(255,255,255,0.6);">Emergency Response</p>
+                    <span class="su-role-badge"><i class="bi bi-shield-star-fill"></i> Super User</span>
                 </div>
             </div>
         </div>
-
-        <div class="main-content-wrapper">
+        <div class="system-status">
+            <div class="status-indicator">
+                <span class="status-dot online"></span>
+                <span style="font-size:0.8rem;color:rgba(255,255,255,0.75);">System Status: Online</span>
+            </div>
+        </div>
+        <nav class="sidebar-nav">
+            <a href="super-user.html" class="nav-item"><i class="bi bi-house"></i> Dashboard</a>
+            <a href="super-user-reports.html" class="nav-item"><i class="bi bi-clipboard-data"></i> Recent Reports</a>
+            <a href="super-user-early-warning.html" class="nav-item active"><i class="bi bi-shield-exclamation"></i> Early Warning</a>
+            <a href="super-user-map.html" class="nav-item"><i class="bi bi-map"></i> Map View</a>
+            <a href="super-user-evacuation.html" class="nav-item"><i class="bi bi-shield-check"></i> Evacuation Guide</a>
+            <a href="super-user-announcements.html" class="nav-item"><i class="bi bi-megaphone-fill"></i> Announcements</a>
+        </nav>
+        <div class="sidebar-footer">
+            <div class="user-info-card">
+                <div class="user-avatar">S</div>
+                <div class="user-details">
+                    <h4 id="suUserName" style="margin:0;font-size:0.875rem;font-weight:600;color:white;">Super User</h4>
+                    <p style="margin:0;font-size:0.75rem;color:rgba(255,255,255,0.55);">LSPU Command</p>
+                </div>
+            </div>
+            <button class="su-logout-btn" onclick="showLogoutConfirm()">
+                <i class="bi bi-box-arrow-right"></i> Logout
+            </button>
+        </div>
+    </div>
+    <!-- Main Content -->
+    <div class="main-content">
+        <!-- Page Header -->
+        <div class="su-content-header">
+            <div>
+                <h1><i class="bi bi-shield-exclamation"></i> Early Warning Dashboard</h1>
+                <p>Real-time monitoring of weather conditions, air quality, and safety metrics for LSPU Sta. Cruz Campus</p>
+            </div>
+            <span style="background:rgba(16,185,129,0.15);border:1px solid rgba(16,185,129,0.35);color:#34d399;border-radius:9999px;padding:0.3rem 0.85rem;font-size:0.75rem;font-weight:700;letter-spacing:0.05em;text-transform:uppercase;"><i class="bi bi-shield-star-fill"></i> Super User</span>
+        </div>
+        <div class="main-content-wrapper" style="max-width:1400px;margin:0 auto;padding:0 0 2rem;">
             <!-- Header Section -->
             <div class="card">
                 <div class="card-header">
@@ -688,7 +702,8 @@
                 </div>
             </div>
         </div>
-    </div>
+    </div><!-- end .main-content -->
+</div><!-- end .dashboard-container -->
 
     <!-- Logout Modal -->
     <div id="logoutModal" class="modal hidden">

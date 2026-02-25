@@ -7,6 +7,44 @@ const corsHeaders = {
   'Access-Control-Allow-Methods': 'POST, GET, OPTIONS, PUT, DELETE',
 }
 
+// Run delete and ignore non-fatal errors (missing table, no rows, RLS, etc.)
+async function deleteWhere(
+  supabase: ReturnType<typeof createClient>,
+  table: string,
+  column: string,
+  value: string,
+  optional = true
+): Promise<{ error?: string }> {
+  const { error } = await supabase.from(table).delete().eq(column, value)
+  if (error && optional) {
+    if (error.code !== 'PGRST116' && error.code !== '42P01') {
+      console.warn(`Delete ${table}.${column}=*:`, error.message)
+    }
+    return {}
+  }
+  if (error) return { error: error.message }
+  return {}
+}
+
+// Update column to null where column = value (for optional FKs we want to keep rows)
+async function nullWhere(
+  supabase: ReturnType<typeof createClient>,
+  table: string,
+  column: string,
+  value: string,
+  optional = true
+): Promise<{ error?: string }> {
+  const { error } = await supabase.from(table).update({ [column]: null }).eq(column, value)
+  if (error && optional) {
+    if (error.code !== 'PGRST116' && error.code !== '42P01') {
+      console.warn(`Null ${table}.${column}=*:`, error.message)
+    }
+    return {}
+  }
+  if (error) return { error: error.message }
+  return {}
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
@@ -44,46 +82,67 @@ serve(async (req) => {
       SERVICE_ROLE
     )
 
-    // Delete from user_profiles table (if exists)
+    // ---- 1. Unlink or remove references to this user ----
+    await deleteWhere(supabase, 'classification_corrections', 'corrected_by', userId)
+    await nullWhere(supabase, 'reports_archived', 'corrected_by', userId)
+    await nullWhere(supabase, 'reports_archived', 'archived_by', userId)
+    await nullWhere(supabase, 'reports_archived', 'user_id', userId)
+
+    // ---- 2. Delete user-owned data (order respects FKs) ----
+    await deleteWhere(supabase, 'reports', 'user_id', userId)
+    await deleteWhere(supabase, 'learning_progress', 'user_id', userId)
+    await deleteWhere(supabase, 'lms_results', 'user_id', userId)
+    await deleteWhere(supabase, 'notifications', 'user_id', userId)
+    await deleteWhere(supabase, 'notifications_subscriptions', 'user_id', userId)
+    await deleteWhere(supabase, 'audit_log', 'user_id', userId)
+    await deleteWhere(supabase, 'onesignal_subscriptions', 'user_id', userId)
+
+    // Responder and reporter (may be referenced by assignment; CASCADE will clean assignment when responder/reporter row is removed)
+    const { data: responderRows } = await supabase.from('responder').select('id').eq('user_id', userId)
+    const responderIds = (responderRows || []).map((r: { id: string }) => r.id)
+    for (const rid of responderIds) {
+      await deleteWhere(supabase, 'assignment', 'responder_id', rid)
+    }
+    await deleteWhere(supabase, 'responder', 'user_id', userId)
+    await deleteWhere(supabase, 'reporter', 'user_id', userId)
+
+    await deleteWhere(supabase, 'announcements', 'created_by', userId)
+
+    // ---- 3. Profiles (current and archived) ----
     const { error: delProfErr } = await supabase
       .from('user_profiles')
       .delete()
       .eq('user_id', userId)
-    
-    // Ignore error if profile doesn't exist - continue to delete from archive
     if (delProfErr && delProfErr.code !== 'PGRST116') {
       console.warn('Error deleting from user_profiles:', delProfErr.message)
     }
 
-    // Delete from user_profiles_archived table (if exists)
     const { error: delArchErr } = await supabase
       .from('user_profiles_archived')
       .delete()
       .eq('user_id', userId)
-    
-    // Ignore error if archived profile doesn't exist
     if (delArchErr && delArchErr.code !== 'PGRST116') {
       console.warn('Error deleting from user_profiles_archived:', delArchErr.message)
     }
 
-    // Delete from Supabase Auth (this is the critical part!)
-    const { data: authData, error: authErr } = await supabase.auth.admin.deleteUser(userId)
-    
+    // ---- 4. Delete from Supabase Auth (must be last) ----
+    const { error: authErr } = await supabase.auth.admin.deleteUser(userId)
+
     if (authErr) {
       return new Response(
-        JSON.stringify({ 
-          error: 'Failed to delete user from authentication', 
-          details: authErr.message 
+        JSON.stringify({
+          error: 'Failed to delete user from authentication',
+          details: authErr.message
         }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
 
     return new Response(
-      JSON.stringify({ 
-        success: true, 
+      JSON.stringify({
+        success: true,
         message: 'User deleted permanently from database and authentication',
-        userId: userId
+        userId
       }),
       { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
@@ -94,4 +153,3 @@ serve(async (req) => {
     )
   }
 })
-

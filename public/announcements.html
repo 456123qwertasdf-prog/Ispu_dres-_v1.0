@@ -293,12 +293,22 @@
             font-size: 1.1rem;
         }
         
+        .view-btn {
+            background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+            color: #0f172a;
+            font-weight: 600;
+        }
+        .view-btn:hover {
+            background: linear-gradient(135deg, #fcd34d 0%, #fbbf24 100%);
+            box-shadow: 0 4px 12px rgba(251, 191, 36, 0.4);
+        }
+        
         .edit-btn {
-            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+            background: linear-gradient(135deg, #1e3a8a 0%, #0f172a 100%);
             color: white;
         }
         .edit-btn:hover {
-            background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+            background: linear-gradient(135deg, #2563eb 0%, #1e3a8a 100%);
         }
         
         .delete-btn {
@@ -699,7 +709,7 @@
         <div class="sidebar">
             <div class="sidebar-header">
                 <div class="sidebar-logo">
-                    <img src="images/udrrmo image.jpg" alt="UDRRMO Logo" 
+                    <img src="images/logolspu.jpg" alt="LSPU Logo" 
                          style="width: 50px; height: 50px; object-fit: contain; border-radius: 50%; border: 2px solid white; display: block;">
                     <div class="logo-text">
                         <h3>Kapiyu Admin</h3>
@@ -920,6 +930,67 @@
                             <!-- Announcements will be loaded here -->
                         </div>
                     </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Announcement Details Modal -->
+    <div id="announcementDetailModal" class="modal hidden">
+        <div class="modal-content" style="max-width: 700px;">
+            <div class="modal-header">
+                <h2>Announcement Details</h2>
+                <button onclick="closeAnnouncementDetailModal()" class="modal-close">&times;</button>
+            </div>
+            <div class="modal-body" style="padding: 2rem;">
+                <div class="detail-section">
+                    <h3 id="detailTitle" style="font-size: 1.5rem; font-weight: 700; color: #0f172a; margin: 0 0 1.5rem 0; line-height: 1.3;"></h3>
+                </div>
+                
+                <div class="detail-info-grid" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; margin-bottom: 1.5rem;">
+                    <div class="detail-info-item">
+                        <label style="font-size: 0.75rem; font-weight: 600; color: #6b7280; text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 0.25rem;">Type</label>
+                        <div id="detailType" style="font-size: 0.9375rem; color: #1e293b; font-weight: 500;"></div>
+                    </div>
+                    <div class="detail-info-item">
+                        <label style="font-size: 0.75rem; font-weight: 600; color: #6b7280; text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 0.25rem;">Status</label>
+                        <span id="detailStatus" class="detail-status-badge" style="display: inline-block; padding: 0.25rem 0.75rem; border-radius: 9999px; font-size: 0.8125rem; font-weight: 600;"></span>
+                    </div>
+                    <div class="detail-info-item">
+                        <label style="font-size: 0.75rem; font-weight: 600; color: #6b7280; text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 0.25rem;">Priority</label>
+                        <span id="detailPriority" class="detail-priority-badge" style="display: inline-block; padding: 0.25rem 0.75rem; border-radius: 9999px; font-size: 0.8125rem; font-weight: 600;"></span>
+                    </div>
+                    <div class="detail-info-item">
+                        <label style="font-size: 0.75rem; font-weight: 600; color: #6b7280; text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 0.25rem;">Audience</label>
+                        <div id="detailAudience" style="font-size: 0.9375rem; color: #1e293b; font-weight: 500;"></div>
+                    </div>
+                </div>
+                
+                <div class="detail-section" style="margin-bottom: 1.5rem;">
+                    <label style="font-size: 0.75rem; font-weight: 600; color: #6b7280; text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 0.75rem;">Message</label>
+                    <div id="detailMessage" style="font-size: 0.9375rem; color: #374151; line-height: 1.6; white-space: pre-wrap; word-wrap: break-word; padding: 1rem; background: #f5f5f5; border-radius: 8px; border-left: 3px solid #fbbf24;"></div>
+                </div>
+                
+                <div id="detailImageContainer" style="margin-bottom: 1.5rem; display: none;">
+                    <label style="font-size: 0.75rem; font-weight: 600; color: #6b7280; text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 0.75rem;">Image</label>
+                    <img id="detailImage" src="" alt="Announcement Image" style="width: 100%; max-width: 100%; height: auto; border-radius: 8px; border: 1px solid #e5e7eb;" onerror="this.style.display='none';">
+                </div>
+                
+                <div class="detail-meta" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; padding-top: 1.5rem; border-top: 1px solid #e5e7eb;">
+                    <div class="detail-meta-item">
+                        <label style="font-size: 0.75rem; font-weight: 600; color: #6b7280; text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 0.25rem;">Created</label>
+                        <div id="detailCreated" style="font-size: 0.875rem; color: #4b5563;"></div>
+                    </div>
+                    <div class="detail-meta-item">
+                        <label style="font-size: 0.75rem; font-weight: 600; color: #6b7280; text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 0.25rem;">Expires</label>
+                        <div id="detailExpires" style="font-size: 0.875rem; color: #4b5563;"></div>
+                    </div>
+                </div>
+                
+                <div style="margin-top: 2rem; display: flex; justify-content: flex-end; gap: 0.75rem;">
+                    <button onclick="closeAnnouncementDetailModal()" class="btn btn-secondary" style="background: #f5f5f5; color: #1e293b; border: 1px solid #e5e7eb;">
+                        Close
+                    </button>
                 </div>
             </div>
         </div>
@@ -1206,6 +1277,9 @@
                                 ` : ''}
                             </div>
                             <div class="announcement-actions">
+                                <button onclick="viewAnnouncementDetails('${announcement.id}')" class="action-btn view-btn" title="View Details">
+                                    <i class="bi bi-eye"></i>
+                                </button>
                                 <button onclick="editAnnouncement('${announcement.id}')" class="action-btn edit-btn" title="Edit">
                                     <i class="bi bi-pencil"></i>
                                 </button>
@@ -1761,9 +1835,106 @@
             }, 100);
         }
         
+        // View announcement details
+        function viewAnnouncementDetails(id) {
+            const announcement = announcements.find(a => a.id === id);
+            if (!announcement) {
+                showToast('Announcement not found', 'error');
+                return;
+            }
+
+            const title = announcement.title || 'Untitled announcement';
+            const message = announcement.message || 'No message provided.';
+            const type = announcement.type || 'general';
+            const status = announcement.status || 'active';
+            const priority = announcement.priority || 'medium';
+            const audience = announcement.target_audience || 'all';
+            const createdAt = announcement.created_at ? formatDate(announcement.created_at) : 'Unknown time';
+            const expiresAt = announcement.expires_at ? formatDate(announcement.expires_at) : 'No expiration';
+            const imageUrl = getSafeImageUrl(announcement.image_url);
+            
+            // Get type icon
+            const typeIcon = getTypeIcon(type);
+            
+            // Format priority display
+            const priorityLabels = {
+                'critical': 'Critical',
+                'high': 'High',
+                'medium': 'Medium',
+                'low': 'Low'
+            };
+            
+            // Format status display
+            const statusLabels = {
+                'active': 'Active',
+                'inactive': 'Inactive',
+                'expired': 'Expired'
+            };
+            
+            // Format audience display
+            const audienceLabels = {
+                'all': 'All Users',
+                'citizen': 'Citizens',
+                'responder': 'Responders',
+                'admin': 'Administrators',
+                'students': 'Students',
+                'faculty': 'Faculty',
+                'staff': 'Staff'
+            };
+
+            // Populate modal
+            document.getElementById('detailTitle').textContent = title;
+            document.getElementById('detailType').innerHTML = `<i class="bi bi-${type === 'emergency' ? 'exclamation-triangle' : type === 'weather' ? 'cloud-rain' : type === 'maintenance' ? 'wrench' : type === 'safety' ? 'shield-check' : 'megaphone'}"></i> ${typeIcon} ${type.charAt(0).toUpperCase() + type.slice(1)}`;
+            document.getElementById('detailStatus').textContent = statusLabels[status] || status;
+            document.getElementById('detailStatus').className = `detail-status-badge status-${status}`;
+            document.getElementById('detailPriority').textContent = priorityLabels[priority] || priority;
+            document.getElementById('detailPriority').className = `detail-priority-badge priority-${priority}`;
+            document.getElementById('detailAudience').textContent = audienceLabels[audience] || audience;
+            document.getElementById('detailMessage').textContent = message;
+            document.getElementById('detailCreated').textContent = createdAt;
+            document.getElementById('detailExpires').textContent = expiresAt;
+            
+            // Handle image
+            const detailImageContainer = document.getElementById('detailImageContainer');
+            if (imageUrl) {
+                document.getElementById('detailImage').src = imageUrl;
+                detailImageContainer.style.display = 'block';
+            } else {
+                detailImageContainer.style.display = 'none';
+            }
+            
+            // Show modal
+            document.getElementById('announcementDetailModal').classList.remove('hidden');
+        }
+
+        // Close detail modal
+        function closeAnnouncementDetailModal() {
+            document.getElementById('announcementDetailModal').classList.add('hidden');
+        }
+        
+        // Close detail modal when clicking outside
+        document.addEventListener('click', function(event) {
+            const modal = document.getElementById('announcementDetailModal');
+            if (event.target === modal) {
+                closeAnnouncementDetailModal();
+            }
+        });
+        
+        // Close detail modal with Escape key
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'Escape') {
+                const modal = document.getElementById('announcementDetailModal');
+                if (!modal.classList.contains('hidden')) {
+                    closeAnnouncementDetailModal();
+                }
+            }
+        });
+
         // Make functions globally available
         window.showCreateAnnouncementModal = showCreateAnnouncementModal;
         window.closeAnnouncementModal = closeAnnouncementModal;
+        window.viewAnnouncementDetails = viewAnnouncementDetails;
+        window.closeAnnouncementDetailModal = closeAnnouncementDetailModal;
         window.editAnnouncement = editAnnouncement;
         window.toggleAnnouncementStatus = toggleAnnouncementStatus;
         window.deleteAnnouncement = deleteAnnouncement;
@@ -2031,6 +2202,65 @@
 
         .text-gray-500 {
             color: #6b7280;
+        }
+        
+        /* Detail Modal Styles */
+        .detail-status-badge.status-active {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white;
+        }
+        
+        .detail-status-badge.status-inactive {
+            background: linear-gradient(135deg, #6b7280 0%, #4b5563 100%);
+            color: white;
+        }
+        
+        .detail-status-badge.status-expired {
+            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+            color: white;
+        }
+        
+        .detail-priority-badge.priority-critical {
+            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+            color: white;
+        }
+        
+        .detail-priority-badge.priority-high {
+            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+            color: white;
+        }
+        
+        .detail-priority-badge.priority-medium {
+            background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+            color: #0f172a;
+        }
+        
+        .detail-priority-badge.priority-low {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white;
+        }
+        
+        .modal-body {
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+        
+        .modal-body::-webkit-scrollbar {
+            width: 6px;
+        }
+        
+        .modal-body::-webkit-scrollbar-track {
+            background: #f5f5f5;
+            border-radius: 3px;
+        }
+        
+        .modal-body::-webkit-scrollbar-thumb {
+            background: #d1d5db;
+            border-radius: 3px;
+        }
+        
+        .modal-body::-webkit-scrollbar-thumb:hover {
+            background: #9ca3af;
         }
     </style>
 </body>

@@ -10,69 +10,94 @@
     <script src="https://cdn.jsdelivr.net/npm/supabase@2"></script>
     <script src="js/supabase.js"></script>
     <style>
-        .su-nav {
-            background: #020617;
+        /* ── Super-User Sidebar Overrides (distinct from Admin gold theme) ── */
+        .sidebar {
+            background: linear-gradient(180deg, #0f172a 0%, #064e3b 100%) !important;
+        }
+        .nav-item.active {
+            background: rgba(16, 185, 129, 0.2) !important;
+            color: #34d399 !important;
+            border-left: 3px solid #10b981 !important;
+            border-top: none !important;
+            border-right: none !important;
+            border-bottom: none !important;
+            font-weight: 600;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .nav-item:hover {
+            background: rgba(16, 185, 129, 0.1) !important;
+            color: #a7f3d0 !important;
+            border-left-color: rgba(16, 185, 129, 0.4) !important;
+        }
+        .system-status {
+            padding: 10px 20px;
+            border-bottom: 1px solid rgba(16, 185, 129, 0.15);
+        }
+        .status-dot.online {
+            background: #10b981 !important;
+            box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.25) !important;
+        }
+        .user-avatar {
+            background: rgba(16, 185, 129, 0.25) !important;
+            color: #34d399 !important;
+        }
+        .sidebar-header {
+            border-bottom: 1px solid rgba(16, 185, 129, 0.15) !important;
+        }
+        .su-role-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 0.65rem;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            background: rgba(16, 185, 129, 0.2);
+            color: #34d399;
+            border: 1px solid rgba(16, 185, 129, 0.4);
+            border-radius: 9999px;
+            padding: 2px 8px;
+            margin-top: 4px;
+        }
+
+        /* ── Page Content ── */
+        .su-content-header {
+            background: linear-gradient(135deg, #0f172a 0%, #064e3b 100%);
             color: white;
-            padding: 0.75rem 2rem;
+            padding: 1.5rem 2rem;
+            border-radius: 16px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+            border-left: 4px solid #10b981;
+            margin-bottom: 1.75rem;
             display: flex;
             justify-content: space-between;
             align-items: center;
+            flex-wrap: wrap;
             gap: 1rem;
-            box-shadow: 0 4px 12px rgba(15,23,42,0.45);
-            position: sticky;
-            top: 0;
-            z-index: 40;
         }
-        .su-nav-title {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            font-weight: 600;
-        }
-        .su-nav-links {
+        .su-content-header h1 {
+            margin: 0;
+            font-size: 1.5rem;
+            font-weight: 700;
             display: flex;
             align-items: center;
             gap: 0.75rem;
-            font-size: 0.9rem;
         }
-        .su-nav-link {
-            color: rgba(248,250,252,0.85);
-            text-decoration: none;
-            padding: 0.35rem 0.75rem;
-            border-radius: 9999px;
-            display: inline-flex;
-            align-items: center;
-            gap: 0.35rem;
+        .su-content-header h1 i {
+            color: #34d399;
         }
-        .su-nav-link:hover {
-            background: rgba(148,163,184,0.25);
+        .su-content-header p {
+            margin: 0.4rem 0 0 0;
+            font-size: 0.875rem;
+            opacity: 0.8;
         }
-        .su-nav-link.active {
-            background: linear-gradient(135deg, #3b82f6, #2563eb);
-            color: white;
-        }
-        .su-page {
-            background: #f8fafc;
-            min-height: 100vh;
-        }
-        .su-header {
-            background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
-            color: white;
-            padding: 1.5rem 2rem;
-            border-radius: 0 0 24px 24px;
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
-            margin-bottom: 2rem;
-        }
-        .su-container {
-            max-width: 1100px;
-            margin: 0 auto;
-            padding: 0 1.5rem 2rem;
-        }
+
+        /* ── Announcement Cards ── */
         .su-card {
             background: white;
-            border-radius: 16px;
+            border-radius: 14px;
             padding: 1.75rem;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.08);
+            box-shadow: 0 2px 12px rgba(0,0,0,0.06);
             border: 1px solid #e5e7eb;
             margin-bottom: 1.5rem;
         }
@@ -81,441 +106,602 @@
             justify-content: space-between;
             align-items: center;
             gap: 1rem;
-            margin-bottom: 1rem;
+            margin-bottom: 1.25rem;
+            padding-bottom: 1rem;
+            border-bottom: 2px solid #f0fdf4;
         }
+        .su-card-header h2 {
+            margin: 0;
+            font-size: 1rem;
+            color: #111827;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .su-card-header h2 i {
+            color: #10b981;
+            font-size: 1.1rem;
+        }
+        .su-card-header p {
+            margin: 0.2rem 0 0 0;
+            font-size: 0.8rem;
+            color: #6b7280;
+        }
+
+        /* ── Status Badges ── */
         .badge-status {
-            font-size: 0.75rem;
-            padding: 0.25rem 0.6rem;
+            font-size: 0.7rem;
+            padding: 0.2rem 0.6rem;
             border-radius: 9999px;
-            font-weight: 600;
+            font-weight: 700;
             text-transform: uppercase;
-            letter-spacing: 0.05em;
+            letter-spacing: 0.06em;
         }
         .badge-status.active {
-            background: #fee2e2;
-            color: #b91c1c;
+            background: #d1fae5;
+            color: #065f46;
+            border: 1px solid #6ee7b7;
         }
         .badge-status.inactive {
-            background: #e5e7eb;
+            background: #f3f4f6;
             color: #4b5563;
+            border: 1px solid #d1d5db;
         }
         .badge-status.expired {
             background: #fef3c7;
             color: #92400e;
+            border: 1px solid #fcd34d;
         }
-        .su-announcement-actions {
-            display: flex;
-            gap: 0.5rem;
-            flex-wrap: wrap;
-        }
+
+        /* ── Buttons ── */
         .su-btn {
-            border-radius: 9999px;
-            padding: 0.4rem 0.9rem;
+            border-radius: 8px;
+            padding: 0.45rem 1rem;
             border: none;
             font-size: 0.8rem;
             font-weight: 500;
             cursor: pointer;
             display: inline-flex;
             align-items: center;
-            gap: 0.25rem;
+            gap: 0.35rem;
+            transition: all 0.2s ease;
         }
         .su-btn-primary {
-            background: linear-gradient(135deg, #3b82f6, #2563eb);
+            background: linear-gradient(135deg, #10b981, #059669);
             color: white;
+            font-weight: 600;
+            box-shadow: 0 2px 8px rgba(16,185,129,0.3);
+        }
+        .su-btn-primary:hover {
+            background: linear-gradient(135deg, #059669, #047857);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(16,185,129,0.4);
         }
         .su-btn-secondary {
-            background: #e5e7eb;
+            background: #f3f4f6;
             color: #374151;
+            border: 1px solid #e5e7eb;
+        }
+        .su-btn-secondary:hover {
+            background: #e5e7eb;
+            transform: translateY(-1px);
         }
         .su-btn-danger {
-            background: #fee2e2;
+            background: #fef2f2;
             color: #b91c1c;
+            border: 1px solid #fecaca;
         }
+        .su-btn-danger:hover {
+            background: #fee2e2;
+            transform: translateY(-1px);
+        }
+        .su-btn:active {
+            transform: translateY(0);
+        }
+
+        /* ── Announcement Item ── */
+        .su-announcement-item {
+            border: 1px solid #e5e7eb;
+            border-radius: 10px;
+            padding: 1rem 1.25rem;
+            margin-bottom: 0.75rem;
+            transition: box-shadow 0.2s, border-color 0.2s;
+        }
+        .su-announcement-item:hover {
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            border-color: #a7f3d0;
+        }
+        .su-announcement-item:last-child {
+            margin-bottom: 0;
+        }
+        .su-announcement-actions {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+
+        /* ── Logout Button in Sidebar ── */
+        .su-logout-btn {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            color: #fca5a5;
+            border-radius: 8px;
+            font-size: 0.875rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .su-logout-btn:hover {
+            background: #EF4444 !important;
+            border-color: #EF4444 !important;
+            color: white !important;
+        }
+
+        /* ── Modal ── */
         .modal {
             position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.6);
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(0,0,0,0.55);
             display: flex;
             align-items: center;
             justify-content: center;
             z-index: 10000;
             backdrop-filter: blur(4px);
         }
-        .modal.hidden {
-            display: none;
-        }
+        .modal.hidden { display: none; }
         .modal-content {
             background: white;
             border-radius: 16px;
             padding: 2rem;
-            max-width: 600px;
+            max-width: 460px;
             width: 90%;
-            max-height: 90vh;
-            overflow-y: auto;
-            box-shadow: 0 20px 25px rgba(0, 0, 0, 0.3);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.25);
+            animation: suSlideUp 0.3s ease;
+            text-align: center;
         }
+        @keyframes suSlideUp {
+            from { opacity: 0; transform: translateY(20px) scale(0.96); }
+            to   { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        .modal-icon {
+            width: 60px; height: 60px;
+            margin: 0 auto 1.25rem;
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .modal-icon.warning {
+            background: linear-gradient(135deg, #fef2f2, #fee2e2);
+            border: 2px solid #fca5a5;
+        }
+        .modal-icon.warning i { font-size: 1.75rem; color: #ef4444; }
+        .modal-title {
+            font-size: 1.25rem; font-weight: 700; color: #111827;
+            margin: 0 0 0.5rem 0;
+        }
+        .modal-message {
+            font-size: 0.9rem; color: #6b7280; line-height: 1.6;
+            margin: 0 0 1.5rem 0;
+        }
+        .modal-buttons {
+            display: flex; gap: 0.75rem; justify-content: center;
+        }
+        .modal-btn {
+            padding: 0.65rem 1.5rem; border-radius: 8px;
+            font-size: 0.875rem; font-weight: 600; cursor: pointer;
+            transition: all 0.2s ease; display: flex; align-items: center;
+            gap: 0.4rem; border: 2px solid transparent;
+        }
+        .modal-btn.cancel {
+            background: #f3f4f6; color: #374151; border-color: #e5e7eb;
+        }
+        .modal-btn.cancel:hover { background: #e5e7eb; transform: translateY(-1px); }
+        .modal-btn.confirm {
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+            color: white; border-color: #ef4444;
+            box-shadow: 0 2px 8px rgba(239,68,68,0.3);
+        }
+        .modal-btn.confirm:hover {
+            background: linear-gradient(135deg, #dc2626, #b91c1c);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(239,68,68,0.4);
+        }
+        .modal-btn:active { transform: translateY(0); }
+
+        /* ── Form Styles ── */
+        .form-group { margin-bottom: 1.1rem; }
+        .form-label { display: block; font-size: 0.875rem; font-weight: 600; color: #374151; margin-bottom: 0.4rem; }
+        .form-input, .form-textarea, .form-select {
+            width: 100%;
+            padding: 0.6rem 0.9rem;
+            border: 1.5px solid #d1d5db;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            color: #111827;
+            background: #fafafa;
+            transition: border-color 0.2s, box-shadow 0.2s;
+            outline: none;
+        }
+        .form-input:focus, .form-textarea:focus, .form-select:focus {
+            border-color: #10b981;
+            box-shadow: 0 0 0 3px rgba(16,185,129,0.15);
+            background: white;
+        }
+        .form-textarea { min-height: 110px; resize: vertical; }
+        .form-select { appearance: auto; }
     </style>
 </head>
 <body>
-    <nav class="su-nav">
-        <div class="su-nav-title">
-            <i class="bi bi-shield-check"></i>
-            <span>LSPU Emergency • Super User</span>
+<div class="dashboard-container">
+
+    <!-- ── Sidebar ── -->
+    <div class="sidebar" style="display:flex;flex-direction:column;">
+        <div class="sidebar-header">
+            <div class="sidebar-logo">
+                <img src="images/logolspu.jpg" alt="LSPU Logo"
+                     style="width:50px;height:50px;object-fit:contain;border-radius:50%;border:2px solid rgba(52,211,153,0.6);display:block;">
+                <div class="logo-text">
+                    <h3 style="margin:0;font-size:15px;font-weight:700;color:white;">Super User</h3>
+                    <p style="margin:2px 0 0 0;font-size:11px;color:rgba(255,255,255,0.6);">Emergency Response</p>
+                    <span class="su-role-badge"><i class="bi bi-shield-star-fill"></i> Super User</span>
+                </div>
+            </div>
         </div>
-        <div class="su-nav-links">
-            <a href="super-user.html" class="su-nav-link">
-                <i class="bi bi-grid-fill"></i>
-                Dashboard
-            </a>
-            <a href="super-user-reports.html" class="su-nav-link">
-                <i class="bi bi-clipboard-data"></i>
-                Recent Reports
-            </a>
-            <a href="super-user-early-warning.html" class="su-nav-link">
-                <i class="bi bi-shield-exclamation"></i>
-                Early Warning
-            </a>
-            <a href="super-user-map.html" class="su-nav-link">
-                <i class="bi bi-map"></i>
-                Map View
-            </a>
-            <a href="super-user-evacuation.html" class="su-nav-link">
-                <i class="bi bi-shield-check"></i>
-                Evacuation Guide
-            </a>
-            <a href="super-user-announcements.html" class="su-nav-link active">
-                <i class="bi bi-megaphone-fill"></i>
-                General Announcements
-            </a>
-            <button type="button" onclick="showLogoutConfirm()" class="su-nav-link" style="border:none;background:none;cursor:pointer;">
-                <i class="bi bi-box-arrow-right"></i>
-                Logout
+
+        <div class="system-status">
+            <div class="status-indicator">
+                <span class="status-dot online"></span>
+                <span style="font-size:0.8rem;color:rgba(255,255,255,0.75);">System Status: Online</span>
+            </div>
+        </div>
+
+        <nav class="sidebar-nav">
+            <a href="super-user.html" class="nav-item"><i class="bi bi-house"></i> Dashboard</a>
+            <a href="super-user-reports.html" class="nav-item"><i class="bi bi-clipboard-data"></i> Recent Reports</a>
+            <a href="super-user-early-warning.html" class="nav-item"><i class="bi bi-shield-exclamation"></i> Early Warning</a>
+            <a href="super-user-map.html" class="nav-item"><i class="bi bi-map"></i> Map View</a>
+            <a href="super-user-evacuation.html" class="nav-item"><i class="bi bi-shield-check"></i> Evacuation Guide</a>
+            <a href="super-user-announcements.html" class="nav-item active"><i class="bi bi-megaphone-fill"></i> Announcements</a>
+        </nav>
+
+        <div class="sidebar-footer">
+            <div class="user-info-card">
+                <div class="user-avatar">S</div>
+                <div class="user-details">
+                    <h4 id="suUserName" style="margin:0;font-size:0.875rem;font-weight:600;color:white;">Super User</h4>
+                    <p style="margin:0;font-size:0.75rem;color:rgba(255,255,255,0.55);">LSPU Command</p>
+                </div>
+            </div>
+            <button class="su-logout-btn" onclick="showLogoutConfirm()">
+                <i class="bi bi-box-arrow-right"></i> Logout
             </button>
         </div>
-    </nav>
-    <div class="su-page">
-        <header class="su-header">
-            <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:1rem;">
+    </div>
+
+    <!-- ── Main Content ── -->
+    <div class="main-content">
+
+        <!-- Page Header -->
+        <div class="su-content-header">
+            <div>
+                <h1><i class="bi bi-megaphone-fill"></i> General Announcements</h1>
+                <p>Create and manage non-evacuation announcements for all citizens.</p>
+            </div>
+            <span style="background:rgba(16,185,129,0.15);border:1px solid rgba(16,185,129,0.35);color:#34d399;
+                         border-radius:9999px;padding:0.3rem 0.85rem;font-size:0.75rem;font-weight:700;
+                         letter-spacing:0.05em;text-transform:uppercase;">
+                <i class="bi bi-shield-star-fill"></i> Super User
+            </span>
+        </div>
+
+        <!-- Compose Card -->
+        <div class="su-card">
+            <div class="su-card-header">
                 <div>
-                    <h1 style="margin:0;font-size:1.75rem;display:flex;align-items:center;gap:0.75rem;">
-                        <i class="bi bi-megaphone-fill"></i>
-                        Super User - General Announcements
-                    </h1>
-                    <p style="margin:0.5rem 0 0 0;font-size:0.9rem;opacity:0.9;">
-                        Create and manage non-evacuation announcements for all citizens.
-                    </p>
+                    <h2><i class="bi bi-pencil-square"></i> Create General Announcement</h2>
+                    <p>For schedule changes, reminders, and other updates that do not require evacuation.</p>
                 </div>
             </div>
-        </header>
-
-        <main class="su-container">
-            <!-- Composer -->
-            <section class="su-card">
-                <div class="su-card-header">
-                    <div style="display:flex;align-items:center;gap:0.5rem;">
-                        <span style="font-size:1.5rem;">📢</span>
-                        <div>
-                            <h2 style="margin:0;font-size:1.1rem;color:#111827;">Create General Announcement</h2>
-                            <p style="margin:0.25rem 0 0 0;font-size:0.85rem;color:#6b7280;">
-                                For schedule changes, reminders, and other updates that do not require evacuation.
-                            </p>
-                        </div>
-                    </div>
+            <form id="generalAnnouncementForm" onsubmit="handleCreateAnnouncement(event)">
+                <div class="form-group">
+                    <label class="form-label" for="gaTitle">Title</label>
+                    <input id="gaTitle" type="text" class="form-input"
+                           placeholder="Announcement Title" required>
                 </div>
-                <form id="generalAnnouncementForm" onsubmit="handleCreateAnnouncement(event)">
-                    <div class="form-group">
-                        <label class="form-label" for="gaTitle">Title</label>
-                        <input id="gaTitle" type="text" class="form-input" placeholder="e.g. Suspension of Classes for This Afternoon" required>
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label" for="gaMessage">Message</label>
-                        <textarea id="gaMessage" class="form-textarea" placeholder="Write the full details of the announcement here..." required></textarea>
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label" for="gaAudience">Target Audience</label>
-                        <select id="gaAudience" class="form-select">
-                            <option value="all">All Users</option>
-                            <option value="students">Students</option>
-                            <option value="faculty">Faculty</option>
-                            <option value="staff">Staff</option>
-                            <option value="responders">Responders</option>
-                        </select>
-                    </div>
-                    <div style="display:flex;gap:0.75rem;margin-top:1rem;">
-                        <button type="submit" class="su-btn su-btn-primary">
-                            <i class="bi bi-send"></i>
-                            Post Announcement
-                        </button>
-                        <button type="button" class="su-btn su-btn-secondary" onclick="document.getElementById('generalAnnouncementForm').reset()">
-                            Clear
-                        </button>
-                    </div>
-                </form>
-            </section>
-
-            <!-- List -->
-            <section class="su-card">
-                <div class="su-card-header">
-                    <div style="display:flex;align-items:center;gap:0.5rem;">
-                        <span style="font-size:1.25rem;">📜</span>
-                        <h2 style="margin:0;font-size:1.05rem;color:#111827;">Recent General Announcements</h2>
-                    </div>
-                    <button type="button" class="su-btn su-btn-secondary" onclick="loadAnnouncements()">
-                        <i class="bi bi-arrow-clockwise"></i>
-                        Refresh
+                <div class="form-group">
+                    <label class="form-label" for="gaMessage">Message</label>
+                    <textarea id="gaMessage" class="form-textarea"
+                              placeholder="Write the full details of the announcement here..." required></textarea>
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="gaAudience">Target Audience</label>
+                    <select id="gaAudience" class="form-select">
+                        <option value="all">All Users</option>
+                        <option value="students">Students</option>
+                        <option value="faculty">Faculty</option>
+                        <option value="staff">Staff</option>
+                        <option value="responders">Responders</option>
+                    </select>
+                </div>
+                <div style="display:flex;gap:0.75rem;margin-top:1.25rem;">
+                    <button type="submit" class="su-btn su-btn-primary">
+                        <i class="bi bi-send-fill"></i> Post Announcement
+                    </button>
+                    <button type="button" class="su-btn su-btn-secondary"
+                            onclick="document.getElementById('generalAnnouncementForm').reset()">
+                        <i class="bi bi-x-circle"></i> Clear
                     </button>
                 </div>
-                <div id="announcementsList">
-                    <p style="font-size:0.9rem;color:#6b7280;">Loading announcements...</p>
-                </div>
-            </section>
-        </main>
-    </div>
+            </form>
+        </div>
 
-    <!-- Logout Modal -->
-    <div id="logoutModal" class="modal hidden">
-        <div class="modal-content">
-            <h2 style="margin: 0 0 1rem 0;">Confirm Logout</h2>
-            <p>Are you sure you want to logout?</p>
-            <div style="display:flex;gap:1rem;margin-top:1.5rem;">
-                <button class="su-btn su-btn-secondary" style="flex:1;justify-content:center;" onclick="closeLogoutModal()">Cancel</button>
-                <button class="su-btn su-btn-primary" style="flex:1;justify-content:center;" onclick="confirmLogout()">Logout</button>
+        <!-- Announcements List Card -->
+        <div class="su-card">
+            <div class="su-card-header">
+                <div>
+                    <h2><i class="bi bi-list-ul"></i> Recent General Announcements</h2>
+                    <p>Latest announcements posted by Super User</p>
+                </div>
+                <button type="button" class="su-btn su-btn-secondary" onclick="loadAnnouncements()">
+                    <i class="bi bi-arrow-clockwise"></i> Refresh
+                </button>
+            </div>
+            <div id="announcementsList">
+                <p style="font-size:0.9rem;color:#6b7280;text-align:center;padding:1.5rem 0;">
+                    <i class="bi bi-hourglass-split" style="margin-right:0.4rem;"></i>Loading announcements...
+                </p>
             </div>
         </div>
+
+    </div><!-- end .main-content -->
+</div><!-- end .dashboard-container -->
+
+<!-- Logout Modal -->
+<div id="logoutModal" class="modal hidden">
+    <div class="modal-content">
+        <div class="modal-icon warning">
+            <i class="bi bi-exclamation-triangle"></i>
+        </div>
+        <h3 class="modal-title">Confirm Logout</h3>
+        <p class="modal-message">Are you sure you want to logout? You'll need to sign in again to access the system.</p>
+        <div class="modal-buttons">
+            <button class="modal-btn cancel" onclick="closeLogoutModal()">
+                <i class="bi bi-x-circle"></i> Cancel
+            </button>
+            <button class="modal-btn confirm" onclick="confirmLogout()">
+                <i class="bi bi-box-arrow-right"></i> Logout
+            </button>
+        </div>
     </div>
+</div>
 
-    <script>
-        // Ensure only super_user can access this page
-        document.addEventListener('DOMContentLoaded', async () => {
-            await window.emergencySystem.initialize();
+<script>
+    document.addEventListener('DOMContentLoaded', async () => {
+        await window.emergencySystem.initialize();
 
-            const role = window.emergencySystem.user?.user_metadata?.role;
-            if (!window.emergencySystem.user || role !== 'super_user') {
-                console.log('Not super_user, redirecting...');
-                if (role === 'admin') {
-                    window.location.href = 'admin.html';
-                } else {
-                    window.location.href = 'login.html';
-                }
+        const role = window.emergencySystem.user?.user_metadata?.role;
+        if (!window.emergencySystem.user || role !== 'super_user') {
+            if (role === 'admin') {
+                window.location.href = 'admin.html';
+            } else {
+                window.location.href = 'login.html';
+            }
+            return;
+        }
+
+        // Set display name
+        const email = window.emergencySystem.user?.email || '';
+        const displayName = window.emergencySystem.user?.user_metadata?.full_name
+            || (email ? email.split('@')[0] : 'Super User');
+        const nameEl = document.getElementById('suUserName');
+        if (nameEl) nameEl.textContent = displayName;
+
+        await loadAnnouncements();
+    });
+
+    async function handleCreateAnnouncement(event) {
+        event.preventDefault();
+        try {
+            const title   = document.getElementById('gaTitle').value.trim();
+            const message = document.getElementById('gaMessage').value.trim();
+            const audience = document.getElementById('gaAudience').value;
+
+            if (!title || !message) {
+                window.emergencySystem.showError('Please provide both a title and a message.');
                 return;
             }
 
-            await loadAnnouncements();
-        });
+            const currentUser = window.emergencySystem.user;
+            const payload = {
+                title,
+                message,
+                type: 'general',
+                priority: 'medium',
+                target_audience: audience,
+                status: 'active',
+                created_by: currentUser?.id
+            };
 
-        async function handleCreateAnnouncement(event) {
-            event.preventDefault();
-            try {
-                const titleEl = document.getElementById('gaTitle');
-                const msgEl = document.getElementById('gaMessage');
-                const audEl = document.getElementById('gaAudience');
+            const { data, error } = await window.emergencySystem.supabase
+                .from('announcements')
+                .insert([payload])
+                .select();
 
-                const title = titleEl.value.trim();
-                const message = msgEl.value.trim();
-                const audience = audEl.value;
-
-                if (!title || !message) {
-                    window.emergencySystem.showError('Please provide both a title and a message.');
-                    return;
-                }
-
-                const currentUser = window.emergencySystem.user;
-                const payload = {
-                    title,
-                    message,
-                    type: 'general',
-                    priority: 'medium',
-                    target_audience: audience,
-                    status: 'active',
-                    created_by: currentUser?.id
-                };
-
-                const { data, error } = await window.emergencySystem.supabase
-                    .from('announcements')
-                    .insert([payload])
-                    .select();
-
-                if (error) {
-                    console.error('Insert announcement error:', error);
-                    window.emergencySystem.showError('Failed to create announcement');
-                    return;
-                }
-
-                // Send notifications via Edge Function
-                if (data && data.length > 0 && data[0].id) {
-                    try {
-                        const { data: sessionData } = await window.emergencySystem.supabase.auth.getSession();
-                        const token = sessionData?.session?.access_token;
-                        
-                        // Use hardcoded Supabase URL and key (same as in supabase.js)
-                        const supabaseUrl = 'https://hmolyqzbvxxliemclrld.supabase.co';
-                        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imhtb2x5cXpidnh4bGllbWNscmxkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjAyNDY5NzAsImV4cCI6MjA3NTgyMjk3MH0.G2AOT-8zZ5sk8qGQUBifFqq5ww2W7Hxvtux0tlQ0Q-4';
-                        
-                        const notifyResponse = await fetch(`${supabaseUrl}/functions/v1/announcement-notify`, {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json',
-                                'Authorization': `Bearer ${token || supabaseKey}`,
-                                'apikey': supabaseKey
-                            },
-                            body: JSON.stringify({ announcementId: data[0].id })
-                        });
-                        
-                        if (notifyResponse.ok) {
-                            const notifyResult = await notifyResponse.json();
-                            console.log('✅ Notifications sent:', notifyResult);
-                        } else {
-                            console.warn('⚠️ Failed to send notifications:', notifyResponse.status);
-                        }
-                    } catch (notifyError) {
-                        console.warn('⚠️ Error calling announcement-notify:', notifyError);
-                        // Don't fail the announcement creation if notification fails
-                    }
-                }
-
-                window.emergencySystem.showSuccess('Announcement posted!');
-                document.getElementById('generalAnnouncementForm').reset();
-                await loadAnnouncements();
-            } catch (e) {
-                console.error('handleCreateAnnouncement error:', e);
+            if (error) {
                 window.emergencySystem.showError('Failed to create announcement');
+                return;
             }
-        }
 
-        async function loadAnnouncements() {
-            try {
-                const container = document.getElementById('announcementsList');
-                container.innerHTML = '<p style="font-size:0.9rem;color:#6b7280;">Loading announcements...</p>';
+            // Send notifications via Edge Function
+            if (data && data.length > 0 && data[0].id) {
+                try {
+                    const { data: sessionData } = await window.emergencySystem.supabase.auth.getSession();
+                    const token = sessionData?.session?.access_token;
+                    const supabaseUrl = 'https://hmolyqzbvxxliemclrld.supabase.co';
+                    const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imhtb2x5cXpidnh4bGllbWNscmxkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjAyNDY5NzAsImV4cCI6MjA3NTgyMjk3MH0.G2AOT-8zZ5sk8qGQUBifFqq5ww2W7Hxvtux0tlQ0Q-4';
 
-                const { data, error } = await window.emergencySystem.supabase
-                    .from('announcements')
-                    .select('*')
-                    .eq('type', 'general')
-                    .order('created_at', { ascending: false })
-                    .limit(50);
-
-                if (error) {
-                    console.error('Load announcements error:', error);
-                    container.innerHTML = '<p style="font-size:0.9rem;color:#b91c1c;">Failed to load announcements.</p>';
-                    return;
+                    const notifyResponse = await fetch(`${supabaseUrl}/functions/v1/announcement-notify`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${token || supabaseKey}`,
+                            'apikey': supabaseKey
+                        },
+                        body: JSON.stringify({ announcementId: data[0].id })
+                    });
+                    if (notifyResponse.ok) {
+                        console.log('Notifications sent:', await notifyResponse.json());
+                    }
+                } catch (notifyError) {
+                    console.warn('Notification error (non-critical):', notifyError);
                 }
-
-                const announcements = data || [];
-                if (!announcements.length) {
-                    container.innerHTML = '<p style="font-size:0.9rem;color:#6b7280;">No general announcements yet.</p>';
-                    return;
-                }
-
-                container.innerHTML = announcements.map(renderAnnouncementCard).join('');
-            } catch (e) {
-                console.error('loadAnnouncements exception:', e);
             }
-        }
 
-        function renderAnnouncementCard(a) {
-            const status = a.status || 'active';
-            const statusLabel = status.toUpperCase();
-            return `
-                <article class="su-announcement" style="border-bottom:1px solid #e5e7eb;padding:0.75rem 0;">
-                    <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:1rem;">
-                        <div style="flex:1;min-width:0;">
-                            <div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.25rem;">
-                                <span style="font-size:1.25rem;">📢</span>
-                                <h3 style="margin:0;font-size:0.95rem;color:#111827;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
-                                    ${a.title}
-                                </h3>
-                                <span class="badge-status ${status}">
-                                    ${statusLabel}
-                                </span>
-                            </div>
-                            <p style="margin:0.25rem 0 0.4rem 0;font-size:0.85rem;color:#4b5563;white-space:pre-wrap;">
-                                ${a.message}
-                            </p>
-                            <div style="font-size:0.75rem;color:#6b7280;display:flex;flex-wrap:wrap;gap:0.75rem;margin-top:0.25rem;">
-                                <span><i class="bi bi-clock"></i> ${new Date(a.created_at).toLocaleString()}</span>
-                                <span><i class="bi bi-people"></i> ${a.target_audience || 'all'}</span>
-                            </div>
+            window.emergencySystem.showSuccess('Announcement posted!');
+            document.getElementById('generalAnnouncementForm').reset();
+            await loadAnnouncements();
+        } catch (e) {
+            console.error('handleCreateAnnouncement error:', e);
+            window.emergencySystem.showError('Failed to create announcement');
+        }
+    }
+
+    async function loadAnnouncements() {
+        const container = document.getElementById('announcementsList');
+        container.innerHTML = '<p style="font-size:0.9rem;color:#6b7280;text-align:center;padding:1.5rem 0;"><i class="bi bi-hourglass-split" style="margin-right:0.4rem;"></i>Loading announcements...</p>';
+        try {
+            const { data, error } = await window.emergencySystem.supabase
+                .from('announcements')
+                .select('*')
+                .eq('type', 'general')
+                .order('created_at', { ascending: false })
+                .limit(50);
+
+            if (error) {
+                container.innerHTML = '<p style="font-size:0.9rem;color:#b91c1c;text-align:center;padding:1.5rem 0;">Failed to load announcements.</p>';
+                return;
+            }
+
+            const announcements = data || [];
+            if (!announcements.length) {
+                container.innerHTML = '<p style="font-size:0.9rem;color:#6b7280;text-align:center;padding:2rem 0;"><i class="bi bi-megaphone" style="font-size:2rem;display:block;margin-bottom:0.5rem;opacity:0.4;"></i>No general announcements yet.</p>';
+                return;
+            }
+
+            container.innerHTML = announcements.map(renderAnnouncementCard).join('');
+        } catch (e) {
+            console.error('loadAnnouncements exception:', e);
+        }
+    }
+
+    function renderAnnouncementCard(a) {
+        const status = a.status || 'active';
+        return `
+            <div class="su-announcement-item">
+                <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:1rem;">
+                    <div style="flex:1;min-width:0;">
+                        <div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.35rem;flex-wrap:wrap;">
+                            <h3 style="margin:0;font-size:0.95rem;font-weight:600;color:#111827;">
+                                ${escapeHtml(a.title)}
+                            </h3>
+                            <span class="badge-status ${status}">${status.toUpperCase()}</span>
                         </div>
-                        <div class="su-announcement-actions">
-                            <button class="su-btn su-btn-secondary" onclick="toggleAnnouncementStatus('${a.id}', '${status}')">
-                                <i class="bi bi-${status === 'active' ? 'pause' : 'play'}"></i>
-                                ${status === 'active' ? 'Deactivate' : 'Activate'}
-                            </button>
-                            <button class="su-btn su-btn-danger" onclick="deleteAnnouncement('${a.id}')">
-                                <i class="bi bi-trash"></i>
-                                Delete
-                            </button>
+                        <p style="margin:0 0 0.5rem 0;font-size:0.85rem;color:#4b5563;white-space:pre-wrap;line-height:1.5;">
+                            ${escapeHtml(a.message)}
+                        </p>
+                        <div style="font-size:0.75rem;color:#9ca3af;display:flex;flex-wrap:wrap;gap:1rem;">
+                            <span><i class="bi bi-clock"></i> ${new Date(a.created_at).toLocaleString()}</span>
+                            <span><i class="bi bi-people"></i> ${a.target_audience || 'all'}</span>
                         </div>
                     </div>
-                </article>
-            `;
-        }
+                    <div class="su-announcement-actions">
+                        <button class="su-btn su-btn-secondary" onclick="toggleAnnouncementStatus('${a.id}', '${status}')">
+                            <i class="bi bi-${status === 'active' ? 'pause-fill' : 'play-fill'}"></i>
+                            ${status === 'active' ? 'Deactivate' : 'Activate'}
+                        </button>
+                        <button class="su-btn su-btn-danger" onclick="deleteAnnouncement('${a.id}')">
+                            <i class="bi bi-trash3"></i> Delete
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
 
-        async function toggleAnnouncementStatus(id, currentStatus) {
-            try {
-                const newStatus = currentStatus === 'active' ? 'inactive' : 'active';
-                const { error } = await window.emergencySystem.supabase
-                    .from('announcements')
-                    .update({ status: newStatus }, { returning: 'minimal' })
-                    .eq('id', id);
+    function escapeHtml(text) {
+        const map = { '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;' };
+        return String(text || '').replace(/[&<>"']/g, m => map[m]);
+    }
 
-                if (error) {
-                    console.error('toggleAnnouncementStatus error:', error);
-                    window.emergencySystem.showError('Failed to update status');
-                    return;
-                }
+    async function toggleAnnouncementStatus(id, currentStatus) {
+        try {
+            const newStatus = currentStatus === 'active' ? 'inactive' : 'active';
+            const { error } = await window.emergencySystem.supabase
+                .from('announcements')
+                .update({ status: newStatus }, { returning: 'minimal' })
+                .eq('id', id);
 
-                window.emergencySystem.showSuccess(`Announcement ${newStatus === 'active' ? 'activated' : 'deactivated'}!`);
-                await loadAnnouncements();
-            } catch (e) {
-                console.error('toggleAnnouncementStatus exception:', e);
+            if (error) {
                 window.emergencySystem.showError('Failed to update status');
+                return;
             }
+
+            window.emergencySystem.showSuccess(`Announcement ${newStatus === 'active' ? 'activated' : 'deactivated'}!`);
+            await loadAnnouncements();
+        } catch (e) {
+            console.error('toggleAnnouncementStatus exception:', e);
+            window.emergencySystem.showError('Failed to update status');
         }
+    }
 
-        async function deleteAnnouncement(id) {
-            if (!window.confirm('Delete this announcement? This cannot be undone.')) return;
-            try {
-                const { error } = await window.emergencySystem.supabase
-                    .from('announcements')
-                    .delete({ returning: 'minimal' })
-                    .eq('id', id);
+    async function deleteAnnouncement(id) {
+        if (!window.confirm('Delete this announcement? This cannot be undone.')) return;
+        try {
+            const { error } = await window.emergencySystem.supabase
+                .from('announcements')
+                .delete({ returning: 'minimal' })
+                .eq('id', id);
 
-                if (error) {
-                    console.error('deleteAnnouncement error:', error);
-                    window.emergencySystem.showError('Failed to delete announcement');
-                    return;
-                }
-
-                window.emergencySystem.showSuccess('Announcement deleted.');
-                await loadAnnouncements();
-            } catch (e) {
-                console.error('deleteAnnouncement exception:', e);
+            if (error) {
                 window.emergencySystem.showError('Failed to delete announcement');
+                return;
             }
-        }
 
-        // Logout helpers (shared behavior with other super user pages)
-        function showLogoutConfirm() {
-            document.getElementById('logoutModal').classList.remove('hidden');
+            window.emergencySystem.showSuccess('Announcement deleted.');
+            await loadAnnouncements();
+        } catch (e) {
+            console.error('deleteAnnouncement exception:', e);
+            window.emergencySystem.showError('Failed to delete announcement');
         }
-        function closeLogoutModal() {
-            document.getElementById('logoutModal').classList.add('hidden');
+    }
+
+    function showLogoutConfirm() {
+        document.getElementById('logoutModal').classList.remove('hidden');
+    }
+    function closeLogoutModal() {
+        document.getElementById('logoutModal').classList.add('hidden');
+    }
+    async function confirmLogout() {
+        try {
+            closeLogoutModal();
+            await window.emergencySystem.signOut();
+            window.location.href = 'login.html';
+        } catch (error) {
+            window.emergencySystem.showError('Failed to logout');
         }
-        async function confirmLogout() {
-            try {
-                await window.emergencySystem.signOut();
-                window.location.href = 'login.html';
-            } catch (error) {
-                console.error('Logout error:', error);
-                window.emergencySystem.showError('Failed to logout');
-            }
-        }
-    </script>
+    }
+
+    document.addEventListener('click', e => {
+        if (e.target === document.getElementById('logoutModal')) closeLogoutModal();
+    });
+    document.addEventListener('keydown', e => {
+        if (e.key === 'Escape') closeLogoutModal();
+    });
+</script>
 </body>
 </html>
-
-

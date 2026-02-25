@@ -46,63 +46,87 @@ serve(async (req) => {
 <head>
     <meta charset="UTF-8">
     <style>
-        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
-        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-        .header { background-color: #dc2626; color: white; padding: 20px; text-align: center; border-radius: 8px 8px 0 0; }
-        .content { background-color: #f9fafb; padding: 30px; border: 1px solid #e5e7eb; }
-        .credentials { background-color: white; padding: 20px; margin: 20px 0; border-radius: 8px; border-left: 4px solid #dc2626; }
-        .credential-item { margin: 10px 0; }
-        .label { font-weight: bold; color: #374151; }
-        .value { font-family: monospace; background-color: #f3f4f6; padding: 8px; border-radius: 4px; margin-top: 5px; display: block; }
-        .button { display: inline-block; background-color: #dc2626; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; margin: 20px 0; }
-        .footer { text-align: center; color: #6b7280; font-size: 12px; margin-top: 30px; }
-        .warning { background-color: #fef3c7; border-left: 4px solid #f59e0b; padding: 15px; margin: 20px 0; border-radius: 4px; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; color: #1f2937; background-color: #f3f4f6; margin: 0; padding: 0; }
+        .container { max-width: 600px; margin: 40px auto; background-color: white; border-radius: 16px; overflow: hidden; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04); }
+        .header { background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%); color: white; padding: 40px 30px; text-align: center; }
+        .header h1 { margin: 0; font-size: 28px; font-weight: 700; }
+        .header p { margin: 10px 0 0 0; opacity: 0.95; font-size: 14px; }
+        .content { padding: 40px 30px; }
+        .greeting { font-size: 18px; font-weight: 600; color: #111827; margin-bottom: 20px; }
+        .credentials { background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); padding: 25px; margin: 25px 0; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); }
+        .credential-item { margin: 15px 0; }
+        .label { font-weight: 600; color: #78350f; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px; }
+        .value { font-family: 'Courier New', monospace; background-color: white; padding: 12px 16px; border-radius: 8px; margin-top: 8px; display: block; font-size: 16px; color: #1f2937; border: 2px solid #fbbf24; font-weight: 600; }
+        .button { display: inline-block; background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%); color: white !important; padding: 16px 32px; text-decoration: none; border-radius: 10px; margin: 25px 0; font-weight: 700; font-size: 16px; box-shadow: 0 10px 15px -3px rgba(220, 38, 38, 0.3); transition: all 0.3s; }
+        .button:hover { transform: translateY(-2px); box-shadow: 0 20px 25px -5px rgba(220, 38, 38, 0.4); }
+        .apk-download { background: linear-gradient(135deg, #10b981 0%, #059669 100%); padding: 20px; margin: 25px 0; border-radius: 12px; text-align: center; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); }
+        .apk-download h3 { margin: 0 0 12px 0; color: white; font-size: 18px; }
+        .apk-download p { margin: 0 0 15px 0; color: rgba(255,255,255,0.95); font-size: 14px; }
+        .apk-button { display: inline-block; background-color: white; color: #059669 !important; padding: 14px 28px; text-decoration: none; border-radius: 8px; font-weight: 700; font-size: 15px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); }
+        .footer { text-align: center; color: #6b7280; font-size: 13px; padding: 30px; background-color: #f9fafb; }
+        .warning { background-color: #fef3c7; border-left: 5px solid #f59e0b; padding: 20px; margin: 25px 0; border-radius: 8px; }
+        .warning strong { color: #92400e; font-size: 15px; }
+        .info-box { background-color: #eff6ff; border-left: 5px solid #3b82f6; padding: 20px; margin: 25px 0; border-radius: 8px; }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="header">
-            <h1>Account Verification - LSPU Emergency Response System</h1>
+            <h1>🚨 LSPU Emergency Response</h1>
+            <p>Welcome to the Kapiyu Disaster Risk Reduction System</p>
         </div>
         <div class="content">
-            <p>Hello ${displayName},</p>
+            <p class="greeting">Hello ${displayName},</p>
             
-            <p>Your account has been created successfully. Please use the following credentials to log in:</p>
+            <p style="font-size: 15px; line-height: 1.7;">Your account has been successfully created! You can now access the emergency response system.</p>
             
             <div class="credentials">
                 <div class="credential-item">
-                    <span class="label">Email:</span>
-                    <span class="value">${email}</span>
+                    <div class="label">📧 Email Address</div>
+                    <div class="value">${email}</div>
                 </div>
                 <div class="credential-item">
-                    <span class="label">Temporary Password:</span>
-                    <span class="value">${password}</span>
+                    <div class="label">🔒 Temporary Password</div>
+                    <div class="value">${password}</div>
                 </div>
                 ${role ? `<div class="credential-item">
-                    <span class="label">Role:</span>
-                    <span class="value">${role}</span>
+                    <div class="label">👤 Role</div>
+                    <div class="value">${role}</div>
                 </div>` : ''}
             </div>
             
             <div class="warning">
-                <strong>⚠️ Important:</strong> For security reasons, please change your password immediately after your first login.
+                <strong>⚠️ Security Notice:</strong> Please change your password immediately after your first login for your account security.
             </div>
             
-            ${verificationLink ? `
-            <p>Click the button below to verify your email and complete your account setup:</p>
-            <a href="${verificationLink}" class="button">Verify Email Address</a>
-            <p style="font-size: 12px; color: #6b7280;">Or copy and paste this link into your browser:<br><a href="${verificationLink}">${verificationLink}</a></p>
-            <p style="margin-top: 20px;"><strong>Or login directly:</strong> <a href="http://127.0.0.1:8000/login.html">http://127.0.0.1:8000/login.html</a></p>
-            ` : `
-            <p>Please verify your email address by logging in with the credentials above at <a href="http://127.0.0.1:8000/login.html">http://127.0.0.1:8000/login.html</a></p>
-            `}
-            
-            <p>Thank you for joining the LSPU Emergency Response System!</p>
-            
-            <div class="footer">
-                <p>This is an automated message. Please do not reply to this email.</p>
-                <p>© ${new Date().getFullYear()} LSPU Emergency Response System</p>
+            <div style="text-align: center; margin: 30px 0;">
+                ${verificationLink ? `
+                <p style="font-size: 15px; margin-bottom: 20px;">Click the button below to access the system:</p>
+                <a href="${verificationLink}" class="button">🚀 Access System</a>
+                ` : `
+                <a href="https://dres-lspu-edu-ph.456123qwert-asdf.workers.dev/login" class="button">🚀 Login Now</a>
+                `}
             </div>
+            
+            <div class="apk-download">
+                <h3>📱 Download Mobile App</h3>
+                <p>Get the LSPU Emergency Response app for Android</p>
+                <a href="https://github.com/456123qwertasdf-prog/lspu_dres/raw/master/public/lspu-emergency-response.apk" class="apk-button">⬇️ Download Android APK</a>
+            </div>
+            
+            <div class="info-box">
+                <p style="margin: 0; font-size: 14px;"><strong>🌐 Web Login:</strong> <a href="https://dres-lspu-edu-ph.456123qwert-asdf.workers.dev/" style="color: #3b82f6; text-decoration: none;">https://dres-lspu-edu-ph.456123qwert-asdf.workers.dev/</a></p>
+            </div>
+            
+            <p style="margin-top: 30px; font-size: 15px;">Thank you for joining the LSPU Emergency Response System!</p>
+            
+            <p style="margin-top: 20px; font-size: 14px; color: #6b7280;">Need help? Contact your system administrator.</p>
+        </div>
+        
+        <div class="footer">
+            <p style="margin: 5px 0;">This is an automated message. Please do not reply to this email.</p>
+            <p style="margin: 5px 0; font-weight: 600;">© ${new Date().getFullYear()} LSPU Emergency Response System - Kapiyu</p>
+            <p style="margin: 5px 0;">Disaster Risk Reduction and Emergency Response</p>
         </div>
     </div>
 </body>

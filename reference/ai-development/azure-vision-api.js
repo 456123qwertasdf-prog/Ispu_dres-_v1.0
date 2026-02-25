@@ -7,7 +7,7 @@
 
 class AzureVisionAPI {
   constructor() {
-    this.apiKey = process.env.AZURE_VISION_KEY || "YOUR_AZURE_VISION_KEY";
+    this.apiKey = process.env.AZURE_VISION_KEY || ""; // Set AZURE_VISION_KEY in environment; do not commit real key
     this.endpoint = "https://ew09.cognitiveservices.azure.com";
   }
 

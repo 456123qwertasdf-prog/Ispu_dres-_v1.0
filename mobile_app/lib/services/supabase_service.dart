@@ -100,6 +100,40 @@ class SupabaseService {
     }
   }
 
+  /// Fetch current safety notice (editable by admin). Returns null if none or error.
+  static Future<Map<String, dynamic>?> getSafetyNotice() async {
+    try {
+      final response = await client
+          .from('safety_notice')
+          .select('id, message, enabled, updated_at')
+          .order('updated_at', ascending: false)
+          .limit(1)
+          .maybeSingle();
+      if (response == null) return null;
+      return Map<String, dynamic>.from(response as Map);
+    } catch (e) {
+      return null;
+    }
+  }
+
+  /// Update safety notice (admin/super_user only). Pass null to leave unchanged.
+  static Future<void> updateSafetyNotice({
+    String? message,
+    bool? enabled,
+  }) async {
+    final notice = await getSafetyNotice();
+    if (notice == null) return;
+    final id = notice['id'] as String?;
+    if (id == null) return;
+    final updates = <String, dynamic>{
+      'updated_at': DateTime.now().toUtc().toIso8601String(),
+      'updated_by': currentUserId,
+    };
+    if (message != null) updates['message'] = message;
+    if (enabled != null) updates['enabled'] = enabled;
+    await client.from('safety_notice').update(updates).eq('id', id);
+  }
+
   // Reset password
   static Future<void> resetPassword({
     required String email,

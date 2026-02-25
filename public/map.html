@@ -21,7 +21,7 @@
         <div class="sidebar">
             <div class="sidebar-header">
                 <div class="sidebar-logo">
-                    <img src="images/udrrmo image.jpg" alt="UDRRMO Logo" 
+                    <img src="images/logolspu.jpg" alt="LSPU Logo" 
                          style="width: 50px; height: 50px; object-fit: contain; border-radius: 50%; border: 2px solid white; display: block;">
                     <div class="logo-text">
                         <h3>Kapiyu Admin</h3>
@@ -934,14 +934,26 @@
                 // Setup real-time updates
                 setupRealtimeUpdates();
                 
-                // Check if reportId is in URL
+                // Check if reportId is in URL - wait for markers to be loaded
                 const reportId = getUrlParameter('reportId');
                 if (reportId) {
                     console.log('📍 Report ID found in URL:', reportId);
-                    // Focus on specific report
-                    setTimeout(() => {
-                        focusOnReport(reportId);
-                    }, 1000);
+                    // Wait for markers to be created, then focus on specific report
+                    // Try multiple times in case markers take time to load
+                    let attempts = 0;
+                    const maxAttempts = 10;
+                    const checkAndFocus = setInterval(() => {
+                        attempts++;
+                        const marker = emergencyMarkers.find(m => m.reportId === reportId);
+                        if (marker) {
+                            console.log('✅ Marker found, focusing on report:', reportId);
+                            focusOnReport(reportId);
+                            clearInterval(checkAndFocus);
+                        } else if (attempts >= maxAttempts) {
+                            console.warn('⚠️ Could not find marker for report ID after', maxAttempts, 'attempts');
+                            clearInterval(checkAndFocus);
+                        }
+                    }, 500);
                 }
                 
                 console.log('✅ Map page initialized successfully');
@@ -1209,35 +1221,6 @@
             }
         }
 
-        // Focus on specific report
-        function focusOnReport(reportId) {
-            try {
-                console.log('📍 Focusing on report:', reportId);
-                
-                // Find the marker for this report
-                const marker = emergencyMarkers.find(m => m.reportId === reportId);
-                
-                if (!marker) {
-                    console.warn('⚠️ Report marker not found:', reportId);
-                    return;
-                }
-                
-                // Fit map to marker with some padding
-                map.fitBounds(marker.getBounds ? marker.getBounds() : [[marker.getLatLng().lat - 0.005, marker.getLatLng().lng - 0.005], [marker.getLatLng().lat + 0.005, marker.getLatLng().lng + 0.005]], {
-                    padding: [50, 50]
-                });
-                
-                // Open popup if it exists
-                if (marker.openPopup) {
-                    marker.openPopup();
-                }
-                
-                console.log('✅ Focused on report successfully');
-                
-            } catch (error) {
-                console.error('❌ Error focusing on report:', error);
-            }
-        }
 
         // Update map with reports
         function updateMapWithReports(reports) {
@@ -1710,16 +1693,63 @@
             alert('Assignment functionality will be implemented in the assignment modal');
         }
 
-        // Focus on a specific report on the map (called from emergency list)
+        // Focus on a specific report on the map (called from emergency list or URL parameter)
         function focusOnReport(reportId) {
-            // Use the stored reportId property for more reliable matching
-            const marker = emergencyMarkers.find(m => m.reportId === reportId);
-            
-            if (marker) {
-                map.setView(marker.getLatLng(), 15);
-                marker.openPopup();
-            } else {
-                console.warn(`⚠️ Marker not found for report ID: ${reportId}`);
+            try {
+                console.log('📍 Focusing on report:', reportId);
+                
+                // Use the stored reportId property for more reliable matching
+                const marker = emergencyMarkers.find(m => m.reportId === reportId);
+                
+                if (!marker) {
+                    console.warn(`⚠️ Marker not found for report ID: ${reportId}. Available markers:`, emergencyMarkers.map(m => m.reportId));
+                    return;
+                }
+                
+                // Get marker position
+                const latLng = marker.getLatLng();
+                
+                // If marker is in a cluster, uncluster it first
+                if (markerClusterGroup && markerClusterGroup.hasLayer(marker)) {
+                    // Zoom in to uncluster
+                    map.setView(latLng, 18, {
+                        animate: true,
+                        duration: 0.5
+                    });
+                    
+                    // Wait a bit for cluster to expand, then focus
+                    setTimeout(() => {
+                        map.setView(latLng, 16, {
+                            animate: true,
+                            duration: 0.5
+                        });
+                        
+                        // Open popup after view animation
+                        setTimeout(() => {
+                            if (marker.openPopup) {
+                                marker.openPopup();
+                            }
+                        }, 600);
+                    }, 300);
+                } else {
+                    // Marker is not clustered, just focus on it
+                    map.setView(latLng, 16, {
+                        animate: true,
+                        duration: 0.5
+                    });
+                    
+                    // Open popup after view animation
+                    setTimeout(() => {
+                        if (marker.openPopup) {
+                            marker.openPopup();
+                        }
+                    }, 600);
+                }
+                
+                console.log('✅ Focused on report successfully');
+                
+            } catch (error) {
+                console.error('❌ Error focusing on report:', error);
             }
         }
 

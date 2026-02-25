@@ -74,6 +74,8 @@ class ResponderProfile {
     required this.status,
     this.phone,
     this.lastLocation,
+    this.teamName,
+    this.leaderName,
   });
 
   final String id;
@@ -83,8 +85,15 @@ class ResponderProfile {
   final String status;
   final String? phone;
   final dynamic lastLocation;
+  final String? teamName;
+  final String? leaderName;
 
   factory ResponderProfile.fromMap(Map<String, dynamic> map) {
+    String? leaderName;
+    final leader = map['leader'];
+    if (leader is Map<String, dynamic> && leader['name'] != null) {
+      leaderName = leader['name']?.toString();
+    }
     return ResponderProfile(
       id: map['id']?.toString() ?? '',
       name: (map['name'] as String?)?.trim().isNotEmpty == true
@@ -99,6 +108,10 @@ class ResponderProfile {
           : (map['is_available'] == true ? 'available' : 'unavailable'),
       phone: map['phone'] as String?,
       lastLocation: map['last_location'],
+      teamName: (map['team_name'] as String?)?.trim().isNotEmpty == true
+          ? map['team_name'] as String
+          : null,
+      leaderName: leaderName?.trim().isNotEmpty == true ? leaderName : null,
     );
   }
 
@@ -118,6 +131,8 @@ class ResponderProfile {
     bool? isAvailable,
     String? status,
     dynamic lastLocation,
+    String? teamName,
+    String? leaderName,
   }) {
     return ResponderProfile(
       id: id,
@@ -127,6 +142,8 @@ class ResponderProfile {
       isAvailable: isAvailable ?? this.isAvailable,
       status: status ?? this.status,
       lastLocation: lastLocation ?? this.lastLocation,
+      teamName: teamName ?? this.teamName,
+      leaderName: leaderName ?? this.leaderName,
     );
   }
 }
@@ -178,6 +195,7 @@ class ResponderAssignment {
     required this.report,
     this.acceptedAt,
     this.completedAt,
+    this.notes,
   });
 
   final String id;
@@ -185,10 +203,13 @@ class ResponderAssignment {
   final DateTime? assignedAt;
   final DateTime? acceptedAt;
   final DateTime? completedAt;
+  final String? notes;
   final AssignmentReportSummary report;
 
   factory ResponderAssignment.fromMap(Map<String, dynamic> map) {
     final reportData = (map['reports'] ?? <String, dynamic>{}) as Map<String, dynamic>;
+    final notesStr = map['notes'] as String?;
+    final notes = (notesStr != null && notesStr.trim().isNotEmpty) ? notesStr.trim() : null;
 
     return ResponderAssignment(
       id: map['id']?.toString() ?? '',
@@ -202,6 +223,7 @@ class ResponderAssignment {
       completedAt: map['completed_at'] != null
           ? DateTime.tryParse(map['completed_at'].toString())
           : null,
+      notes: notes,
       report: AssignmentReportSummary.fromMap(
         Map<String, dynamic>.from(reportData),
       ),

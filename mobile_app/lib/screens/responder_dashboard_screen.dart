@@ -200,7 +200,7 @@ class _ResponderDashboardScreenState extends State<ResponderDashboardScreen> {
 
       var profileRaw = await SupabaseService.client
           .from('responder')
-          .select('id, name, role, status, phone, is_available, last_location')
+          .select('id, name, role, status, phone, is_available, last_location, leader_id, team_name, leader:leader_id(name)')
           .eq('user_id', userId)
           .maybeSingle();
 
@@ -225,7 +225,7 @@ class _ResponderDashboardScreenState extends State<ResponderDashboardScreen> {
                 'status': 'active',
                 'is_available': true,
               })
-              .select('id, name, role, status, phone, is_available, last_location')
+              .select('id, name, role, status, phone, is_available, last_location, leader_id, team_name, leader:leader_id(name)')
               .maybeSingle();
           if (insertResult != null) {
             profileRaw = insertResult;
@@ -261,6 +261,7 @@ class _ResponderDashboardScreenState extends State<ResponderDashboardScreen> {
             assigned_at,
             accepted_at,
             completed_at,
+            notes,
             responder_id,
             reports:reports!assignment_report_id_fkey (
               id,
@@ -385,8 +386,9 @@ class _ResponderDashboardScreenState extends State<ResponderDashboardScreen> {
 
   Future<void> _updateAssignmentStatus(
     ResponderAssignment assignment,
-    String newStatus,
-  ) async {
+    String newStatus, {
+    String? notes,
+  }) async {
     if (_updatingAssignmentId != null) return;
     setState(() => _updatingAssignmentId = assignment.id);
 
@@ -418,13 +420,17 @@ class _ResponderDashboardScreenState extends State<ResponderDashboardScreen> {
       // Handle other status updates - use update-assignment-status function
       else if (['enroute', 'on_scene', 'resolved'].contains(newStatus)) {
         debugPrint('📞 Calling update-assignment-status edge function for status: $newStatus...');
+        final body = <String, dynamic>{
+          'assignment_id': assignment.id,
+          'responder_id': responderId,
+          'status': newStatus,
+        };
+        if (notes != null && notes.trim().isNotEmpty) {
+          body['notes'] = notes.trim();
+        }
         final response = await SupabaseService.client.functions.invoke(
           'update-assignment-status',
-          body: {
-            'assignment_id': assignment.id,
-            'responder_id': responderId,
-            'status': newStatus,
-          },
+          body: body,
         );
 
         if (response.data == null || response.data['success'] != true) {
@@ -444,6 +450,9 @@ class _ResponderDashboardScreenState extends State<ResponderDashboardScreen> {
 
         if (newStatus == 'resolved' || newStatus == 'completed') {
           updateData['completed_at'] = now;
+        }
+        if (notes != null && notes.trim().isNotEmpty) {
+          updateData['notes'] = notes.trim();
         }
 
         await SupabaseService.client
@@ -474,6 +483,64 @@ class _ResponderDashboardScreenState extends State<ResponderDashboardScreen> {
         setState(() => _updatingAssignmentId = null);
       }
     }
+  }
+
+  Future<void> _showResolveNoteDialog(ResponderAssignment assignment) async {
+    final controller = TextEditingController();
+    await showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Mark as Resolved'),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Add a note about what happened (optional). This will be saved with the emergency report.',
+                style: TextStyle(
+                  fontSize: 14,
+                  color: Colors.grey.shade700,
+                ),
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: controller,
+                maxLines: 4,
+                maxLength: 1000,
+                decoration: const InputDecoration(
+                  hintText: 'e.g. Arrived on scene, provided first aid. Patient transferred to hospital.',
+                  border: OutlineInputBorder(),
+                  alignLabelWithHint: true,
+                ),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+              _updateAssignmentStatus(
+                assignment,
+                'resolved',
+                notes: controller.text.trim().isEmpty ? null : controller.text.trim(),
+              );
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF10B981),
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('Mark Resolved'),
+          ),
+        ],
+      ),
+    );
+    controller.dispose();
   }
 
   Future<void> _captureLocation() async {
@@ -1203,6 +1270,26 @@ class _ResponderDashboardScreenState extends State<ResponderDashboardScreen> {
                     letterSpacing: 0.5,
                   ),
                 ),
+                if (responder.teamName != null || responder.leaderName != null) ...[
+                  const SizedBox(height: 6),
+                  if (responder.teamName != null)
+                    Text(
+                      'Team: ${responder.teamName}',
+                      style: const TextStyle(
+                        color: Colors.white70,
+                        fontSize: 13,
+                      ),
+                    ),
+                  if (responder.teamName != null && responder.leaderName != null) const SizedBox(height: 2),
+                  if (responder.leaderName != null)
+                    Text(
+                      'Leader: ${responder.leaderName}',
+                      style: const TextStyle(
+                        color: Colors.white70,
+                        fontSize: 13,
+                      ),
+                    ),
+                ],
                 const SizedBox(height: 12),
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
@@ -1621,7 +1708,7 @@ class _ResponderDashboardScreenState extends State<ResponderDashboardScreen> {
                 OutlinedButton.icon(
                   onPressed: _updatingAssignmentId == assignment.id
                       ? null
-                      : () => _updateAssignmentStatus(assignment, 'resolved'),
+                      : () => _showResolveNoteDialog(assignment),
                   icon: const Icon(Icons.flag_circle_outlined),
                   label: const Text('Mark Resolved'),
                 ),
@@ -1717,6 +1804,32 @@ class _ResponderDashboardScreenState extends State<ResponderDashboardScreen> {
                   'Completed ${_formatDate(assignment.completedAt)}',
                   style: const TextStyle(color: Color(0xFF047857)),
                 ),
+                if (assignment.notes != null && assignment.notes!.isNotEmpty) ...[
+                  const SizedBox(height: 6),
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: Colors.green.shade100.withValues(alpha: 0.5),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Icon(Icons.note_alt_outlined, size: 16, color: Colors.green.shade800),
+                        const SizedBox(width: 6),
+                        Expanded(
+                          child: Text(
+                            assignment.notes!,
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.green.shade900,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ],
             ),
           ),

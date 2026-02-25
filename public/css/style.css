@@ -1,7 +1,32 @@
 /* LSPU Emergency Response System - Modern Design System */
 
 :root {
-  /* Primary Colors */
+  /* LSPU Official Branding Colors - Academic Professional Scheme */
+  /* Primary: Deep Royal Blue / Navy Blue */
+  --primary-blue: #1e3a8a; /* Deep Royal Blue - Headers, Navigation, Footer */
+  --primary-blue-light: #2563eb; /* Lighter blue for gradients */
+  --primary-blue-dark: #1e40af; /* Darker blue for hover states */
+  --primary-navy: #0f172a; /* Navy Blue - Deepest shade */
+  
+  /* Primary: Golden Yellow / Mustard Yellow - Highlights & CTAs */
+  --primary-yellow: #fbbf24; /* Golden Yellow - Buttons, Accents */
+  --primary-yellow-light: #fcd34d; /* Light yellow for hover */
+  --primary-yellow-dark: #f59e0b; /* Darker yellow - Mustard */
+  --accent-yellow: #fbbf24; /* Call-to-action elements */
+  
+  /* Secondary Colors - Academic Clean */
+  --bg-white: #ffffff; /* White for backgrounds */
+  --bg-light-gray: #f5f5f5; /* Light gray for sections, cards, dividers */
+  --bg-gray: #e5e7eb; /* Medium gray for borders */
+  
+  /* LSPU Logo Section Colors (for reference) */
+  --secondary-green: #10b981; /* Agriculture section */
+  --secondary-light-blue: #60a5fa; /* Fisheries section */
+  --secondary-brown: #92400e; /* Technology section */
+  --secondary-gold: #f59e0b; /* Gold accent */
+  --secondary-orange: #f97316; /* Orange flame */
+  
+  /* Legacy red for emergency/error states */
   --primary-red: #dc2626;
   --primary-red-light: #fca5a5;
   --primary-red-dark: #991b1b;
@@ -11,9 +36,9 @@
   --secondary-blue-light: #93c5fd;
   --secondary-blue-dark: #1d4ed8;
   
-  /* Neutral Colors */
-  --gray-50: #f9fafb;
-  --gray-100: #f3f4f6;
+  /* Neutral Colors - Academic Professional */
+  --gray-50: #f5f5f5; /* Light gray for sections */
+  --gray-100: #f5f5f5;
   --gray-200: #e5e7eb;
   --gray-300: #d1d5db;
   --gray-400: #9ca3af;
@@ -78,7 +103,7 @@ body {
   font-size: var(--font-size-base);
   line-height: 1.6;
   color: var(--gray-800);
-  background-color: var(--gray-50);
+  background-color: var(--bg-white);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -152,17 +177,18 @@ p {
 
 /* Card Component */
 .card {
-  background: white;
+  background: var(--bg-white);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-md);
   padding: var(--space-6);
-  border: 1px solid var(--gray-200);
+  border: 1px solid var(--bg-light-gray);
+  border-left: 3px solid var(--primary-blue);
 }
 
 .card-header {
-  background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
+  background: linear-gradient(135deg, var(--primary-navy) 0%, var(--primary-blue) 100%);
   color: white;
-  border-bottom: none;
+  border-bottom: 2px solid var(--accent-yellow);
   padding: var(--space-6);
   margin-bottom: 0;
   border-radius: var(--radius-lg) var(--radius-lg) 0 0;
@@ -203,25 +229,53 @@ p {
 }
 
 .btn-primary {
-  background-color: var(--primary-red);
+  background: linear-gradient(135deg, var(--primary-navy) 0%, var(--primary-blue) 100%);
   color: white;
+  border: 1px solid var(--primary-blue-dark);
 }
 
 .btn-primary:hover:not(:disabled) {
-  background-color: var(--primary-red-dark);
+  background: linear-gradient(135deg, var(--primary-blue-dark) 0%, var(--primary-blue) 100%);
   transform: translateY(-1px);
   box-shadow: var(--shadow-lg);
+  border-color: var(--accent-yellow);
+}
+
+/* Golden Yellow for Call-to-Action buttons */
+.btn-cta,
+.btn-submit,
+.btn-save,
+.btn-login,
+.btn-view {
+  background: linear-gradient(135deg, var(--accent-yellow) 0%, var(--primary-yellow-dark) 100%);
+  color: var(--primary-navy);
+  font-weight: 600;
+  border: 1px solid var(--primary-yellow-dark);
+}
+
+.btn-cta:hover:not(:disabled),
+.btn-submit:hover:not(:disabled),
+.btn-save:hover:not(:disabled),
+.btn-login:hover:not(:disabled),
+.btn-view:hover:not(:disabled) {
+  background: linear-gradient(135deg, var(--primary-yellow-light) 0%, var(--accent-yellow) 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(251, 191, 36, 0.4);
+  border-color: var(--primary-yellow-dark);
 }
 
 .btn-secondary {
-  background-color: var(--secondary-blue);
-  color: white;
+  background: var(--bg-light-gray);
+  color: var(--primary-blue);
+  border: 1px solid var(--gray-300);
 }
 
 .btn-secondary:hover:not(:disabled) {
-  background-color: var(--secondary-blue-dark);
+  background: var(--gray-200);
+  color: var(--primary-blue-dark);
+  border-color: var(--primary-blue);
   transform: translateY(-1px);
-  box-shadow: var(--shadow-lg);
+  box-shadow: var(--shadow-md);
 }
 
 .btn-outline {
@@ -261,16 +315,18 @@ p {
 .form-input {
   width: 100%;
   padding: var(--space-3) var(--space-4);
-  border: 2px solid var(--gray-300);
+  border: 2px solid var(--bg-light-gray);
   border-radius: var(--radius-md);
   font-size: var(--font-size-base);
+  background: var(--bg-white);
   transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
 .form-input:focus {
   outline: none;
-  border-color: var(--primary-red);
-  box-shadow: 0 0 0 3px rgb(220 38 38 / 0.1);
+  border-color: var(--primary-blue);
+  box-shadow: 0 0 0 3px rgba(30, 58, 138, 0.1);
+  border-left: 3px solid var(--accent-yellow);
 }
 
 .form-textarea {
@@ -316,8 +372,8 @@ p {
 }
 
 .file-upload-label:hover {
-  border-color: var(--primary-red);
-  background-color: var(--primary-red-light);
+  border-color: var(--accent-yellow);
+  background-color: rgba(251, 191, 36, 0.1);
 }
 
 .file-upload-icon {
@@ -371,13 +427,13 @@ p {
 
 /* Navigation */
 .navbar {
-  background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  background: linear-gradient(135deg, var(--primary-navy) 0%, var(--primary-blue) 100%);
+  border-bottom: 2px solid var(--accent-yellow);
   padding: var(--space-4) 0;
   position: sticky;
   top: 0;
   z-index: 100;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.15);
 }
 
 .navbar-brand-container {
@@ -538,10 +594,11 @@ p {
 
 /* Footer Styles */
 .footer {
-  background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
+  background: linear-gradient(135deg, var(--primary-navy) 0%, var(--primary-blue) 100%);
   color: white;
   margin-top: 4rem;
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  border-top: 3px solid var(--accent-yellow);
+  box-shadow: 0 -4px 6px -1px rgba(0, 0, 0, 0.1);
 }
 
 .footer-brand {
@@ -665,11 +722,11 @@ p {
     --warning-color: #f59e0b;
     --danger-color: #ef4444;
     --info-color: #3b82f6;
-    --light-bg: #f8fafc;
+    --light-bg: #f5f5f5;
     --card-bg: #ffffff;
     --text-primary: #1e293b;
     --text-secondary: #64748b;
-    --border-color: #e2e8f0;
+    --border-color: #e5e7eb;
     --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
     --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
     --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
@@ -678,7 +735,7 @@ p {
 
 body {
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    background: var(--light-bg);
+    background: transparent;
     color: var(--text-primary);
     line-height: 1.6;
 }
@@ -687,13 +744,46 @@ body {
 .dashboard-container {
     display: flex;
     min-height: 100vh;
-    background: var(--light-bg);
+    position: relative;
+    overflow: hidden;
+}
+
+/* Blurred Background for Admin Dashboard */
+.dashboard-container::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background-image: url('../images/cover.png');
+    background-size: cover;
+    background-position: center center;
+    background-repeat: no-repeat;
+    background-attachment: fixed;
+    filter: blur(15px);
+    -webkit-filter: blur(15px);
+    opacity: 0.6;
+    z-index: 0;
+    transform: scale(1.1);
+    will-change: transform;
+}
+
+.dashboard-container::after {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(255, 255, 255, 0.7);
+    z-index: 1;
 }
 
 /* Sidebar Styles */
 .sidebar {
     width: 250px;
-    background: linear-gradient(180deg, #1e3a8a 0%, #3b82f6 100%);
+    background: linear-gradient(180deg, var(--primary-navy) 0%, var(--primary-blue) 100%);
     color: white;
     display: flex;
     flex-direction: column;
@@ -702,8 +792,10 @@ body {
     left: 0;
     top: 0;
     z-index: 1000;
-    box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+    box-shadow: 2px 0 10px rgba(0, 0, 0, 0.15);
     transition: all 0.3s ease;
+    backdrop-filter: blur(10px);
+    border-right: 2px solid var(--accent-yellow);
 }
 
 .sidebar-header {
@@ -807,10 +899,10 @@ body {
 }
 
 .nav-item.active {
-    background: rgba(255, 255, 255, 0.3);
-    color: white;
-    border-left-color: white;
-    border: 1px solid rgba(255, 255, 255, 0.5);
+    background: rgba(255, 255, 255, 0.2);
+    color: var(--accent-yellow);
+    border-left: 3px solid var(--accent-yellow);
+    border: 1px solid rgba(251, 191, 36, 0.3);
     font-weight: 600;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
@@ -895,6 +987,8 @@ body {
     padding: 20px;
     min-height: 100vh;
     width: calc(100% - 250px);
+    position: relative;
+    z-index: 2;
 }
 
 /* Admin Sections */
@@ -908,18 +1002,22 @@ body {
 
 /* Card Styles */
 .card {
-    background: var(--card-bg);
+    background: var(--bg-white);
+    backdrop-filter: blur(10px);
     border-radius: 12px;
     box-shadow: var(--shadow-md);
-    border: 1px solid var(--border-color);
+    border: 1px solid var(--bg-light-gray);
+    border-left: 3px solid var(--primary-blue);
     margin-bottom: 20px;
     overflow: hidden;
+    position: relative;
+    z-index: 2;
 }
 
 .card-header {
     padding: 20px 24px;
-    border-bottom: 1px solid var(--border-color);
-    background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
+    border-bottom: 2px solid var(--accent-yellow);
+    background: linear-gradient(135deg, var(--primary-navy) 0%, var(--primary-blue) 100%);
     color: white;
 }
 
@@ -963,14 +1061,41 @@ body {
 }
 
 .btn-primary {
-    background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
+    background: linear-gradient(135deg, var(--primary-navy) 0%, var(--primary-blue) 100%);
     color: white;
     box-shadow: var(--shadow-md);
+    border: 1px solid var(--primary-blue-dark);
 }
 
 .btn-primary:hover:not(:disabled) {
+    background: linear-gradient(135deg, var(--primary-blue-dark) 0%, var(--primary-blue) 100%);
     transform: translateY(-1px);
     box-shadow: var(--shadow-lg);
+    border-color: var(--accent-yellow);
+}
+
+/* Academic CTA Buttons - Golden Yellow */
+button[type="submit"],
+input[type="submit"],
+.btn-submit,
+.btn-save,
+.btn-login,
+.btn-view {
+    background: linear-gradient(135deg, var(--accent-yellow) 0%, var(--primary-yellow-dark) 100%) !important;
+    color: var(--primary-navy) !important;
+    font-weight: 600 !important;
+    border: 1px solid var(--primary-yellow-dark) !important;
+}
+
+button[type="submit"]:hover,
+input[type="submit"]:hover,
+.btn-submit:hover,
+.btn-save:hover,
+.btn-login:hover,
+.btn-view:hover {
+    background: linear-gradient(135deg, var(--primary-yellow-light) 0%, var(--accent-yellow) 100%) !important;
+    box-shadow: 0 4px 12px rgba(251, 191, 36, 0.4) !important;
+    transform: translateY(-1px);
 }
 
 .btn-secondary {
@@ -1042,8 +1167,9 @@ body {
 
 .form-control:focus {
     outline: none;
-    border-color: var(--primary-color);
-    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+    border-color: var(--primary-blue);
+    box-shadow: 0 0 0 3px rgba(30, 58, 138, 0.1);
+    border-left: 3px solid var(--accent-yellow);
 }
 
 .form-select {
@@ -1380,8 +1506,8 @@ body {
 
 .modal-header {
     padding: 20px 24px;
-    border-bottom: 1px solid var(--border-color);
-    background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
+    border-bottom: 2px solid var(--accent-yellow);
+    background: linear-gradient(135deg, var(--primary-navy) 0%, var(--primary-blue) 100%);
     color: white;
     border-radius: 12px 12px 0 0;
 }
@@ -1506,12 +1632,13 @@ body {
 }
 
 .stat-card-blue {
-    --gradient-start: #3b82f6;
-    --gradient-end: #1d4ed8;
+    --gradient-start: #1e3a8a;
+    --gradient-end: #0f172a;
+    border-left: 3px solid var(--primary-blue);
 }
 
 .stat-card-blue .stat-icon {
-    background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+    background: linear-gradient(135deg, #0f172a 0%, #1e3a8a 100%);
     color: white;
 }
 
@@ -1536,13 +1663,14 @@ body {
 }
 
 .stat-card-orange {
-    --gradient-start: #f59e0b;
-    --gradient-end: #d97706;
+    --gradient-start: #fbbf24;
+    --gradient-end: #f59e0b;
+    border-left: 3px solid var(--accent-yellow);
 }
 
 .stat-card-orange .stat-icon {
-    background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
-    color: white;
+    background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+    color: var(--primary-navy);
 }
 
 .stat-icon {

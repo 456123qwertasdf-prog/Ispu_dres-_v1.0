@@ -485,7 +485,7 @@
         <div class="sidebar">
             <div class="sidebar-header">
                 <div class="sidebar-logo">
-                    <img src="images/udrrmo image.jpg" alt="UDRRMO Logo" 
+                    <img src="images/logolspu.jpg" alt="LSPU Logo" 
                          style="width: 50px; height: 50px; object-fit: contain; border-radius: 50%; border: 2px solid white; display: block;">
                     <div class="logo-text">
                         <h3>Kapiyu Admin</h3>
@@ -1085,6 +1085,10 @@
                                     <option value="instructor">Instructor</option>
                                     <option value="faculty_staff">Faculty Staff</option>
                                     <option value="security_guard">Security Guard</option>
+                                    <option value="first_aider">First Aider</option>
+                                    <option value="responder">Responder</option>
+                                    <option value="first_aider_leader">First Aider Leader</option>
+                                    <option value="responder_leader">Responder Leader</option>
                                 </select>
                             </div>
                             
@@ -1129,6 +1133,16 @@
                                     <option value="admin">Admin</option>
                                     <option value="super_user">Super User</option>
                                 </select>
+                            </div>
+                            <div class="form-group" id="responderLeaderGroup" style="display:none;">
+                                <label class="form-label">Team name (optional)</label>
+                                <input type="text" id="responderTeamName" class="form-input" placeholder="e.g. First Aider Team A, Responder Squad 1">
+                                <div class="form-hint">Name this team so you can assign the whole group in one click. Leaders set the name; members inherit from their leader.</div>
+                                <label class="form-label" style="margin-top:0.75rem;">Team Leader (optional)</label>
+                                <select id="responderLeaderId" class="form-select">
+                                    <option value="">None (I am the leader)</option>
+                                </select>
+                                <div class="form-hint">If this person is under a leader, select the leader. When the leader is assigned to a report, the whole team is assigned.</div>
                             </div>
                         </div>
                         
@@ -1371,8 +1385,50 @@
             return new Date(dateString).toLocaleDateString();
         }
 
+        // Populate Team Leader dropdown (responders who can be leaders)
+        async function loadResponderLeadersDropdown() {
+            const sel = document.getElementById('responderLeaderId');
+            const firstOpt = sel.options[0];
+            sel.innerHTML = '';
+            sel.appendChild(firstOpt);
+            try {
+                const responders = await window.emergencySystem.getResponders();
+                (responders || []).forEach(r => {
+                    const opt = document.createElement('option');
+                    opt.value = r.id;
+                    opt.textContent = r.name + (r.role ? ' (' + r.role + ')' : '');
+                    sel.appendChild(opt);
+                });
+            } catch (e) {
+                console.warn('Could not load responders for leader dropdown', e);
+            }
+        }
+
+        // Show/hide Team Leader dropdown when Role changes
+        document.getElementById('userRole').addEventListener('change', function() {
+            const leaderGroup = document.getElementById('responderLeaderGroup');
+            if (this.value === 'responder') {
+                leaderGroup.style.display = 'block';
+                loadResponderLeadersDropdown();
+            } else {
+                leaderGroup.style.display = 'none';
+            }
+        });
+
+        // When a leader is selected, optionally fill team name from leader's team
+        document.getElementById('responderLeaderId').addEventListener('change', async function() {
+            const leaderId = this.value;
+            if (!leaderId) return;
+            try {
+                const { data: r } = await window.emergencySystem.supabase.from('responder').select('team_name').eq('id', leaderId).single();
+                if (r && r.team_name && !document.getElementById('responderTeamName').value) {
+                    document.getElementById('responderTeamName').value = r.team_name;
+                }
+            } catch (_) {}
+        });
+
         // Edit user
-        function editUser(userId) {
+        async function editUser(userId) {
             const user = allUsers.find(u => u.id === userId);
             if (!user) {
                 window.emergencySystem.showError('User not found');
@@ -1420,6 +1476,18 @@
             document.getElementById('contactNumber').value = user.contactNumber || '';
             document.getElementById('userRole').value = user.role;
             document.getElementById('password').value = ''; // Clear password field for security
+
+            // Show/hide Team Leader dropdown and load current leader when role is responder
+            const leaderGroup = document.getElementById('responderLeaderGroup');
+            if (user.role === 'responder') {
+                leaderGroup.style.display = 'block';
+                await loadResponderLeadersDropdown();
+                const { data: resp } = await window.emergencySystem.supabase.from('responder').select('leader_id, team_name').eq('user_id', userId).maybeSingle();
+                document.getElementById('responderLeaderId').value = (resp && resp.leader_id) ? resp.leader_id : '';
+                document.getElementById('responderTeamName').value = (resp && resp.team_name) ? resp.team_name : '';
+            } else {
+                leaderGroup.style.display = 'none';
+            }
 
             // Attach the editing user id to the form for update
             document.getElementById('userRegistrationForm').dataset.editUserId = userId;
@@ -1543,14 +1611,16 @@
                 }
                 
                 const formData = {
-                    userType: userType, // This is actually user type (student/instructor/faculty_staff/security_guard)
+                    userType: userType,
                     password: document.getElementById('password').value,
                     firstname: document.getElementById('firstname').value,
                     lastname: document.getElementById('lastname').value,
                     gmail: document.getElementById('gmail').value,
                     studentNumber: document.getElementById('studentNumber').value,
                     contactNumber: document.getElementById('contactNumber').value,
-                    role: document.getElementById('userRole').value
+                    role: document.getElementById('userRole').value,
+                    leaderId: document.getElementById('userRole').value === 'responder' ? (document.getElementById('responderLeaderId').value || null) : null,
+                    teamName: document.getElementById('userRole').value === 'responder' ? (document.getElementById('responderTeamName').value || null) : null
                 };
 
                 const editingUserId = document.getElementById('userRegistrationForm').dataset.editUserId;
@@ -1583,6 +1653,15 @@
                         }
                     });
                     if (error) throw error;
+                    if (formData.role === 'responder') {
+                        const leaderIdVal = document.getElementById('responderLeaderId').value || null;
+                        const teamNameVal = document.getElementById('responderTeamName').value || null;
+                        const { error: respErr } = await window.emergencySystem.supabase
+                            .from('responder')
+                            .update({ leader_id: leaderIdVal || null, team_name: teamNameVal || null })
+                            .eq('user_id', editingUserId);
+                        if (respErr) console.warn('Could not update responder leader/team:', respErr);
+                    }
                     window.emergencySystem.showSuccess('User updated successfully');
                     
                     // Clear edit mode and reset form
@@ -1609,30 +1688,42 @@
                         role: formData.role,
                         phone: formData.contactNumber,
                         studentNumber: formData.studentNumber,
-                        userType: formData.userType || 'student' // Send user type (student/teacher/security_guard), default to student
+                        userType: formData.userType || 'student',
+                        leaderId: formData.leaderId || undefined,
+                        teamName: formData.teamName || undefined
                     }
                 });
                 
                 // Handle edge function errors more gracefully
                 if (error) {
                     console.error('Edge function error:', error);
-                    // Try to extract error message from response
+                    // Try to extract error message from response (500 body may be in context.body or context)
                     let errorMessage = error.message || 'Unknown error';
+                    let errorBody = null;
                     if (error.context && error.context.body) {
                         try {
-                            const errorBody = typeof error.context.body === 'string' 
-                                ? JSON.parse(error.context.body) 
+                            errorBody = typeof error.context.body === 'string'
+                                ? JSON.parse(error.context.body)
                                 : error.context.body;
-                            if (errorBody.error) {
-                                errorMessage = errorBody.error;
-                            } else if (errorBody.details) {
-                                errorMessage = errorBody.details;
-                            } else if (errorBody.message) {
-                                errorMessage = errorBody.message;
-                            }
-                        } catch (e) {
-                            // If parsing fails, use original message
+                        } catch (e) { /* ignore */ }
+                    }
+                    if (error.context && !errorBody && typeof error.context === 'object') {
+                        try {
+                            const raw = error.context.body ?? error.context;
+                            errorBody = typeof raw === 'string' ? JSON.parse(raw) : raw;
+                        } catch (e) { /* ignore */ }
+                    }
+                    if (errorBody) {
+                        if (errorBody.error && errorBody.details) {
+                            errorMessage = errorBody.error + ': ' + errorBody.details;
+                        } else if (errorBody.error) {
+                            errorMessage = errorBody.error;
+                        } else if (errorBody.details) {
+                            errorMessage = errorBody.details;
+                        } else if (errorBody.message) {
+                            errorMessage = errorBody.message;
                         }
+                        if (errorBody.hint) errorMessage += ' ' + errorBody.hint;
                     }
                     throw new Error(errorMessage);
                 }
@@ -1692,7 +1783,9 @@
         function clearForm() {
             document.getElementById('userRegistrationForm').reset();
             document.getElementById('displayUsername').value = ''; // Clear username display field
-            
+            document.getElementById('responderLeaderGroup').style.display = 'none';
+            document.getElementById('responderTeamName').value = '';
+
             // Clear edit mode
             delete document.getElementById('userRegistrationForm').dataset.editUserId;
             exitEditMode();

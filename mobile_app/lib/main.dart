@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'services/supabase_service.dart';
 import 'services/onesignal_service.dart';
 import 'services/auto_sync_service.dart';
+import 'services/update_check_service.dart';
 import 'screens/login_screen.dart';
 import 'screens/home_screen.dart';
 import 'screens/emergency_report_screen.dart';
@@ -43,7 +44,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       navigatorKey: navigatorKey,
-      title: 'LSPU DRES',
+      title: 'KAPIYU',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(
@@ -101,13 +102,162 @@ class _AuthWrapper extends StatelessWidget {
           );
         }
 
-        // Check if user is authenticated
-        if (SupabaseService.isAuthenticated) {
-          return const RoleRouter();
-        }
-
-        return const LoginScreen();
+        // Check if user is authenticated, then run update check before showing any screen
+        final isAuthenticated = SupabaseService.isAuthenticated;
+        return _UpdateCheckGate(isAuthenticated: isAuthenticated);
       },
+    );
+  }
+}
+
+/// Runs update check once. If app version < min_version, shows full-screen block (app won't work until update).
+class _UpdateCheckGate extends StatefulWidget {
+  final bool isAuthenticated;
+
+  const _UpdateCheckGate({required this.isAuthenticated});
+
+  @override
+  State<_UpdateCheckGate> createState() => _UpdateCheckGateState();
+}
+
+class _UpdateCheckGateState extends State<_UpdateCheckGate> {
+  bool _checking = true;
+  bool _updateRequired = false;
+  UpdateCheckResult? _updateResult;
+
+  @override
+  void initState() {
+    super.initState();
+    _runCheck();
+  }
+
+  Future<void> _runCheck() async {
+    setState(() => _checking = true);
+    final result = await UpdateCheckService.checkForUpdate();
+    if (!mounted) return;
+    setState(() {
+      _checking = false;
+      _updateResult = result;
+      _updateRequired = result?.status == UpdateStatus.updateRequired;
+    });
+    if (!_updateRequired && result != null && result.status == UpdateStatus.updateAvailable) {
+      UpdateCheckService.showUpdateDialogIfNeeded(context, result);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_checking) {
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
+    if (_updateRequired && _updateResult != null) {
+      return _UpdateRequiredScreen(result: _updateResult!);
+    }
+    // Version check failed (null): block until we get a successful check (no bypass for old APK)
+    if (_updateResult == null) {
+      return _UpdateCheckFailedScreen(onRetry: _runCheck);
+    }
+    if (widget.isAuthenticated) {
+      return const RoleRouter();
+    }
+    return const LoginScreen();
+  }
+}
+
+/// Full-screen block when version is below min_version. App does not work until user updates.
+class _UpdateRequiredScreen extends StatelessWidget {
+  final UpdateCheckResult result;
+
+  const _UpdateRequiredScreen({required this.result});
+
+  @override
+  Widget build(BuildContext context) {
+    return PopScope(
+      canPop: false,
+      child: Scaffold(
+        body: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.system_update_alt, size: 72, color: Theme.of(context).colorScheme.primary),
+                const SizedBox(height: 24),
+                Text(
+                  'Update required',
+                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  'This version of KAPIYU (${result.currentVersion}) is no longer supported. You must install version ${result.latestVersion} or newer to continue.',
+                  style: Theme.of(context).textTheme.bodyLarge,
+                  textAlign: TextAlign.center,
+                ),
+                if (result.releaseNotes != null && result.releaseNotes!.isNotEmpty) ...[
+                  const SizedBox(height: 16),
+                  Text(result.releaseNotes!, style: Theme.of(context).textTheme.bodyMedium, textAlign: TextAlign.center),
+                ],
+                const SizedBox(height: 32),
+                FilledButton.icon(
+                  onPressed: () => UpdateCheckService.openDownloadUrl(result.downloadUrl),
+                  icon: const Icon(Icons.download),
+                  label: const Text('Download update'),
+                  style: FilledButton.styleFrom(padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16)),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Shown when version check fails (network/error). User must retry until check succeeds; no bypass.
+class _UpdateCheckFailedScreen extends StatelessWidget {
+  final VoidCallback onRetry;
+
+  const _UpdateCheckFailedScreen({required this.onRetry});
+
+  @override
+  Widget build(BuildContext context) {
+    return PopScope(
+      canPop: false,
+      child: Scaffold(
+        body: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.cloud_off, size: 72, color: Theme.of(context).colorScheme.error),
+                const SizedBox(height: 24),
+                Text(
+                  'Could not check for updates',
+                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  'Please check your internet connection and try again. You must pass the update check to use the app.',
+                  style: Theme.of(context).textTheme.bodyLarge,
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 32),
+                FilledButton.icon(
+                  onPressed: onRetry,
+                  icon: const Icon(Icons.refresh),
+                  label: const Text('Retry'),
+                  style: FilledButton.styleFrom(padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16)),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
     );
   }
 }

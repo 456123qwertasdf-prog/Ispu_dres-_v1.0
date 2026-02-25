@@ -11,13 +11,13 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="js/supabase.js"></script>
 </head>
-<body>
+<body class="page-analytics">
     <div class="dashboard-container">
         <!-- Sidebar -->
         <div class="sidebar">
             <div class="sidebar-header">
                 <div class="sidebar-logo">
-                    <img src="images/udrrmo image.jpg" alt="UDRRMO Logo" 
+                    <img src="images/logolspu.jpg" alt="LSPU Logo" 
                          style="width: 50px; height: 50px; object-fit: contain; border-radius: 50%; border: 2px solid white; display: block;">
                     <div class="logo-text">
                         <h3>Kapiyu Admin</h3>
@@ -81,132 +81,178 @@
         </div>
 
         <style>
-            .logout-btn:hover {
-                background: #EF4444 !important;
-                border-color: #EF4444 !important;
-                color: white !important;
+            /* ─── Analytics Page ─ Minimalistic & Modern ─── */
+            .page-analytics {
+                --c-bg:        #f8fafc;
+                --c-surface:   #ffffff;
+                --c-border:    #e2e8f0;
+                --c-text:      #0f172a;
+                --c-muted:     #64748b;
+                --c-faint:     #94a3b8;
+                --c-accent:    #2563eb;
+                --c-danger:    #dc2626;
+                --c-success:   #059669;
+                --c-warning:   #d97706;
+                --r:           12px;
+                --r-sm:        8px;
+                --gap:         1rem;
             }
-            
-            .logout-btn:hover i {
-                color: white !important;
-            }
-            
-            /* Modern Analytics Dashboard Styling */
-            .admin-section.active {
+
+            /* Main content bg */
+            .page-analytics .main-content { background: var(--c-bg) !important; }
+
+            /* Logout */
+            .page-analytics .logout-btn:hover { background:#ef4444!important; border-color:#ef4444!important; color:#fff!important; }
+            .page-analytics .logout-btn:hover i { color:#fff!important; }
+
+            /* Section */
+            .page-analytics .admin-section.active {
                 padding: 1.5rem;
+                width: 100%;
+                max-width: 100%;
+                box-sizing: border-box;
+                background: var(--c-bg);
+                min-height: 100vh;
             }
-            
-            /* Header Card Modernization */
-            .admin-section .card:first-child {
-                border-radius: 16px;
-                box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 
-                            0 2px 4px -1px rgba(0, 0, 0, 0.06),
-                            0 0 0 1px rgba(0, 0, 0, 0.05);
-                border: 1px solid rgba(226, 232, 240, 0.8);
+
+
+            /* ── Toolbar (flat bar, no card) ── */
+            .page-analytics .ana-toolbar {
+                display: flex;
+                flex-wrap: wrap;
+                align-items: center;
+                gap: 0.75rem;
+                background: var(--c-surface);
+                border: 1px solid var(--c-border);
+                border-radius: var(--r);
+                padding: 0.75rem 1.25rem;
                 margin-bottom: 1.5rem;
-                overflow: hidden;
             }
-            
-            .admin-section .card:first-child .card-header {
-                background: linear-gradient(135deg, #f8fafc 0%, #ffffff 100%);
-                border-bottom: 1px solid rgba(226, 232, 240, 0.8);
-                padding: 1.5rem 1.75rem;
-                position: relative;
+            .page-analytics .ana-toolbar-sep {
+                width: 1px;
+                height: 1.5rem;
+                background: var(--c-border);
+                flex-shrink: 0;
             }
-            
-            .admin-section .card:first-child .card-header::after {
-                content: '';
-                position: absolute;
-                bottom: 0;
-                left: 0;
-                right: 0;
-                height: 2px;
-                background: linear-gradient(90deg, transparent, rgba(59, 130, 246, 0.3), transparent);
+            .page-analytics .ana-toolbar .action-buttons {
+                display: flex;
+                gap: 0.5rem;
+                flex-wrap: wrap;
+                align-items: center;
             }
-            
-            .admin-section .card:first-child .card-title {
-                font-size: 1.75rem;
-                font-weight: 800;
-                color: #1e293b;
-                margin: 0;
-                background: linear-gradient(180deg, #0f172a 0%, #1e293b 50%, #334155 100%);
-                -webkit-background-clip: text;
-                -webkit-text-fill-color: transparent;
-                background-clip: text;
-                letter-spacing: -0.02em;
-                text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+            .page-analytics .ana-toolbar .action-buttons .btn {
+                padding: 0.4rem 0.875rem;
+                border-radius: var(--r-sm);
+                font-weight: 600;
+                font-size: 0.75rem;
+                border: 1px solid transparent;
+                display: inline-flex;
+                align-items: center;
+                gap: 0.375rem;
+                cursor: pointer;
+                transition: opacity 0.15s ease, transform 0.15s ease;
             }
-            
-            .admin-section .card:first-child .card-subtitle {
-                font-size: 0.9375rem;
-                color: #4b5563;
-                margin: 0.5rem 0 0 0;
+            .page-analytics .ana-toolbar .action-buttons .btn:hover { opacity: 0.88; transform: translateY(-1px); }
+            .page-analytics .ana-toolbar .action-buttons .btn-danger  { background:#fef2f2; color:var(--c-danger); border-color:#fecaca; }
+            .page-analytics .ana-toolbar .action-buttons .btn-success { background:#f0fdf4; color:var(--c-success); border-color:#bbf7d0; }
+            .page-analytics .ana-toolbar .action-buttons .btn-primary { background:#eff6ff; color:var(--c-accent);  border-color:#bfdbfe; }
+            .page-analytics .ana-toolbar .date-range-selector,
+            .page-analytics .ana-toolbar .period-selector {
+                display: flex;
+                align-items: center;
+                gap: 0.5rem;
+            }
+            .page-analytics .ana-toolbar .period-selector { margin-left: auto; }
+            .page-analytics .ana-toolbar label {
+                font-size: 0.75rem;
+                font-weight: 600;
+                color: var(--c-muted);
+                white-space: nowrap;
+            }
+            .page-analytics .ana-label-hint { font-size: 0.7rem; color: var(--c-faint); font-weight: 500; }
+            .page-analytics .ana-toolbar select {
+                padding: 0.375rem 0.625rem;
+                border: 1px solid var(--c-border);
+                border-radius: var(--r-sm);
+                background: var(--c-bg);
+                font-size: 0.75rem;
+                color: var(--c-text);
                 font-weight: 500;
-                line-height: 1.5;
+                cursor: pointer;
             }
-            
-            /* Modern Analytics Overview Cards */
-            .analytics-overview {
+            .page-analytics .ana-toolbar select:focus {
+                outline: none;
+                border-color: var(--c-accent);
+                box-shadow: 0 0 0 3px rgba(37,99,235,0.1);
+            }
+            .page-analytics .period-tabs {
+                display: flex;
+                background: var(--c-bg);
+                border: 1px solid var(--c-border);
+                border-radius: var(--r-sm);
+                overflow: hidden;
+                gap: 0;
+            }
+            .page-analytics .period-tab {
+                padding: 0.375rem 0.75rem;
+                font-size: 0.75rem;
+                font-weight: 600;
+                color: var(--c-muted);
+                background: transparent;
+                border: none;
+                cursor: pointer;
+                transition: background 0.15s, color 0.15s;
+            }
+            .page-analytics .period-tab:hover { color: var(--c-text); background: #f1f5f9; }
+            .page-analytics .period-tab.active { background: var(--c-accent); color: #fff; }
+
+            /* ── KPI Cards (matches admin dashboard stat-card style) ── */
+            .page-analytics .analytics-overview {
                 display: grid;
-                grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+                grid-template-columns: repeat(4, minmax(0, 1fr));
                 gap: 1.5rem;
                 margin-bottom: 2rem;
+                width: 100%;
             }
-            
-            .analytics-card {
+            .page-analytics .analytics-card {
                 background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
                 border-radius: 16px;
                 padding: 1.75rem;
-                box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 
-                            0 2px 4px -1px rgba(0, 0, 0, 0.06),
-                            0 0 0 1px rgba(0, 0, 0, 0.05);
-                border: 1px solid rgba(226, 232, 240, 0.8);
-                transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+                box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06), 0 0 0 1px rgba(0,0,0,0.05);
+                border: none !important;
+                display: flex;
+                align-items: center;
+                gap: 1.25rem;
+                transition: all 0.4s cubic-bezier(0.4,0,0.2,1);
                 position: relative;
                 overflow: hidden;
                 cursor: pointer;
             }
-            
-            .analytics-card::before {
+            .page-analytics .analytics-card::before {
                 content: '';
                 position: absolute;
-                top: 0;
-                left: 0;
-                right: 0;
+                top: 0; left: 0; right: 0;
                 height: 4px;
-                background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.8), transparent);
+                background: linear-gradient(90deg, transparent, rgba(255,255,255,0.8), transparent);
                 opacity: 0;
                 transition: opacity 0.4s ease;
             }
-            
-            .analytics-card:hover::before {
-                opacity: 1;
-            }
-            
-            .analytics-card:hover {
-                transform: translateY(-4px);
-                box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 
-                            0 10px 10px -5px rgba(0, 0, 0, 0.04),
-                            0 0 0 1px rgba(139, 92, 246, 0.1);
-            }
-            
-            .analytics-card::after {
+            .page-analytics .analytics-card:hover::before { opacity: 1; }
+            .page-analytics .analytics-card::after {
                 content: '';
                 position: absolute;
-                top: -50%;
-                right: -50%;
-                width: 200%;
-                height: 200%;
-                background: radial-gradient(circle, rgba(255, 255, 255, 0.1) 0%, transparent 70%);
+                top: -50%; right: -50%;
+                width: 200%; height: 200%;
+                background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
                 opacity: 0;
                 transition: opacity 0.4s ease;
             }
-            
-            .analytics-card:hover::after {
-                opacity: 1;
+            .page-analytics .analytics-card:hover::after { opacity: 1; }
+            .page-analytics .analytics-card:hover {
+                transform: translateY(-4px);
+                box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04), 0 0 0 1px rgba(59,130,246,0.1);
             }
-            
-            .analytics-card-icon {
+            .page-analytics .analytics-card-icon {
                 width: 72px;
                 height: 72px;
                 border-radius: 16px;
@@ -216,62 +262,46 @@
                 font-size: 28px;
                 color: white;
                 flex-shrink: 0;
-                box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
-                transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+                box-shadow: 0 8px 16px rgba(0,0,0,0.15);
+                transition: all 0.4s cubic-bezier(0.4,0,0.2,1);
                 position: relative;
                 overflow: hidden;
-                margin-bottom: 1.25rem;
+                background: linear-gradient(135deg, #0f172a 0%, #1e3a8a 50%, #1e40af 100%);
             }
-            
-            .analytics-card-icon::before {
+            .page-analytics .analytics-card-icon i { font-size: 28px; position: relative; z-index: 1; }
+            .page-analytics .analytics-card-icon::before {
                 content: '';
                 position: absolute;
-                top: -50%;
-                left: -50%;
-                width: 200%;
-                height: 200%;
-                background: linear-gradient(45deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+                top: -50%; left: -50%;
+                width: 200%; height: 200%;
+                background: linear-gradient(45deg, transparent, rgba(255,255,255,0.3), transparent);
                 transform: rotate(45deg);
                 transition: all 0.6s ease;
             }
-            
-            .analytics-card:hover .analytics-card-icon::before {
-                animation: shine 0.6s ease;
+            .page-analytics .analytics-card:hover .analytics-card-icon::before {
+                animation: ana-icon-shine 0.6s ease;
             }
-            
-            .analytics-card:hover .analytics-card-icon {
+            @keyframes ana-icon-shine {
+                0%  { transform: translateX(-100%) translateY(-100%) rotate(45deg); }
+                100%{ transform: translateX(100%)  translateY(100%)  rotate(45deg); }
+            }
+            .page-analytics .analytics-card:hover .analytics-card-icon {
                 transform: scale(1.1) rotate(5deg);
-                box-shadow: 0 12px 24px rgba(0, 0, 0, 0.2);
+                box-shadow: 0 12px 24px rgba(0,0,0,0.2);
             }
-            
-            @keyframes shine {
-                0% { transform: translateX(-100%) translateY(-100%) rotate(45deg); }
-                100% { transform: translateX(100%) translateY(100%) rotate(45deg); }
+            /* 4th card gets yellow icon like admin dashboard */
+            .page-analytics .analytics-card-info .analytics-card-icon {
+                background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 50%, #d97706 100%);
+                color: #0f172a;
             }
-            
-            .analytics-card-primary .analytics-card-icon {
-                background: linear-gradient(135deg, #dc2626 0%, #b91c1c 50%, #991b1b 100%);
+            .page-analytics .analytics-card-info .analytics-card-icon i { color: #0f172a; }
+            /* Fix global margin-bottom on icon (global style.css sets margin-bottom:16px for vertical layout) */
+            .page-analytics .analytics-card-icon { margin-bottom: 0 !important; }
+            .page-analytics .analytics-card-content {
+                flex: 1;
+                min-width: 0;
             }
-            
-            .analytics-card-success .analytics-card-icon {
-                background: linear-gradient(135deg, #10b981 0%, #059669 50%, #047857 100%);
-            }
-            
-            .analytics-card-warning .analytics-card-icon {
-                background: linear-gradient(135deg, #f59e0b 0%, #d97706 50%, #b45309 100%);
-            }
-            
-            .analytics-card-info .analytics-card-icon {
-                background: linear-gradient(135deg, #3b82f6 0%, #2563eb 50%, #1d4ed8 100%);
-            }
-            
-            .analytics-card-content {
-                display: flex;
-                flex-direction: column;
-                gap: 0.5rem;
-            }
-            
-            .analytics-card-number {
+            .page-analytics .analytics-card-number {
                 font-size: 2.75rem;
                 font-weight: 800;
                 line-height: 1;
@@ -283,238 +313,158 @@
                 letter-spacing: -0.02em;
                 transition: all 0.3s ease;
             }
-            
-            .analytics-card:hover .analytics-card-number {
-                transform: scale(1.05);
-            }
-            
-            .analytics-card-label {
+            .page-analytics .analytics-card:hover .analytics-card-number { transform: scale(1.05); }
+            .page-analytics .analytics-card-label {
                 font-size: 0.9375rem;
-                font-weight: 700;
+                font-weight: 600;
                 color: #374151;
-                text-transform: uppercase;
-                letter-spacing: 0.05em;
-                margin-bottom: 0.25rem;
+                margin-bottom: 0.375rem;
+                letter-spacing: 0.01em;
+                text-transform: none;
             }
-            
-            .analytics-card-trend {
+            .page-analytics .analytics-card-trend {
                 font-size: 0.8125rem;
-                color: #64748b;
-                font-weight: 600;
-            }
-            
-            /* Modern Chart Cards */
-            .analytics-charts {
-                display: grid;
-                grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
-                gap: 1.5rem;
-                margin-bottom: 2rem;
-            }
-            
-            .analytics-charts .card {
-                border-radius: 16px;
-                box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 
-                            0 2px 4px -1px rgba(0, 0, 0, 0.06),
-                            0 0 0 1px rgba(0, 0, 0, 0.05);
-                border: 1px solid rgba(226, 232, 240, 0.8);
-                overflow: hidden;
-                transition: all 0.3s ease;
-            }
-            
-            .analytics-charts .card:hover {
-                box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 
-                            0 4px 6px -2px rgba(0, 0, 0, 0.05);
-            }
-            
-            .analytics-charts .card-header {
-                background: linear-gradient(135deg, #f8fafc 0%, #ffffff 100%);
-                border-bottom: 1px solid rgba(226, 232, 240, 0.8);
-                padding: 1.25rem 1.5rem;
-                position: relative;
-            }
-            
-            .chart-header-content {
+                font-weight: 500;
+                color: #6b7280;
                 display: flex;
-                align-items: flex-start;
-                gap: 0.75rem;
-                margin-bottom: 0.5rem;
+                align-items: center;
+                gap: 0.25rem;
             }
-            
-            .chart-icon-square {
-                width: 12px;
-                height: 12px;
-                background: #374151;
-                flex-shrink: 0;
-                margin-top: 0.25rem;
-            }
-            
-            .chart-title-wrapper {
-                flex: 1;
-                display: flex;
-                flex-direction: column;
-                gap: 0;
-            }
-            
-            .analytics-charts .card-header::after {
+            .page-analytics .analytics-card-trend::before {
                 content: '';
-                position: absolute;
-                bottom: 0;
-                left: 0;
-                right: 0;
-                height: 1px;
-                background: linear-gradient(90deg, transparent, rgba(59, 130, 246, 0.2), transparent);
+                width: 6px; height: 6px;
+                border-radius: 50%;
+                background: currentColor;
+                opacity: 0.6;
+                flex-shrink: 0;
             }
-            
-            .analytics-charts .card-title {
-                font-size: 1.25rem;
-                font-weight: 700;
-                color: #1e293b;
-                margin: 0;
-                line-height: 1.3;
-                letter-spacing: -0.01em;
+
+            /* ── Section header card — let global dark-navy card-header show ── */
+            .page-analytics .admin-section .ana-header-card {
+                margin-bottom: 1.75rem;
             }
-            
-            .card-title-continuation {
-                font-size: 1.25rem;
-                font-weight: 700;
-                color: #1e293b;
-                line-height: 1.3;
-                letter-spacing: -0.01em;
-                display: block;
-            }
-            
-            .analytics-charts .card-subtitle {
-                font-size: 0.875rem;
-                color: #64748b;
-                margin: 0.375rem 0 0 0;
-                font-weight: 400;
-                line-height: 1.5;
-            }
-            
-            .analytics-charts .card-body {
-                padding: 1.5rem;
-            }
-            
-            .chart-container {
-                position: relative;
-                height: 320px;
-                width: 100%;
-            }
-            
-            /* Modern Export Actions Card */
-            .card:nth-of-type(2) {
-                border-radius: 16px;
-                box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 
-                            0 2px 4px -1px rgba(0, 0, 0, 0.06),
-                            0 0 0 1px rgba(0, 0, 0, 0.05);
-                border: 1px solid rgba(226, 232, 240, 0.8);
-                margin-bottom: 1.5rem;
-            }
-            
-            .card:nth-of-type(2) .card-body {
-                padding: 1.25rem 1.5rem;
+            .page-analytics .admin-section .ana-header-card .card-header {
                 display: flex;
+                align-items: center;
                 justify-content: space-between;
-                align-items: center;
                 flex-wrap: wrap;
-                gap: 1rem;
-            }
-            
-            .action-buttons {
-                display: flex;
-                gap: 0.75rem;
-                flex-wrap: wrap;
-            }
-            
-            .action-buttons .btn {
-                padding: 0.625rem 1.25rem;
-                border-radius: 10px;
-                font-weight: 600;
-                font-size: 0.875rem;
-                transition: all 0.3s ease;
-                border: none;
-                box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-                display: flex;
-                align-items: center;
                 gap: 0.5rem;
             }
-            
-            .action-buttons .btn:hover {
-                transform: translateY(-2px);
-                box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
-            }
-            
-            .action-buttons .btn-danger {
-                background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
-                color: white;
-            }
-            
-            .action-buttons .btn-success {
-                background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-                color: white;
-            }
-            
-            .action-buttons .btn-primary {
-                background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
-                color: white;
-            }
-            
-            .date-range-selector {
-                display: flex;
-                align-items: center;
-                gap: 0.75rem;
-            }
-            
-            .date-range-selector label {
-                font-size: 0.875rem;
-                font-weight: 600;
-                color: #374151;
-            }
-            
-            .date-range-selector select {
-                padding: 0.625rem 1rem;
-                border: 1px solid rgba(226, 232, 240, 0.8);
-                border-radius: 10px;
-                background: white;
-                font-size: 0.875rem;
-                color: #374151;
-                cursor: pointer;
-                transition: all 0.2s ease;
+            .page-analytics .ana-page-meta {
+                font-size: 0.75rem;
+                color: rgba(255,255,255,0.65);
                 font-weight: 500;
+                white-space: nowrap;
             }
-            
-            .date-range-selector select:focus {
-                outline: none;
-                border-color: #3b82f6;
-                box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+
+            /* ── Chart Cards ── */
+            .page-analytics .analytics-charts {
+                display: grid;
+                grid-template-columns: repeat(4, minmax(0, 1fr));
+                gap: var(--gap);
+                margin-bottom: 1.5rem;
+                width: 100%;
             }
-            
-            /* Responsive adjustments */
+            .page-analytics .analytics-charts .card {
+                background: var(--c-surface) !important;
+                border-radius: var(--r) !important;
+                border: 1px solid var(--c-border) !important;
+                border-left: 1px solid var(--c-border) !important;
+                box-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 0 0 1px rgba(0,0,0,0.03) !important;
+                overflow: hidden;
+                transition: box-shadow 0.2s ease;
+                padding: 0 !important;
+            }
+            .page-analytics .analytics-charts .card:hover {
+                box-shadow: 0 4px 16px rgba(0,0,0,0.09) !important;
+            }
+            .page-analytics .analytics-charts .card-header {
+                background: #ffffff !important;
+                color: var(--c-text) !important;
+                border-bottom: 1px solid var(--c-border) !important;
+                border-radius: var(--r) var(--r) 0 0 !important;
+                padding: 1rem 1.25rem !important;
+            }
+            .page-analytics .analytics-charts .card-title {
+                font-size: 0.9375rem !important;
+                font-weight: 700 !important;
+                color: var(--c-text) !important;
+                margin: 0 !important;
+                line-height: 1.4 !important;
+            }
+            .page-analytics .analytics-charts .card-subtitle {
+                font-size: 0.75rem !important;
+                color: var(--c-faint) !important;
+                margin: 0.2rem 0 0 0 !important;
+                font-weight: 400 !important;
+            }
+            .page-analytics .analytics-charts .card-body { padding: 1rem 1.25rem !important; }
+            .page-analytics .chart-container { position: relative; height: 280px; width: 100%; }
+            .page-analytics .card-full-width { grid-column: 1 / -1; }
+
+            /* Simplify chart header (hide old icon/wrapper) */
+            .page-analytics .chart-header-content { display: block; }
+            .page-analytics .chart-icon-square { display: none; }
+            .page-analytics .chart-title-wrapper { display: block; }
+            .page-analytics .card-title-continuation {
+                font-size: 0.9375rem;
+                font-weight: 700;
+                color: var(--c-text);
+                display: inline;
+                letter-spacing: -0.01em;
+            }
+            /* Merge title + continuation on one line */
+            .page-analytics .analytics-charts .card-title::after { content: ' '; }
+
+            /* ── Summary Table ── */
+            .page-analytics .summary-table-wrapper {
+                overflow-x: auto;
+                border-radius: var(--r-sm);
+            }
+            .page-analytics .analytics-summary-table {
+                width: 100%;
+                border-collapse: collapse;
+                font-size: 0.8125rem;
+            }
+            .page-analytics .analytics-summary-table th,
+            .page-analytics .analytics-summary-table td {
+                padding: 0.75rem 1rem;
+                text-align: left;
+                border-bottom: 1px solid var(--c-border);
+            }
+            .page-analytics .analytics-summary-table tr:last-child td { border-bottom: none; }
+            .page-analytics .analytics-summary-table thead th {
+                font-weight: 600;
+                color: var(--c-muted);
+                font-size: 0.7rem;
+                text-transform: uppercase;
+                letter-spacing: 0.05em;
+                background: var(--c-bg);
+            }
+            .page-analytics .analytics-summary-table tbody td { color: var(--c-text); }
+            .page-analytics .analytics-summary-table .change-up    { color: var(--c-success); font-weight: 600; }
+            .page-analytics .analytics-summary-table .change-down  { color: var(--c-danger);  font-weight: 600; }
+            .page-analytics .analytics-summary-table .change-neutral { color: var(--c-muted); }
+
+            /* ── Responsive ── */
+            @media (max-width: 1200px) {
+                .page-analytics .analytics-overview { grid-template-columns: repeat(2, 1fr); }
+                .page-analytics .analytics-charts   { grid-template-columns: repeat(2, 1fr); }
+            }
             @media (max-width: 768px) {
-                .analytics-overview {
-                    grid-template-columns: 1fr;
-                    gap: 1rem;
-                }
-                
-                .analytics-charts {
-                    grid-template-columns: 1fr;
-                    gap: 1rem;
-                }
-                
-                .card:nth-of-type(2) .card-body {
-                    flex-direction: column;
-                    align-items: stretch;
-                }
-                
-                .action-buttons {
-                    justify-content: center;
-                    width: 100%;
-                }
-                
-                .date-range-selector {
-                    width: 100%;
-                    justify-content: space-between;
-                }
+                .page-analytics .admin-section.active { padding: 1rem; }
+                .page-analytics .analytics-overview { grid-template-columns: 1fr; gap: 1rem; }
+                .page-analytics .analytics-charts   { grid-template-columns: 1fr; }
+                .page-analytics .analytics-card { padding: 1.5rem; }
+                .page-analytics .analytics-card-icon { width: 64px; height: 64px; font-size: 24px; }
+                .page-analytics .analytics-card-icon i { font-size: 24px; }
+                .page-analytics .analytics-card-number { font-size: 2.25rem; }
+                .page-analytics .ana-toolbar { flex-direction: column; align-items: stretch; }
+                .page-analytics .ana-toolbar .period-selector { margin-left: 0; }
+                .page-analytics .ana-toolbar-sep { display: none; }
+                .page-analytics .period-tabs { flex: 1; }
+                .page-analytics .period-tab  { flex: 1; text-align: center; }
+                .page-analytics .ana-page-header { flex-direction: column; align-items: flex-start; }
             }
         </style>
         
@@ -524,11 +474,14 @@
             <div class="admin-section active">
                
 
-                <!-- Header Card -->
-                <div class="card">
+                <!-- Page Header Card (matches other admin pages) -->
+                <div class="card ana-header-card">
                     <div class="card-header">
-                        <h2 class="card-title">Analytics Dashboard</h2>
-                        <p class="card-subtitle">Comprehensive emergency response analytics and insights</p>
+                        <div>
+                            <h2 class="card-title">Analytics Dashboard</h2>
+                            <p class="card-subtitle">Comprehensive emergency response analytics and insights</p>
+                        </div>
+                        <span class="ana-page-meta" id="anaPageDate">Loading...</span>
                     </div>
                 </div>
                 
@@ -578,28 +531,36 @@
                         </div>
                     </div>
                 </div>
-                 <!-- Export Actions Card -->
-                 <div class="card">
-                    <div class="card-body" style="display: flex; justify-content: space-between; align-items: center;">
-                        <div class="action-buttons">
-                            <button onclick="exportAnalytics('pdf')" class="btn btn-danger">
-                                <i class="bi bi-file-pdf"></i> Export PDF Report
-                            </button>
-                            <button onclick="exportAnalytics('excel')" class="btn btn-success">
-                                <i class="bi bi-file-excel"></i> Export Excel Data
-                            </button>
-                            <button onclick="refreshAnalytics()" class="btn btn-primary">
-                                <i class="bi bi-arrow-clockwise"></i> Refresh Data
-                            </button>
-                        </div>
-                        <div class="date-range-selector">
-                            <label for="dateRange">Date Range:</label>
-                            <select id="dateRange" onchange="updateDateRange()">
-                                <option value="7">Last 7 days</option>
-                                <option value="30" selected>Last 30 days</option>
-                                <option value="90">Last 90 days</option>
-                                <option value="365">Last year</option>
-                            </select>
+                <!-- Toolbar -->
+                <div class="ana-toolbar">
+                    <div class="action-buttons">
+                        <button onclick="exportAnalytics('pdf')" class="btn btn-danger">
+                            <i class="bi bi-file-pdf"></i> Export PDF
+                        </button>
+                        <button onclick="exportAnalytics('excel')" class="btn btn-success">
+                            <i class="bi bi-file-earmark-spreadsheet"></i> Export CSV
+                        </button>
+                        <button onclick="refreshAnalytics()" class="btn btn-primary">
+                            <i class="bi bi-arrow-clockwise"></i> Refresh
+                        </button>
+                    </div>
+                    <div class="ana-toolbar-sep"></div>
+                    <div class="date-range-selector">
+                        <label for="dateRange">Range:</label>
+                        <select id="dateRange" onchange="updateDateRange()">
+                            <option value="7">Last 7 days</option>
+                            <option value="30" selected>Last 30 days</option>
+                            <option value="90">Last 90 days</option>
+                            <option value="365">Last year</option>
+                        </select>
+                    </div>
+                    <div class="ana-toolbar-sep"></div>
+                    <div class="period-selector" title="Controls the Reports Over Time chart below">
+                        <label>View <span class="ana-label-hint">(Reports Over Time)</span>:</label>
+                        <div class="period-tabs">
+                            <button type="button" class="period-tab active" data-period="daily">Daily</button>
+                            <button type="button" class="period-tab" data-period="weekly">Weekly</button>
+                            <button type="button" class="period-tab" data-period="monthly">Monthly</button>
                         </div>
                     </div>
                 </div>
@@ -609,57 +570,92 @@
                     <!-- Emergency Type Distribution -->
                     <div class="card">
                         <div class="card-header">
-                            <div class="chart-header-content">
-                                <div class="chart-icon-square"></div>
-                                <div class="chart-title-wrapper">
-                                    <h3 class="card-title">Emergency Type</h3>
-                                    <span class="card-title-continuation">Distribution</span>
-                                </div>
-                            </div>
-                            <p class="card-subtitle">Breakdown of emergency types over time</p>
+                            <h3 class="card-title">Emergency Type Distribution</h3>
+                            <p class="card-subtitle">Breakdown of emergency categories</p>
                         </div>
                         <div class="card-body">
                             <div class="chart-container">
-                                <canvas id="emergencyTypeChart" width="400" height="200"></canvas>
+                                <canvas id="emergencyTypeChart"></canvas>
                             </div>
                         </div>
                     </div>
-                    
-                    
+
                     <!-- Monthly Trends -->
                     <div class="card">
                         <div class="card-header">
-                            <div class="chart-header-content">
-                                <div class="chart-icon-square"></div>
-                                <div class="chart-title-wrapper">
-                                    <h3 class="card-title">Monthly Emergency</h3>
-                                    <span class="card-title-continuation">Trends</span>
-                                </div>
-                            </div>
-                            <p class="card-subtitle">Emergency frequency over the past 12 months</p>
+                            <h3 class="card-title">Monthly Emergency Trends</h3>
+                            <p class="card-subtitle">Frequency over the past 12 months</p>
                         </div>
                         <div class="card-body">
                             <div class="chart-container">
-                                <canvas id="monthlyTrendsChart" width="400" height="200"></canvas>
+                                <canvas id="monthlyTrendsChart"></canvas>
                             </div>
                         </div>
                     </div>
-                    
+
                     <!-- Priority Distribution -->
                     <div class="card">
                         <div class="card-header">
-                            <div class="chart-header-content">
-                                <div class="chart-icon-square"></div>
-                                <div class="chart-title-wrapper">
-                                    <h3 class="card-title">Priority</h3>
-                                    <span class="card-title-continuation">Distribution</span>
-                                </div>
-                            </div>
-                            <p class="card-subtitle">Distribution of emergency priorities</p>
+                            <h3 class="card-title">Priority Distribution</h3>
+                            <p class="card-subtitle">Breakdown by emergency priority level</p>
                         </div>
                         <div class="card-body">
                             <div class="chart-container">
-                                <canvas id="priorityChart" width="400" height="200"></canvas>
+                                <canvas id="priorityChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Status Distribution -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="card-title">Status Distribution</h3>
+                            <p class="card-subtitle">Pending, in-progress, and resolved</p>
+                        </div>
+                        <div class="card-body">
+                            <div class="chart-container">
+                                <canvas id="statusChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Reports Over Time -->
+                    <div class="card card-full-width">
+                        <div class="card-header">
+                            <h3 class="card-title">Reports Over Time <span id="reportsOverTimeSubtitle" style="font-weight:400;color:var(--c-faint);font-size:0.8125rem;margin-left:0.375rem;">— by day</span></h3>
+                            <p class="card-subtitle" id="reportsOverTimeDesc">Number of reports per day in the selected date range</p>
+                        </div>
+                        <div class="card-body">
+                            <div class="chart-container">
+                                <canvas id="reportsOverTimeChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Summary Table -->
+                    <div class="card card-full-width">
+                        <div class="card-header">
+                            <h3 class="card-title">Period Summary</h3>
+                            <p class="card-subtitle">Totals and averages vs. previous period</p>
+                        </div>
+                        <div class="card-body">
+                            <div class="summary-table-wrapper">
+                                <table class="analytics-summary-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Metric</th>
+                                            <th>This period</th>
+                                            <th>Previous period</th>
+                                            <th>Change</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="summaryTableBody">
+                                        <tr><td>Total reports</td><td id="sumTotal">—</td><td id="sumPrevTotal">—</td><td id="sumChangeTotal">—</td></tr>
+                                        <tr><td>Resolved</td><td id="sumResolved">—</td><td id="sumPrevResolved">—</td><td id="sumChangeResolved">—</td></tr>
+                                        <tr><td>Avg response time</td><td id="sumResponse">—</td><td id="sumPrevResponse">—</td><td id="sumChangeResponse">—</td></tr>
+                                        <tr><td>Critical priority</td><td id="sumCritical">—</td><td id="sumPrevCritical">—</td><td id="sumChangeCritical">—</td></tr>
+                                    </tbody>
+                                </table>
                             </div>
                         </div>
                     </div>
@@ -674,24 +670,85 @@
         let analyticsData = {};
         let charts = {};
         let currentDateRange = 30;
+        let currentPeriod = 'daily'; // daily | weekly | monthly
+
+        // Unified palette – same colors across Emergency Type, Priority, Status, Monthly Trends
+        const CHART_COLORS = {
+            danger: '#dc2626',   // Fire, Critical
+            primary: '#2563eb',  // Flood, Medium, In progress, main line
+            warning: '#d97706',  // Accident, High, Pending
+            success: '#059669',  // Medical, Low, Resolved
+            neutral: '#64748b'   // Other
+        };
+        const CHART_COLORS_RGBA = {
+            danger: 'rgba(220, 38, 38, 0.9)',
+            primary: 'rgba(37, 99, 235, 0.9)',
+            warning: 'rgba(217, 119, 6, 0.9)',
+            success: 'rgba(5, 150, 105, 0.9)',
+            neutral: 'rgba(100, 116, 139, 0.9)'
+        };
 
         // Initialize the system when the page loads
         document.addEventListener('DOMContentLoaded', async function() {
+            // Set header date
+            const dateEl = document.getElementById('anaPageDate');
+            if (dateEl) {
+                dateEl.textContent = new Date().toLocaleDateString('en-US', { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' });
+            }
             try {
-                // Initialize the emergency system
                 await window.emergencySystem.initialize();
-                
-                // Initialize charts first
                 initializeCharts();
-                
-                // Load analytics data
                 await loadAnalyticsData();
-                
+                // Period tabs
+                document.querySelectorAll('.period-tab').forEach(btn => {
+                    btn.addEventListener('click', function() {
+                        document.querySelectorAll('.period-tab').forEach(b => b.classList.remove('active'));
+                        this.classList.add('active');
+                        currentPeriod = this.getAttribute('data-period');
+                        updateCharts();
+                    });
+                });
                 console.log('✅ Analytics page initialized successfully');
             } catch (error) {
                 console.error('❌ Error initializing analytics page:', error);
             }
         });
+
+        // Filter reports to those within the last N days
+        function filterReportsByDateRange(reports, days) {
+            if (!reports || !days) return reports || [];
+            const end = new Date();
+            const start = new Date();
+            start.setDate(start.getDate() - days);
+            start.setHours(0, 0, 0, 0);
+            return (reports || []).filter(r => {
+                const d = new Date(r.created_at);
+                return d >= start && d <= end;
+            });
+        }
+
+        // Get reports from the previous period (same length, before current start)
+        function getPreviousPeriodReports(reports, days) {
+            if (!reports || !days) return [];
+            const end = new Date();
+            end.setDate(end.getDate() - days);
+            end.setHours(23, 59, 59, 999);
+            const start = new Date(end);
+            start.setDate(start.getDate() - days);
+            start.setHours(0, 0, 0, 0);
+            return (reports || []).filter(r => {
+                const d = new Date(r.created_at);
+                return d >= start && d <= end;
+            });
+        }
+
+        // Get filtered (current period) and previous period reports for display
+        function getFilteredReports() {
+            const reports = analyticsData.reports || [];
+            const filtered = filterReportsByDateRange(reports, currentDateRange);
+            const previous = getPreviousPeriodReports(reports, currentDateRange);
+            return { filtered, previous, all: reports };
+        }
 
         // Load analytics data
         async function loadAnalyticsData() {
@@ -723,31 +780,42 @@
             }
         }
 
-        // Update overview cards
+        // Update overview cards (use filtered data + comparison to previous period)
         function updateOverviewCards() {
-            const reports = analyticsData.reports;
-            const responders = analyticsData.responders;
+            const { filtered, previous } = getFilteredReports();
+            const reports = filtered;
+            const responders = analyticsData.responders || [];
+            const emergencyReports = filterEmergencyReports(reports);
+            const prevEmergency = filterEmergencyReports(previous);
             
-            // Total emergencies
-            const totalEmergencies = reports.length;
+            const totalEmergencies = emergencyReports.length;
+            const prevTotal = prevEmergency.length;
+            const totalDiff = totalEmergencies - prevTotal;
             document.getElementById('totalEmergencies').textContent = totalEmergencies;
-            document.getElementById('emergencyTrend').textContent = `${totalEmergencies} total cases`;
+            document.getElementById('emergencyTrend').textContent = formatTrend(totalDiff, prevTotal, 'cases');
             
-            // Average response time (mock calculation)
             const avgResponseTime = calculateAverageResponseTime(reports);
-            document.getElementById('avgResponseTime').textContent = avgResponseTime || '12m';
-            document.getElementById('responseTrend').textContent = 'Response time tracking';
+            const prevAvg = calculateAverageResponseTime(previous);
+            document.getElementById('avgResponseTime').textContent = avgResponseTime || '--';
+            document.getElementById('responseTrend').textContent = prevAvg ? 'vs prev: ' + prevAvg : 'Response time tracking';
             
-            // Active responders
             const activeResponders = responders.filter(r => r.is_available).length;
             document.getElementById('activeResponders').textContent = activeResponders;
-            document.getElementById('responderTrend').textContent = `${activeResponders} available`;
+            document.getElementById('responderTrend').textContent = activeResponders + ' available';
             
-            // Resolved cases
             const resolvedCases = reports.filter(r => r.status === 'completed').length;
+            const prevResolved = previous.filter(r => r.status === 'completed').length;
+            const resolvedDiff = resolvedCases - prevResolved;
             document.getElementById('resolvedCases').textContent = resolvedCases;
-            document.getElementById('resolvedTrend').textContent = `${resolvedCases} resolved`;
-            
+            document.getElementById('resolvedTrend').textContent = formatTrend(resolvedDiff, prevResolved, 'resolved');
+        }
+
+        function formatTrend(diff, prev, label) {
+            if (prev === 0) return diff > 0 ? '+' + diff + ' vs previous period' : (diff === 0 ? 'No prior data' : diff + ' vs previous period');
+            const pct = Math.round((diff / prev) * 100);
+            if (pct > 0) return '+' + pct + '% vs previous period';
+            if (pct < 0) return pct + '% vs previous period';
+            return 'Same as previous period';
         }
 
         // Calculate average response time
@@ -776,16 +844,16 @@
                     datasets: [{
                         data: [5, 3, 2, 4, 1],
                         backgroundColor: [
-                            'rgba(239, 68, 68, 0.9)',
-                            'rgba(59, 130, 246, 0.9)',
-                            'rgba(245, 158, 11, 0.9)',
-                            'rgba(16, 185, 129, 0.9)',
-                            'rgba(107, 114, 128, 0.9)'
+                            CHART_COLORS_RGBA.danger,
+                            CHART_COLORS_RGBA.primary,
+                            CHART_COLORS_RGBA.warning,
+                            CHART_COLORS_RGBA.success,
+                            CHART_COLORS_RGBA.neutral
                         ],
                         borderColor: '#ffffff',
-                        borderWidth: 3,
-                        hoverBorderWidth: 4,
-                        hoverOffset: 8
+                        borderWidth: 2,
+                        hoverBorderWidth: 3,
+                        hoverOffset: 6
                     }]
                 },
                 options: {
@@ -863,14 +931,12 @@
             });
 
 
-            // Monthly Trends Chart
+            // Monthly Trends Chart – modernized, primary blue (aligned with palette)
             const monthlyTrendsCtx = document.getElementById('monthlyTrendsChart').getContext('2d');
-            
-            // Create gradient for line chart
-            const monthlyTrendsGradient = monthlyTrendsCtx.createLinearGradient(0, 0, 0, 400);
-            monthlyTrendsGradient.addColorStop(0, 'rgba(220, 38, 38, 0.3)');
-            monthlyTrendsGradient.addColorStop(0.5, 'rgba(220, 38, 38, 0.15)');
-            monthlyTrendsGradient.addColorStop(1, 'rgba(220, 38, 38, 0.05)');
+            const monthlyTrendsGradient = monthlyTrendsCtx.createLinearGradient(0, 0, 0, 300);
+            monthlyTrendsGradient.addColorStop(0, 'rgba(37, 99, 235, 0.25)');
+            monthlyTrendsGradient.addColorStop(0.6, 'rgba(37, 99, 235, 0.06)');
+            monthlyTrendsGradient.addColorStop(1, 'rgba(37, 99, 235, 0.02)');
             
             charts.monthlyTrends = new Chart(monthlyTrendsCtx, {
                 type: 'line',
@@ -879,118 +945,72 @@
                     datasets: [{
                         label: 'Emergencies',
                         data: [2, 3, 1, 4, 2, 5, 3, 2, 4, 1, 3, 2],
-                        borderColor: '#dc2626',
+                        borderColor: CHART_COLORS.primary,
                         backgroundColor: monthlyTrendsGradient,
-                        borderWidth: 3,
-                        tension: 0.4,
+                        borderWidth: 2,
+                        tension: 0.35,
                         fill: true,
-                        pointRadius: 5,
-                        pointHoverRadius: 7,
-                        pointBackgroundColor: '#ffffff',
-                        pointBorderColor: '#dc2626',
+                        pointRadius: 0,
+                        pointHoverRadius: 6,
+                        pointBackgroundColor: '#fff',
+                        pointBorderColor: CHART_COLORS.primary,
                         pointBorderWidth: 2,
-                        pointHoverBackgroundColor: '#dc2626',
-                        pointHoverBorderColor: '#ffffff',
-                        pointHoverBorderWidth: 3,
-                        shadowOffsetX: 0,
-                        shadowOffsetY: 4,
-                        shadowBlur: 8,
-                        shadowColor: 'rgba(220, 38, 38, 0.2)'
+                        pointHoverBackgroundColor: CHART_COLORS.primary,
+                        pointHoverBorderColor: '#fff'
                     }]
                 },
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
-                    interaction: {
-                        intersect: false,
-                        mode: 'index'
-                    },
+                    interaction: { intersect: false, mode: 'index' },
                     plugins: {
                         legend: {
-                            display: true,
-                            position: 'top',
-                            labels: {
-                                usePointStyle: true,
-                                padding: 15,
-                                font: {
-                                    size: 13,
-                                    weight: '600',
-                                    family: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif"
-                                },
-                                color: '#374151'
-                            }
+                            display: false
                         },
                         tooltip: {
-                            backgroundColor: 'rgba(30, 41, 59, 0.95)',
-                            padding: 12,
-                            titleFont: {
-                                size: 13,
-                                weight: '600'
-                            },
-                            bodyFont: {
-                                size: 13,
-                                weight: '500'
-                            },
-                            borderColor: 'rgba(220, 38, 38, 0.3)',
-                            borderWidth: 1,
+                            backgroundColor: 'rgba(15, 23, 42, 0.92)',
+                            padding: 10,
+                            titleFont: { size: 12, weight: '600' },
+                            bodyFont: { size: 12 },
                             cornerRadius: 8,
                             displayColors: true,
                             callbacks: {
-                                label: function(context) {
-                                    return `${context.dataset.label}: ${context.parsed.y} emergencies`;
+                                label: function(ctx) {
+                                    return ctx.parsed.y + ' emergencies';
                                 }
                             }
                         }
                     },
                     scales: {
                         x: {
-                            grid: {
-                                display: true,
-                                color: 'rgba(226, 232, 240, 0.5)',
-                                lineWidth: 1
-                            },
+                            grid: { display: false },
                             ticks: {
                                 color: '#64748b',
-                                font: {
-                                    size: 11,
-                                    weight: '500'
-                                },
+                                font: { size: 10, weight: '500' },
                                 maxRotation: 45,
-                                minRotation: 45
+                                minRotation: 45,
+                                autoSkip: false,
+                                maxTicksLimit: 12
                             },
-                            border: {
-                                display: true,
-                                color: '#e2e8f0'
-                            }
+                            border: { display: false }
                         },
                         y: {
                             beginAtZero: true,
                             grid: {
-                                display: true,
-                                color: 'rgba(226, 232, 240, 0.5)',
+                                color: 'rgba(226, 232, 240, 0.6)',
                                 lineWidth: 1
                             },
                             ticks: {
                                 color: '#64748b',
-                                font: {
-                                    size: 11,
-                                    weight: '500'
-                                },
-                                stepSize: 5,
-                                callback: function(value) {
-                                    return value;
-                                }
+                                font: { size: 10, weight: '500' }
                             },
-                            border: {
-                                display: true,
-                                color: '#e2e8f0'
-                            }
+                            border: { display: false }
                         }
                     }
                 }
             });
 
-            // Priority Chart
+            // Priority Chart – palette: Critical=danger, High=warning, Medium=primary, Low=success
             const priorityCtx = document.getElementById('priorityChart').getContext('2d');
             charts.priority = new Chart(priorityCtx, {
                 type: 'pie',
@@ -999,15 +1019,15 @@
                     datasets: [{
                         data: [2, 3, 8, 6],
                         backgroundColor: [
-                            'rgba(220, 38, 38, 0.9)',
-                            'rgba(245, 158, 11, 0.9)',
-                            'rgba(59, 130, 246, 0.9)',
-                            'rgba(16, 185, 129, 0.9)'
+                            CHART_COLORS_RGBA.danger,
+                            CHART_COLORS_RGBA.warning,
+                            CHART_COLORS_RGBA.primary,
+                            CHART_COLORS_RGBA.success
                         ],
                         borderColor: '#ffffff',
-                        borderWidth: 3,
-                        hoverBorderWidth: 4,
-                        hoverOffset: 8
+                        borderWidth: 2,
+                        hoverBorderWidth: 3,
+                        hoverOffset: 6
                     }]
                 },
                 options: {
@@ -1034,7 +1054,7 @@
                                         return data.labels.map((label, i) => {
                                             const value = data.datasets[0].data[i];
                                             const total = data.datasets[0].data.reduce((a, b) => a + b, 0);
-                                            const percentage = ((value / total) * 100).toFixed(1);
+                                            const percentage = total ? ((value / total) * 100).toFixed(1) : '0';
                                             return {
                                                 text: `${label} (${percentage}%)`,
                                                 fillStyle: data.datasets[0].backgroundColor[i],
@@ -1069,8 +1089,8 @@
                                     const label = context.label || '';
                                     const value = context.parsed || 0;
                                     const total = context.dataset.data.reduce((a, b) => a + b, 0);
-                                    const percentage = ((value / total) * 100).toFixed(1);
-                                    return `${label}: ${value} (${percentage}%)`;
+                                    const percentage = total ? ((value / total) * 100).toFixed(1) : '0';
+                                    return `${label}: ${percentage}%`;
                                 }
                             }
                         }
@@ -1080,6 +1100,90 @@
                         animateScale: true,
                         duration: 1000,
                         easing: 'easeOutQuart'
+                    }
+                }
+            });
+
+            // Reports Over Time – primary blue (palette)
+            const rotCtx = document.getElementById('reportsOverTimeChart').getContext('2d');
+            const rotGradient = rotCtx.createLinearGradient(0, 0, 0, 320);
+            rotGradient.addColorStop(0, 'rgba(37, 99, 235, 0.2)');
+            rotGradient.addColorStop(0.6, 'rgba(37, 99, 235, 0.05)');
+            rotGradient.addColorStop(1, 'rgba(37, 99, 235, 0.02)');
+            charts.reportsOverTime = new Chart(rotCtx, {
+                type: 'line',
+                data: { labels: [], datasets: [{
+                    label: 'Reports',
+                    data: [],
+                    borderColor: CHART_COLORS.primary,
+                    backgroundColor: rotGradient,
+                    borderWidth: 2,
+                    tension: 0.35,
+                    fill: true,
+                    pointRadius: 4,
+                    pointHoverRadius: 6,
+                    pointBackgroundColor: '#fff',
+                    pointBorderColor: CHART_COLORS.primary,
+                    pointBorderWidth: 2
+                }]},
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: { intersect: false, mode: 'index' },
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            backgroundColor: 'rgba(30, 41, 59, 0.95)',
+                            padding: 10,
+                            callbacks: { label: function(ctx) { return ctx.parsed.y + ' reports'; } }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            grid: { color: 'rgba(226, 232, 240, 0.5)' },
+                            ticks: { color: '#64748b', maxRotation: 45, minRotation: 30 }
+                        },
+                        y: {
+                            beginAtZero: true,
+                            grid: { color: 'rgba(226, 232, 240, 0.5)' },
+                            ticks: { color: '#64748b' }
+                        }
+                    }
+                }
+            });
+
+            // Status Distribution – palette: Pending=warning, In progress=primary, Resolved=success
+            const statusCtx = document.getElementById('statusChart').getContext('2d');
+            charts.status = new Chart(statusCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Pending', 'In progress', 'Resolved'],
+                    datasets: [{
+                        data: [0, 0, 0],
+                        backgroundColor: [
+                            CHART_COLORS_RGBA.warning,
+                            CHART_COLORS_RGBA.primary,
+                            CHART_COLORS_RGBA.success
+                        ],
+                        borderColor: '#ffffff',
+                        borderWidth: 2,
+                        hoverOffset: 6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'bottom', labels: { usePointStyle: true, padding: 12 } },
+                        tooltip: {
+                            callbacks: {
+                                label: function(ctx) {
+                                    const total = ctx.dataset.data.reduce((a, b) => a + b, 0);
+                                    const pct = total ? ((ctx.parsed / total) * 100).toFixed(1) : 0;
+                                    return ctx.label + ': ' + ctx.parsed + ' (' + pct + '%)';
+                                }
+                            }
+                        }
                     }
                 }
             });
@@ -1093,11 +1197,10 @@
             });
         }
 
-        // Update charts with real data
+        // Update charts with real data (filtered by date range)
         function updateCharts() {
-            const reports = analyticsData.reports;
-            
-            // Filter out non-emergency reports - only count actual emergencies
+            const { filtered, previous } = getFilteredReports();
+            const reports = filtered;
             const emergencyReports = filterEmergencyReports(reports);
             
             // Emergency Type Distribution
@@ -1152,8 +1255,9 @@
             charts.emergencyType.update();
 
 
-            // Monthly Trends (only emergency reports)
-            const monthlyData = calculateMonthlyTrends(emergencyReports);
+            // Monthly Trends: last 12 months (use up to 365 days of data so chart is always meaningful)
+            const reports12Months = filterReportsByDateRange(analyticsData.reports || [], 365);
+            const monthlyData = calculateMonthlyTrends(filterEmergencyReports(reports12Months));
             charts.monthlyTrends.data.datasets[0].data = monthlyData;
             charts.monthlyTrends.update();
 
@@ -1172,6 +1276,145 @@
                 priorityCounts[4]
             ];
             charts.priority.update();
+
+            // Status distribution (all reports in range, not just emergency)
+            const statusCounts = {
+                pending: reports.filter(r => (r.status || '').toLowerCase() === 'pending').length,
+                in_progress: reports.filter(r => (r.status || '').toLowerCase() === 'in_progress' || (r.status || '').toLowerCase() === 'assigned').length,
+                completed: reports.filter(r => (r.status || '').toLowerCase() === 'completed').length
+            };
+            charts.status.data.datasets[0].data = [statusCounts.pending, statusCounts.in_progress, statusCounts.completed];
+            charts.status.update();
+
+            // Reports Over Time by period
+            const rotChart = charts.reportsOverTime;
+            let labels = [];
+            let data = [];
+            const days = currentDateRange;
+            if (currentPeriod === 'daily') {
+                const out = getDailyReportCounts(reports, days);
+                labels = out.labels;
+                data = out.data;
+                document.getElementById('reportsOverTimeSubtitle').textContent = 'By day (last ' + days + ' days)';
+                document.getElementById('reportsOverTimeDesc').textContent = 'Number of reports per day. Date range: same as "Date Range" selector above.';
+            } else if (currentPeriod === 'weekly') {
+                const weeks = Math.min(12, Math.max(1, Math.floor(days / 7)));
+                const out = getWeeklyReportCounts(reports, weeks);
+                labels = out.labels;
+                data = out.data;
+                document.getElementById('reportsOverTimeSubtitle').textContent = 'By week (last ' + weeks + ' weeks)';
+                document.getElementById('reportsOverTimeDesc').textContent = 'Number of reports per week';
+            } else {
+                const months = Math.min(12, Math.max(1, Math.floor(days / 30)));
+                const out = getMonthlyReportCounts(reports, months);
+                labels = out.labels;
+                data = out.data;
+                document.getElementById('reportsOverTimeSubtitle').textContent = 'By month (last ' + months + ' months)';
+                document.getElementById('reportsOverTimeDesc').textContent = 'Number of reports per month';
+            }
+            rotChart.data.labels = labels;
+            rotChart.data.datasets[0].data = data;
+            rotChart.update();
+
+            updateSummaryTable(filtered, previous);
+        }
+
+        function getDailyReportCounts(reports, days) {
+            const labels = [];
+            const data = [];
+            const now = new Date();
+            for (let i = days - 1; i >= 0; i--) {
+                const d = new Date(now);
+                d.setDate(d.getDate() - i);
+                d.setHours(0, 0, 0, 0);
+                const next = new Date(d);
+                next.setDate(next.getDate() + 1);
+                const count = (reports || []).filter(r => {
+                    const t = new Date(r.created_at);
+                    return t >= d && t < next;
+                }).length;
+                labels.push(d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }));
+                data.push(count);
+            }
+            return { labels, data };
+        }
+
+        function getWeeklyReportCounts(reports, weeks) {
+            const labels = [];
+            const data = [];
+            const now = new Date();
+            now.setHours(23, 59, 59, 999);
+            for (let i = weeks - 1; i >= 0; i--) {
+                const weekEnd = new Date(now);
+                weekEnd.setDate(weekEnd.getDate() - i * 7);
+                const weekStart = new Date(weekEnd);
+                weekStart.setDate(weekStart.getDate() - 6);
+                weekStart.setHours(0, 0, 0, 0);
+                weekEnd.setHours(23, 59, 59, 999);
+                const count = (reports || []).filter(r => {
+                    const t = new Date(r.created_at);
+                    return t >= weekStart && t <= weekEnd;
+                }).length;
+                labels.push('W' + (weeks - i) + ' ' + weekStart.toLocaleDateString('en-US', { month: 'short' }));
+                data.push(count);
+            }
+            return { labels, data };
+        }
+
+        function getMonthlyReportCounts(reports, months) {
+            const labels = [];
+            const data = [];
+            const now = new Date();
+            for (let i = months - 1; i >= 0; i--) {
+                const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
+                const next = new Date(date.getFullYear(), date.getMonth() + 1, 1);
+                const count = (reports || []).filter(r => {
+                    const t = new Date(r.created_at);
+                    return t >= date && t < next;
+                }).length;
+                labels.push(date.toLocaleDateString('en-US', { month: 'short', year: '2-digit' }));
+                data.push(count);
+            }
+            return { labels, data };
+        }
+
+        function updateSummaryTable(filtered, previous) {
+            const emergencyFiltered = filterEmergencyReports(filtered);
+            const emergencyPrev = filterEmergencyReports(previous);
+            const fmt = (n) => n == null || n === '' ? '—' : n;
+            const avgResp = (r) => calculateAverageResponseTime(r);
+            const critical = (r) => (r || []).filter(x => x.priority === 1).length;
+            const resolved = (r) => (r || []).filter(x => (x.status || '').toLowerCase() === 'completed').length;
+            const totalF = emergencyFiltered.length, totalP = emergencyPrev.length;
+            const resF = resolved(filtered), resP = resolved(previous);
+            const respF = avgResp(filtered), respP = avgResp(previous);
+            const critF = critical(emergencyFiltered), critP = critical(emergencyPrev);
+            const change = (curr, prev, invert) => {
+                if (prev === 0) return curr > 0 ? (invert ? '↓ new' : '↑ new') : '—';
+                const pct = Math.round(((curr - prev) / prev) * 100);
+                if (pct === 0) return '—';
+                const s = pct > 0 ? '+' + pct + '%' : pct + '%';
+                return (pct > 0 && invert) || (pct < 0 && !invert) ? '↓ ' + s : '↑ ' + s;
+            };
+            const setCell = (id, val, cssClass) => {
+                const el = document.getElementById(id);
+                if (!el) return;
+                el.textContent = val;
+                el.classList.remove('change-up', 'change-down', 'change-neutral');
+                if (cssClass) el.classList.add(cssClass);
+            };
+            setCell('sumTotal', fmt(totalF));
+            setCell('sumPrevTotal', fmt(totalP));
+            setCell('sumChangeTotal', change(totalF, totalP, false), totalF >= totalP ? 'change-up' : 'change-down');
+            setCell('sumResolved', fmt(resF));
+            setCell('sumPrevResolved', fmt(resP));
+            setCell('sumChangeResolved', change(resF, resP, false), resF >= resP ? 'change-up' : 'change-down');
+            setCell('sumResponse', fmt(respF));
+            setCell('sumPrevResponse', fmt(respP));
+            setCell('sumChangeResponse', change(respF, respP, true), respF !== respP ? (respF <= respP ? 'change-up' : 'change-down') : 'change-neutral');
+            setCell('sumCritical', fmt(critF));
+            setCell('sumPrevCritical', fmt(critP));
+            setCell('sumChangeCritical', change(critF, critP, true), critF !== critP ? (critF <= critP ? 'change-up' : 'change-down') : 'change-neutral');
         }
 
         // Calculate monthly trends
@@ -1190,14 +1433,14 @@
             return monthlyData;
         }
 
-        // Get last 12 months labels
+        // Get last 12 months labels (full year to avoid digit "2" in "25"/"26")
         function getLast12Months() {
             const months = [];
             const now = new Date();
             
             for (let i = 11; i >= 0; i--) {
                 const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
-                months.push(date.toLocaleDateString('en-US', { month: 'short', year: '2-digit' }));
+                months.push(date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' }));
             }
             
             return months;
@@ -1218,10 +1461,52 @@
 
         // Export analytics
         function exportAnalytics(format) {
+            const { filtered, previous } = getFilteredReports();
+            const reports = filtered;
+            const emergencyReports = filterEmergencyReports(reports);
+            const dateRangeLabel = 'Last_' + currentDateRange + '_days';
+            const timestamp = new Date().toISOString().slice(0, 10);
+            if (format === 'excel' || format === 'csv') {
+                const rows = [
+                    ['LSPU Emergency Response - Analytics Export', ''],
+                    ['Date range', 'Last ' + currentDateRange + ' days'],
+                    ['Exported', new Date().toLocaleString()],
+                    [''],
+                    ['Summary', 'This period', 'Previous period'],
+                    ['Total reports (emergencies only)', emergencyReports.length, previous.length],
+                    ['Resolved', reports.filter(r => (r.status || '').toLowerCase() === 'completed').length, previous.filter(r => (r.status || '').toLowerCase() === 'completed').length],
+                    ['Avg response time', calculateAverageResponseTime(reports), calculateAverageResponseTime(previous)],
+                    [''],
+                    ['Reports by type', 'Count'],
+                    ['Fire', emergencyReports.filter(r => (r.corrected_type || r.type || '').toLowerCase() === 'fire').length],
+                    ['Flood', emergencyReports.filter(r => (r.corrected_type || r.type || '').toLowerCase() === 'flood').length],
+                    ['Accident', emergencyReports.filter(r => { const t = (r.corrected_type || r.type || '').toLowerCase(); return t === 'accident' || t === 'vehicle' || t === 'traffic'; }).length],
+                    ['Medical', emergencyReports.filter(r => { const t = (r.corrected_type || r.type || '').toLowerCase(); return t === 'medical' || t === 'health'; }).length],
+                    ['Other', emergencyReports.filter(r => !['fire','flood','accident','vehicle','traffic','medical','health'].includes((r.corrected_type || r.type || '').toLowerCase())).length],
+                    [''],
+                    ['Report list', 'ID', 'Type', 'Status', 'Priority', 'Created at'],
+                    ...reports.slice(0, 500).map(r => [r.id || '', (r.corrected_type || r.type || ''), (r.status || ''), (r.priority || ''), (r.created_at || '')])
+                ];
+                const csv = rows.map(row => row.map(cell => '"' + String(cell).replace(/"/g, '""') + '"').join(',')).join('\r\n');
+                const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' });
+                const a = document.createElement('a');
+                a.href = URL.createObjectURL(blob);
+                a.download = 'analytics_' + dateRangeLabel + '_' + timestamp + '.csv';
+                a.click();
+                URL.revokeObjectURL(a.href);
+                if (window.emergencySystem && window.emergencySystem.showSuccess) {
+                    window.emergencySystem.showSuccess('Export downloaded (CSV). Open in Excel or Sheets.');
+                } else {
+                    alert('Export downloaded as CSV. Open in Excel or Google Sheets.');
+                }
+                return;
+            }
             if (format === 'pdf') {
-                alert('PDF export functionality would be implemented here');
-            } else if (format === 'excel') {
-                alert('Excel export functionality would be implemented here');
+                if (window.emergencySystem && window.emergencySystem.showSuccess) {
+                    window.emergencySystem.showSuccess('For a full PDF report, use Export Excel to get the data, then print or save as PDF from your spreadsheet.');
+                } else {
+                    alert('For a full PDF report, use "Export Excel Data" to download the data, then open in Excel/Sheets and use File → Print → Save as PDF.');
+                }
             }
         }
 
@@ -1310,8 +1595,8 @@
     </div>
 
     <style>
-        /* Logout Confirmation Modal */
-        .logout-modal {
+        /* Logout modal – scoped to analytics page only */
+        .page-analytics .logout-modal {
             position: fixed;
             top: 0;
             left: 0;
@@ -1321,14 +1606,12 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            animation: fadeIn 0.2s ease;
+            animation: ana-fadeIn 0.2s ease;
         }
-        
-        .logout-modal.hidden {
+        .page-analytics .logout-modal.hidden {
             display: none;
         }
-        
-        .logout-modal-overlay {
+        .page-analytics .logout-modal-overlay {
             position: absolute;
             top: 0;
             left: 0;
@@ -1337,8 +1620,7 @@
             background: rgba(0, 0, 0, 0.6);
             backdrop-filter: blur(4px);
         }
-        
-        .logout-modal-content {
+        .page-analytics .logout-modal-content {
             position: relative;
             background: white;
             border-radius: 16px;
@@ -1346,11 +1628,10 @@
             max-width: 420px;
             width: 90%;
             box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3), 0 10px 10px -5px rgba(0, 0, 0, 0.2);
-            animation: slideUp 0.3s ease;
+            animation: ana-slideUp 0.3s ease;
             text-align: center;
         }
-        
-        .logout-modal-icon {
+        .page-analytics .logout-modal-icon {
             width: 64px;
             height: 64px;
             margin: 0 auto 1.5rem;
@@ -1361,33 +1642,28 @@
             justify-content: center;
             border: 3px solid #fca5a5;
         }
-        
-        .logout-modal-icon i {
+        .page-analytics .logout-modal-icon i {
             font-size: 2rem;
             color: #ef4444;
         }
-        
-        .logout-modal-title {
+        .page-analytics .logout-modal-title {
             font-size: 1.5rem;
             font-weight: 700;
             color: #111827;
             margin: 0 0 0.75rem 0;
         }
-        
-        .logout-modal-message {
+        .page-analytics .logout-modal-message {
             font-size: 0.9375rem;
             color: #6b7280;
             line-height: 1.6;
             margin: 0 0 1.75rem 0;
         }
-        
-        .logout-modal-buttons {
+        .page-analytics .logout-modal-buttons {
             display: flex;
             gap: 0.75rem;
             justify-content: center;
         }
-        
-        .logout-modal-btn {
+        .page-analytics .logout-modal-btn {
             padding: 0.75rem 1.5rem;
             border-radius: 8px;
             font-size: 0.875rem;
@@ -1399,42 +1675,35 @@
             gap: 0.5rem;
             border: 2px solid transparent;
         }
-        
-        .logout-modal-btn.cancel {
+        .page-analytics .logout-modal-btn.cancel {
             background: #f3f4f6;
             color: #374151;
             border-color: #e5e7eb;
         }
-        
-        .logout-modal-btn.cancel:hover {
+        .page-analytics .logout-modal-btn.cancel:hover {
             background: #e5e7eb;
             border-color: #d1d5db;
             transform: translateY(-1px);
         }
-        
-        .logout-modal-btn.confirm {
+        .page-analytics .logout-modal-btn.confirm {
             background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
             color: white;
             border-color: #ef4444;
             box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3);
         }
-        
-        .logout-modal-btn.confirm:hover {
+        .page-analytics .logout-modal-btn.confirm:hover {
             background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
             transform: translateY(-1px);
             box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4);
         }
-        
-        .logout-modal-btn:active {
+        .page-analytics .logout-modal-btn:active {
             transform: translateY(0);
         }
-        
-        @keyframes fadeIn {
+        @keyframes ana-fadeIn {
             from { opacity: 0; }
             to { opacity: 1; }
         }
-        
-        @keyframes slideUp {
+        @keyframes ana-slideUp {
             from {
                 opacity: 0;
                 transform: translateY(20px) scale(0.95);

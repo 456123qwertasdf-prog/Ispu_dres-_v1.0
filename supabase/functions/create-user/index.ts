@@ -44,7 +44,9 @@ Deno.serve(async (req) => {
       role,
       phone,
       studentNumber,
-      userType
+      userType,
+      leaderId,
+      teamName
     } = body || {}
 
     if (!email || !role) {
@@ -90,8 +92,14 @@ Deno.serve(async (req) => {
     })
 
     if (createErr || !created?.user) {
+      const details = createErr?.message || 'Unknown'
+      const isDuplicate = /already registered|already exists|duplicate/i.test(details)
       return new Response(
-        JSON.stringify({ error: 'Failed to create auth user', details: createErr?.message || 'Unknown' }),
+        JSON.stringify({
+          error: isDuplicate ? 'Email already registered' : 'Failed to create auth user',
+          details,
+          code: isDuplicate ? 'EMAIL_EXISTS' : 'AUTH_ERROR'
+        }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
@@ -115,9 +123,38 @@ Deno.serve(async (req) => {
 
     if (profileErr) {
       return new Response(
-        JSON.stringify({ error: 'User created but profile insert failed', details: profileErr.message, userId }),
+        JSON.stringify({
+          error: 'User created but profile insert failed',
+          details: profileErr.message,
+          userId,
+          code: 'PROFILE_INSERT_ERROR',
+          hint: /duplicate|unique|already exists/i.test(profileErr.message)
+            ? 'ID number or email may already be in use.'
+            : undefined
+        }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
+    }
+
+    // When role is responder, create a responder row so the mobile app dashboard can load
+    if (role === 'responder') {
+      const responderName = displayName || (email.split('@')[0] || 'Responder')
+      const responderPhone = (phone && phone.trim() !== '') ? phone.trim() : `pending-${userId}`
+      const { error: responderErr } = await supabase
+        .from('responder')
+        .insert([{
+          user_id: userId,
+          name: responderName,
+          phone: responderPhone,
+          role: 'Emergency Responder',
+          status: 'active',
+          is_available: true,
+          leader_id: (leaderId && leaderId.trim() !== '') ? leaderId : null,
+          team_name: (teamName && teamName.trim() !== '') ? teamName.trim() : null
+        }])
+      if (responderErr) {
+        console.error('Responder row insert failed (non-fatal):', responderErr.message)
+      }
     }
 
     // Generate verification link and send email with credentials
@@ -125,13 +162,13 @@ Deno.serve(async (req) => {
     try {
       // Generate email verification link (this also creates the invite email but we'll send our own with credentials)
       // Set redirect to login page after verification
-      const redirectUrl = `${SUPABASE_URL.replace('/rest/v1', '').replace('https://', 'http://127.0.0.1:8000') || 'http://127.0.0.1:8000/login.html'}`
+      const redirectUrl = 'https://dres-lspu-edu-ph.456123qwert-asdf.workers.dev/login'
       const { data: linkData, error: linkError } = await supabase.auth.admin.generateLink({
         type: 'signup',
         email: email,
         password: generatedPassword,
         options: {
-          redirectTo: 'http://127.0.0.1:8000/login.html', // Redirect to login page after verification
+          redirectTo: 'https://dres-lspu-edu-ph.456123qwert-asdf.workers.dev/login', // Redirect to login page after verification
           data: {
             full_name: displayName || (email.split('@')[0] || 'User'),
             role,
@@ -182,7 +219,7 @@ Deno.serve(async (req) => {
           must_change_password: true,
           temporary_password: generatedPassword // This should map to {{ .Data.temporary_password }} in template
         },
-        redirectTo: 'http://127.0.0.1:8000/login.html'
+        redirectTo: 'https://dres-lspu-edu-ph.456123qwert-asdf.workers.dev/login'
       })
       
       if (inviteError) {
@@ -192,7 +229,7 @@ Deno.serve(async (req) => {
         console.log('✅ Invitation email sent via Supabase')
         console.log('🔑 Password for email:', generatedPassword)
         console.log('📧 Template variable should be: {{ .Data.temporary_password }}')
-        console.log('🔗 Verification link:', finalVerificationLink)
+        console.log('🔗 Verification link:', verificationLink)
         console.log('⚠️  CRITICAL: Make sure custom template is uploaded in Supabase Dashboard!')
         console.log('    Dashboard: https://supabase.com/dashboard/project/hmolyqzbvxxliemclrld/settings/auth')
       }

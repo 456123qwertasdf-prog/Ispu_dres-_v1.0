@@ -29,7 +29,7 @@
     <div class="sidebar">
         <div class="sidebar-header">
             <div class="sidebar-logo">
-                    <img src="images/udrrmo image.jpg" alt="UDRRMO Logo" 
+                    <img src="images/logolspu.jpg" alt="LSPU Logo" 
                          style="width: 50px; height: 50px; object-fit: contain; border-radius: 50%; border: 2px solid white; display: block;">
                     <div class="sidebar-title">
                         <h2>Responder Dashboard</h2>
@@ -791,7 +791,8 @@
             try {
                 const reports = await emergencySystem.getReports();
                 const ongoingStatuses = ['pending', 'processing', 'classified', 'assigned', 'in-progress'];
-                const ongoing = (reports || []).filter(r => ongoingStatuses.includes((r.status || '').toLowerCase()));
+                const isFalseAlarm = (r) => ((r.type || '').toLowerCase() === 'false_alarm' || (r.corrected_type || '').toLowerCase() === 'false_alarm');
+                const ongoing = (reports || []).filter(r => ongoingStatuses.includes((r.status || '').toLowerCase()) && !isFalseAlarm(r));
                 ongoing.sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
                 ongoingIncidents = ongoing;
                 if (ongoing.length === 0) {

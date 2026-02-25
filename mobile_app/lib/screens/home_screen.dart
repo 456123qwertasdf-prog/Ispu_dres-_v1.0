@@ -46,9 +46,10 @@ class _HomeScreenState extends State<HomeScreen> {
   bool _isGettingSosLocation = false;
   bool _sosLocationReady = false;
 
-  // Citizen synopsis (Safety Notice)
+  // Citizen synopsis (Safety Notice) — from DB when editable, else from reports
   String? _citizenSynopsisMessage;
   bool _synopsisLoaded = false;
+  bool _safetyNoticeEnabled = true;
   
   // Use centralized Supabase service
   String get _supabaseUrl => SupabaseService.supabaseUrl;
@@ -73,10 +74,42 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Future<void> _loadCitizenSynopsis() async {
     try {
+      // Don't show safety notice to admin/super_user (they manage it from their dashboard)
+      final role = SupabaseService.currentUser?.userMetadata?['role']?.toString() ?? _userRole;
+      if (role == 'admin' || role == 'super_user') {
+        if (mounted) {
+          setState(() {
+            _safetyNoticeEnabled = false;
+            _synopsisLoaded = true;
+          });
+        }
+        return;
+      }
+      final notice = await SupabaseService.getSafetyNotice();
+      if (mounted && notice != null) {
+        final enabled = notice['enabled'] == true;
+        final customMessage = notice['message']?.toString()?.trim();
+        if (!enabled) {
+          setState(() {
+            _safetyNoticeEnabled = false;
+            _synopsisLoaded = true;
+          });
+          return;
+        }
+        if (customMessage != null && customMessage.isNotEmpty) {
+          setState(() {
+            _safetyNoticeEnabled = true;
+            _citizenSynopsisMessage = customMessage;
+            _synopsisLoaded = true;
+          });
+          return;
+        }
+      }
       final reports = await SupabaseService.getReportsForSynopsis();
       final synopsis = SynopsisHelper.getSynopsisForRole(reports, 'citizen');
       if (mounted) {
         setState(() {
+          _safetyNoticeEnabled = true;
           _citizenSynopsisMessage = synopsis['citizenMessage'];
           _synopsisLoaded = true;
         });
@@ -84,6 +117,7 @@ class _HomeScreenState extends State<HomeScreen> {
     } catch (e) {
       if (mounted) {
         setState(() {
+          _safetyNoticeEnabled = true;
           _citizenSynopsisMessage = 'Stay alert and report any real emergency you see.';
           _synopsisLoaded = true;
         });
@@ -569,9 +603,11 @@ class _HomeScreenState extends State<HomeScreen> {
             _buildEmergencyBanner(),
             const SizedBox(height: 20),
           ],
-          // Safety Notice (citizen synopsis)
-          _buildSafetyNoticeCard(),
-          const SizedBox(height: 20),
+          // Safety Notice (citizen synopsis) — only when enabled by admin
+          if (_safetyNoticeEnabled) ...[
+            _buildSafetyNoticeCard(),
+            const SizedBox(height: 20),
+          ],
           // Daily Weather Outlook
           _buildWeatherDashboard(),
           const SizedBox(height: 24),
@@ -1534,6 +1570,10 @@ class _HomeScreenState extends State<HomeScreen> {
   IconData _getWeatherIcon() {
     if (_weatherData == null) return Icons.wb_sunny;
     final weather = _weatherData!['weather'];
+    final hour = DateTime.now().hour;
+    final isNight = hour < 6 || hour >= 18;
+    final clearIcon = isNight ? Icons.nightlight_round : Icons.wb_sunny;
+    final cloudIcon = isNight ? Icons.nightlight_round : Icons.cloud;
     if (weather is List && weather.isNotEmpty) {
       final main = (weather[0]['main'] ?? '').toString().toLowerCase();
       final description = (weather[0]['description'] ?? '').toString().toLowerCase();
@@ -1544,9 +1584,9 @@ class _HomeScreenState extends State<HomeScreen> {
         if (description.contains('broken') || description.contains('scattered')) {
           return Icons.wb_cloudy;
         }
-        return Icons.cloud;
+        return cloudIcon;
       } else if (main.contains('clear') || description.contains('clear') || description.contains('sun')) {
-        return Icons.wb_sunny;
+        return clearIcon;
       } else if (main.contains('thunderstorm') || description.contains('thunder')) {
         return Icons.flash_on;
       } else if (main.contains('snow') || description.contains('snow')) {
@@ -1555,21 +1595,23 @@ class _HomeScreenState extends State<HomeScreen> {
         return Icons.blur_on;
       }
     }
-    return Icons.wb_sunny;
+    return clearIcon;
   }
 
   String _getDayTemperature() {
     if (_weatherData == null) return '--°';
     final main = _weatherData!['main'];
     final temp = main?['temp'] ?? 0;
-    return '${temp.round()}°';
+    final tempMax = main?['temp_max'];
+    return '${((tempMax is num) ? tempMax : temp).round()}°';
   }
 
   String _getNightTemperature() {
     if (_weatherData == null) return '--°';
     final main = _weatherData!['main'];
-    final tempMin = main?['temp_min'] ?? main?['temp'] ?? 0;
-    return '${tempMin.round()}°';
+    final temp = main?['temp'] ?? 0;
+    final tempMin = main?['temp_min'];
+    return '${((tempMin is num) ? tempMin : temp).round()}°';
   }
 
   String _getCurrentTime() {
@@ -2723,10 +2765,10 @@ class _HomeScreenState extends State<HomeScreen> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('About LSPU DRES'),
+        title: const Text('About KAPIYU'),
         content: const Text(
-          'LSPU Disaster Risk Reduction and Emergency Response System\n\n'
-          'Version 1.0.0\n\n'
+          'KAPIYU – Disaster Risk Reduction and Emergency Response\n\n'
+          'Version 1.1.0\n\n'
           'Stay safe and connected with real-time emergency reporting and response management.',
         ),
         actions: [

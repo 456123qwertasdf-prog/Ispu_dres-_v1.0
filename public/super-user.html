@@ -217,98 +217,123 @@
             color: rgba(255, 255, 255, 0.9);
             margin-top: 0.5rem;
         }
+        /* ── Super-User Sidebar Theme ── */
+        .sidebar { background: linear-gradient(180deg, #0f172a 0%, #064e3b 100%) !important; }
+        .nav-item.active { background: rgba(16,185,129,0.2) !important; color: #34d399 !important; border-left: 3px solid #10b981 !important; border-top: none !important; border-right: none !important; border-bottom: none !important; font-weight: 600; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .nav-item:hover { background: rgba(16,185,129,0.1) !important; color: #a7f3d0 !important; border-left-color: rgba(16,185,129,0.4) !important; }
+        .status-dot.online { background: #10b981 !important; box-shadow: 0 0 0 3px rgba(16,185,129,0.25) !important; }
+        .user-avatar { background: rgba(16,185,129,0.25) !important; color: #34d399 !important; }
+        .sidebar-header { border-bottom: 1px solid rgba(16,185,129,0.15) !important; }
+        .system-status { padding: 10px 20px; border-bottom: 1px solid rgba(16,185,129,0.15); }
+        .su-role-badge { display:inline-flex; align-items:center; gap:4px; font-size:0.65rem; font-weight:700; letter-spacing:0.08em; text-transform:uppercase; background:rgba(16,185,129,0.2); color:#34d399; border:1px solid rgba(16,185,129,0.4); border-radius:9999px; padding:2px 8px; margin-top:4px; }
+        .su-logout-btn { width:100%; padding:0.75rem 1rem; background:rgba(239,68,68,0.1); border:1px solid rgba(239,68,68,0.3); color:#fca5a5; border-radius:8px; font-size:0.875rem; font-weight:500; cursor:pointer; transition:all 0.2s ease; display:flex; align-items:center; gap:0.5rem; }
+        .su-logout-btn:hover { background:#EF4444 !important; border-color:#EF4444 !important; color:white !important; }
+        .su-content-header { background:linear-gradient(135deg, #0f172a 0%, #064e3b 100%); color:white; padding:1.5rem 2rem; border-radius:16px; box-shadow:0 8px 24px rgba(0,0,0,0.15); border-left:4px solid #10b981; margin-bottom:1.75rem; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:1rem; }
+        .su-content-header h1 { margin:0; font-size:1.5rem; font-weight:700; display:flex; align-items:center; gap:0.75rem; }
+        .su-content-header h1 i { color:#34d399; }
+        .su-content-header p { margin:0.4rem 0 0 0; font-size:0.875rem; opacity:0.8; }
     </style>
     <script src="https://cdn.jsdelivr.net/npm/supabase@2"></script>
     <script src="js/supabase.js"></script>
 </head>
 <body>
-    <nav class="su-nav">
-        <div class="su-nav-title">
-            <i class="bi bi-shield-check"></i>
-            <span>LSPU Emergency • Super User</span>
+<div class="dashboard-container">
+    <!-- Sidebar -->
+    <div class="sidebar" style="display:flex;flex-direction:column;">
+        <div class="sidebar-header">
+            <div class="sidebar-logo">
+                <img src="images/logolspu.jpg" alt="LSPU Logo"
+                     style="width:50px;height:50px;object-fit:contain;border-radius:50%;border:2px solid rgba(52,211,153,0.6);display:block;">
+                <div class="logo-text">
+                    <h3 style="margin:0;font-size:15px;font-weight:700;color:white;">Super User</h3>
+                    <p style="margin:2px 0 0 0;font-size:11px;color:rgba(255,255,255,0.6);">Emergency Response</p>
+                    <span class="su-role-badge"><i class="bi bi-shield-star-fill"></i> Super User</span>
+                </div>
+            </div>
         </div>
-        <div class="su-nav-links">
-            <a href="super-user.html" class="su-nav-link active">
-                <i class="bi bi-grid-fill"></i>
-                Dashboard
-            </a>
-            <a href="super-user-reports.html" class="su-nav-link">
-                <i class="bi bi-clipboard-data"></i>
-                Recent Reports
-            </a>
-            <a href="super-user-sos-alerts.html" class="su-nav-link">
-                <i class="bi bi-exclamation-triangle-fill"></i>
-                SOS Alerts
-            </a>
-            <a href="super-user-early-warning.html" class="su-nav-link">
-                <i class="bi bi-shield-exclamation"></i>
-                Early Warning
-            </a>
-            <a href="super-user-map.html" class="su-nav-link">
-                <i class="bi bi-map"></i>
-                Map View
-            </a>
-            <a href="super-user-evacuation.html" class="su-nav-link">
-                <i class="bi bi-shield-check"></i>
-                Evacuation Guide
-            </a>
-            <a href="super-user-announcements.html" class="su-nav-link">
-                <i class="bi bi-megaphone-fill"></i>
-                General Announcements
-            </a>
-            <button type="button" onclick="showLogoutConfirm()" class="su-nav-link" style="border:none;background:none;cursor:pointer;">
-                <i class="bi bi-box-arrow-right"></i>
-                Logout
+        <div class="system-status">
+            <div class="status-indicator">
+                <span class="status-dot online"></span>
+                <span style="font-size:0.8rem;color:rgba(255,255,255,0.75);">System Status: Online</span>
+            </div>
+        </div>
+        <nav class="sidebar-nav">
+            <a href="super-user.html" class="nav-item active"><i class="bi bi-house"></i> Dashboard</a>
+            <a href="super-user-reports.html" class="nav-item"><i class="bi bi-clipboard-data"></i> Recent Reports</a>
+            <a href="super-user-early-warning.html" class="nav-item"><i class="bi bi-shield-exclamation"></i> Early Warning</a>
+            <a href="super-user-map.html" class="nav-item"><i class="bi bi-map"></i> Map View</a>
+            <a href="super-user-evacuation.html" class="nav-item"><i class="bi bi-shield-check"></i> Evacuation Guide</a>
+            <a href="super-user-announcements.html" class="nav-item"><i class="bi bi-megaphone-fill"></i> Announcements</a>
+        </nav>
+        <div class="sidebar-footer">
+            <div class="user-info-card">
+                <div class="user-avatar">S</div>
+                <div class="user-details">
+                    <h4 id="suUserName" style="margin:0;font-size:0.875rem;font-weight:600;color:white;">Super User</h4>
+                    <p style="margin:0;font-size:0.75rem;color:rgba(255,255,255,0.55);">LSPU Command</p>
+                </div>
+            </div>
+            <button class="su-logout-btn" onclick="showLogoutConfirm()">
+                <i class="bi bi-box-arrow-right"></i> Logout
             </button>
         </div>
-    </nav>
-    <div class="super-user-container">
-        <!-- Header -->
-        <div class="super-user-header">
-            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
-                <div>
-                    <h1 style="margin: 0; font-size: 2rem; display: flex; align-items: center; gap: 1rem;">
-                        <i class="bi bi-shield-check"></i>
-                        Super User Dashboard
-                        <span class="super-user-badge">
-                            <i class="bi bi-star-fill"></i> Premium Access
-                        </span>
-                    </h1>
-                    <p style="margin: 0.5rem 0 0 0; opacity: 0.9;">System-wide control and citizen communication</p>
-                </div>
-                <div style="display: flex; gap: 1rem; align-items: center;">
-                    <div style="text-align: right;">
-                        <div style="font-size: 0.875rem; opacity: 0.8;">Logged in as</div>
-                        <div style="font-weight: 600;" id="userEmail">Super User</div>
-                    </div>
-                </div>
+    </div>
+    <!-- Main Content -->
+    <div class="main-content">
+        <!-- Page Header -->
+        <div class="su-content-header">
+            <div>
+                <h1><i class="bi bi-shield-check"></i> Super User Dashboard</h1>
+                <p>System-wide control and citizen communication</p>
             </div>
-            
-            <!-- Quick Stats -->
-            <div class="stats-row">
-                <div class="stat-item">
-                    <div class="stat-number" id="totalCitizens">0</div>
-                    <div class="stat-label">Total Citizens</div>
-                </div>
-                <div class="stat-item">
-                    <div class="stat-number" id="activeReports">0</div>
-                    <div class="stat-label">Active Reports</div>
-                </div>
-                <div class="stat-item">
-                    <div class="stat-number" id="totalUsers">0</div>
-                    <div class="stat-label">Total Users</div>
+            <div style="display:flex;align-items:center;gap:1rem;flex-wrap:wrap;">
+                <span style="background:rgba(16,185,129,0.15);border:1px solid rgba(16,185,129,0.35);color:#34d399;border-radius:9999px;padding:0.3rem 0.85rem;font-size:0.75rem;font-weight:700;letter-spacing:0.05em;text-transform:uppercase;"><i class="bi bi-shield-star-fill"></i> Super User</span>
+                <div style="text-align:right;">
+                    <div style="font-size:0.75rem;color:rgba(255,255,255,0.7);">Logged in as</div>
+                    <div style="font-weight:600;color:white;font-size:0.875rem;" id="userEmail">Super User</div>
                 </div>
             </div>
         </div>
-
-        <!-- Main Content -->
-        <div style="max-width: 1200px; margin: 0 auto; padding: 0 2rem 2rem;">
+        <!-- Quick Stats -->
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;margin-bottom:1.5rem;">
+            <div style="background:white;border-radius:12px;padding:1.25rem;box-shadow:0 2px 8px rgba(0,0,0,0.07);border:1px solid #e5e7eb;text-align:center;">
+                <div style="font-size:2rem;font-weight:700;color:#111827;" id="totalCitizens">0</div>
+                <div style="font-size:0.875rem;color:#6b7280;margin-top:0.35rem;">Total Citizens</div>
+            </div>
+            <div style="background:white;border-radius:12px;padding:1.25rem;box-shadow:0 2px 8px rgba(0,0,0,0.07);border:1px solid #e5e7eb;text-align:center;">
+                <div style="font-size:2rem;font-weight:700;color:#ef4444;" id="activeReports">0</div>
+                <div style="font-size:0.875rem;color:#6b7280;margin-top:0.35rem;">Active Reports</div>
+            </div>
+            <div style="background:white;border-radius:12px;padding:1.25rem;box-shadow:0 2px 8px rgba(0,0,0,0.07);border:1px solid #e5e7eb;text-align:center;">
+                <div style="font-size:2rem;font-weight:700;color:#3b82f6;" id="totalUsers">0</div>
+                <div style="font-size:0.875rem;color:#6b7280;margin-top:0.35rem;">Total Users</div>
+            </div>
+        </div>
+        <div style="padding: 0 0 2rem;">
             <!-- Readiness Synopsis (Prepare / be ready / inspect) -->
             <div class="broadcast-card" style="margin-bottom: 1.5rem; background: linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 100%); border-left: 4px solid #059669;">
                 <h2 style="margin: 0 0 0.5rem 0; color: #047857; display: flex; align-items: center; gap: 0.5rem;">
                     <i class="bi bi-shield-check"></i> Readiness Notice
                 </h2>
                 <p style="margin: 0; color: #374151; font-size: 0.95rem; line-height: 1.5;" id="superUserResponderSynopsis">Loading...</p>
+            </div>
+            <!-- Safety Notice (Citizen) — editable; only admin/super_user can disable showing -->
+            <div class="broadcast-card" style="margin-bottom: 1.5rem; background: linear-gradient(135deg, #eff6ff 0%, #f0f9ff 100%); border-left: 4px solid #3b82f6;">
+                <h2 style="margin: 0 0 0.5rem 0; color: #1e40af; display: flex; align-items: center; gap: 0.5rem;">
+                    <i class="bi bi-info-circle"></i> Safety Notice (Citizen)
+                </h2>
+                <p style="margin: 0 0 1rem 0; color: #6b7280; font-size: 0.875rem;">Shown on citizen home. When disabled, the notice is hidden for all users.</p>
+                <div style="margin-bottom: 1rem;">
+                    <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; font-weight: 500; color: #374151;">
+                        <input type="checkbox" id="safetyNoticeEnabled" checked>
+                        Show safety notice to citizens
+                    </label>
+                </div>
+                <textarea id="safetyNoticeMessage" rows="3" placeholder="Leave empty to use auto-generated message from recent reports." style="width:100%;padding:0.75rem;border:1px solid #e5e7eb;border-radius:8px;font-size:0.9rem;resize:vertical;"></textarea>
+                <div style="margin-top: 0.75rem;">
+                    <button type="button" class="btn btn-primary" id="saveSafetyNoticeBtn" onclick="saveSafetyNotice()">Save Safety Notice</button>
+                    <span id="safetyNoticeStatus" style="margin-left:0.75rem;font-size:0.875rem;color:#6b7280;"></span>
+                </div>
             </div>
             <!-- Quick One-Tap Alerts: FIRST thing on the dashboard -->
             <div class="broadcast-row" style="margin-bottom: 1.5rem;">
@@ -340,8 +365,8 @@
                 </div>
             </div>
         </div>
-    </div>
-
+    </div><!-- end .main-content -->
+</div><!-- end .dashboard-container -->
 
     <!-- Logout Modal -->
     <div id="logoutModal" class="modal hidden">
@@ -373,14 +398,19 @@
                     return;
                 }
                 
-                // Set user email
+                // Set user display info
                 if (window.emergencySystem.user?.email) {
                     document.getElementById('userEmail').textContent = window.emergencySystem.user.email;
                 }
+                const displayName = window.emergencySystem.user?.user_metadata?.full_name
+                    || (window.emergencySystem.user?.email ? window.emergencySystem.user.email.split('@')[0] : 'Super User');
+                const nameEl = document.getElementById('suUserName');
+                if (nameEl) nameEl.textContent = displayName;
                 
                 // Load stats
                 await loadStats();
                 await loadActiveAlerts();
+                await loadSafetyNotice();
                 
                 // Set up real-time notifications
                 await setupRealTimeNotifications();
@@ -531,6 +561,36 @@
                 }
             } catch (error) {
                 console.error('Error loading stats:', error);
+            }
+        }
+
+        async function loadSafetyNotice() {
+            try {
+                const notice = await window.emergencySystem.getSafetyNotice();
+                const enabledEl = document.getElementById('safetyNoticeEnabled');
+                const messageEl = document.getElementById('safetyNoticeMessage');
+                if (enabledEl) enabledEl.checked = notice ? notice.enabled !== false : true;
+                if (messageEl) messageEl.value = notice?.message || '';
+            } catch (e) {
+                console.warn('loadSafetyNotice failed:', e);
+            }
+        }
+
+        async function saveSafetyNotice() {
+            const btn = document.getElementById('saveSafetyNoticeBtn');
+            const statusEl = document.getElementById('safetyNoticeStatus');
+            const message = (document.getElementById('safetyNoticeMessage')?.value || '').trim();
+            const enabled = document.getElementById('safetyNoticeEnabled')?.checked !== false;
+            if (btn) btn.disabled = true;
+            if (statusEl) statusEl.textContent = 'Saving...';
+            try {
+                await window.emergencySystem.updateSafetyNotice({ message: message || null, enabled });
+                if (statusEl) statusEl.textContent = 'Saved.';
+                setTimeout(() => { if (statusEl) statusEl.textContent = ''; }, 3000);
+            } catch (e) {
+                if (statusEl) statusEl.textContent = 'Failed: ' + (e?.message || e);
+            } finally {
+                if (btn) btn.disabled = false;
             }
         }
 

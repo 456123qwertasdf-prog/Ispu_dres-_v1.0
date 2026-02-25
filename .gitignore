@@ -15,6 +15,7 @@ yarn-error.log*
 **/api-keys.json
 **/secrets.json
 **/config.json
+GITHUB_SECRETS_SETUP.md
 
 # IDE files
 .vscode/

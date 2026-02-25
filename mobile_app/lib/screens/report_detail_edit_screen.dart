@@ -19,6 +19,8 @@ class _ReportDetailEditScreenState extends State<ReportDetailEditScreen> {
   bool _isLoading = false;
   bool _isSaving = false;
   List<Map<String, dynamic>> _responders = [];
+  List<Map<String, dynamic>> _ungroupedResponders = [];
+  List<({String label, List<Map<String, dynamic>> responders})> _responderTeams = [];
   Map<String, dynamic>? _currentAssignment;
 
   // Form controllers
@@ -51,13 +53,15 @@ class _ReportDetailEditScreenState extends State<ReportDetailEditScreen> {
     try {
       final response = await SupabaseService.client
           .from('responder')
-          .select('id, name, role, is_available, status')
+          .select('id, name, role, is_available, status, leader_id, team_name')
           .eq('is_available', true)
           .order('name');
 
       if (response != null) {
+        final list = List<Map<String, dynamic>>.from(response);
+        _buildResponderTeams(list);
         setState(() {
-          _responders = List<Map<String, dynamic>>.from(response);
+          _responders = list;
         });
       }
     } catch (e) {
@@ -70,6 +74,32 @@ class _ReportDetailEditScreenState extends State<ReportDetailEditScreen> {
         );
       }
     }
+  }
+
+  void _buildResponderTeams(List<Map<String, dynamic>> available) {
+    final leaderIds = <String>{};
+    for (final r in available) {
+      if (r['leader_id'] == null) leaderIds.add(r['id']?.toString() ?? '');
+    }
+    final teams = <({String label, List<Map<String, dynamic>> responders})>[];
+    final ungrouped = <Map<String, dynamic>>[];
+
+    for (final r in available) {
+      final leaderId = r['leader_id']?.toString();
+      if (leaderId == null || leaderId.isEmpty) {
+        final members = available.where((x) => x['leader_id']?.toString() == r['id']?.toString()).toList();
+        final teamList = [r, ...members];
+        final teamName = (r['team_name'] as String?)?.trim().isNotEmpty == true
+            ? r['team_name'] as String
+            : (r['name']?.toString() ?? 'Team');
+        teams.add((label: teamName, responders: teamList));
+      } else if (!leaderIds.contains(leaderId)) {
+        ungrouped.add(r);
+      }
+    }
+
+    _responderTeams = teams;
+    _ungroupedResponders = ungrouped;
   }
 
   Future<void> _loadAssignment() async {
@@ -778,92 +808,218 @@ class _ReportDetailEditScreenState extends State<ReportDetailEditScreen> {
       return;
     }
 
-    String? selectedResponderId;
+    Set<String> selectedIds = {};
     final reportId = widget.report['id']?.toString();
-    
+
     await showDialog(
       context: context,
       builder: (context) => StatefulBuilder(
-        builder: (context, setDialogState) => AlertDialog(
-          title: const Text('Assign Responder'),
-          content: SizedBox(
-            width: double.maxFinite,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Select a responder to assign to this report.',
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: Colors.grey.shade700,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  'This will automatically update the status to "Assigned" and lifecycle status to "Assigned".',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Colors.grey.shade600,
-                    fontStyle: FontStyle.italic,
-                  ),
-                ),
-                const SizedBox(height: 16),
-                DropdownButtonFormField<String?>(
-                  value: selectedResponderId,
-                  decoration: const InputDecoration(
-                    labelText: 'Responder',
-                    border: OutlineInputBorder(),
-                    contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 16),
-                  ),
-                  items: [
-                    const DropdownMenuItem<String?>(
-                      value: null,
-                      child: Text('-- Select Responder --'),
+        builder: (context, setDialogState) {
+          void toggleTeam(({String label, List<Map<String, dynamic>> responders}) team) {
+            final ids = team.responders.map((r) => r['id']?.toString()).whereType<String>().toSet();
+            if (ids.every(selectedIds.contains)) {
+              selectedIds = Set.from(selectedIds)..removeAll(ids);
+            } else {
+              selectedIds = Set.from(selectedIds)..addAll(ids);
+            }
+            setDialogState(() {});
+          }
+
+          void toggleResponder(String id) {
+            if (selectedIds.contains(id)) {
+              selectedIds = Set.from(selectedIds)..remove(id);
+            } else {
+              selectedIds = Set.from(selectedIds)..add(id);
+            }
+            setDialogState(() {});
+          }
+
+          return AlertDialog(
+            title: const Text('Assign Responder(s)'),
+            content: SizedBox(
+              width: double.maxFinite,
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Select one or more responders, or assign a whole team.',
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Colors.grey.shade700,
+                      ),
                     ),
-                    ..._responders.map((responder) {
-                      final name = responder['name']?.toString() ?? 'Unknown';
-                      final role = responder['role']?.toString() ?? '';
-                      final isAvailable = responder['is_available'] == true;
-                      return DropdownMenuItem<String?>(
-                        value: responder['id']?.toString(),
-                        child: Text(
-                          '$name ($role)${isAvailable ? '' : ' - Busy'}',
-                        ),
+                    const SizedBox(height: 12),
+                    ..._responderTeams.map((team) {
+                      final ids = team.responders.map((r) => r['id']?.toString()).whereType<String>().toSet();
+                      final allSelected = ids.isNotEmpty && ids.every(selectedIds.contains);
+                      final someSelected = ids.any(selectedIds.contains);
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Checkbox(
+                                value: allSelected ? true : (someSelected ? null : false),
+                                tristate: true,
+                                onChanged: (_) => toggleTeam(team),
+                              ),
+                              Text(
+                                'Assign whole team: ${team.label} (${team.responders.length})',
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: 14,
+                                ),
+                              ),
+                            ],
+                          ),
+                          ...team.responders.map((r) {
+                            final id = r['id']?.toString() ?? '';
+                            final name = r['name']?.toString() ?? 'Unknown';
+                            final role = r['role']?.toString() ?? '';
+                            return Padding(
+                              padding: const EdgeInsets.only(left: 32, bottom: 4),
+                              child: Row(
+                                children: [
+                                  Checkbox(
+                                    value: selectedIds.contains(id),
+                                    onChanged: (_) => toggleResponder(id),
+                                  ),
+                                  Text('$name ($role)'),
+                                ],
+                              ),
+                            );
+                          }),
+                          const SizedBox(height: 8),
+                        ],
                       );
                     }),
+                    if (_ungroupedResponders.isNotEmpty) ...[
+                      const Text(
+                        'Ungrouped',
+                        style: TextStyle(
+                          fontWeight: FontWeight.w600,
+                          fontSize: 14,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      ..._ungroupedResponders.map((r) {
+                        final id = r['id']?.toString() ?? '';
+                        final name = r['name']?.toString() ?? 'Unknown';
+                        final role = r['role']?.toString() ?? '';
+                        return Padding(
+                          padding: const EdgeInsets.only(bottom: 4),
+                          child: Row(
+                            children: [
+                              Checkbox(
+                                value: selectedIds.contains(id),
+                                onChanged: (_) => toggleResponder(id),
+                              ),
+                              Text('$name ($role)'),
+                            ],
+                          ),
+                        );
+                      }),
+                    ],
                   ],
-                  onChanged: (value) {
-                    setDialogState(() {
-                      selectedResponderId = value;
-                    });
-                  },
                 ),
-              ],
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Cancel'),
-            ),
-            ElevatedButton(
-              onPressed: selectedResponderId == null
-                  ? null
-                  : () async {
-                      Navigator.of(context).pop();
-                      await _assignResponder(reportId, selectedResponderId!);
-                    },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF16a34a),
-                foregroundColor: Colors.white,
               ),
-              child: const Text('Assign'),
             ),
-          ],
-        ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text('Cancel'),
+              ),
+              ElevatedButton(
+                onPressed: selectedIds.isEmpty
+                    ? null
+                    : () async {
+                        Navigator.of(context).pop();
+                        if (selectedIds.length == 1) {
+                          await _assignResponder(reportId, selectedIds.single);
+                        } else {
+                          await _assignResponders(reportId, selectedIds.toList());
+                        }
+                      },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF16a34a),
+                  foregroundColor: Colors.white,
+                ),
+                child: Text(selectedIds.isEmpty ? 'Assign' : 'Assign (${selectedIds.length})'),
+              ),
+            ],
+          );
+        },
       ),
     );
+  }
+
+  Future<void> _assignResponders(String? reportId, List<String> responderIds) async {
+    if (reportId == null || responderIds.isEmpty) {
+      if (reportId == null && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Report ID is missing'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+      return;
+    }
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const Center(
+        child: CircularProgressIndicator(),
+      ),
+    );
+
+    try {
+      final now = DateTime.now().toIso8601String();
+      for (final responderId in responderIds) {
+        await SupabaseService.client.from('assignment').insert({
+          'report_id': reportId,
+          'responder_id': responderId,
+          'status': 'assigned',
+          'assigned_at': now,
+        });
+      }
+
+      await SupabaseService.client
+          .from('reports')
+          .update({
+            'status': 'assigned',
+            'lifecycle_status': 'assigned',
+            'last_update': now,
+          })
+          .eq('id', reportId);
+
+      await _loadAssignment();
+      if (mounted) {
+        Navigator.of(context).pop();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('${responderIds.length} responder(s) assigned successfully!'),
+            backgroundColor: Colors.green,
+          ),
+        );
+        setState(() {});
+      }
+    } catch (e) {
+      debugPrint('Error assigning responders: $e');
+      if (mounted) {
+        Navigator.of(context).pop();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to assign: ${e.toString()}'),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 5),
+          ),
+        );
+      }
+    }
   }
 
   Future<void> _assignResponder(String? reportId, String responderId) async {

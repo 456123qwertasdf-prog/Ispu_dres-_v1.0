@@ -441,7 +441,7 @@
         <div class="sidebar">
             <div class="sidebar-header">
                 <div class="sidebar-logo">
-                    <img src="images/udrrmo image.jpg" alt="UDRRMO Logo" 
+                    <img src="images/logolspu.jpg" alt="LSPU Logo" 
                          style="width: 50px; height: 50px; object-fit: contain; border-radius: 50%; border: 2px solid white; display: block;">
                     <div class="logo-text">
                         <h3>Kapiyu Admin</h3>
@@ -647,6 +647,10 @@
                             <div class="pair-row">
                                 <span class="pair-label">Response Time</span>
                                 <div id="responseTime" class="pair-value">Loading...</div>
+                            </div>
+                            <div id="responderNotesRow" class="pair-row" style="display: none;">
+                                <span class="pair-label">Responder note(s)</span>
+                                <div id="responderNotes" class="pair-value"></div>
                             </div>
                         </div>
                     </div>
@@ -1012,6 +1016,41 @@
             document.getElementById('assignmentId').textContent = report.assignment_id || 'Not assigned';
             document.getElementById('responseTime').textContent = report.response_time || 'Not specified';
 
+            // Load responder notes from resolved assignments
+            try {
+                const { data: resolvedAssignments, error: notesErr } = await window.emergencySystem.supabase
+                    .from('assignment')
+                    .select('responder_id, notes, status')
+                    .eq('report_id', reportId)
+                    .in('status', ['resolved', 'completed', 'closed']);
+                const notesRow = document.getElementById('responderNotesRow');
+                const notesEl = document.getElementById('responderNotes');
+                if (!notesErr && resolvedAssignments && resolvedAssignments.length > 0) {
+                    const withNotes = resolvedAssignments.filter(a => a.notes && String(a.notes).trim());
+                    if (withNotes.length > 0) {
+                        const responders = await window.emergencySystem.getResponders();
+                        const escapeHtml = (s) => {
+                            const d = document.createElement('div');
+                            d.textContent = s;
+                            return d.innerHTML;
+                        };
+                        const parts = withNotes.map(a => {
+                            const name = responders.find(r => r.id === a.responder_id)?.name || 'Responder';
+                            return `<strong>${escapeHtml(name)}:</strong> ${escapeHtml(String(a.notes).trim())}`;
+                        });
+                        notesEl.innerHTML = parts.join('<br><br>');
+                        notesRow.style.display = '';
+                    } else {
+                        notesRow.style.display = 'none';
+                    }
+                } else {
+                    notesRow.style.display = 'none';
+                }
+            } catch (err) {
+                console.warn('Could not fetch responder notes:', err);
+                document.getElementById('responderNotesRow').style.display = 'none';
+            }
+
             // Update timestamps
             document.getElementById('createdAt').textContent = createdAt;
             document.getElementById('lastUpdated').textContent = updatedAt;
@@ -1193,50 +1232,102 @@
                     console.warn('Could not fetch existing assignments:', err);
                 }
 
-                // Populate responder list with checkboxes
+                // Keep responders for expand-leader+team on confirm
+                window._lastAssignModalResponders = responders || [];
+
+                // Build teams: leaders (no leader_id) + their members
+                const leaders = responders.filter(r => !r.leader_id);
+                const teams = leaders.map(leader => ({
+                    leader,
+                    name: (leader.team_name && leader.team_name.trim()) ? leader.team_name.trim() : ('Team ' + (leader.name || 'Unnamed')),
+                    members: responders.filter(r => r.leader_id === leader.id)
+                }));
+                const ungrouped = responders.filter(r => r.leader_id && !leaders.find(l => l.id === r.leader_id));
+
                 const responderList = document.getElementById('responderList');
                 responderList.innerHTML = '';
-                
-                responders.forEach(responder => {
-                    const isAssigned = assignedResponderIds.includes(responder.id);
+
+                function addResponderRow(responder, isAssigned, indent) {
                     const item = document.createElement('div');
                     item.className = `responder-item ${isAssigned ? 'responder-item-assigned' : ''}`;
-                    
+                    if (indent) item.style.paddingLeft = '1.5rem';
                     const checkbox = document.createElement('input');
                     checkbox.type = 'checkbox';
                     checkbox.value = responder.id;
                     checkbox.id = `responder-${responder.id}`;
                     checkbox.checked = isAssigned;
-                    if (isAssigned) {
-                        checkbox.disabled = true; // Don't allow unchecking already assigned
-                    }
-                    
+                    if (isAssigned) checkbox.disabled = true;
                     const info = document.createElement('div');
                     info.className = 'responder-item-info';
-                    
                     const name = document.createElement('div');
                     name.className = 'responder-item-name';
                     name.textContent = responder.name;
-                    
                     const role = document.createElement('div');
                     role.className = 'responder-item-role';
-                    role.textContent = responder.role || 'responder';
-                    
+                    role.textContent = (responder.role || 'responder') + (indent ? ' (member)' : ' (leader)');
                     info.appendChild(name);
                     info.appendChild(role);
-                    
                     item.appendChild(checkbox);
                     item.appendChild(info);
-                    
-                    // Make entire row clickable
                     item.addEventListener('click', function(e) {
-                        if (e.target.type !== 'checkbox' && !checkbox.disabled) {
-                            checkbox.checked = !checkbox.checked;
-                        }
+                        if (e.target.type !== 'checkbox' && !checkbox.disabled) checkbox.checked = !checkbox.checked;
                     });
-                    
-                    responderList.appendChild(item);
+                    return { item, checkbox };
+                }
+
+                teams.forEach(team => {
+                    const allIds = [team.leader.id, ...team.members.map(m => m.id)];
+                    const allAssigned = allIds.every(id => assignedResponderIds.includes(id));
+                    const someAssigned = allIds.some(id => assignedResponderIds.includes(id));
+
+                    const teamSection = document.createElement('div');
+                    teamSection.style.marginBottom = '1rem';
+                    const teamHeader = document.createElement('div');
+                    teamHeader.style.cssText = 'display:flex;align-items:center;gap:0.5rem;margin-bottom:0.5rem;padding:0.4rem 0;border-bottom:1px solid #e5e7eb;';
+                    const teamCheck = document.createElement('input');
+                    teamCheck.type = 'checkbox';
+                    teamCheck.className = 'assign-whole-team';
+                    teamCheck.dataset.teamIds = allIds.join(',');
+                    teamCheck.checked = allAssigned;
+                    teamCheck.disabled = allAssigned;
+                    teamCheck.style.accentColor = '#059669';
+                    const teamLabel = document.createElement('label');
+                    teamLabel.style.cssText = 'font-weight:600;font-size:0.9rem;color:#374151;cursor:pointer;flex:1;';
+                    teamLabel.textContent = team.name + ' (' + allIds.length + ' responder' + (allIds.length > 1 ? 's' : '') + ') – Assign whole team';
+                    teamLabel.addEventListener('click', function(e) { if (e.target !== teamCheck && !teamCheck.disabled) teamCheck.checked = !teamCheck.checked; });
+                    teamHeader.appendChild(teamCheck);
+                    teamHeader.appendChild(teamLabel);
+                    teamSection.appendChild(teamHeader);
+
+                    const leaderAssigned = assignedResponderIds.includes(team.leader.id);
+                    const { item: leaderRow, checkbox: leaderCb } = addResponderRow(team.leader, leaderAssigned, false);
+                    teamSection.appendChild(leaderRow);
+                    team.members.forEach(m => {
+                        const mAssigned = assignedResponderIds.includes(m.id);
+                        const { item: memberRow } = addResponderRow(m, mAssigned, true);
+                        teamSection.appendChild(memberRow);
+                    });
+
+                    teamCheck.addEventListener('change', function() {
+                        allIds.forEach(id => {
+                            const cb = document.getElementById('responder-' + id);
+                            if (cb && !cb.disabled) cb.checked = teamCheck.checked;
+                        });
+                    });
+                    responderList.appendChild(teamSection);
                 });
+
+                if (ungrouped.length > 0) {
+                    const ungroupedHeader = document.createElement('div');
+                    ungroupedHeader.style.cssText = 'font-weight:600;font-size:0.9rem;color:#6b7280;margin:0.75rem 0 0.5rem;padding:0.4rem 0;border-bottom:1px solid #e5e7eb;';
+                    ungroupedHeader.textContent = 'Ungrouped';
+                    responderList.appendChild(ungroupedHeader);
+                    ungrouped.forEach(responder => {
+                        const isAssigned = assignedResponderIds.includes(responder.id);
+                        const { item } = addResponderRow(responder, isAssigned, false);
+                        responderList.appendChild(item);
+                    });
+                }
 
                 // Show modal
                 document.getElementById('assignModal').style.display = 'flex';
@@ -1250,12 +1341,20 @@
         document.getElementById('assignConfirm').addEventListener('click', async function() {
             // Get all checked responders
             const checkboxes = document.querySelectorAll('#responderList input[type="checkbox"]:checked:not(:disabled)');
-            const selectedResponderIds = Array.from(checkboxes).map(cb => cb.value);
+            let selectedResponderIds = Array.from(checkboxes).map(cb => cb.value);
 
             if (selectedResponderIds.length === 0) {
                 showError('Please select at least one responder');
                 return;
             }
+
+            // Expand: when a leader is selected, include all team members (responders whose leader_id = that leader)
+            const respondersList = window._lastAssignModalResponders || [];
+            const expandedSet = new Set(selectedResponderIds);
+            selectedResponderIds.forEach(leaderId => {
+                respondersList.filter(r => r.leader_id === leaderId).forEach(m => expandedSet.add(m.id));
+            });
+            selectedResponderIds = Array.from(expandedSet);
 
             try {
                 // Get existing assignments to avoid duplicates

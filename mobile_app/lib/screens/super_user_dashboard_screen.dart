@@ -32,6 +32,12 @@ class _SuperUserDashboardScreenState extends State<SuperUserDashboardScreen> {
   // Readiness synopsis (prepare / be ready / inspect)
   String? _responderSynopsisMessage;
   
+  // Safety Notice (citizen) — editable by admin/super_user
+  String? _safetyNoticeMessage;
+  bool _safetyNoticeEnabled = true;
+  bool _safetyNoticeSaving = false;
+  final TextEditingController _safetyNoticeController = TextEditingController();
+  
   // User info
   String _userEmail = 'Super User';
   
@@ -56,6 +62,7 @@ class _SuperUserDashboardScreenState extends State<SuperUserDashboardScreen> {
   void dispose() {
     _notificationsChannel?.unsubscribe();
     _announcementsChannel?.unsubscribe();
+    _safetyNoticeController.dispose();
     super.dispose();
   }
 
@@ -208,6 +215,17 @@ class _SuperUserDashboardScreenState extends State<SuperUserDashboardScreen> {
           setState(() => _responderSynopsisMessage = 'Keep equipment inspected and stay ready for anything.');
         }
       }
+      // Load safety notice (citizen) for editing
+      try {
+        final notice = await SupabaseService.getSafetyNotice();
+        if (mounted && notice != null) {
+          setState(() {
+            _safetyNoticeEnabled = notice['enabled'] == true;
+            _safetyNoticeMessage = notice['message']?.toString();
+            _safetyNoticeController.text = _safetyNoticeMessage ?? '';
+          });
+        }
+      } catch (_) {}
     } catch (e) {
       debugPrint('Error loading stats: $e');
     } finally {
@@ -734,10 +752,104 @@ class _SuperUserDashboardScreenState extends State<SuperUserDashboardScreen> {
               ),
             const SizedBox(height: 24),
             _buildReadinessNoticeCard(),
+            const SizedBox(height: 24),
+            _buildSafetyNoticeAdminCard(),
           ],
         ),
       ),
     );
+  }
+
+  Widget _buildSafetyNoticeAdminCard() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [Color(0xFFeff6ff), Color(0xFFf0f9ff)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(16),
+        border: Border(left: BorderSide(color: const Color(0xFF3b82f6), width: 4)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.info_outline, color: const Color(0xFF3b82f6), size: 22),
+              const SizedBox(width: 8),
+              const Text(
+                'Safety Notice (Citizen)',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF1e40af),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 4),
+          Text(
+            'Shown on citizen home. When disabled, hidden for all users.',
+            style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              const Text('Show safety notice to citizens', style: TextStyle(fontSize: 14, color: Color(0xFF374151))),
+              const Spacer(),
+              Switch(
+                value: _safetyNoticeEnabled,
+                onChanged: (v) => setState(() => _safetyNoticeEnabled = v),
+                activeColor: const Color(0xFF3b82f6),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          TextField(
+            controller: _safetyNoticeController,
+            maxLines: 3,
+            decoration: const InputDecoration(
+              hintText: 'Leave empty to use auto-generated message from recent reports.',
+              border: OutlineInputBorder(),
+              contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            ),
+          ),
+          const SizedBox(height: 12),
+          SizedBox(
+            width: double.infinity,
+            child: FilledButton.icon(
+              onPressed: _safetyNoticeSaving ? null : _saveSafetyNotice,
+              icon: _safetyNoticeSaving ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)) : const Icon(Icons.save, size: 20),
+              label: Text(_safetyNoticeSaving ? 'Saving...' : 'Save Safety Notice'),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _saveSafetyNotice() async {
+    setState(() => _safetyNoticeSaving = true);
+    try {
+      await SupabaseService.updateSafetyNotice(
+        message: _safetyNoticeController.text.trim().isEmpty ? null : _safetyNoticeController.text.trim(),
+        enabled: _safetyNoticeEnabled,
+      );
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Safety notice saved.'), backgroundColor: Colors.green),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to save: $e'), backgroundColor: Colors.red),
+      );
+    } finally {
+      if (mounted) setState(() => _safetyNoticeSaving = false);
+    }
   }
 
   Widget _buildReadinessNoticeCard() {

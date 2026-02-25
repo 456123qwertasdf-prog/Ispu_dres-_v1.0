@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:carousel_slider/carousel_slider.dart';
 import 'dart:ui';
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../services/supabase_service.dart';
 
@@ -35,6 +36,7 @@ class _LoginScreenState extends State<LoginScreen> {
   String _passwordStrength = ''; // Password strength indicator
   final _forgotPasswordEmailController = TextEditingController();
   bool _isForgotPasswordLoading = false;
+  String _appVersion = '';
 
   // Background slider images
   final List<String> _backgroundImages = [
@@ -43,6 +45,19 @@ class _LoginScreenState extends State<LoginScreen> {
     'assets/images/slider-3.jpg',
     'assets/images/slider-4.jpg',
   ];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadAppVersion();
+  }
+
+  Future<void> _loadAppVersion() async {
+    try {
+      final info = await PackageInfo.fromPlatform();
+      if (mounted) setState(() => _appVersion = info.version);
+    } catch (_) {}
+  }
 
   @override
   void dispose() {
@@ -430,6 +445,21 @@ class _LoginScreenState extends State<LoginScreen> {
       );
 
       if (response.user != null) {
+        // Supabase returns user with empty identities when email already exists (no verification email sent)
+        final identities = response.user!.identities;
+        if (identities == null || identities.isEmpty) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('This email is already registered. Please sign in instead.'),
+                backgroundColor: Colors.orange,
+                duration: Duration(seconds: 4),
+              ),
+            );
+          }
+          return;
+        }
+
         // Create user profile in database
         try {
           await SupabaseService.client.from('user_profiles').insert({
@@ -654,6 +684,22 @@ class _LoginScreenState extends State<LoginScreen> {
               }).toList(),
             ),
           ),
+          // App version at bottom of login screen
+          if (_appVersion.isNotEmpty)
+            Positioned(
+              bottom: 8,
+              left: 0,
+              right: 0,
+              child: Center(
+                child: Text(
+                  'Version $_appVersion',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Colors.white.withOpacity(0.8),
+                  ),
+                ),
+              ),
+            ),
         ],
       ),
     );
@@ -1092,6 +1138,22 @@ class _LoginScreenState extends State<LoginScreen> {
                   DropdownMenuItem(
                     value: 'security_guard',
                     child: Text('Security Guard'),
+                  ),
+                  DropdownMenuItem(
+                    value: 'first_aider',
+                    child: Text('First Aider'),
+                  ),
+                  DropdownMenuItem(
+                    value: 'responder',
+                    child: Text('Responder'),
+                  ),
+                  DropdownMenuItem(
+                    value: 'first_aider_leader',
+                    child: Text('First Aider Leader'),
+                  ),
+                  DropdownMenuItem(
+                    value: 'responder_leader',
+                    child: Text('Responder Leader'),
                   ),
                 ],
                 onChanged: (value) {
