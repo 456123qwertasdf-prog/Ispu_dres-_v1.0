@@ -1,6 +1,9 @@
 # Build Flutter APK and push only public/lspu-emergency-response.apk to the repo.
-# To auto-update app_version in Supabase: add GitHub Secret SUPABASE_SERVICE_ROLE_KEY
-# (Supabase Dashboard -> Project Settings -> API -> service_role secret).
+#
+# Required: Repo Settings -> Actions -> General -> Workflow permissions
+#   -> choose "Read and write permissions" so GITHUB_TOKEN can push the APK commit.
+#
+# Optional: add GitHub Secret SUPABASE_SERVICE_ROLE_KEY to auto-update app_version in Supabase.
 name: Build and push APK
 
 on:
