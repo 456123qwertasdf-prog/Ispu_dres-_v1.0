@@ -1,0 +1,85 @@
+# Build Flutter APK and push only public/lspu-emergency-response.apk to the repo.
+# Optional: to auto-update app_version in Supabase when a new APK is built, add GitHub Secrets:
+#   SUPABASE_ANON_KEY, APP_VERSION_UPDATE_SECRET (same value as in Supabase Edge Function set-app-version secret APP_VERSION_UPDATE_SECRET).
+name: Build and push APK
+
+on:
+  workflow_dispatch:  # Run manually from Actions tab
+  push:
+    branches: [main]
+    paths:
+      - 'mobile_app/**'
+      - '.github/workflows/build-and-push-apk.yml'
+
+jobs:
+  build-and-push-apk:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository (with LFS)
+        uses: actions/checkout@v4
+        with:
+          lfs: true
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.24.0'
+          channel: 'stable'
+          cache: true
+
+      - name: Get dependencies
+        run: flutter pub get
+        working-directory: mobile_app
+
+      - name: Build APK
+        run: flutter build apk --release
+        working-directory: mobile_app
+
+      - name: Copy APK to public folder
+        run: |
+          cp mobile_app/build/app/outputs/flutter-apk/app-release.apk public/lspu-emergency-response.apk
+          ls -la public/lspu-emergency-response.apk
+
+      - name: Configure Git LFS and push only APK
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git lfs install
+          git add public/lspu-emergency-response.apk
+          git status
+          if git diff --staged --quiet; then
+            echo "No APK changes to commit."
+          else
+            git commit -m "chore: build and push APK [skip ci]"
+            git push
+          fi
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Update app version in Supabase (so in-app update check sees new version)
+        continue-on-error: true
+        run: |
+          VERSION=$(grep '^version:' mobile_app/pubspec.yaml | sed -n 's/version: *\([0-9]*\.[0-9]*\.[0-9]*\).*/\1/p')
+          if [ -z "$VERSION" ]; then
+            echo "Could not parse version from pubspec.yaml"
+            exit 0
+          fi
+          if [ -z "${{ secrets.APP_VERSION_UPDATE_SECRET }}" ]; then
+            echo "APP_VERSION_UPDATE_SECRET not set in GitHub Secrets; skipping DB update. Add it and set APP_VERSION_UPDATE_SECRET in Supabase Edge Function secrets to enable auto-update."
+            exit 0
+          fi
+          echo "Updating app_version to $VERSION"
+          curl -sS -f -X POST "https://hmolyqzbvxxliemclrld.supabase.co/functions/v1/set-app-version" \
+            -H "Content-Type: application/json" \
+            -H "Authorization: Bearer ${{ secrets.SUPABASE_ANON_KEY }}" \
+            -H "x-app-version-secret: ${{ secrets.APP_VERSION_UPDATE_SECRET }}" \
+            -d "{\"version\": \"$VERSION\", \"platform\": \"android\"}"
+        env:
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
