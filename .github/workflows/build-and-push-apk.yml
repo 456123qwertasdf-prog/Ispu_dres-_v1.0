@@ -49,8 +49,10 @@ jobs:
         run: flutter pub get
         working-directory: mobile_app
 
-      - name: Build APK
-        run: flutter build apk --release
+      - name: Build APK (version keeps updating: run number used as build number)
+        run: |
+          VER=$(grep '^version:' pubspec.yaml | sed -n 's/version: *\([0-9]*\.[0-9]*\.[0-9]*\).*/\1/p')
+          flutter build apk --release --build-name="$VER" --build-number="${{ github.run_number }}"
         working-directory: mobile_app
 
       - name: Copy APK to public folder
@@ -58,7 +60,7 @@ jobs:
           cp mobile_app/build/app/outputs/flutter-apk/app-release.apk public/lspu-emergency-response.apk
           ls -la public/lspu-emergency-response.apk
 
-      - name: Configure Git LFS and push only APK
+      - name: Configure Git LFS and push only APK (no [skip ci])
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
