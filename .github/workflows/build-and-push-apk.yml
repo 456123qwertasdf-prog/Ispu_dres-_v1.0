@@ -3,7 +3,10 @@
 # Required: Repo Settings -> Actions -> General -> Workflow permissions
 #   -> choose "Read and write permissions" so GITHUB_TOKEN can push the APK commit.
 #
-# Optional: add GitHub Secret SUPABASE_SERVICE_ROLE_KEY to auto-update app_version in Supabase.
+# Required for auto version enforcement: add GitHub Secret SUPABASE_SERVICE_ROLE_KEY
+# (Supabase -> Settings -> API -> service_role) so app_version is updated and old APKs are blocked.
+#
+# Do NOT use [skip ci] in commit messages; CI must run to update app_version in Supabase.
 name: Build and push APK
 
 on:
@@ -12,6 +15,7 @@ on:
     branches: [main]
     paths:
       - 'mobile_app/**'
+      - 'public/**'
       - '.github/workflows/build-and-push-apk.yml'
 
 jobs:
@@ -76,19 +80,18 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Update app version in Supabase (direct PATCH, no Edge Function)
-        continue-on-error: true
+      - name: Update app version in Supabase (required so old APKs are blocked)
         run: |
           VERSION=$(grep '^version:' mobile_app/pubspec.yaml | sed -n 's/version: *\([0-9]*\.[0-9]*\.[0-9]*\).*/\1/p')
           if [ -z "$VERSION" ]; then
             echo "Could not parse version from pubspec.yaml"
-            exit 0
+            exit 1
           fi
           if [ -z "${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}" ]; then
-            echo "SUPABASE_SERVICE_ROLE_KEY not set; skipping DB update. Add it in GitHub Secrets (Supabase -> Settings -> API -> service_role) to enable auto-update."
-            exit 0
+            echo "::error::SUPABASE_SERVICE_ROLE_KEY not set. Add it in GitHub Secrets (Supabase -> Settings -> API -> service_role) so app_version is updated and old APKs cannot be used."
+            exit 1
           fi
-          echo "Updating app_version to $VERSION"
+          echo "Updating app_version to $VERSION so clients below this version must update."
           curl -sS -f -X PATCH "https://hmolyqzbvxxliemclrld.supabase.co/rest/v1/app_version?platform=eq.android" \
             -H "apikey: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}" \
             -H "Authorization: Bearer ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}" \

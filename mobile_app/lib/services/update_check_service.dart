@@ -132,7 +132,7 @@ class UpdateCheckService {
               children: [
                 Text(
                   isRequired
-                      ? 'A new version of KAPIYU is required to continue. Please update from the link below.'
+                      ? 'You need to update to continue. This version can no longer be used. Please update from the link below.'
                       : 'A new version of KAPIYU (${result.latestVersion}) is available. You have ${result.currentVersion}.',
                 ),
                 if (result.releaseNotes != null && result.releaseNotes!.isNotEmpty) ...[

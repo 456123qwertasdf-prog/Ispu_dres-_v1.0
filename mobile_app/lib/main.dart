@@ -192,7 +192,7 @@ class _UpdateRequiredScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: 12),
                 Text(
-                  'This version of KAPIYU (${result.currentVersion}) is no longer supported. You must install version ${result.latestVersion} or newer to continue.',
+                  'You need to update to continue. This version (${result.currentVersion}) can no longer be used. Please install version ${result.latestVersion} or newer.',
                   style: Theme.of(context).textTheme.bodyLarge,
                   textAlign: TextAlign.center,
                 ),
