@@ -68,7 +68,7 @@ jobs:
           if git diff --staged --quiet; then
             echo "No APK changes to commit."
           else
-            git commit -m "chore: build and push APK [skip ci]"
+            git commit -m "chore: build and push APK"
             git push
           fi
         env:
