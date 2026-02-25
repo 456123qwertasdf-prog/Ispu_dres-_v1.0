@@ -198,16 +198,44 @@ class _ResponderDashboardScreenState extends State<ResponderDashboardScreen> {
         throw Exception('Please sign in to access the responder dashboard.');
       }
 
-      final profileRaw = await SupabaseService.client
+      var profileRaw = await SupabaseService.client
           .from('responder')
           .select('id, name, role, status, phone, is_available, last_location')
           .eq('user_id', userId)
           .maybeSingle();
 
+      // If no responder row but user is a responder (e.g. just verified), create one so dashboard can load
       if (profileRaw == null) {
-        throw Exception(
-          'No responder profile is linked to this account yet. Please contact an administrator.',
-        );
+        final userProfile = await SupabaseService.client
+            .from('user_profiles')
+            .select('role, name')
+            .eq('user_id', userId)
+            .maybeSingle();
+        final userRole = userProfile?['role'] as String?;
+        if (userRole == 'responder') {
+          final name = userProfile?['name'] as String? ?? SupabaseService.currentUser?.email?.split('@').first ?? 'Responder';
+          final phonePlaceholder = 'mobile-$userId';
+          final insertResult = await SupabaseService.client
+              .from('responder')
+              .insert({
+                'user_id': userId,
+                'name': name,
+                'phone': phonePlaceholder,
+                'role': 'Emergency Responder',
+                'status': 'active',
+                'is_available': true,
+              })
+              .select('id, name, role, status, phone, is_available, last_location')
+              .maybeSingle();
+          if (insertResult != null) {
+            profileRaw = insertResult;
+          }
+        }
+        if (profileRaw == null) {
+          throw Exception(
+            'No responder profile is linked to this account yet. Please contact an administrator.',
+          );
+        }
       }
 
       final profileMap = Map<String, dynamic>.from(profileRaw);
@@ -1032,8 +1060,9 @@ class _ResponderDashboardScreenState extends State<ResponderDashboardScreen> {
                     );
                   }
                   if (coords != null) {
+                    final c = coords;
                     setState(() {
-                      _pendingMapTarget = CoordinatePoint(coords.latitude, coords.longitude);
+                      _pendingMapTarget = CoordinatePoint(latitude: c.latitude, longitude: c.longitude);
                       _pendingMapLabel = type;
                       _selectedIndex = 3;
                       _routePolyline = [];
@@ -1042,7 +1071,7 @@ class _ResponderDashboardScreenState extends State<ResponderDashboardScreen> {
                       _routeDurationMin = null;
                     });
                     if (_deviceLocation != null) {
-                      _fetchRoute(_deviceLocation!, CoordinatePoint(coords.latitude, coords.longitude));
+                      _fetchRoute(_deviceLocation!, CoordinatePoint(latitude: c.latitude, longitude: c.longitude));
                     }
                   }
                 },
@@ -1060,11 +1089,15 @@ class _ResponderDashboardScreenState extends State<ResponderDashboardScreen> {
       const ongoingStatuses = ['pending', 'processing', 'classified', 'assigned', 'in-progress'];
       final response = await SupabaseService.client
           .from('reports')
-          .select('id, type, message, status, location, reporter_name, created_at, responder_id, responder:responder_id(id, name)')
+          .select('id, type, corrected_type, message, status, location, reporter_name, created_at, responder_id, responder:responder_id(id, name)')
           .inFilter('status', ongoingStatuses)
           .order('created_at', ascending: false);
       final list = response as List<dynamic>? ?? [];
-      final maps = list.whereType<Map<String, dynamic>>().toList();
+      final maps = list.whereType<Map<String, dynamic>>().where((r) {
+        final type = (r['type'] as String? ?? '').toLowerCase();
+        final correctedType = (r['corrected_type'] as String? ?? '').toLowerCase();
+        return type != 'false_alarm' && correctedType != 'false_alarm';
+      }).toList();
       if (mounted) {
         setState(() {
           _ongoingReports = maps;
