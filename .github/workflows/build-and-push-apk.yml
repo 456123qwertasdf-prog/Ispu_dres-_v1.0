@@ -30,10 +30,10 @@ jobs:
       - name: Set up Android SDK
         uses: android-actions/setup-android@v3
 
-      - name: Install Android SDK platform 33
+      - name: Install Android SDK platform 33, CMake, and NDK
         run: |
           yes | sdkmanager --licenses || true
-          sdkmanager "platforms;android-33" "build-tools;33.0.1"
+          sdkmanager "platforms;android-33" "build-tools;33.0.1" "cmake;3.22.1" "ndk;25.1.8937393"
 
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
