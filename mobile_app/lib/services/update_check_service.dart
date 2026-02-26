@@ -116,11 +116,14 @@ class UpdateCheckService {
   }
 
   /// Download APK from [downloadUrl] and open with system installer (user taps Install once).
-  /// Uses same signing + higher versionCode so the old app is cleanly replaced.
+  /// For in-place update (without uninstall), the APK must be signed with the same key as the
+  /// currently installed app; otherwise Android shows "App not installed". Use [onInstallError]
+  /// to show a message and suggest uninstall + install from browser.
   /// [onProgress] receives 0.0 to 1.0. On Android only; otherwise opens URL in browser.
   static Future<void> downloadAndInstallApk(
     String? downloadUrl, {
     void Function(double progress)? onProgress,
+    void Function(String message)? onInstallError,
   }) async {
     if (downloadUrl == null || downloadUrl.isEmpty) return;
     if (defaultTargetPlatform != TargetPlatform.android) {
@@ -133,12 +136,58 @@ class UpdateCheckService {
         onProgress: (progress) => onProgress?.call(progress),
         onError: (error) {
           debugPrint('UpdateCheck: download/install error: $error');
+          onInstallError?.call(error);
         },
       );
     } catch (e, st) {
       debugPrint('UpdateCheck: downloadAndInstallApk error: $e\n$st');
+      final message = e.toString();
+      onInstallError?.call(message);
       await openDownloadUrl(downloadUrl);
     }
+  }
+
+  /// Show a dialog when install fails (e.g. "App not installed" due to signing mismatch).
+  /// Suggests uninstalling the current app and installing from the browser link.
+  static void showInstallErrorDialog(BuildContext context, String message, String? downloadUrl) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Install failed'),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'The update could not be installed. This often happens when the app was previously installed from a different source (e.g. from this device vs. from the web link).',
+                style: TextStyle(fontWeight: FontWeight.w500),
+              ),
+              const SizedBox(height: 12),
+              Text('Details: $message', style: const TextStyle(fontSize: 12)),
+              const SizedBox(height: 12),
+              const Text(
+                'Try this: Uninstall the current app, then use "Open in browser" below to download and install the latest version.',
+                style: TextStyle(fontWeight: FontWeight.w500),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: const Text('OK'),
+          ),
+          FilledButton(
+            onPressed: () {
+              Navigator.of(ctx).pop();
+              openDownloadUrl(downloadUrl);
+            },
+            child: const Text('Open in browser'),
+          ),
+        ],
+      ),
+    );
   }
 
   /// Show update dialog if result is updateAvailable or updateRequired. Returns true if dialog was shown.
@@ -180,7 +229,14 @@ class UpdateCheckService {
             FilledButton(
               onPressed: () {
                 Navigator.of(ctx).pop();
-                downloadAndInstallApk(result.downloadUrl);
+                downloadAndInstallApk(
+                  result.downloadUrl,
+                  onInstallError: (msg) {
+                    if (context.mounted) {
+                      showInstallErrorDialog(context, msg, result.downloadUrl);
+                    }
+                  },
+                );
               },
               child: const Text('Download and install'),
             ),

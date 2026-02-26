@@ -1,0 +1,9 @@
+# Copy this file to key.properties and fill in your values.
+# key.properties is gitignored; never commit it.
+#
+# Use the same keystore for local release builds and in CI (GitHub Secrets)
+# so "Download and install" in the app can update without "App not installed".
+storePassword=your_keystore_password
+keyPassword=your_key_password
+keyAlias=upload
+storeFile=app/upload-keystore.jks

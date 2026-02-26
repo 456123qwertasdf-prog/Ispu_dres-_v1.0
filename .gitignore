@@ -73,6 +73,9 @@ pubspec.lock
 local.properties
 *.keystore
 *.jks
+mobile_app/android/key.properties
+mobile_app/android/keystore-base64.txt
+mobile_app/android/GITHUB_SECRETS_VALUES.txt
 hs_err_pid*.log
 replay_pid*.log
 

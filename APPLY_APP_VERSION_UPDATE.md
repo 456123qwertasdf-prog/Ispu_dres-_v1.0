@@ -69,3 +69,19 @@ WHERE platform = 'android';
 ```
 
 After that, rely on the workflow for future releases (and avoid `[skip ci]` on release commits).
+
+---
+
+## "App not installed" when using "Download and install"
+
+If users tap **Download and install** and after the download they see **"App not installed"** (without having uninstalled the app), the cause is usually **signing key mismatch**:
+
+- The app they have installed was signed with one key (e.g. from a local build or another machine).
+- The APK from the download link is signed with a different key (e.g. from GitHub Actions).
+- Android only allows upgrading an app if the new APK is signed with the **same** key.
+
+**What to do:**
+
+1. **For users right now:** In the app we show an "Install failed" dialog with **"Open in browser"**. They should **uninstall the current app**, then use that button to open the link in the browser, download the APK, and install it. After that, future in-app "Download and install" updates will work as long as all APKs come from the same source (same signing key).
+
+2. **For you (one signing key everywhere):** To make in-place updates work for everyone, use the **same** release keystore locally and in CI. Step-by-step: **[mobile_app/android/RELEASE_SIGNING.md](mobile_app/android/RELEASE_SIGNING.md)** — create keystore once, add `key.properties` for local builds, add the four GitHub Secrets so the workflow signs with the same key.

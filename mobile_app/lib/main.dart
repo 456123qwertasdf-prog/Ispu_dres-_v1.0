@@ -193,6 +193,12 @@ class _UpdateRequiredScreen extends StatelessWidget {
         lastProgress = progress;
         _DownloadProgressDialog.updateProgress?.call(progress);
       },
+      onInstallError: (message) {
+        if (context.mounted) {
+          Navigator.of(context).pop(); // close progress dialog
+          UpdateCheckService.showInstallErrorDialog(context, message, url);
+        }
+      },
     );
     if (context.mounted) Navigator.of(context).pop();
     // System installer opens; user taps Install once and old app is replaced (same signing + higher versionCode).
