@@ -22,7 +22,7 @@ class HomeScreen extends StatefulWidget {
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> {
+class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   int _selectedIndex = 0;
   Map<String, dynamic>? _weatherData;
   bool _isLoadingWeather = false;
@@ -60,7 +60,7 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
-    
+    WidgetsBinding.instance.addObserver(this);
     // Retry saving OneSignal player ID if user is already authenticated
     _retrySaveOneSignalPlayerId();
     
@@ -70,6 +70,20 @@ class _HomeScreenState extends State<HomeScreen> {
     _subscribeToEmergencyAlerts();
     _startEmergencyPolling();
     _loadCitizenSynopsis();
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      // Refresh safety notice when app comes back (e.g. after admin turned it off on web)
+      _loadCitizenSynopsis();
+    }
   }
 
   Future<void> _loadCitizenSynopsis() async {
@@ -1759,6 +1773,10 @@ class _HomeScreenState extends State<HomeScreen> {
           setState(() {
             _selectedIndex = index;
           });
+          // Refresh safety notice when Home tab is selected (so "off" from admin is reflected)
+          if (index == 0) {
+            _loadCitizenSynopsis();
+          }
           // Refresh profile when profile tab is selected
           if (index == 4) {
             _loadUserProfile();

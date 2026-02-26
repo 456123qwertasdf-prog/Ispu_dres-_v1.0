@@ -85,14 +85,16 @@ serve(async (req) => {
       )
     }
 
+    // Only the latest version is allowed to work: require app version >= latest_version
+    const effectiveMin = latestVersion
     const payload = {
-      min_version: minVersion,
+      min_version: effectiveMin,
       latest_version: latestVersion,
-      force_update: (raw.force_update as boolean | undefined) ?? false,
+      force_update: true, // always force update when not on latest
       download_url: (raw.download_url as string | null | undefined) ?? null,
       release_notes: (raw.release_notes as string | null | undefined) ?? null,
     }
-    console.log('[get-app-version] success', { platform, min_version: payload.min_version, latest_version: payload.latest_version })
+    console.log('[get-app-version] success (only latest allowed)', { platform, min_version: payload.min_version, latest_version: payload.latest_version })
     return new Response(
       JSON.stringify(payload),
       { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }

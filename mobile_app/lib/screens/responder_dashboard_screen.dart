@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
@@ -48,6 +49,12 @@ class _ResponderDashboardScreenState extends State<ResponderDashboardScreen> {
   double? _routeDistanceKm;
   double? _routeDurationMin;
 
+  // Realtime walking: position stream so map keeps updating as responder moves
+  StreamSubscription<Position>? _positionStreamSubscription;
+  DateTime? _lastRouteRecalcTime;
+  CoordinatePoint? _lastRouteRecalcOrigin;
+  DateTime? _lastSupabaseLocationUpdate;
+
   String? _responderSynopsisMessage;
 
   bool _isSecurityGuard = false;
@@ -67,6 +74,8 @@ class _ResponderDashboardScreenState extends State<ResponderDashboardScreen> {
 
   @override
   void dispose() {
+    _positionStreamSubscription?.cancel();
+    _positionStreamSubscription = null;
     _mapController.dispose();
     _notificationsChannel?.unsubscribe();
     _reportsChannel?.unsubscribe();
@@ -598,8 +607,11 @@ class _ResponderDashboardScreenState extends State<ResponderDashboardScreen> {
       _showSnack('Location updated');
 
       if (_pendingMapTarget != null) {
+        _lastRouteRecalcTime = DateTime.now();
+        _lastRouteRecalcOrigin = point;
         _fetchRoute(point, _pendingMapTarget!);
       }
+      _startLocationStream();
     } catch (e) {
       if (!mounted) return;
       setState(() => _updatingLocation = false);
@@ -614,6 +626,73 @@ class _ResponderDashboardScreenState extends State<ResponderDashboardScreen> {
     } catch (_) {
       // Map might not be mounted yet. Ignore.
     }
+  }
+
+  /// Start real-time position updates so the map keeps changing as the responder walks.
+  void _startLocationStream() {
+    if (_positionStreamSubscription != null || _profile == null) return;
+
+    final settings = LocationSettings(
+      accuracy: LocationAccuracy.high,
+      distanceFilter: 5, // meters – update every ~5 m when walking
+    );
+    _positionStreamSubscription = Geolocator.getPositionStream(
+      locationSettings: settings,
+    ).listen((Position position) {
+      if (!mounted) return;
+      final point = CoordinatePoint(
+        latitude: position.latitude,
+        longitude: position.longitude,
+      );
+      setState(() => _deviceLocation = point);
+
+      // Recalculate route from current position to destination periodically
+      final dest = _pendingMapTarget;
+      if (dest != null && !_isFetchingRoute) {
+        final now = DateTime.now();
+        final shouldRecalc = _lastRouteRecalcTime == null ||
+            now.difference(_lastRouteRecalcTime!).inSeconds >= 20 ||
+            (_lastRouteRecalcOrigin != null &&
+                Geolocator.distanceBetween(
+                  point.latitude,
+                  point.longitude,
+                  _lastRouteRecalcOrigin!.latitude,
+                  _lastRouteRecalcOrigin!.longitude,
+                ) > 25);
+        if (shouldRecalc) {
+          _lastRouteRecalcTime = now;
+          _lastRouteRecalcOrigin = point;
+          _fetchRoute(point, dest);
+        }
+      }
+
+      // Update Supabase so dispatchers see live position (throttle to ~every 12 s)
+      final responder = _profile;
+      if (responder != null) {
+        final last = _lastSupabaseLocationUpdate;
+        if (last == null ||
+            DateTime.now().difference(last).inSeconds >= 12) {
+          _lastSupabaseLocationUpdate = DateTime.now();
+          final geoJsonPoint = {
+            'type': 'Point',
+            'coordinates': [position.longitude, position.latitude],
+            'properties': {
+              'lat': position.latitude,
+              'lng': position.longitude,
+              'latitude': position.latitude,
+              'longitude': position.longitude,
+              'updated_at': DateTime.now().toUtc().toIso8601String(),
+            },
+          };
+          SupabaseService.client
+              .from('responder')
+              .update({'last_location': geoJsonPoint})
+              .eq('id', responder.id)
+              .then((_) {})
+              .catchError((_) {});
+        }
+      }
+    });
   }
 
   String _cleanError(Object error) {
@@ -646,13 +725,11 @@ class _ResponderDashboardScreenState extends State<ResponderDashboardScreen> {
       _selectedIndex = _isSecurityGuard ? 3 : 2; // Switch to Map View tab
     });
 
-    // Always use the responder phone's live location as origin
+    // Use live location as origin; if missing, request it then fetch route when ready
     final origin = _deviceLocation;
     if (origin == null) {
-      _showSnack(
-        'Share your live location first by tapping "Update" in the map view.',
-        isError: true,
-      );
+      _showSnack('Getting your location to build the route...');
+      _captureLocation();
       return;
     }
     _fetchRoute(origin, coords);
@@ -1647,7 +1724,7 @@ class _ResponderDashboardScreenState extends State<ResponderDashboardScreen> {
                 ),
               ),
               IconButton(
-                tooltip: 'Show on Map',
+                tooltip: 'Navigate',
                 icon: const Icon(Icons.navigation_rounded),
                 color: const Color(0xFF2563EB),
                 onPressed: assignment.report.coordinates == null
@@ -1979,7 +2056,6 @@ class _ResponderDashboardScreenState extends State<ResponderDashboardScreen> {
           if (_pendingMapTarget != null && !_isFetchingRoute)
             TextButton.icon(
               onPressed: () {
-                // Recalculate using only the phone's current location
                 final origin = _deviceLocation;
                 if (origin == null) {
                   _showSnack(
