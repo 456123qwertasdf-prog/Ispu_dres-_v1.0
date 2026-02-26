@@ -207,6 +207,9 @@ class _ResponderDashboardScreenState extends State<ResponderDashboardScreen> {
         throw Exception('Please sign in to access the responder dashboard.');
       }
 
+      // Ensure OneSignal player ID is registered (helps new responders receive assignment notifications)
+      OneSignalService().retrySavePlayerIdToSupabase();
+
       var profileRaw = await SupabaseService.client
           .from('responder')
           .select('id, name, role, status, phone, is_available, last_location, leader_id, team_name, leader:leader_id(name)')

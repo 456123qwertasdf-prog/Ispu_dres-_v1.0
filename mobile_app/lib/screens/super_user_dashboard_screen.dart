@@ -52,6 +52,8 @@ class _SuperUserDashboardScreenState extends State<SuperUserDashboardScreen> {
   @override
   void initState() {
     super.initState();
+    // Ensure this device is registered for push (new user or new phone)
+    OneSignalService().retrySavePlayerIdToSupabase();
     _loadUserInfo();
     _loadStats();
     _loadActiveAlerts();

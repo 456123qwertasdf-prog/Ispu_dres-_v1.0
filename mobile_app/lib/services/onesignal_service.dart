@@ -95,6 +95,9 @@ class OneSignalService {
         }
       }
 
+      // Delayed retry so new users / restored sessions get registered (subscription can arrive late)
+      Future.delayed(const Duration(seconds: 4), () => retrySavePlayerIdToSupabase());
+
       // Handle notification received (when app is in foreground or background)
       OneSignal.Notifications.addClickListener((event) {
         debugPrint('OneSignal notification clicked: ${event.notification.body}');
@@ -196,6 +199,14 @@ class OneSignalService {
             }
           }
         }
+        // Handle assignment status update for superuser (e.g. "Help is on the Way")
+        else if (type == 'assignment_status_update_superuser') {
+          final reportId = data['reportId'] as String? ?? data['report_id'] as String?;
+          if (reportId != null && _onCriticalReportNotificationTap != null) {
+            debugPrint('📱 Superuser status update notification tapped - Report ID: $reportId');
+            _onCriticalReportNotificationTap!(reportId);
+          }
+        }
       }
     } catch (e) {
       debugPrint('Error handling notification tap: $e');
@@ -223,21 +234,26 @@ class OneSignalService {
   /// Get current player ID
   String? get playerId => _playerId;
 
-  /// Retry saving player ID to Supabase (call this after login)
+  /// Retry saving player ID to Supabase (call this after login).
+  /// Polls for subscription ID a few times so new users get registered even if SDK was slow.
   Future<void> retrySavePlayerIdToSupabase() async {
     if (_playerId != null && _playerId!.isNotEmpty) {
       debugPrint('🔄 Retrying to save OneSignal Player ID after login...');
       await _savePlayerIdToSupabase(_playerId!);
-    } else {
-      debugPrint('⚠️ Cannot retry: Player ID not available yet');
-      // Try to get it again
+      return;
+    }
+    // Subscription ID may not be ready yet; poll a few times (new responders often miss otherwise)
+    for (int i = 0; i < 5; i++) {
+      await Future.delayed(Duration(milliseconds: i * 400));
       final currentId = OneSignal.User.pushSubscription.id;
       if (currentId != null && currentId.isNotEmpty) {
         _playerId = currentId;
-        debugPrint('🔄 Found Player ID, saving now: $_playerId');
+        debugPrint('🔄 OneSignal Player ID available after retry, saving: $_playerId');
         await _savePlayerIdToSupabase(_playerId!);
+        return;
       }
     }
+    debugPrint('⚠️ OneSignal Player ID still not available after retries (will save when observer fires)');
   }
 
   /// Send tags to OneSignal (for user segmentation)

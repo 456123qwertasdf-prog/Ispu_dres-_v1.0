@@ -87,6 +87,8 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
+      // Ensure this device stays registered for push (new phone or late subscription)
+      OneSignalService().retrySavePlayerIdToSupabase();
       // Refresh safety notice when app comes back (e.g. after admin turned it off on web)
       _loadCitizenSynopsis();
     }

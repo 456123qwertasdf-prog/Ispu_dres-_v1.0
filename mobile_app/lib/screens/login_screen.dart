@@ -4,6 +4,7 @@ import 'dart:ui';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../services/supabase_service.dart';
+import '../services/onesignal_service.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -100,6 +101,8 @@ class _LoginScreenState extends State<LoginScreen> {
         final prefs = await SharedPreferences.getInstance();
         await prefs.setString('user_id', response.user!.id);
         await prefs.setString('user_email', email);
+        // Register OneSignal player ID now that user is authenticated (fixes new responders not receiving notifications)
+        await OneSignalService().retrySavePlayerIdToSupabase();
         await _navigateAfterLogin(
           userId: response.user!.id,
           metadata: response.user!.userMetadata,

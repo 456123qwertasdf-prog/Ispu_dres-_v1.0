@@ -775,9 +775,113 @@ async function sendStatusUpdatePushNotification(
       })
     }
 
+    // Notify superusers (same update as citizen: e.g. "Help is on the Way")
+    try {
+      await sendOneSignalNotificationToSuperusers(
+        supabaseClient,
+        statusMessage.title,
+        statusMessage.body,
+        {
+          reportId: result.report_id,
+          assignmentId: result.assignment_id,
+          newStatus: result.new_status,
+          lifecycleStatus: STATUS_TO_LIFECYCLE[result.new_status],
+          timestamp: result.updated_at
+        }
+      )
+    } catch (superuserNotifError) {
+      console.warn('Superuser status notification failed (non-critical):', superuserNotifError)
+    }
+
   } catch (error) {
     console.warn('Failed to send push notification:', error)
     // Don't throw error as push notifications are not critical
+  }
+}
+
+/**
+ * Send OneSignal notification to all superusers (admin/super_user) when responder updates status.
+ * Same style as citizen: "Help is on the Way", "Responder Arrived", etc.
+ */
+async function sendOneSignalNotificationToSuperusers(
+  supabaseClient: any,
+  title: string,
+  message: string,
+  data: any
+): Promise<void> {
+  try {
+    if (!ONESIGNAL_REST_API_KEY || !ONESIGNAL_APP_ID) return
+
+    // Get super user and admin user_ids from user_profiles
+    const { data: superProfiles, error: profileError } = await supabaseClient
+      .from('user_profiles')
+      .select('user_id')
+      .in('role', ['super_user', 'admin'])
+
+    if (profileError || !superProfiles?.length) {
+      console.log('No super users/admins to notify for status update')
+      return
+    }
+
+    const superUserIds = superProfiles.map((p: { user_id: string }) => p.user_id).filter(Boolean)
+    if (superUserIds.length === 0) return
+
+    // Get OneSignal player IDs for those users
+    const { data: subscriptions, error: subError } = await supabaseClient
+      .from('onesignal_subscriptions')
+      .select('player_id')
+      .in('user_id', superUserIds)
+
+    if (subError || !subscriptions?.length) {
+      console.log('No OneSignal subscriptions for super users')
+      return
+    }
+
+    const playerIds = subscriptions.map((s: { player_id: string }) => s.player_id).filter(Boolean)
+    if (playerIds.length === 0) return
+
+    const isImportant = data.newStatus === 'resolved' || data.newStatus === 'on_scene'
+    const emoji = isImportant ? '✅' : '📢'
+
+    const oneSignalPayload: any = {
+      app_id: ONESIGNAL_APP_ID,
+      include_player_ids: playerIds,
+      headings: { en: `${emoji} ${title}` },
+      contents: { en: message },
+      data: {
+        ...data,
+        type: 'assignment_status_update_superuser'
+      },
+      android_channel_id: '62b67b1a-b2c2-4073-92c5-3b1d416a4720',
+      ...(isImportant ? { android_sound: 'emergency_alert' } : {}),
+      priority: isImportant ? 10 : 5,
+      android_visibility: 1,
+      android_accent_color: '3b82f6',
+      ...(isImportant ? { ios_sound: 'emergency_alert.wav' } : {}),
+      ios_badgeType: 'Increase',
+      ios_badgeCount: 1,
+      content_available: true,
+    }
+
+    const isV2Key = ONESIGNAL_REST_API_KEY.startsWith('os_v2_app_')
+    const authHeader = isV2Key
+      ? `Key ${ONESIGNAL_REST_API_KEY}`
+      : `Basic ${base64Encode(new TextEncoder().encode(`${ONESIGNAL_REST_API_KEY}:`))}`
+
+    const response = await fetch('https://api.onesignal.com/notifications', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': authHeader },
+      body: JSON.stringify(oneSignalPayload)
+    })
+
+    if (!response.ok) {
+      console.warn('OneSignal superuser notification API error:', response.status, await response.text())
+      return
+    }
+    const result = await response.json()
+    console.log('OneSignal status update sent to superusers:', { id: result.id, recipients: result.recipients })
+  } catch (error) {
+    console.warn('Failed to send OneSignal notification to superusers:', error)
   }
 }
 
