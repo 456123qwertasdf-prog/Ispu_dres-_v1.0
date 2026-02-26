@@ -634,7 +634,7 @@ class _ResponderDashboardScreenState extends State<ResponderDashboardScreen> {
 
     final settings = LocationSettings(
       accuracy: LocationAccuracy.high,
-      distanceFilter: 5, // meters – update every ~5 m when walking
+      distanceFilter: 2, // meters – update often so small movements feel real-time
     );
     _positionStreamSubscription = Geolocator.getPositionStream(
       locationSettings: settings,
@@ -652,7 +652,7 @@ class _ResponderDashboardScreenState extends State<ResponderDashboardScreen> {
         try {
           _mapController.move(
             latlong.LatLng(point.latitude, point.longitude),
-            16, // zoom level so you stay in view while moving
+            18, // zoomed in like campus-level view so route and pins are clear
           );
         } catch (_) {}
       }
@@ -1984,7 +1984,7 @@ class _ResponderDashboardScreenState extends State<ResponderDashboardScreen> {
                 mapController: _mapController,
                 options: MapOptions(
                   initialCenter: center,
-                  initialZoom: _deviceLocation != null ? 16 : 14,
+                  initialZoom: _deviceLocation != null ? 18 : 14,
                   interactionOptions: const InteractionOptions(
                     flags: InteractiveFlag.all & ~InteractiveFlag.rotate,
                   ),

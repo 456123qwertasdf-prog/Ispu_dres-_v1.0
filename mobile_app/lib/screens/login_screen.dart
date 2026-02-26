@@ -36,6 +36,8 @@ class _LoginScreenState extends State<LoginScreen> {
   String _passwordStrength = ''; // Password strength indicator
   final _forgotPasswordEmailController = TextEditingController();
   bool _isForgotPasswordLoading = false;
+  /// Installed app version only (from PackageInfo). Shows what this APK actually is.
+  /// Old builds are blocked by the update check in main.dart before this screen is shown.
   String _appVersion = '';
 
   // Background slider images
@@ -52,6 +54,8 @@ class _LoginScreenState extends State<LoginScreen> {
     _loadAppVersion();
   }
 
+  /// Load installed app version only. Version shown here is what you actually installed.
+  /// DB min_version is checked in main.dart _UpdateCheckGate; old versions never reach this screen.
   Future<void> _loadAppVersion() async {
     try {
       final info = await PackageInfo.fromPlatform();
@@ -684,22 +688,22 @@ class _LoginScreenState extends State<LoginScreen> {
               }).toList(),
             ),
           ),
-          // App version at bottom of login screen
-          if (_appVersion.isNotEmpty)
-            Positioned(
-              bottom: 8,
-              left: 0,
-              right: 0,
-              child: Center(
-                child: Text(
-                  'Version $_appVersion',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Colors.white.withOpacity(0.8),
-                  ),
+          // App version at bottom of login screen (above nav bar and dots)
+          Positioned(
+            bottom: 48,
+            left: 0,
+            right: 0,
+            child: Center(
+              child: Text(
+                'Version ${_appVersion.isNotEmpty ? _appVersion : '—'}',
+                style: TextStyle(
+                  fontSize: 13,
+                  color: Colors.white.withOpacity(0.9),
+                  fontWeight: FontWeight.w500,
                 ),
               ),
             ),
+          ),
         ],
       ),
     );

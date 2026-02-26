@@ -110,7 +110,8 @@ class _AuthWrapper extends StatelessWidget {
   }
 }
 
-/// Runs update check once. If app version < min_version, shows full-screen block (app won't work until update).
+/// Runs update check once before any screen. If installed version < min_version (from DB),
+/// shows full-screen block only—no login, no app use. Old APKs cannot be used.
 class _UpdateCheckGate extends StatefulWidget {
   final bool isAuthenticated;
 
@@ -155,7 +156,7 @@ class _UpdateCheckGateState extends State<_UpdateCheckGate> {
     if (_updateRequired && _updateResult != null) {
       return _UpdateRequiredScreen(result: _updateResult!);
     }
-    // Version check failed (null): block until we get a successful check (no bypass for old APK)
+    // Version check failed (null): block until check succeeds; no bypass so old builds cannot be used
     if (_updateResult == null) {
       return _UpdateCheckFailedScreen(onRetry: _runCheck);
     }
@@ -171,6 +172,31 @@ class _UpdateRequiredScreen extends StatelessWidget {
   final UpdateCheckResult result;
 
   const _UpdateRequiredScreen({required this.result});
+
+  Future<void> _downloadAndInstall(BuildContext context) async {
+    final url = result.downloadUrl;
+    if (url == null || url.isEmpty) {
+      UpdateCheckService.openDownloadUrl(url);
+      return;
+    }
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => _DownloadProgressDialog(
+        onCancel: () => Navigator.of(ctx).pop(),
+      ),
+    );
+    double? lastProgress;
+    await UpdateCheckService.downloadAndInstallApk(
+      url,
+      onProgress: (progress) {
+        lastProgress = progress;
+        _DownloadProgressDialog.updateProgress?.call(progress);
+      },
+    );
+    if (context.mounted) Navigator.of(context).pop();
+    // System installer opens; user taps Install once and old app is replaced (same signing + higher versionCode).
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -202,16 +228,71 @@ class _UpdateRequiredScreen extends StatelessWidget {
                 ],
                 const SizedBox(height: 32),
                 FilledButton.icon(
-                  onPressed: () => UpdateCheckService.openDownloadUrl(result.downloadUrl),
+                  onPressed: () => _downloadAndInstall(context),
                   icon: const Icon(Icons.download),
-                  label: const Text('Download update'),
+                  label: const Text('Download and install'),
                   style: FilledButton.styleFrom(padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16)),
+                ),
+                const SizedBox(height: 12),
+                TextButton(
+                  onPressed: () => UpdateCheckService.openDownloadUrl(result.downloadUrl),
+                  child: const Text('Open in browser instead'),
                 ),
               ],
             ),
           ),
         ),
       ),
+    );
+  }
+}
+
+class _DownloadProgressDialog extends StatefulWidget {
+  final VoidCallback? onCancel;
+
+  const _DownloadProgressDialog({this.onCancel});
+
+  static void Function(double)? updateProgress;
+
+  @override
+  State<_DownloadProgressDialog> createState() => _DownloadProgressDialogState();
+}
+
+class _DownloadProgressDialogState extends State<_DownloadProgressDialog> {
+  double _progress = 0.0;
+
+  @override
+  void initState() {
+    super.initState();
+    _DownloadProgressDialog.updateProgress = (p) {
+      if (mounted) setState(() => _progress = p);
+    };
+  }
+
+  @override
+  void dispose() {
+    _DownloadProgressDialog.updateProgress = null;
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('Downloading update'),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          LinearProgressIndicator(value: _progress.clamp(0.0, 1.0)),
+          const SizedBox(height: 16),
+          Text('${(_progress * 100).toStringAsFixed(0)}%', style: Theme.of(context).textTheme.titleMedium),
+        ],
+      ),
+      actions: [
+        TextButton(
+          onPressed: widget.onCancel,
+          child: const Text('Cancel'),
+        ),
+      ],
     );
   }
 }

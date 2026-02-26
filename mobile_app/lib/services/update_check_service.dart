@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:app_installer_plus/app_installer_plus.dart';
 import 'supabase_service.dart';
 
 /// Result of checking for app updates.
@@ -114,6 +115,32 @@ class UpdateCheckService {
     }
   }
 
+  /// Download APK from [downloadUrl] and open with system installer (user taps Install once).
+  /// Uses same signing + higher versionCode so the old app is cleanly replaced.
+  /// [onProgress] receives 0.0 to 1.0. On Android only; otherwise opens URL in browser.
+  static Future<void> downloadAndInstallApk(
+    String? downloadUrl, {
+    void Function(double progress)? onProgress,
+  }) async {
+    if (downloadUrl == null || downloadUrl.isEmpty) return;
+    if (defaultTargetPlatform != TargetPlatform.android) {
+      await openDownloadUrl(downloadUrl);
+      return;
+    }
+    try {
+      await AppInstallerPlus().downloadAndInstallApk(
+        downloadFileUrl: downloadUrl,
+        onProgress: (progress) => onProgress?.call(progress),
+        onError: (error) {
+          debugPrint('UpdateCheck: download/install error: $error');
+        },
+      );
+    } catch (e, st) {
+      debugPrint('UpdateCheck: downloadAndInstallApk error: $e\n$st');
+      await openDownloadUrl(downloadUrl);
+    }
+  }
+
   /// Show update dialog if result is updateAvailable or updateRequired. Returns true if dialog was shown.
   static bool showUpdateDialogIfNeeded(BuildContext context, UpdateCheckResult? result) {
     if (result == null || result.status == UpdateStatus.upToDate) return false;
@@ -153,9 +180,9 @@ class UpdateCheckService {
             FilledButton(
               onPressed: () {
                 Navigator.of(ctx).pop();
-                openDownloadUrl(result.downloadUrl);
+                downloadAndInstallApk(result.downloadUrl);
               },
-              child: const Text('Download update'),
+              child: const Text('Download and install'),
             ),
           ],
         ),
