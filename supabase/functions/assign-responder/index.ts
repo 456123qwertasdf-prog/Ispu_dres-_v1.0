@@ -50,7 +50,17 @@ serve(async (req) => {
     await validateResponderAvailability(supabaseClient, requestData.responder_id)
 
     // Check responder does not already have an active assignment (to another report)
-    await checkResponderHasNoOtherActiveAssignment(supabaseClient, requestData.responder_id, requestData.report_id)
+    const responderBusy = await checkResponderHasOtherActiveAssignment(supabaseClient, requestData.responder_id, requestData.report_id)
+    if (responderBusy) {
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: 'Responder is busy — they have an active assignment and must finish it before being assigned to another report.',
+          code: 'RESPONDER_BUSY'
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
+      )
+    }
 
     // Check if assignment already exists
     await checkExistingAssignment(supabaseClient, requestData.report_id)
@@ -190,17 +200,18 @@ async function validateResponderAvailability(
   }
 }
 
-const ACTIVE_ASSIGNMENT_STATUSES = ['assigned', 'accepted', 'enroute', 'in_progress', 'on_scene']
+// Must match assignment_status enum in DB: assigned, accepted, enroute, on_scene, resolved, cancelled (no in_progress)
+const ACTIVE_ASSIGNMENT_STATUSES = ['assigned', 'accepted', 'enroute', 'on_scene']
 
 /**
- * Check that responder has no other active assignment (to a different report).
- * A responder can only have one active assignment at a time.
+ * Check if responder has another active assignment (to a different report).
+ * Returns true if busy (has other active assignment), false if clear to assign.
  */
-async function checkResponderHasNoOtherActiveAssignment(
+async function checkResponderHasOtherActiveAssignment(
   supabaseClient: any,
   responderId: string,
   reportId: string
-): Promise<void> {
+): Promise<boolean> {
   const { data: otherAssignments, error } = await supabaseClient
     .from('assignment')
     .select('id, report_id, status')
@@ -213,9 +224,7 @@ async function checkResponderHasNoOtherActiveAssignment(
     throw new Error(`Failed to check responder assignments: ${error.message}`)
   }
 
-  if (otherAssignments && otherAssignments.length > 0) {
-    throw new Error('Responder already has an active assignment. They must finish it before being assigned to another report.')
-  }
+  return otherAssignments != null && otherAssignments.length > 0
 }
 
 /**

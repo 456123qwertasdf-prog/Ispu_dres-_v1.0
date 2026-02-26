@@ -1217,7 +1217,19 @@ class _ReportDetailEditScreenState extends State<ReportDetailEditScreen> {
       debugPrint('📦 Edge Function response: ${response.data}');
 
       if (response.data == null || response.data['success'] != true) {
-        throw Exception(response.data?['error'] ?? response.data?['message'] ?? 'Failed to assign responder');
+        final message = response.data?['error'] ?? response.data?['message'] ?? 'Failed to assign responder';
+        final isBusy = response.data?['code'] == 'RESPONDER_BUSY';
+        if (mounted) {
+          Navigator.of(context).pop();
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(message),
+              backgroundColor: isBusy ? Colors.orange : Colors.red,
+              duration: const Duration(seconds: 5),
+            ),
+          );
+        }
+        return;
       }
 
       // Update the report status to 'assigned' (lifecycle_status is already updated by Edge Function)
