@@ -55,16 +55,20 @@ class _ReportDetailEditScreenState extends State<ReportDetailEditScreen> {
     'assigned', 'accepted', 'enroute', 'in_progress', 'on_scene',
   ];
 
-  /// Server-side check: which of [responderIds] currently have an active assignment (any report).
-  /// Use this before assigning so we never rely only on client state.
-  Future<Set<String>> _fetchBusyResponderIdsFromServer(List<String> responderIds) async {
+  /// Server-side check: which of [responderIds] have an active assignment to a *different* report.
+  /// When assigning to [reportId], pass it so we only treat "busy" as having another report's assignment.
+  Future<Set<String>> _fetchBusyResponderIdsFromServer(List<String> responderIds, {String? reportId}) async {
     if (responderIds.isEmpty) return {};
     try {
-      final response = await SupabaseService.client
+      var query = SupabaseService.client
           .from('assignment')
           .select('responder_id')
           .inFilter('responder_id', responderIds)
           .inFilter('status', _activeAssignmentStatuses);
+      if (reportId != null && reportId.isNotEmpty) {
+        query = query.neq('report_id', reportId);
+      }
+      final response = await query;
       if (response == null || response.isEmpty) return {};
       final list = response as List;
       return list
@@ -90,11 +94,16 @@ class _ReportDetailEditScreenState extends State<ReportDetailEditScreen> {
         final allIds = list.map((r) => r['id']?.toString()).whereType<String>().toList();
         if (allIds.isNotEmpty) {
           try {
-            final activeAssignments = await SupabaseService.client
+            final reportId = widget.report['id']?.toString();
+            var query = SupabaseService.client
                 .from('assignment')
                 .select('responder_id')
                 .inFilter('responder_id', allIds)
                 .inFilter('status', _activeAssignmentStatuses);
+            if (reportId != null && reportId.isNotEmpty) {
+              query = query.neq('report_id', reportId);
+            }
+            final activeAssignments = await query;
             if (activeAssignments != null && activeAssignments.isNotEmpty) {
               _busyResponderIds = (activeAssignments as List)
                   .map((a) => a['responder_id']?.toString())
@@ -1047,8 +1056,8 @@ class _ReportDetailEditScreenState extends State<ReportDetailEditScreen> {
     );
 
     try {
-      // Server-side check first; fallback to client _busyResponderIds if server returns empty
-      final busyFromServer = await _fetchBusyResponderIdsFromServer(responderIds);
+      // Server-side check: responders with active assignment to another report cannot be assigned
+      final busyFromServer = await _fetchBusyResponderIdsFromServer(responderIds, reportId: reportId);
       var busyIds = responderIds.where((id) => busyFromServer.contains(id.trim().toLowerCase())).toList();
       if (busyIds.isEmpty && busyFromServer.isEmpty) {
         busyIds = responderIds.where((id) => _busyResponderIds.contains(id)).toList();
@@ -1142,8 +1151,8 @@ class _ReportDetailEditScreenState extends State<ReportDetailEditScreen> {
     );
 
     try {
-      // Server-side check: responder must not already have an active assignment (any report)
-      final busyFromServer = await _fetchBusyResponderIdsFromServer([responderId]);
+      // Server-side check: responder must not already have an active assignment to another report
+      final busyFromServer = await _fetchBusyResponderIdsFromServer([responderId], reportId: reportId);
       if (busyFromServer.contains(responderId.trim().toLowerCase())) {
         if (mounted) {
           Navigator.of(context).pop();

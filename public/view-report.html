@@ -1216,20 +1216,34 @@
                     return;
                 }
 
-                // Fetch existing assignments for this report
+                const activeStatuses = ['assigned', 'accepted', 'enroute', 'in_progress', 'on_scene'];
+                // Fetch existing assignments for this report (any active status)
                 let assignedResponderIds = [];
                 try {
                     const { data: assignments, error: assignError } = await window.emergencySystem.supabase
                         .from('assignment')
                         .select('responder_id')
                         .eq('report_id', reportId)
-                        .eq('status', 'assigned');
+                        .in('status', activeStatuses);
                     
                     if (!assignError && assignments) {
                         assignedResponderIds = assignments.map(a => a.responder_id);
                     }
                 } catch (err) {
                     console.warn('Could not fetch existing assignments:', err);
+                }
+
+                // Busy = has active assignment to a *different* report (cannot assign to another)
+                let busyResponderIds = new Set();
+                try {
+                    const allResponderIds = responders.map(r => r.id);
+                    const { data: activeData } = await window.emergencySystem.supabase
+                        .from('assignment')
+                        .select('responder_id, status, report_id')
+                        .in('responder_id', allResponderIds);
+                    busyResponderIds = new Set((activeData || []).filter(a => activeStatuses.includes(a.status) && a.report_id !== reportId).map(a => a.responder_id));
+                } catch (err) {
+                    console.warn('Could not fetch busy responders:', err);
                 }
 
                 // Keep responders for expand-leader+team on confirm
@@ -1362,25 +1376,17 @@
             selectedResponderIds = Array.from(expandedSet);
 
             try {
-                // Get existing assignments to avoid duplicates
+                const activeStatuses = ['assigned', 'accepted', 'enroute', 'in_progress', 'on_scene'];
+                // Get existing assignments to avoid duplicates (any active status)
                 const { data: existingAssignments, error: fetchError } = await window.emergencySystem.supabase
                     .from('assignment')
                     .select('responder_id')
                     .eq('report_id', reportId)
-                    .eq('status', 'assigned');
+                    .in('status', activeStatuses);
 
                 if (fetchError) throw fetchError;
 
                 const existingResponderIds = existingAssignments ? existingAssignments.map(a => a.responder_id) : [];
-                const allResponderIds = responders.map(r => r.id);
-
-                // Responders who already have an active assignment (any report) – cannot assign another
-                const { data: activeAssignmentsData } = await window.emergencySystem.supabase
-                    .from('assignment')
-                    .select('responder_id, status')
-                    .in('responder_id', allResponderIds);
-                const activeStatuses = ['assigned', 'accepted', 'enroute', 'in_progress', 'on_scene'];
-                const busyResponderIds = new Set((activeAssignmentsData || []).filter(a => activeStatuses.includes(a.status)).map(a => a.responder_id));
 
                 // Filter out already assigned responders (to this report)
                 const newResponderIds = selectedResponderIds.filter(id => !existingResponderIds.includes(id));
@@ -1391,16 +1397,15 @@
                     return;
                 }
 
-                // Block assigning responders who already have an active assignment (must finish first)
+                // Block assigning responders who already have an active assignment to another report (must finish first)
                 const { data: allAssignmentsForResponders } = await window.emergencySystem.supabase
                     .from('assignment')
-                    .select('responder_id, status')
+                    .select('responder_id, status, report_id')
                     .in('responder_id', newResponderIds);
-                const activeStatuses = ['assigned', 'accepted', 'enroute', 'in_progress', 'on_scene'];
-                const busyResponderIds = (allAssignmentsForResponders || [])
-                    .filter(a => activeStatuses.includes(a.status))
+                const busyResponderIdsList = (allAssignmentsForResponders || [])
+                    .filter(a => activeStatuses.includes(a.status) && a.report_id !== reportId)
                     .map(a => a.responder_id);
-                const uniqueBusyIds = [...new Set(busyResponderIds)];
+                const uniqueBusyIds = [...new Set(busyResponderIdsList)];
                 if (uniqueBusyIds.length > 0) {
                     const respondersMap = (window._lastAssignModalResponders || []).reduce((acc, r) => { acc[r.id] = r.name || r.email || r.id; return acc; }, {});
                     const names = uniqueBusyIds.map(id => respondersMap[id] || id).join(', ');

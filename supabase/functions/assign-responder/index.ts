@@ -49,6 +49,9 @@ serve(async (req) => {
     // Check if responder exists and is available
     await validateResponderAvailability(supabaseClient, requestData.responder_id)
 
+    // Check responder does not already have an active assignment (to another report)
+    await checkResponderHasNoOtherActiveAssignment(supabaseClient, requestData.responder_id, requestData.report_id)
+
     // Check if assignment already exists
     await checkExistingAssignment(supabaseClient, requestData.report_id)
 
@@ -184,6 +187,34 @@ async function validateResponderAvailability(
 
   if (responder.status !== 'active') {
     throw new Error('Responder is not active')
+  }
+}
+
+const ACTIVE_ASSIGNMENT_STATUSES = ['assigned', 'accepted', 'enroute', 'in_progress', 'on_scene']
+
+/**
+ * Check that responder has no other active assignment (to a different report).
+ * A responder can only have one active assignment at a time.
+ */
+async function checkResponderHasNoOtherActiveAssignment(
+  supabaseClient: any,
+  responderId: string,
+  reportId: string
+): Promise<void> {
+  const { data: otherAssignments, error } = await supabaseClient
+    .from('assignment')
+    .select('id, report_id, status')
+    .eq('responder_id', responderId)
+    .neq('report_id', reportId)
+    .in('status', ACTIVE_ASSIGNMENT_STATUSES)
+    .limit(1)
+
+  if (error) {
+    throw new Error(`Failed to check responder assignments: ${error.message}`)
+  }
+
+  if (otherAssignments && otherAssignments.length > 0) {
+    throw new Error('Responder already has an active assignment. They must finish it before being assigned to another report.')
   }
 }
 

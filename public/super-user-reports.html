@@ -731,10 +731,11 @@
             ? `<img src="${imageUrl}" alt="Report image" style="width:100%;max-width:280px;height:180px;object-fit:cover;border-radius:8px;border:1px solid #e5e7eb;">`
             : `<div style="width:100%;max-width:280px;height:120px;background:#f3f4f6;border:2px dashed #d1d5db;border-radius:8px;display:flex;align-items:center;justify-content:center;color:#9ca3af;font-size:0.85rem;">No image uploaded</div>`;
 
-        // assignments
+        // assignments (any active status so we show responder for accepted/enroute/on_scene too)
         let assignedText = 'Not assigned';
         try {
-            const { data: asgn } = await window.emergencySystem.supabase.from('assignment').select('responder_id,status').eq('report_id', rId).eq('status','assigned');
+            const activeStatusesDisplay = ['assigned', 'accepted', 'enroute', 'in_progress', 'on_scene'];
+            const { data: asgn } = await window.emergencySystem.supabase.from('assignment').select('responder_id,status').eq('report_id', rId).in('status', activeStatusesDisplay);
             if (asgn && asgn.length > 0) {
                 const resp = await window.emergencySystem.getResponders();
                 assignedText = asgn.map(a => { const r = resp.find(x=>x.id===a.responder_id); return r?.name||`Responder ${a.responder_id.substring(0,8)}`; }).join(', ');
@@ -901,17 +902,18 @@
         list.innerHTML = '<div style="padding:1rem;text-align:center;color:#6b7280;">Loading responders...</div>';
         try {
             const responders = await window.emergencySystem.getResponders();
+            const activeStatuses = ['assigned', 'accepted', 'enroute', 'in_progress', 'on_scene'];
             let assignedIds = [];
             try {
-                const { data } = await window.emergencySystem.supabase.from('assignment').select('responder_id').eq('report_id', reportId).eq('status','assigned');
+                const { data } = await window.emergencySystem.supabase.from('assignment').select('responder_id').eq('report_id', reportId).in('status', activeStatuses);
                 if (data) assignedIds = data.map(a => a.responder_id);
             } catch(_) {}
             const allResponderIds = (responders || []).map(r => r.id);
             let busyResponderIds = new Set();
             try {
-                const { data: activeData } = await window.emergencySystem.supabase.from('assignment').select('responder_id, status').in('responder_id', allResponderIds);
-                const activeStatuses = ['assigned', 'accepted', 'enroute', 'in_progress', 'on_scene'];
-                busyResponderIds = new Set((activeData || []).filter(a => activeStatuses.includes(a.status)).map(a => a.responder_id));
+                const { data: activeData } = await window.emergencySystem.supabase.from('assignment').select('responder_id, status, report_id').in('responder_id', allResponderIds);
+                // Busy = has active assignment to a *different* report (can't assign to another while assigned elsewhere)
+                busyResponderIds = new Set((activeData || []).filter(a => activeStatuses.includes(a.status) && a.report_id !== reportId).map(a => a.responder_id));
             } catch(_) {}
             list.innerHTML = '';
             if (!responders || !responders.length) { list.innerHTML = '<div style="padding:1rem;text-align:center;color:#6b7280;">No responders available.</div>'; return; }
@@ -988,14 +990,14 @@
         });
         selectedIds = Array.from(expandedSet);
         try {
-            const { data: existing } = await window.emergencySystem.supabase.from('assignment').select('responder_id').eq('report_id', currentReportId).eq('status','assigned');
+            const activeStatuses = ['assigned', 'accepted', 'enroute', 'in_progress', 'on_scene'];
+            const { data: existing } = await window.emergencySystem.supabase.from('assignment').select('responder_id').eq('report_id', currentReportId).in('status', activeStatuses);
             const existingIds = existing ? existing.map(a => a.responder_id) : [];
             const newIds = selectedIds.filter(id => !existingIds.includes(id));
             if (!newIds.length) { showToast('All selected responders are already assigned', 'info'); closeAssignResponderModalVR(); return; }
-            // Block assigning responders who already have an active assignment (must finish first)
-            const { data: allAssignmentsForResponders } = await window.emergencySystem.supabase.from('assignment').select('responder_id, status').in('responder_id', newIds);
-            const activeStatuses = ['assigned', 'accepted', 'enroute', 'in_progress', 'on_scene'];
-            const busyResponderIds = [...new Set((allAssignmentsForResponders || []).filter(a => activeStatuses.includes(a.status)).map(a => a.responder_id))];
+            // Block assigning responders who already have an active assignment to another report (must finish first)
+            const { data: allAssignmentsForResponders } = await window.emergencySystem.supabase.from('assignment').select('responder_id, status, report_id').in('responder_id', newIds);
+            const busyResponderIds = [...new Set((allAssignmentsForResponders || []).filter(a => activeStatuses.includes(a.status) && a.report_id !== currentReportId).map(a => a.responder_id))];
             if (busyResponderIds.length > 0) {
                 const respondersList = window._lastAssignModalResponders || [];
                 const names = busyResponderIds.map(id => { const r = respondersList.find(x => x.id === id); return r ? (r.name || r.email || id) : id; }).join(', ');
