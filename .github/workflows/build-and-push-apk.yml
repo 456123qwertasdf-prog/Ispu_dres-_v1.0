@@ -58,14 +58,22 @@ jobs:
         working-directory: mobile_app
 
       - name: Prepare release keystore (same key = in-app updates work)
-        if: secrets.ANDROID_KEYSTORE_BASE64 != ''
+        env:
+          KEYSTORE_B64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
         run: |
+          if [ -z "$KEYSTORE_B64" ] || [ -z "$KEYSTORE_PASSWORD" ]; then
+            echo "Release signing secrets not set; build will use debug signing."
+            exit 0
+          fi
           mkdir -p mobile_app/android/app
-          echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 -d > mobile_app/android/app/upload-keystore.jks
+          echo "$KEYSTORE_B64" | base64 -d > mobile_app/android/app/upload-keystore.jks
           printf '%s\n' \
-            "storePassword=${{ secrets.ANDROID_KEYSTORE_PASSWORD }}" \
-            "keyPassword=${{ secrets.ANDROID_KEY_PASSWORD }}" \
-            "keyAlias=${{ secrets.ANDROID_KEY_ALIAS }}" \
+            "storePassword=$KEYSTORE_PASSWORD" \
+            "keyPassword=$KEY_PASSWORD" \
+            "keyAlias=$KEY_ALIAS" \
             "storeFile=app/upload-keystore.jks" \
             > mobile_app/android/key.properties
 
