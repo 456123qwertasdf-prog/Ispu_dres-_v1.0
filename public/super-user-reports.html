@@ -906,6 +906,13 @@
                 const { data } = await window.emergencySystem.supabase.from('assignment').select('responder_id').eq('report_id', reportId).eq('status','assigned');
                 if (data) assignedIds = data.map(a => a.responder_id);
             } catch(_) {}
+            const allResponderIds = (responders || []).map(r => r.id);
+            let busyResponderIds = new Set();
+            try {
+                const { data: activeData } = await window.emergencySystem.supabase.from('assignment').select('responder_id, status').in('responder_id', allResponderIds);
+                const activeStatuses = ['assigned', 'accepted', 'enroute', 'in_progress', 'on_scene'];
+                busyResponderIds = new Set((activeData || []).filter(a => activeStatuses.includes(a.status)).map(a => a.responder_id));
+            } catch(_) {}
             list.innerHTML = '';
             if (!responders || !responders.length) { list.innerHTML = '<div style="padding:1rem;text-align:center;color:#6b7280;">No responders available.</div>'; return; }
             window._lastAssignModalResponders = responders;
@@ -917,15 +924,16 @@
             }));
             const ungrouped = responders.filter(r => r.leader_id && !leaders.find(l => l.id === r.leader_id));
 
-            function addRow(r, isAssigned, isMember) {
+            function addRow(r, isAssigned, isBusy, isMember) {
                 const row = document.createElement('div');
-                row.style.cssText = `display:flex;align-items:center;gap:0.75rem;padding:0.65rem ${isMember ? '1.5rem' : '0.65rem'} 0.65rem;border-bottom:1px solid #f3f4f6;cursor:pointer;${isAssigned?'background:#f0fdf4;border-left:3px solid #10b981;':''}`;
+                row.style.cssText = `display:flex;align-items:center;gap:0.75rem;padding:0.65rem ${isMember ? '1.5rem' : '0.65rem'} 0.65rem;border-bottom:1px solid #f3f4f6;cursor:pointer;${isAssigned?'background:#f0fdf4;border-left:3px solid #10b981;':''}${isBusy?'background:#fffbeb;border-left:3px solid #f59e0b;':''}`;
                 const cb = document.createElement('input');
-                cb.type = 'checkbox'; cb.value = r.id; cb.checked = isAssigned; cb.disabled = isAssigned;
+                cb.type = 'checkbox'; cb.value = r.id; cb.checked = isAssigned; cb.disabled = isAssigned || isBusy;
                 cb.id = 'vr-resp-' + r.id;
                 cb.style.cssText = 'width:18px;height:18px;accent-color:#059669;';
+                const busyLabel = isBusy ? ' <span style="font-size:0.75rem;color:#b45309;font-weight:600;">Has active assignment (finish first)</span>' : '';
                 const info = document.createElement('div');
-                info.innerHTML = `<div style="font-weight:500;font-size:0.875rem;color:${isAssigned?'#059669':'#1f2937'};">${escapeHtml(r.name)}${isAssigned?' <span style="font-size:0.75rem;color:#059669;font-weight:600;">✓ Assigned</span>':''}</div><div style="font-size:0.75rem;color:#6b7280;">${escapeHtml((r.role||'responder') + (isMember ? ' (member)' : ' (leader)'))}</div>`;
+                info.innerHTML = `<div style="font-weight:500;font-size:0.875rem;color:${isAssigned?'#059669':isBusy?'#92400e':'#1f2937'};">${escapeHtml(r.name)}${isAssigned?' <span style="font-size:0.75rem;color:#059669;font-weight:600;">✓ Assigned</span>':''}${busyLabel}</div><div style="font-size:0.75rem;color:#6b7280;">${escapeHtml((r.role||'responder') + (isMember ? ' (member)' : ' (leader)'))}</div>`;
                 row.addEventListener('click', e => { if (e.target.type !== 'checkbox' && !cb.disabled) cb.checked = !cb.checked; });
                 row.appendChild(cb); row.appendChild(info);
                 return { row, cb };
@@ -934,12 +942,13 @@
             teams.forEach(team => {
                 const allIds = [team.leader.id, ...team.members.map(m => m.id)];
                 const allAssigned = allIds.every(id => assignedIds.includes(id));
+                const anyBusy = allIds.some(id => busyResponderIds.has(id));
                 const teamHead = document.createElement('div');
                 teamHead.style.cssText = 'display:flex;align-items:center;gap:0.5rem;margin:0.75rem 0 0.35rem;padding:0.4rem 0;border-bottom:1px solid #e5e7eb;';
                 const teamCb = document.createElement('input');
                 teamCb.type = 'checkbox';
                 teamCb.checked = allAssigned;
-                teamCb.disabled = allAssigned;
+                teamCb.disabled = allAssigned || anyBusy;
                 teamCb.style.cssText = 'width:18px;height:18px;accent-color:#059669;';
                 const teamLbl = document.createElement('span');
                 teamLbl.style.cssText = 'font-weight:600;font-size:0.9rem;color:#374151;cursor:pointer;';
@@ -949,16 +958,17 @@
                 teamHead.appendChild(teamCb); teamHead.appendChild(teamLbl);
                 list.appendChild(teamHead);
                 const leaderAssigned = assignedIds.includes(team.leader.id);
-                const { row: lRow, cb: lCb } = addRow(team.leader, leaderAssigned, false);
+                const leaderBusy = busyResponderIds.has(team.leader.id);
+                const { row: lRow, cb: lCb } = addRow(team.leader, leaderAssigned, leaderBusy, false);
                 list.appendChild(lRow);
-                team.members.forEach(m => { const ma = assignedIds.includes(m.id); list.appendChild(addRow(m, ma, true).row); });
+                team.members.forEach(m => { const ma = assignedIds.includes(m.id); const mb = busyResponderIds.has(m.id); list.appendChild(addRow(m, ma, mb, true).row); });
             });
             if (ungrouped.length) {
                 const ugHead = document.createElement('div');
                 ugHead.style.cssText = 'font-weight:600;font-size:0.9rem;color:#6b7280;margin:0.75rem 0 0.5rem;padding:0.4rem 0;border-bottom:1px solid #e5e7eb;';
                 ugHead.textContent = 'Ungrouped';
                 list.appendChild(ugHead);
-                ungrouped.forEach(r => list.appendChild(addRow(r, assignedIds.includes(r.id), false).row));
+                ungrouped.forEach(r => list.appendChild(addRow(r, assignedIds.includes(r.id), busyResponderIds.has(r.id), false).row));
             }
         } catch(e) { list.innerHTML = `<div style="padding:1rem;text-align:center;color:#ef4444;">Failed to load: ${e.message}</div>`; }
     }
@@ -982,6 +992,16 @@
             const existingIds = existing ? existing.map(a => a.responder_id) : [];
             const newIds = selectedIds.filter(id => !existingIds.includes(id));
             if (!newIds.length) { showToast('All selected responders are already assigned', 'info'); closeAssignResponderModalVR(); return; }
+            // Block assigning responders who already have an active assignment (must finish first)
+            const { data: allAssignmentsForResponders } = await window.emergencySystem.supabase.from('assignment').select('responder_id, status').in('responder_id', newIds);
+            const activeStatuses = ['assigned', 'accepted', 'enroute', 'in_progress', 'on_scene'];
+            const busyResponderIds = [...new Set((allAssignmentsForResponders || []).filter(a => activeStatuses.includes(a.status)).map(a => a.responder_id))];
+            if (busyResponderIds.length > 0) {
+                const respondersList = window._lastAssignModalResponders || [];
+                const names = busyResponderIds.map(id => { const r = respondersList.find(x => x.id === id); return r ? (r.name || r.email || id) : id; }).join(', ');
+                showToast('Cannot assign: these responder(s) already have an active assignment and must finish it first: ' + names, 'error');
+                return;
+            }
             const { error } = await window.emergencySystem.supabase.from('assignment').insert(newIds.map(id => ({ report_id: currentReportId, responder_id: id, status: 'assigned' })));
             if (error) throw error;
             await window.emergencySystem.supabase.from('reports').update({ status: 'assigned', last_update: new Date().toISOString() }).eq('id', currentReportId).neq('status','completed');

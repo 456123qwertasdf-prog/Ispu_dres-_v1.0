@@ -22,6 +22,8 @@ class _ReportDetailEditScreenState extends State<ReportDetailEditScreen> {
   List<Map<String, dynamic>> _ungroupedResponders = [];
   List<({String label, List<Map<String, dynamic>> responders})> _responderTeams = [];
   Map<String, dynamic>? _currentAssignment;
+  /// Responder IDs that already have an active assignment (cannot assign another until finished).
+  Set<String> _busyResponderIds = {};
 
   // Form controllers
   late TextEditingController _messageController;
@@ -60,6 +62,28 @@ class _ReportDetailEditScreenState extends State<ReportDetailEditScreen> {
       if (response != null) {
         final list = List<Map<String, dynamic>>.from(response);
         _buildResponderTeams(list);
+        final allIds = list.map((r) => r['id']?.toString()).whereType<String>().toList();
+        if (allIds.isNotEmpty) {
+          try {
+            final activeAssignments = await SupabaseService.client
+                .from('assignment')
+                .select('responder_id')
+                .inFilter('responder_id', allIds)
+                .inFilter('status', ['assigned', 'accepted', 'enroute', 'in_progress', 'on_scene']);
+            if (activeAssignments != null && activeAssignments.isNotEmpty) {
+              _busyResponderIds = (activeAssignments as List)
+                  .map((a) => a['responder_id']?.toString())
+                  .whereType<String>()
+                  .toSet();
+            } else {
+              _busyResponderIds = {};
+            }
+          } catch (_) {
+            _busyResponderIds = {};
+          }
+        } else {
+          _busyResponderIds = {};
+        }
         setState(() {
           _responders = list;
         });
@@ -817,6 +841,8 @@ class _ReportDetailEditScreenState extends State<ReportDetailEditScreen> {
         builder: (context, setDialogState) {
           void toggleTeam(({String label, List<Map<String, dynamic>> responders}) team) {
             final ids = team.responders.map((r) => r['id']?.toString()).whereType<String>().toSet();
+            final anyBusy = ids.any(_busyResponderIds.contains);
+            if (anyBusy) return;
             if (ids.every(selectedIds.contains)) {
               selectedIds = Set.from(selectedIds)..removeAll(ids);
             } else {
@@ -826,6 +852,7 @@ class _ReportDetailEditScreenState extends State<ReportDetailEditScreen> {
           }
 
           void toggleResponder(String id) {
+            if (_busyResponderIds.contains(id)) return;
             if (selectedIds.contains(id)) {
               selectedIds = Set.from(selectedIds)..remove(id);
             } else {
@@ -853,6 +880,7 @@ class _ReportDetailEditScreenState extends State<ReportDetailEditScreen> {
                     const SizedBox(height: 12),
                     ..._responderTeams.map((team) {
                       final ids = team.responders.map((r) => r['id']?.toString()).whereType<String>().toSet();
+                      final anyBusy = ids.any(_busyResponderIds.contains);
                       final allSelected = ids.isNotEmpty && ids.every(selectedIds.contains);
                       final someSelected = ids.any(selectedIds.contains);
                       return Column(
@@ -863,13 +891,16 @@ class _ReportDetailEditScreenState extends State<ReportDetailEditScreen> {
                               Checkbox(
                                 value: allSelected ? true : (someSelected ? null : false),
                                 tristate: true,
-                                onChanged: (_) => toggleTeam(team),
+                                onChanged: anyBusy ? null : (_) => toggleTeam(team),
                               ),
-                              Text(
-                                'Assign whole team: ${team.label} (${team.responders.length})',
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.w600,
-                                  fontSize: 14,
+                              Expanded(
+                                child: Text(
+                                  'Assign whole team: ${team.label} (${team.responders.length})${anyBusy ? " • Has busy member" : ""}',
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.w600,
+                                    fontSize: 14,
+                                    color: anyBusy ? Colors.grey : null,
+                                  ),
                                 ),
                               ),
                             ],
@@ -878,15 +909,23 @@ class _ReportDetailEditScreenState extends State<ReportDetailEditScreen> {
                             final id = r['id']?.toString() ?? '';
                             final name = r['name']?.toString() ?? 'Unknown';
                             final role = r['role']?.toString() ?? '';
+                            final isBusy = _busyResponderIds.contains(id);
                             return Padding(
                               padding: const EdgeInsets.only(left: 32, bottom: 4),
                               child: Row(
                                 children: [
                                   Checkbox(
                                     value: selectedIds.contains(id),
-                                    onChanged: (_) => toggleResponder(id),
+                                    onChanged: isBusy ? null : (_) => toggleResponder(id),
                                   ),
-                                  Text('$name ($role)'),
+                                  Expanded(
+                                    child: Text(
+                                      '$name ($role)${isBusy ? " • Has active assignment" : ""}',
+                                      style: TextStyle(
+                                        color: isBusy ? Colors.grey : null,
+                                      ),
+                                    ),
+                                  ),
                                 ],
                               ),
                             );
@@ -908,15 +947,21 @@ class _ReportDetailEditScreenState extends State<ReportDetailEditScreen> {
                         final id = r['id']?.toString() ?? '';
                         final name = r['name']?.toString() ?? 'Unknown';
                         final role = r['role']?.toString() ?? '';
+                        final isBusy = _busyResponderIds.contains(id);
                         return Padding(
                           padding: const EdgeInsets.only(bottom: 4),
                           child: Row(
                             children: [
                               Checkbox(
                                 value: selectedIds.contains(id),
-                                onChanged: (_) => toggleResponder(id),
+                                onChanged: isBusy ? null : (_) => toggleResponder(id),
                               ),
-                              Text('$name ($role)'),
+                              Expanded(
+                                child: Text(
+                                  '$name ($role)${isBusy ? " • Has active assignment" : ""}',
+                                  style: TextStyle(color: isBusy ? Colors.grey : null),
+                                ),
+                              ),
                             ],
                           ),
                         );
@@ -977,6 +1022,30 @@ class _ReportDetailEditScreenState extends State<ReportDetailEditScreen> {
     );
 
     try {
+      final busyIds = responderIds.where((id) => _busyResponderIds.contains(id)).toList();
+      if (busyIds.isNotEmpty) {
+        if (mounted) {
+          Navigator.of(context).pop();
+          final names = busyIds.map((id) {
+            try {
+              final r = _responders.firstWhere((r) => r['id']?.toString() == id);
+              return r['name']?.toString() ?? id;
+            } catch (_) {
+              return id;
+            }
+          }).join(', ');
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                'Cannot assign: ${names.isEmpty ? "Selected responder(s)" : names} already have an active assignment. They must finish it first.',
+              ),
+              backgroundColor: Colors.orange,
+              duration: const Duration(seconds: 5),
+            ),
+          );
+        }
+        return;
+      }
       final now = DateTime.now().toIso8601String();
       for (final responderId in responderIds) {
         await SupabaseService.client.from('assignment').insert({
@@ -1043,6 +1112,24 @@ class _ReportDetailEditScreenState extends State<ReportDetailEditScreen> {
     );
 
     try {
+      if (_busyResponderIds.contains(responderId)) {
+        if (mounted) {
+          Navigator.of(context).pop();
+          String name = responderId;
+          try {
+            final r = _responders.firstWhere((r) => r['id']?.toString() == responderId);
+            name = r['name']?.toString() ?? responderId;
+          } catch (_) {}
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('$name already has an active assignment. They must finish it first.'),
+              backgroundColor: Colors.orange,
+              duration: const Duration(seconds: 4),
+            ),
+          );
+        }
+        return;
+      }
       // Check if report already has an active assignment
       final existingAssignments = await SupabaseService.client
           .from('assignment')

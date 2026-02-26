@@ -646,6 +646,17 @@ class _ResponderDashboardScreenState extends State<ResponderDashboardScreen> {
       );
       setState(() => _deviceLocation = point);
 
+      // Real-time map follow: when on Map View tab, keep camera centered on user with automatic zoom
+      final isOnMapTab = _selectedIndex == (_isSecurityGuard ? 3 : 2);
+      if (isOnMapTab) {
+        try {
+          _mapController.move(
+            latlong.LatLng(point.latitude, point.longitude),
+            16, // zoom level so you stay in view while moving
+          );
+        } catch (_) {}
+      }
+
       // Recalculate route from current position to destination periodically
       final dest = _pendingMapTarget;
       if (dest != null && !_isFetchingRoute) {
@@ -1973,7 +1984,7 @@ class _ResponderDashboardScreenState extends State<ResponderDashboardScreen> {
                 mapController: _mapController,
                 options: MapOptions(
                   initialCenter: center,
-                  initialZoom: 14,
+                  initialZoom: _deviceLocation != null ? 16 : 14,
                   interactionOptions: const InteractionOptions(
                     flags: InteractiveFlag.all & ~InteractiveFlag.rotate,
                   ),
@@ -2277,7 +2288,18 @@ class _ResponderDashboardScreenState extends State<ResponderDashboardScreen> {
     }
   }
 
+  /// Resolve report image path to a loadable URL (Supabase storage path → public URL).
+  String _resolveReportImageUrl(String imagePath) {
+    if (imagePath.isEmpty) return imagePath;
+    if (imagePath.startsWith('http://') || imagePath.startsWith('https://')) {
+      return imagePath;
+    }
+    final path = imagePath.startsWith('/') ? imagePath.substring(1) : imagePath;
+    return '${SupabaseService.supabaseUrl}/storage/v1/object/public/reports-images/$path';
+  }
+
   void _showImagePreview(String imageUrl) {
+    final resolvedUrl = _resolveReportImageUrl(imageUrl);
     showDialog(
       context: context,
       builder: (context) {
@@ -2289,8 +2311,16 @@ class _ResponderDashboardScreenState extends State<ResponderDashboardScreen> {
               ClipRRect(
                 borderRadius: BorderRadius.circular(16),
                 child: Image.network(
-                  imageUrl,
+                  resolvedUrl,
                   fit: BoxFit.cover,
+                  loadingBuilder: (_, child, progress) {
+                    if (progress == null) return child;
+                    return Container(
+                      color: Colors.grey.shade200,
+                      alignment: Alignment.center,
+                      child: const CircularProgressIndicator(),
+                    );
+                  },
                   errorBuilder: (_, __, ___) => Container(
                     color: Colors.grey.shade100,
                     alignment: Alignment.center,

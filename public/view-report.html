@@ -1247,16 +1247,16 @@
                 const responderList = document.getElementById('responderList');
                 responderList.innerHTML = '';
 
-                function addResponderRow(responder, isAssigned, indent) {
+                function addResponderRow(responder, isAssigned, isBusy, indent) {
                     const item = document.createElement('div');
-                    item.className = `responder-item ${isAssigned ? 'responder-item-assigned' : ''}`;
+                    item.className = `responder-item ${isAssigned ? 'responder-item-assigned' : ''} ${isBusy ? 'responder-item-busy' : ''}`;
                     if (indent) item.style.paddingLeft = '1.5rem';
                     const checkbox = document.createElement('input');
                     checkbox.type = 'checkbox';
                     checkbox.value = responder.id;
                     checkbox.id = `responder-${responder.id}`;
                     checkbox.checked = isAssigned;
-                    if (isAssigned) checkbox.disabled = true;
+                    if (isAssigned || isBusy) checkbox.disabled = true;
                     const info = document.createElement('div');
                     info.className = 'responder-item-info';
                     const name = document.createElement('div');
@@ -1264,7 +1264,8 @@
                     name.textContent = responder.name;
                     const role = document.createElement('div');
                     role.className = 'responder-item-role';
-                    role.textContent = (responder.role || 'responder') + (indent ? ' (member)' : ' (leader)');
+                    role.textContent = (responder.role || 'responder') + (indent ? ' (member)' : ' (leader)') + (isBusy ? ' • Has active assignment (finish first)' : '');
+                    if (isBusy) role.style.color = '#b45309';
                     info.appendChild(name);
                     info.appendChild(role);
                     item.appendChild(checkbox);
@@ -1288,8 +1289,9 @@
                     teamCheck.type = 'checkbox';
                     teamCheck.className = 'assign-whole-team';
                     teamCheck.dataset.teamIds = allIds.join(',');
+                    const anyBusy = allIds.some(id => busyResponderIds.has(id));
                     teamCheck.checked = allAssigned;
-                    teamCheck.disabled = allAssigned;
+                    teamCheck.disabled = allAssigned || anyBusy;
                     teamCheck.style.accentColor = '#059669';
                     const teamLabel = document.createElement('label');
                     teamLabel.style.cssText = 'font-weight:600;font-size:0.9rem;color:#374151;cursor:pointer;flex:1;';
@@ -1300,11 +1302,13 @@
                     teamSection.appendChild(teamHeader);
 
                     const leaderAssigned = assignedResponderIds.includes(team.leader.id);
-                    const { item: leaderRow, checkbox: leaderCb } = addResponderRow(team.leader, leaderAssigned, false);
+                    const leaderBusy = busyResponderIds.has(team.leader.id);
+                    const { item: leaderRow, checkbox: leaderCb } = addResponderRow(team.leader, leaderAssigned, leaderBusy, false);
                     teamSection.appendChild(leaderRow);
                     team.members.forEach(m => {
                         const mAssigned = assignedResponderIds.includes(m.id);
-                        const { item: memberRow } = addResponderRow(m, mAssigned, true);
+                        const mBusy = busyResponderIds.has(m.id);
+                        const { item: memberRow } = addResponderRow(m, mAssigned, mBusy, true);
                         teamSection.appendChild(memberRow);
                     });
 
@@ -1324,7 +1328,8 @@
                     responderList.appendChild(ungroupedHeader);
                     ungrouped.forEach(responder => {
                         const isAssigned = assignedResponderIds.includes(responder.id);
-                        const { item } = addResponderRow(responder, isAssigned, false);
+                        const isBusy = busyResponderIds.has(responder.id);
+                        const { item } = addResponderRow(responder, isAssigned, isBusy, false);
                         responderList.appendChild(item);
                     });
                 }
@@ -1367,13 +1372,39 @@
                 if (fetchError) throw fetchError;
 
                 const existingResponderIds = existingAssignments ? existingAssignments.map(a => a.responder_id) : [];
-                
-                // Filter out already assigned responders
+                const allResponderIds = responders.map(r => r.id);
+
+                // Responders who already have an active assignment (any report) – cannot assign another
+                const { data: activeAssignmentsData } = await window.emergencySystem.supabase
+                    .from('assignment')
+                    .select('responder_id, status')
+                    .in('responder_id', allResponderIds);
+                const activeStatuses = ['assigned', 'accepted', 'enroute', 'in_progress', 'on_scene'];
+                const busyResponderIds = new Set((activeAssignmentsData || []).filter(a => activeStatuses.includes(a.status)).map(a => a.responder_id));
+
+                // Filter out already assigned responders (to this report)
                 const newResponderIds = selectedResponderIds.filter(id => !existingResponderIds.includes(id));
 
                 if (newResponderIds.length === 0) {
                     showSuccess('All selected responders are already assigned');
                     closeAssignModal();
+                    return;
+                }
+
+                // Block assigning responders who already have an active assignment (must finish first)
+                const { data: allAssignmentsForResponders } = await window.emergencySystem.supabase
+                    .from('assignment')
+                    .select('responder_id, status')
+                    .in('responder_id', newResponderIds);
+                const activeStatuses = ['assigned', 'accepted', 'enroute', 'in_progress', 'on_scene'];
+                const busyResponderIds = (allAssignmentsForResponders || [])
+                    .filter(a => activeStatuses.includes(a.status))
+                    .map(a => a.responder_id);
+                const uniqueBusyIds = [...new Set(busyResponderIds)];
+                if (uniqueBusyIds.length > 0) {
+                    const respondersMap = (window._lastAssignModalResponders || []).reduce((acc, r) => { acc[r.id] = r.name || r.email || r.id; return acc; }, {});
+                    const names = uniqueBusyIds.map(id => respondersMap[id] || id).join(', ');
+                    showError('Cannot assign: the following responder(s) already have an active assignment and must finish it first: ' + names);
                     return;
                 }
 
