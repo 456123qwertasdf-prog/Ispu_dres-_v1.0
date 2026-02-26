@@ -8,7 +8,7 @@
 #
 # For in-app "Download and install" to work (no "App not installed"), add release signing secrets
 # so CI uses the same keystore as your local release builds. See mobile_app/android/RELEASE_SIGNING.md.
-# Optional: ANDROID_KEYSTORE_BASE64, ANDROID_KEYSTORE_PASSWORD, ANDROID_KEY_PASSWORD, ANDROID_KEY_ALIAS
+# Optional: ANDROID_KEYSTORE_BASE64, ANDROID_KEYSTORE_PASSWORD, ANDROID_KEY_PASSWORD, ANDROID_KEY_ALIAS (recommended for in-app updates)
 #
 # Do NOT use [skip ci] in commit messages; CI must run to update app_version in Supabase.
 name: Build and push APK
