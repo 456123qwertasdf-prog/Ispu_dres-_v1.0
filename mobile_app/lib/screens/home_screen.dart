@@ -75,6 +75,12 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
+    _emergencyPollTimer?.cancel();
+    _announcementChannel?.unsubscribe();
+    if (_announcementChannel != null) {
+      SupabaseService.client.removeChannel(_announcementChannel!);
+    }
+    _soundService.stopSound();
     super.dispose();
   }
 
@@ -511,18 +517,6 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     setState(() {
       _activeEmergency = null;
     });
-  }
-
-
-  @override
-  void dispose() {
-    _emergencyPollTimer?.cancel();
-    _announcementChannel?.unsubscribe();
-    if (_announcementChannel != null) {
-      SupabaseService.client.removeChannel(_announcementChannel!);
-    }
-    _soundService.stopSound();
-    super.dispose();
   }
 
   @override
