@@ -176,12 +176,25 @@ class _ReportDetailEditScreenState extends State<ReportDetailEditScreen> {
             responder:responder_id(id, name, role, phone)
           ''')
           .eq('report_id', reportId)
-          .order('assigned_at', ascending: false)
-          .limit(1);
+          .order('assigned_at', ascending: false);
 
       if (response != null && response.isNotEmpty) {
+        final list = response as List<dynamic>;
+        final assignments = list.map((e) => Map<String, dynamic>.from(e as Map)).toList();
+        // Prefer the primary assignment (report.assignment_id or role != 'backup') so backup assignees don't replace the main display
+        final primaryId = widget.report['assignment_id']?.toString();
+        Map<String, dynamic>? primary;
+        if (primaryId != null) {
+          try {
+            primary = assignments.firstWhere((a) => a['id']?.toString() == primaryId);
+          } catch (_) {}
+        }
+        primary ??= assignments.cast<Map<String, dynamic>?>().firstWhere(
+              (a) => a!['role']?.toString() != 'backup',
+              orElse: () => assignments.first,
+            );
         setState(() {
-          _currentAssignment = Map<String, dynamic>.from(response[0]);
+          _currentAssignment = primary;
           if (_currentAssignment?['responder'] != null) {
             final responder = _currentAssignment!['responder'];
             _selectedResponderId = responder['id']?.toString();
@@ -602,7 +615,7 @@ class _ReportDetailEditScreenState extends State<ReportDetailEditScreen> {
                     SizedBox(
                       width: double.infinity,
                       child: FilledButton.icon(
-                        onPressed: _showAssignResponderDialog,
+                        onPressed: () => _showAssignResponderDialog(isBackup: true),
                         icon: Icon(
                           _reportNeedsAssistance ? Icons.emergency : Icons.person_add,
                           size: 22,
@@ -625,7 +638,7 @@ class _ReportDetailEditScreenState extends State<ReportDetailEditScreen> {
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton.icon(
-                      onPressed: _showAssignResponderDialog,
+                      onPressed: () => _showAssignResponderDialog(isBackup: false),
                       icon: Icon(responderName != null ? Icons.refresh : Icons.person_add),
                       label: Text(responderName != null ? 'Change Responder' : 'Assign Responder'),
                       style: ElevatedButton.styleFrom(
@@ -1016,7 +1029,7 @@ class _ReportDetailEditScreenState extends State<ReportDetailEditScreen> {
     }
   }
 
-  Future<void> _showAssignResponderDialog() async {
+  Future<void> _showAssignResponderDialog({bool isBackup = false}) async {
     if (_responders.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -1057,7 +1070,7 @@ class _ReportDetailEditScreenState extends State<ReportDetailEditScreen> {
           }
 
           return AlertDialog(
-            title: const Text('Assign Responder(s)'),
+            title: Text(isBackup ? 'Assign backup / Assist' : 'Assign Responder(s)'),
             content: SizedBox(
               width: double.maxFinite,
               child: SingleChildScrollView(
@@ -1066,7 +1079,9 @@ class _ReportDetailEditScreenState extends State<ReportDetailEditScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Select one or more responders, or assign a whole team.',
+                      isBackup
+                          ? 'Select responder(s) to add as backup. They will see this report in My Assignments.'
+                          : 'Select one or more responders, or assign a whole team.',
                       style: TextStyle(
                         fontSize: 14,
                         color: Colors.grey.shade700,
@@ -1176,7 +1191,11 @@ class _ReportDetailEditScreenState extends State<ReportDetailEditScreen> {
                     ? null
                     : () async {
                         Navigator.of(context).pop();
-                        if (selectedIds.length == 1) {
+                        if (isBackup) {
+                          for (final responderId in selectedIds) {
+                            await _assignResponder(reportId, responderId, isBackup: true);
+                          }
+                        } else if (selectedIds.length == 1) {
                           await _assignResponder(reportId, selectedIds.single);
                         } else {
                           await _assignResponders(reportId, selectedIds.toList());
@@ -1186,7 +1205,11 @@ class _ReportDetailEditScreenState extends State<ReportDetailEditScreen> {
                   backgroundColor: const Color(0xFF16a34a),
                   foregroundColor: Colors.white,
                 ),
-                child: Text(selectedIds.isEmpty ? 'Assign' : 'Assign (${selectedIds.length})'),
+                child: Text(
+                  selectedIds.isEmpty
+                      ? (isBackup ? 'Assign backup' : 'Assign')
+                      : (isBackup ? 'Assign backup (${selectedIds.length})' : 'Assign (${selectedIds.length})'),
+                ),
               ),
             ],
           );
@@ -1291,7 +1314,7 @@ class _ReportDetailEditScreenState extends State<ReportDetailEditScreen> {
     }
   }
 
-  Future<void> _assignResponder(String? reportId, String responderId) async {
+  Future<void> _assignResponder(String? reportId, String responderId, {bool isBackup = false}) async {
     if (reportId == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -1332,29 +1355,31 @@ class _ReportDetailEditScreenState extends State<ReportDetailEditScreen> {
         }
         return;
       }
-      // Check if report already has an active assignment
-      final existingAssignments = await SupabaseService.client
-          .from('assignment')
-          .select('id, status, responder_id')
-          .eq('report_id', reportId)
-          .inFilter('status', ['assigned', 'accepted', 'enroute', 'on_scene'])
-          .limit(1);
+      // When assigning as primary, block if report already has an active assignment
+      if (!isBackup) {
+        final existingAssignments = await SupabaseService.client
+            .from('assignment')
+            .select('id, status, responder_id')
+            .eq('report_id', reportId)
+            .inFilter('status', ['assigned', 'accepted', 'enroute', 'on_scene'])
+            .limit(1);
 
-      if (existingAssignments != null && existingAssignments.isNotEmpty) {
-        final existing = existingAssignments[0];
-        if (mounted) {
-          Navigator.of(context).pop(); // Close loading
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(
-                'Report already has an active assignment (status: ${existing['status']}). Please cancel the existing assignment first.',
+        if (existingAssignments != null && existingAssignments.isNotEmpty) {
+          final existing = existingAssignments[0];
+          if (mounted) {
+            Navigator.of(context).pop(); // Close loading
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(
+                  'Report already has an active assignment (status: ${existing['status']}). Please cancel the existing assignment first.',
+                ),
+                backgroundColor: Colors.orange,
+                duration: const Duration(seconds: 5),
               ),
-              backgroundColor: Colors.orange,
-              duration: const Duration(seconds: 5),
-            ),
-          );
+            );
+          }
+          return;
         }
-        return;
       }
 
       // Get current user ID
@@ -1363,7 +1388,7 @@ class _ReportDetailEditScreenState extends State<ReportDetailEditScreen> {
         throw Exception('User not authenticated');
       }
 
-      debugPrint('🚀 Calling assign-responder Edge Function for report $reportId');
+      debugPrint('🚀 Calling assign-responder Edge Function for report $reportId${isBackup ? ' (backup)' : ''}');
 
       // Call the assign-responder Edge Function
       final response = await SupabaseService.client.functions.invoke(
@@ -1372,6 +1397,7 @@ class _ReportDetailEditScreenState extends State<ReportDetailEditScreen> {
           'report_id': reportId,
           'responder_id': responderId,
           'assigned_by': currentUser.id,
+          if (isBackup) 'as_backup': true,
         },
       );
 
@@ -1393,16 +1419,18 @@ class _ReportDetailEditScreenState extends State<ReportDetailEditScreen> {
         return;
       }
 
-      // Update the report status to 'assigned' (lifecycle_status is already updated by Edge Function)
-      await SupabaseService.client
-          .from('reports')
-          .update({
-            'status': 'assigned',
-            'last_update': DateTime.now().toIso8601String(),
-          })
-          .eq('id', reportId);
+      // Update report only for primary assignment (Edge Function already updates when !as_backup)
+      if (!isBackup) {
+        await SupabaseService.client
+            .from('reports')
+            .update({
+              'status': 'assigned',
+              'last_update': DateTime.now().toIso8601String(),
+            })
+            .eq('id', reportId);
+      }
 
-      debugPrint('✅ Assignment successful');
+      debugPrint(isBackup ? '✅ Backup assignment successful' : '✅ Assignment successful');
 
       // Reload assignment data
       await _loadAssignment();
@@ -1410,8 +1438,8 @@ class _ReportDetailEditScreenState extends State<ReportDetailEditScreen> {
       if (mounted) {
         Navigator.of(context).pop(); // Close loading
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Responder assigned successfully!'),
+          SnackBar(
+            content: Text(isBackup ? 'Backup responder assigned. They will see this report in My Assignments.' : 'Responder assigned successfully!'),
             backgroundColor: Colors.green,
           ),
         );

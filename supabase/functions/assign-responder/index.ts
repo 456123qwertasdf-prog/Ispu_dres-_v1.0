@@ -6,6 +6,8 @@ interface AssignmentRequest {
   report_id: string
   responder_id: string
   assigned_by: string
+  /** When true, add as backup/assist without replacing primary assignment. */
+  as_backup?: boolean
 }
 
 interface AssignmentResult {
@@ -42,9 +44,10 @@ serve(async (req) => {
     // Parse and validate request
     const requestData: AssignmentRequest = await req.json()
     validateAssignmentRequest(requestData)
+    const asBackup = requestData.as_backup === true
 
-    // Check if report exists and is assignable
-    await validateReportAssignment(supabaseClient, requestData.report_id)
+    // Check if report exists and is assignable (backup allowed when report already has primary)
+    await validateReportAssignment(supabaseClient, requestData.report_id, asBackup)
 
     // Check if responder exists and is available
     await validateResponderAvailability(supabaseClient, requestData.responder_id)
@@ -62,11 +65,13 @@ serve(async (req) => {
       )
     }
 
-    // Check if assignment already exists
-    await checkExistingAssignment(supabaseClient, requestData.report_id)
+    // When adding backup, allow report to already have an active assignment; otherwise block
+    if (!asBackup) {
+      await checkExistingAssignment(supabaseClient, requestData.report_id)
+    }
 
-    // Execute assignment transaction
-    const result = await executeAssignmentTransaction(supabaseClient, requestData)
+    // Execute assignment transaction (backup: insert only, do not update report)
+    const result = await executeAssignmentTransaction(supabaseClient, requestData, asBackup)
 
     // Get assignment details for real-time events
     const assignmentDetails = await getAssignmentDetailsForEvent(supabaseClient, result.assignment_id)
@@ -143,11 +148,13 @@ function validateAssignmentRequest(data: AssignmentRequest): void {
 }
 
 /**
- * Validate that report exists and can be assigned
+ * Validate that report exists and can be assigned.
+ * When asBackup is true, report may already have a primary assignment.
  */
 async function validateReportAssignment(
   supabaseClient: any,
-  reportId: string
+  reportId: string,
+  asBackup = false
 ): Promise<void> {
   const { data: report, error } = await supabaseClient
     .from('reports')
@@ -162,7 +169,7 @@ async function validateReportAssignment(
     throw new Error(`Failed to fetch report: ${error.message}`)
   }
 
-  if (report.assignment_id) {
+  if (!asBackup && report.assignment_id) {
     throw new Error('Report is already assigned to a responder')
   }
 
@@ -251,23 +258,27 @@ async function checkExistingAssignment(
 }
 
 /**
- * Execute assignment transaction with atomicity
+ * Execute assignment transaction with atomicity.
+ * When asBackup is true, only insert assignment with role=backup; do not update report.
  */
 async function executeAssignmentTransaction(
   supabaseClient: any,
-  requestData: AssignmentRequest
+  requestData: AssignmentRequest,
+  asBackup = false
 ): Promise<AssignmentResult> {
   const assignedAt = new Date().toISOString()
 
-  // Use a transaction to ensure atomicity
+  const insertPayload: Record<string, unknown> = {
+    report_id: requestData.report_id,
+    responder_id: requestData.responder_id,
+    status: 'assigned',
+    assigned_at: assignedAt,
+    role: asBackup ? 'backup' : 'primary'
+  }
+
   const { data: assignment, error: assignmentError } = await supabaseClient
     .from('assignment')
-    .insert({
-      report_id: requestData.report_id,
-      responder_id: requestData.responder_id,
-      status: 'assigned',
-      assigned_at: assignedAt
-    })
+    .insert(insertPayload)
     .select()
     .single()
 
@@ -275,25 +286,25 @@ async function executeAssignmentTransaction(
     throw new Error(`Failed to create assignment: ${assignmentError.message}`)
   }
 
-  // Update report with assignment details
-  const { error: reportError } = await supabaseClient
-    .from('reports')
-    .update({
-      responder_id: requestData.responder_id,
-      assignment_id: assignment.id,
-      lifecycle_status: 'assigned',
-      last_update: assignedAt
-    })
-    .eq('id', requestData.report_id)
+  if (!asBackup) {
+    // Update report with primary assignment details
+    const { error: reportError } = await supabaseClient
+      .from('reports')
+      .update({
+        responder_id: requestData.responder_id,
+        assignment_id: assignment.id,
+        lifecycle_status: 'assigned',
+        last_update: assignedAt
+      })
+      .eq('id', requestData.report_id)
 
-  if (reportError) {
-    // Rollback assignment if report update fails
-    await supabaseClient
-      .from('assignment')
-      .delete()
-      .eq('id', assignment.id)
-    
-    throw new Error(`Failed to update report: ${reportError.message}`)
+    if (reportError) {
+      await supabaseClient
+        .from('assignment')
+        .delete()
+        .eq('id', assignment.id)
+      throw new Error(`Failed to update report: ${reportError.message}`)
+    }
   }
 
   return {
