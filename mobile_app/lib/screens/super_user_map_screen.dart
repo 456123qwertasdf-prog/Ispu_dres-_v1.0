@@ -5,6 +5,7 @@ import 'package:latlong2/latlong.dart' as latlong;
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../services/supabase_service.dart';
 import '../models/responder_models.dart';
+import 'report_detail_loader_screen.dart';
 
 class SuperUserMapScreen extends StatefulWidget {
   const SuperUserMapScreen({super.key});
@@ -661,20 +662,51 @@ class _SuperUserMapScreenState extends State<SuperUserMapScreen> {
                           borderRadius: BorderRadius.circular(12),
                           border: Border.all(color: Colors.red.shade200),
                         ),
-                        child: Row(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Icon(Icons.emergency_rounded, color: Colors.red.shade700, size: 22),
-                            const SizedBox(width: 10),
-                            Expanded(
-                              child: Text(
-                                'NEEDS BACKUP / ASSISTANCE',
-                                style: TextStyle(
-                                  color: Colors.red.shade700,
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 13,
+                            Row(
+                              children: [
+                                Icon(Icons.emergency_rounded, color: Colors.red.shade700, size: 22),
+                                const SizedBox(width: 10),
+                                Expanded(
+                                  child: Text(
+                                    'NEEDS BACKUP / ASSISTANCE',
+                                    style: TextStyle(
+                                      color: Colors.red.shade700,
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 13,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            if (assignment.isNotEmpty &&
+                                assignment['reports']?['id'] != null) ...[
+                              const SizedBox(height: 12),
+                              SizedBox(
+                                width: double.infinity,
+                                child: FilledButton.icon(
+                                  onPressed: () {
+                                    final reportId = assignment['reports']?['id']?.toString();
+                                    if (reportId != null && context.mounted) {
+                                      Navigator.of(context).pop();
+                                      Navigator.of(context).push(
+                                        MaterialPageRoute(
+                                          builder: (context) => ReportDetailLoaderScreen(reportId: reportId),
+                                        ),
+                                      );
+                                    }
+                                  },
+                                  icon: const Icon(Icons.person_add, size: 20),
+                                  label: const Text('View report & assign backup'),
+                                  style: FilledButton.styleFrom(
+                                    backgroundColor: Colors.orange.shade700,
+                                    padding: const EdgeInsets.symmetric(vertical: 12),
+                                  ),
                                 ),
                               ),
-                            ),
+                            ],
                           ],
                         ),
                       ),

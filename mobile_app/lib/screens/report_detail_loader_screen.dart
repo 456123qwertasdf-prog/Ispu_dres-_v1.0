@@ -52,7 +52,7 @@ class _ReportDetailLoaderScreenState extends State<ReportDetailLoaderScreen> {
         try {
           final assignmentResponse = await SupabaseService.client
               .from('assignment')
-              .select('status, responder:responder_id(id, name, role)')
+              .select('status, needs_backup, responder:responder_id(id, name, role, needs_assistance)')
               .eq('report_id', widget.reportId)
               .inFilter('status', ['assigned', 'accepted', 'enroute', 'on_scene'])
               .order('assigned_at', ascending: false)
@@ -60,10 +60,12 @@ class _ReportDetailLoaderScreenState extends State<ReportDetailLoaderScreen> {
           if (assignmentResponse != null && assignmentResponse.isNotEmpty) {
             final a = assignmentResponse[0] as Map<String, dynamic>;
             report['assignment_status'] = a['status'];
+            report['assignment_needs_backup'] = a['needs_backup'] == true;
             if (a['responder'] != null) {
               final r = a['responder'] as Map<String, dynamic>;
               report['responder_name'] = r['name'];
               report['responder_role'] = r['role'];
+              report['responder_needs_assistance'] = r['needs_assistance'] == true;
             }
           }
         } catch (_) {}

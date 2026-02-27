@@ -349,6 +349,53 @@ class _ReportDetailEditScreenState extends State<ReportDetailEditScreen> {
     );
   }
 
+  Widget _buildNeedsAssistanceBanner() {
+    final report = widget.report;
+    final needsBackup = report['assignment_needs_backup'] == true;
+    final needsAssistance = report['responder_needs_assistance'] == true;
+    if (!needsBackup && !needsAssistance) return const SizedBox.shrink();
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: Colors.orange.shade50,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.orange.shade300),
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.emergency_rounded, color: Colors.orange.shade700, size: 28),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  'Responder needs backup / assistance',
+                  style: TextStyle(
+                    color: Colors.orange.shade900,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 15,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'Use "Assign responder" below to send backup or assist.',
+                  style: TextStyle(
+                    color: Colors.orange.shade800,
+                    fontSize: 13,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildDetailView() {
     final report = widget.report;
     final type = report['type']?.toString() ?? 'Unknown';
@@ -367,6 +414,7 @@ class _ReportDetailEditScreenState extends State<ReportDetailEditScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          _buildNeedsAssistanceBanner(),
           // Type and Status Card
           Card(
             elevation: 2,
@@ -632,6 +680,7 @@ class _ReportDetailEditScreenState extends State<ReportDetailEditScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          _buildNeedsAssistanceBanner(),
           // Type Dropdown
           _buildDropdown(
             label: 'Type',

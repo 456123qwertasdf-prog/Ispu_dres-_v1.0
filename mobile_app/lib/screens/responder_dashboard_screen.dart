@@ -1221,6 +1221,8 @@ class _ResponderDashboardScreenState extends State<ResponderDashboardScreen> {
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
       children: [
         _buildHeader(),
+        const SizedBox(height: 20),
+        _buildRequestAssistanceCard(),
         const SizedBox(height: 24),
         _buildStatsGrid(),
         const SizedBox(height: 24),
@@ -1587,6 +1589,107 @@ class _ResponderDashboardScreenState extends State<ResponderDashboardScreen> {
                 ),
               ],
             ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildRequestAssistanceCard() {
+    final responder = _profile;
+    if (responder == null) return const SizedBox.shrink();
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: responder.needsAssistance
+            ? Colors.orange.shade50
+            : Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: responder.needsAssistance
+              ? Colors.orange.shade300
+              : Colors.orange.shade200,
+          width: 1.5,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.orange.withValues(alpha: 0.08),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(
+                Icons.emergency_rounded,
+                color: Colors.orange.shade700,
+                size: 24,
+              ),
+              const SizedBox(width: 10),
+              Text(
+                'Request assistance',
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
+                      color: Colors.orange.shade900,
+                    ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Text(
+            responder.needsAssistance
+                ? 'Supervisors have been notified. Tap below to cancel when no longer needed.'
+                : 'Notify supervisors if you need backup or assistance.',
+            style: TextStyle(
+              color: Colors.grey.shade700,
+              fontSize: 13,
+              height: 1.35,
+            ),
+          ),
+          const SizedBox(height: 14),
+          Row(
+            children: [
+              if (!responder.needsAssistance)
+                Expanded(
+                  child: FilledButton.icon(
+                    onPressed: _updatingAssistance ? null : _requestAssistance,
+                    icon: _updatingAssistance
+                        ? const SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Colors.white,
+                            ),
+                          )
+                        : const Icon(Icons.emergency_rounded, size: 20),
+                    label: const Text('Request backup / I need assistance'),
+                    style: FilledButton.styleFrom(
+                      backgroundColor: Colors.orange.shade700,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                    ),
+                  ),
+                ),
+              if (!responder.needsAssistance) const SizedBox(width: 12),
+              if (responder.needsAssistance)
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: _updatingAssistance ? null : _cancelAssistance,
+                    icon: const Icon(Icons.cancel_outlined, size: 20),
+                    label: const Text('Cancel request'),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: Colors.orange.shade700,
+                      side: BorderSide(color: Colors.orange.shade700),
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                    ),
+                  ),
+                ),
+            ],
           ),
         ],
       ),

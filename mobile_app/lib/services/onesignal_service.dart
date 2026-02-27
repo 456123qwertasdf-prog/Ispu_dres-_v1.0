@@ -217,6 +217,14 @@ class OneSignalService {
             _onCriticalReportNotificationTap!(reportId);
           }
         }
+        // Handle responder needs assistance (SUPER USER → open report detail to assign backup)
+        else if (type == 'responder_needs_assistance') {
+          final reportId = data['report_id'] as String?;
+          if (reportId != null && _onCriticalReportNotificationTap != null) {
+            debugPrint('📱 Responder needs assistance notification tapped - Report ID: $reportId');
+            _onCriticalReportNotificationTap!(reportId);
+          }
+        }
       }
     } catch (e) {
       debugPrint('Error handling notification tap: $e');

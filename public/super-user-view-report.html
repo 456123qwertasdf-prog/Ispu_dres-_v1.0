@@ -425,6 +425,9 @@
                     <button class="btn-action btn-success" onclick="changeResponder()" id="changeBtn" style="display: none;">
                         <i class="bi bi-person-check"></i> Change Responder
                     </button>
+                    <button class="btn-action btn-warning" onclick="assignResponder()" id="assignBackupBtn" style="display: none;" title="Assign an additional responder to backup or assist">
+                        <i class="bi bi-person-plus-fill"></i> Assign backup / Assist
+                    </button>
                     <button class="btn-action btn-secondary" onclick="viewOnMap()">
                         <i class="bi bi-map"></i> View on Map
                     </button>
@@ -703,9 +706,10 @@
                 // Show responder needs backup/assistance alert
                 const needsBackup = assignment.needs_backup === true;
                 const needsAssistance = assignment.responder && assignment.responder.needs_assistance === true;
+                const needsHelp = needsBackup || needsAssistance;
                 const alertRow = document.getElementById('responderNeedsHelpRow');
                 if (alertRow) {
-                    if (needsBackup || needsAssistance) {
+                    if (needsHelp) {
                         alertRow.style.display = 'flex';
                         alertRow.innerHTML = '<span class="info-label">⚠️ Responder:</span><span class="info-value"><strong class="text-danger">Requested backup / needs assistance</strong></span>';
                     } else {
@@ -713,6 +717,8 @@
                         alertRow.innerHTML = '';
                     }
                 }
+                const assignBackupBtn = document.getElementById('assignBackupBtn');
+                if (assignBackupBtn) assignBackupBtn.style.display = needsHelp ? 'inline-flex' : 'none';
             } else if (report.responder_name) {
                 document.getElementById('reportAssignedTo').textContent = report.responder_name;
                 document.getElementById('reportAssignmentStatus').textContent = 'Assigned';
@@ -720,6 +726,8 @@
                 document.getElementById('changeBtn').style.display = 'inline-flex';
                 const alertRow = document.getElementById('responderNeedsHelpRow');
                 if (alertRow) { alertRow.style.display = 'none'; alertRow.innerHTML = ''; }
+                const assignBackupBtn = document.getElementById('assignBackupBtn');
+                if (assignBackupBtn) assignBackupBtn.style.display = 'none';
             } else {
                 document.getElementById('reportAssignedTo').textContent = 'Not assigned';
                 document.getElementById('reportAssignmentStatus').textContent = '-';
@@ -727,6 +735,8 @@
                 document.getElementById('changeBtn').style.display = 'none';
                 const alertRow = document.getElementById('responderNeedsHelpRow');
                 if (alertRow) { alertRow.style.display = 'none'; alertRow.innerHTML = ''; }
+                const assignBackupBtn = document.getElementById('assignBackupBtn');
+                if (assignBackupBtn) assignBackupBtn.style.display = 'none';
             }
             
             // Assignment History

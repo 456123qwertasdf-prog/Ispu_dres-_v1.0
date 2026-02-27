@@ -65,6 +65,26 @@ serve(async (req) => {
         reportId = report.id
       }
     }
+    // When kind is 'assistance' and no report_id, use responder's first active assignment so super user can open report
+    if (!reportId && kind === 'assistance') {
+      const { data: firstAssignment } = await supabaseClient
+        .from('assignment')
+        .select('report_id')
+        .eq('responder_id', responder_id)
+        .in('status', ['assigned', 'accepted', 'enroute', 'on_scene'])
+        .order('assigned_at', { ascending: false })
+        .limit(1)
+        .maybeSingle()
+      if (firstAssignment?.report_id) {
+        reportId = firstAssignment.report_id
+        const { data: report } = await supabaseClient
+          .from('reports')
+          .select('type')
+          .eq('id', reportId)
+          .single()
+        if (report) reportType = (report.type || 'Incident').toString()
+      }
+    }
 
     const isBackup = kind === 'backup'
     const title = isBackup
