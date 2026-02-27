@@ -6,6 +6,8 @@ import '../models/notification_model.dart';
 import '../services/supabase_service.dart';
 import 'notification_details_screen.dart';
 import 'report_detail_loader_screen.dart';
+import 'my_reports_screen.dart';
+import 'responder_dashboard_screen.dart';
 
 class NotificationsScreen extends StatefulWidget {
   const NotificationsScreen({super.key});
@@ -816,17 +818,36 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
       child: Material(
         color: Colors.transparent,
         child: InkWell(
-          onTap: () {
+          onTap: () async {
             // Mark as read when viewed
             _markAsRead(notification.id);
-            // Navigate to report details or notification/announcement details
+            // Navigate to role-appropriate screen for report, or notification details for announcement
             if (notification.reportId != null && notification.reportId!.isNotEmpty) {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => ReportDetailLoaderScreen(reportId: notification.reportId!),
-                ),
-              );
+              final role = await SupabaseService.getCurrentUserRole();
+              if (!mounted) return;
+              if (role == 'citizen') {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => MyReportsScreen(highlightReportId: notification.reportId),
+                  ),
+                );
+              } else if (role == 'responder') {
+                Navigator.pushAndRemoveUntil(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => ResponderDashboardScreen(initialReportId: notification.reportId),
+                  ),
+                  (route) => false,
+                );
+              } else {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => ReportDetailLoaderScreen(reportId: notification.reportId!),
+                  ),
+                );
+              }
             } else {
               Navigator.push(
                 context,

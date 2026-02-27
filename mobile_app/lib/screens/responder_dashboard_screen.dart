@@ -18,7 +18,10 @@ import 'report_detail_loader_screen.dart';
 import '../utils/synopsis_helper.dart';
 
 class ResponderDashboardScreen extends StatefulWidget {
-  const ResponderDashboardScreen({super.key});
+  /// When set (e.g. from notification tap), switch to My Assignments and scroll to this report after load.
+  final String? initialReportId;
+
+  const ResponderDashboardScreen({super.key, this.initialReportId});
 
   @override
   State<ResponderDashboardScreen> createState() => _ResponderDashboardScreenState();
@@ -27,7 +30,8 @@ class ResponderDashboardScreen extends StatefulWidget {
 class _ResponderDashboardScreenState extends State<ResponderDashboardScreen> {
   final MapController _mapController = MapController();
   final DateFormat _dateFormat = DateFormat('MMM d, yyyy • h:mm a');
-  
+  final GlobalKey _initialAssignmentCardKey = GlobalKey();
+
   // Open Field coordinates (walkable area)
   static const latlong.LatLng _openFieldCenter = latlong.LatLng(14.262689, 121.398464);
 
@@ -330,7 +334,16 @@ class _ResponderDashboardScreenState extends State<ResponderDashboardScreen> {
         _isSecurityGuard = isSecurityGuard;
         _isLoading = false;
         _isRefreshing = false;
+        if (widget.initialReportId != null &&
+            assignments.any((a) => a.report.id == widget.initialReportId)) {
+          _selectedIndex = 0; // My Assignments tab
+        }
       });
+
+      if (widget.initialReportId != null &&
+          _assignments.any((a) => a.report.id == widget.initialReportId)) {
+        WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToInitialAssignment());
+      }
 
       // Load readiness synopsis (prepare / be ready / inspect)
       _loadResponderSynopsis();
@@ -370,6 +383,17 @@ class _ResponderDashboardScreenState extends State<ResponderDashboardScreen> {
           _responderSynopsisMessage = 'Keep equipment inspected and stay ready for anything.';
         });
       }
+    }
+  }
+
+  void _scrollToInitialAssignment() {
+    if (_initialAssignmentCardKey.currentContext != null) {
+      Scrollable.ensureVisible(
+        _initialAssignmentCardKey.currentContext!,
+        duration: const Duration(milliseconds: 400),
+        curve: Curves.easeInOut,
+        alignment: 0.2,
+      );
     }
   }
 
@@ -1693,10 +1717,15 @@ class _ResponderDashboardScreenState extends State<ResponderDashboardScreen> {
           )
         else
           ..._activeAssignments.map(
-            (assignment) => Padding(
-              padding: const EdgeInsets.only(bottom: 16),
-              child: _buildAssignmentCard(assignment),
-            ),
+            (assignment) {
+              final useKey = widget.initialReportId != null &&
+                  assignment.report.id == widget.initialReportId;
+              return Padding(
+                key: useKey ? _initialAssignmentCardKey : null,
+                padding: const EdgeInsets.only(bottom: 16),
+                child: _buildAssignmentCard(assignment),
+              );
+            },
           ),
       ],
     );

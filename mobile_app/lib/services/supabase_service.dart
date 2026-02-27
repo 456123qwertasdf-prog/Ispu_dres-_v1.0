@@ -72,6 +72,33 @@ class SupabaseService {
   // Get current user email
   static String? get currentUserEmail => client.auth.currentUser?.email;
 
+  /// Returns current user role: citizen, responder, or super_user. Null if not logged in.
+  static Future<String?> getCurrentUserRole() async {
+    final userId = currentUserId;
+    if (userId == null) return null;
+    try {
+      final response = await client
+          .from('user_profiles')
+          .select('role')
+          .eq('user_id', userId)
+          .maybeSingle();
+      if (response != null && response['role'] != null) {
+        return (response['role'] as String?)?.toLowerCase();
+      }
+      final responderMatch = await client
+          .from('responder')
+          .select('id')
+          .eq('user_id', userId)
+          .maybeSingle();
+      if (responderMatch != null) return 'responder';
+      final metadataRole = currentUser?.userMetadata?['role'] as String?;
+      if (metadataRole?.toLowerCase() == 'super_user') return 'super_user';
+      return metadataRole?.toLowerCase() ?? 'citizen';
+    } catch (_) {
+      return null;
+    }
+  }
+
   // Resend email verification
   static Future<void> resendEmailVerification({
     required String email,

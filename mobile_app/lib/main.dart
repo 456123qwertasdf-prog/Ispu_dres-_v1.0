@@ -25,17 +25,36 @@ import 'models/notification_model.dart';
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
-/// When user taps a push notification, navigate to the relevant detail screen.
+/// When user taps a push notification, navigate to the role-appropriate screen.
 void _setupNotificationTapNavigation() {
   final oneSignal = OneSignalService();
 
   void navigateToReportDetail(String reportId) {
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      navigatorKey.currentState?.push(
-        MaterialPageRoute(
-          builder: (context) => ReportDetailLoaderScreen(reportId: reportId),
-        ),
-      );
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      final role = await SupabaseService.getCurrentUserRole();
+      final state = navigatorKey.currentState;
+      if (state == null) return;
+      // Citizen → My Reports (with report highlighted)
+      if (role == 'citizen') {
+        state.push(MaterialPageRoute(
+          builder: (context) => MyReportsScreen(highlightReportId: reportId),
+        ));
+        return;
+      }
+      // Responder → My Assignment (dashboard with this report/assignment focused)
+      if (role == 'responder') {
+        state.pushAndRemoveUntil(
+          MaterialPageRoute(
+            builder: (context) => ResponderDashboardScreen(initialReportId: reportId),
+          ),
+          (route) => false,
+        );
+        return;
+      }
+      // Super user (or admin) → full report detail
+      state.push(MaterialPageRoute(
+        builder: (context) => ReportDetailLoaderScreen(reportId: reportId),
+      ));
     });
   }
 

@@ -5,7 +5,10 @@ import 'package:flutter/material.dart';
 import '../services/supabase_service.dart';
 
 class MyReportsScreen extends StatefulWidget {
-  const MyReportsScreen({super.key});
+  /// When set (e.g. from notification tap), scroll to and highlight this report after load.
+  final String? highlightReportId;
+
+  const MyReportsScreen({super.key, this.highlightReportId});
 
   @override
   State<MyReportsScreen> createState() => _MyReportsScreenState();
@@ -15,6 +18,7 @@ class _MyReportsScreenState extends State<MyReportsScreen> {
   final List<EmergencyReport> _reports = [];
   bool _isLoading = true;
   String? _errorMessage;
+  final GlobalKey _highlightCardKey = GlobalKey();
 
   @override
   void initState() {
@@ -62,6 +66,12 @@ class _MyReportsScreenState extends State<MyReportsScreen> {
           ..addAll(data);
         _errorMessage = null;
       });
+
+      if (widget.highlightReportId != null && _reports.any((r) => r.id == widget.highlightReportId)) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          _scrollToReport(widget.highlightReportId!);
+        });
+      }
     } catch (error) {
       final friendly = _cleanError(error);
       if (!mounted) return;
@@ -80,6 +90,17 @@ class _MyReportsScreenState extends State<MyReportsScreen> {
       setState(() {
         _isLoading = false;
       });
+    }
+  }
+
+  void _scrollToReport(String reportId) {
+    if (_highlightCardKey.currentContext != null) {
+      Scrollable.ensureVisible(
+        _highlightCardKey.currentContext!,
+        duration: const Duration(milliseconds: 400),
+        curve: Curves.easeInOut,
+        alignment: 0.2,
+      );
     }
   }
 
@@ -192,10 +213,14 @@ class _MyReportsScreenState extends State<MyReportsScreen> {
           ),
           const SizedBox(height: 20),
           ..._reports.map(
-            (report) => Padding(
-              padding: const EdgeInsets.only(bottom: 16),
-              child: _buildReportCard(report),
-            ),
+            (report) {
+              final useHighlightKey = widget.highlightReportId != null && report.id == widget.highlightReportId;
+              return Padding(
+                key: useHighlightKey ? _highlightCardKey : null,
+                padding: const EdgeInsets.only(bottom: 16),
+                child: _buildReportCard(report),
+              );
+            },
           ),
         ],
       ),
