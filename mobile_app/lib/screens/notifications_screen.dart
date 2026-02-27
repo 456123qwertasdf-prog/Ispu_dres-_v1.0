@@ -5,6 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../models/notification_model.dart';
 import '../services/supabase_service.dart';
 import 'notification_details_screen.dart';
+import 'report_detail_loader_screen.dart';
 
 class NotificationsScreen extends StatefulWidget {
   const NotificationsScreen({super.key});
@@ -818,15 +819,24 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
           onTap: () {
             // Mark as read when viewed
             _markAsRead(notification.id);
-            // Navigate to details screen
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => NotificationDetailsScreen(
-                  notification: notification,
+            // Navigate to report details or notification/announcement details
+            if (notification.reportId != null && notification.reportId!.isNotEmpty) {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => ReportDetailLoaderScreen(reportId: notification.reportId!),
                 ),
-              ),
-            );
+              );
+            } else {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => NotificationDetailsScreen(
+                    notification: notification,
+                  ),
+                ),
+              );
+            }
           },
           borderRadius: BorderRadius.circular(16),
           child: Padding(

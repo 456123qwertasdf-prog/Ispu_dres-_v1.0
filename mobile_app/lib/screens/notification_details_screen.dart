@@ -3,6 +3,7 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import '../models/notification_model.dart';
 import '../services/supabase_service.dart';
+import 'report_detail_loader_screen.dart';
 
 class NotificationDetailsScreen extends StatefulWidget {
   final NotificationModel notification;
@@ -418,6 +419,24 @@ class _NotificationDetailsScreenState extends State<NotificationDetailsScreen> {
                       ),
                     ),
                   ],
+                ),
+              ),
+            ],
+            if (widget.notification.reportId != null && widget.notification.reportId!.isNotEmpty) ...[
+              const SizedBox(height: 24),
+              SizedBox(
+                width: double.infinity,
+                child: FilledButton.icon(
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => ReportDetailLoaderScreen(reportId: widget.notification.reportId!),
+                      ),
+                    );
+                  },
+                  icon: const Icon(Icons.assignment),
+                  label: const Text('View report details'),
                 ),
               ),
             ],

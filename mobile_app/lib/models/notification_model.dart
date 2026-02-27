@@ -7,6 +7,7 @@ class NotificationModel {
   final DateTime timestamp;
   bool read;
   String? announcementId; // For linking to announcements
+  String? reportId; // For linking to report details (critical report, assignment, etc.)
 
   NotificationModel({
     required this.id,
@@ -17,6 +18,7 @@ class NotificationModel {
     required this.timestamp,
     this.read = false,
     this.announcementId,
+    this.reportId,
   });
 
   Map<String, dynamic> toJson() {
@@ -29,6 +31,7 @@ class NotificationModel {
       'timestamp': timestamp.toIso8601String(),
       'read': read,
       'announcementId': announcementId,
+      'reportId': reportId,
     };
   }
 
@@ -42,6 +45,7 @@ class NotificationModel {
       timestamp: DateTime.parse(json['timestamp'] as String),
       read: json['read'] as bool? ?? false,
       announcementId: json['announcementId'] as String?,
+      reportId: json['reportId'] as String?,
     );
   }
 }

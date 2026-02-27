@@ -7,6 +7,7 @@ import '../services/onesignal_service.dart';
 import '../utils/synopsis_helper.dart';
 import 'super_user_reports_screen.dart';
 import 'super_user_announcements_screen.dart';
+import 'report_detail_loader_screen.dart';
 
 class SuperUserDashboardScreen extends StatefulWidget {
   const SuperUserDashboardScreen({super.key});
@@ -122,9 +123,27 @@ class _SuperUserDashboardScreenState extends State<SuperUserDashboardScreen> {
     }
   }
 
+  String? _getReportIdFromNotification(Map<String, dynamic> notification) {
+    final payload = notification['payload'];
+    if (payload == null) return null;
+    if (payload is Map) {
+      final id = payload['report_id'] ?? payload['reportId'];
+      return id?.toString();
+    }
+    if (payload is String) {
+      try {
+        final map = jsonDecode(payload) as Map<String, dynamic>;
+        final id = map['report_id'] ?? map['reportId'];
+        return id?.toString();
+      } catch (_) {}
+    }
+    return null;
+  }
+
   void _showNotificationSnackbar(Map<String, dynamic> notification) {
     if (!mounted) return;
-    
+    final reportId = _getReportIdFromNotification(notification);
+
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Column(
@@ -143,9 +162,17 @@ class _SuperUserDashboardScreenState extends State<SuperUserDashboardScreen> {
         duration: const Duration(seconds: 4),
         behavior: SnackBarBehavior.floating,
         action: SnackBarAction(
-          label: 'Dismiss',
+          label: reportId != null ? 'View' : 'Dismiss',
           textColor: Colors.white,
-          onPressed: () {},
+          onPressed: () {
+            if (reportId != null && mounted) {
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (context) => ReportDetailLoaderScreen(reportId: reportId),
+                ),
+              );
+            }
+          },
         ),
       ),
     );

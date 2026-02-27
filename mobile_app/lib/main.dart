@@ -19,8 +19,50 @@ import 'screens/super_user_announcements_screen.dart';
 import 'screens/super_user_map_screen.dart';
 import 'screens/super_user_early_warning_screen.dart';
 import 'screens/super_user_sos_alerts_screen.dart';
+import 'screens/report_detail_loader_screen.dart';
+import 'screens/notification_details_screen.dart';
+import 'models/notification_model.dart';
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
+
+/// When user taps a push notification, navigate to the relevant detail screen.
+void _setupNotificationTapNavigation() {
+  final oneSignal = OneSignalService();
+
+  void navigateToReportDetail(String reportId) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      navigatorKey.currentState?.push(
+        MaterialPageRoute(
+          builder: (context) => ReportDetailLoaderScreen(reportId: reportId),
+        ),
+      );
+    });
+  }
+
+  void navigateToAnnouncementDetail(String announcementId) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final notification = NotificationModel(
+        id: 'announcement_$announcementId',
+        title: 'Announcement',
+        message: '',
+        type: 'info',
+        icon: 'info',
+        timestamp: DateTime.now(),
+        announcementId: announcementId,
+      );
+      navigatorKey.currentState?.push(
+        MaterialPageRoute(
+          builder: (context) => NotificationDetailsScreen(notification: notification),
+        ),
+      );
+    });
+  }
+
+  oneSignal.setOnAssignmentNotificationTap((reportId, _) => navigateToReportDetail(reportId));
+  oneSignal.setOnEmergencyNotificationTap(navigateToAnnouncementDetail);
+  oneSignal.setOnReportUpdateNotificationTap(navigateToReportDetail);
+  oneSignal.setOnCriticalReportNotificationTap(navigateToReportDetail);
+}
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -30,7 +72,8 @@ void main() async {
   
   // Initialize OneSignal for push notifications
   await OneSignalService().initialize();
-  
+  _setupNotificationTapNavigation();
+
   // Initialize auto-sync service for offline reports
   AutoSyncService().initialize(navigatorKey: navigatorKey);
   
