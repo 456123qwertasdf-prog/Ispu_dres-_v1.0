@@ -514,6 +514,37 @@ class _ReportDetailEditScreenState extends State<ReportDetailEditScreen> {
                         ),
                       ],
                     ),
+                  if (_currentAssignment != null) ...[
+                    if ((_currentAssignment!['notes']?.toString()?.trim() ?? '').isNotEmpty) ...[
+                      const SizedBox(height: 12),
+                      const Text(
+                        'Resolution note',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.black87,
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          color: Colors.green.shade50,
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: Colors.green.shade200),
+                        ),
+                        child: Text(
+                          (_currentAssignment!['notes']?.toString() ?? '').trim(),
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: Colors.green.shade900,
+                            height: 1.4,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ],
                   const SizedBox(height: 16),
                   SizedBox(
                     width: double.infinity,
@@ -537,9 +568,62 @@ class _ReportDetailEditScreenState extends State<ReportDetailEditScreen> {
               ),
             ),
           ),
+          // Report image (Superuser can see what was reported)
+          if (_reportImageUrl != null) ...[
+            const SizedBox(height: 16),
+            Card(
+              elevation: 2,
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Report image',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(8),
+                      child: Image.network(
+                        _reportImageUrl!,
+                        fit: BoxFit.contain,
+                        width: double.infinity,
+                        loadingBuilder: (_, child, progress) {
+                          if (progress == null) return child;
+                          return SizedBox(
+                            height: 200,
+                            child: Center(child: CircularProgressIndicator(value: progress.expectedTotalBytes != null ? progress.cumulativeBytesLoaded / progress.expectedTotalBytes! : null)),
+                          );
+                        },
+                        errorBuilder: (_, __, ___) => Container(
+                          height: 120,
+                          alignment: Alignment.center,
+                          color: Colors.grey.shade200,
+                          child: Text('Unable to load image', style: TextStyle(color: Colors.grey.shade700)),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
         ],
       ),
     );
+  }
+
+  /// Resolved report image URL for display (storage path -> public URL).
+  String? get _reportImageUrl {
+    final path = widget.report['image_path']?.toString();
+    if (path == null || path.isEmpty) return null;
+    final p = path.startsWith('http') ? path : (path.startsWith('/') ? path.substring(1) : path);
+    if (p.startsWith('http')) return p;
+    return '${SupabaseService.supabaseUrl}/storage/v1/object/public/reports-images/$p';
   }
 
   Widget _buildEditView() {

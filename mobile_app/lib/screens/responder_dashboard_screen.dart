@@ -1737,7 +1737,8 @@ class _ResponderDashboardScreenState extends State<ResponderDashboardScreen> {
 
     final primaryTarget = _primaryStatusTarget(assignment.status);
     final primaryLabel = _primaryStatusLabel(assignment.status);
-    final canResolve = !assignment.isCompleted;
+    // Only allow "Mark Resolved" when status is on_scene (backend allows enroute→on_scene, on_scene→resolved)
+    final canResolve = assignment.status == 'on_scene';
 
     return Container(
       decoration: BoxDecoration(

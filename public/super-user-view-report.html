@@ -489,6 +489,10 @@
                             <span class="info-label">Assignment Status:</span>
                             <span class="info-value" id="reportAssignmentStatus">-</span>
                         </div>
+                        <div class="info-row" id="resolutionNoteRow" style="display: none; flex-direction: column; align-items: stretch;">
+                            <span class="info-label">Resolution note (what happened):</span>
+                            <span class="info-value" id="reportResolutionNote" style="white-space: pre-wrap; max-width: 100%; margin-top: 0.25rem;"></span>
+                        </div>
                         <div id="assignmentHistory" class="assignment-history"></div>
                     </div>
 
@@ -521,6 +525,12 @@
         let currentReport = null;
         let reportId = null;
         let map = null;
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
 
         // Get report ID from URL
         function getUrlParameter(name) {
@@ -673,6 +683,15 @@
             }
             
             // Assignment
+            const resolutionNoteRow = document.getElementById('resolutionNoteRow');
+            const resolutionNoteEl = document.getElementById('reportResolutionNote');
+            if (assignment && assignment.notes && assignment.notes.trim()) {
+                resolutionNoteRow.style.display = 'flex';
+                resolutionNoteEl.textContent = assignment.notes.trim();
+            } else {
+                resolutionNoteRow.style.display = 'none';
+                resolutionNoteEl.textContent = '';
+            }
             if (assignment && assignment.responder) {
                 document.getElementById('reportAssignedTo').textContent = 
                     `${assignment.responder.name} (${assignment.responder.role})`;
@@ -710,19 +729,25 @@
                             <div class="assignment-item-time">
                                 ${a.assigned_at ? new Date(a.assigned_at).toLocaleString() : '-'}
                             </div>
+                            ${(a.notes && a.notes.trim()) ? `<div class="assignment-item-notes" style="margin-top: 0.5rem; padding: 0.5rem; background: #f8fafc; border-radius: 8px; font-size: 0.875rem; color: #475569;">${escapeHtml(a.notes.trim())}</div>` : ''}
                         </div>
                     `).join('');
             }
             
-            // Image
+            // Image – ensure Superuser can see the report image
             let imageUrl = report.image_url || report.photo_url || report.image || report.image_path || null;
             try {
                 if (imageUrl && typeof imageUrl === 'string' && !/^https?:\/\//i.test(imageUrl)) {
+                    const path = imageUrl.startsWith('/') ? imageUrl.slice(1) : imageUrl;
                     const pub = window.emergencySystem?.supabase?.storage
                         ?.from('reports-images')
-                        ?.getPublicUrl(imageUrl);
+                        ?.getPublicUrl(path);
                     if (pub?.data?.publicUrl) {
                         imageUrl = pub.data.publicUrl;
+                    } else {
+                        // Fallback: build public URL (same as mobile app)
+                        const base = 'https://hmolyqzbvxxliemclrld.supabase.co';
+                        imageUrl = base + '/storage/v1/object/public/reports-images/' + path;
                     }
                 }
             } catch (e) {
@@ -730,9 +755,16 @@
             }
 
             if (imageUrl) {
-                document.getElementById('reportImage').src = imageUrl;
-                document.getElementById('reportImage').style.display = 'block';
-                document.getElementById('noImage').style.display = 'none';
+                const imgEl = document.getElementById('reportImage');
+                const noImgEl = document.getElementById('noImage');
+                imgEl.src = imageUrl;
+                imgEl.style.display = 'block';
+                imgEl.alt = 'Report photo';
+                noImgEl.style.display = 'none';
+                imgEl.onerror = function() {
+                    imgEl.style.display = 'none';
+                    noImgEl.style.display = 'block';
+                };
             } else {
                 document.getElementById('reportImage').style.display = 'none';
                 document.getElementById('noImage').style.display = 'block';
