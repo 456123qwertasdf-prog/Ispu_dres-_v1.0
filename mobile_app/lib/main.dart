@@ -331,6 +331,15 @@ class _UpdateRequiredScreen extends StatelessWidget {
                   onPressed: () => UpdateCheckService.openDownloadUrl(result.downloadUrl),
                   child: const Text('Open in browser instead'),
                 ),
+                const SizedBox(height: 20),
+                Text(
+                  'If you see "App not installed", try "Open in browser instead" to download and install from there.',
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    fontStyle: FontStyle.italic,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
               ],
             ),
           ),

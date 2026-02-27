@@ -233,6 +233,11 @@ class UpdateCheckService {
                   'The update could not be installed. You can try "Open in browser" to download the APK and install it from your browser or Files app.',
                   style: TextStyle(fontWeight: FontWeight.w500),
                 ),
+                const SizedBox(height: 8),
+                Text(
+                  'If you saw "App not installed", the update file may be signed differently than the app on your device. Use "Open in browser" to download and install.',
+                  style: TextStyle(fontSize: 12, color: Colors.grey.shade700),
+                ),
                 const SizedBox(height: 12),
                 Text('Details: $message', style: const TextStyle(fontSize: 12)),
               ],
