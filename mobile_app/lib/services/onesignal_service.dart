@@ -189,6 +189,16 @@ class OneSignalService {
             }
           }
         }
+        // Handle assignment status updates (CITIZEN - e.g. "Responder is on the way")
+        else if (type == 'assignment_status_update') {
+          final reportId = data['reportId'] as String? ?? data['report_id'] as String?;
+          if (reportId != null) {
+            debugPrint('📱 Assignment status update notification tapped (citizen) - Report ID: $reportId');
+            if (_onReportUpdateNotificationTap != null) {
+              _onReportUpdateNotificationTap!(reportId);
+            }
+          }
+        }
         // Handle critical report notifications (SUPER USER)
         else if (type == 'critical_report' || type == 'high_priority_report') {
           final reportId = data['report_id'] as String?;
