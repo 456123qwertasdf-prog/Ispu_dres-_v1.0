@@ -489,6 +489,7 @@
                             <span class="info-label">Assignment Status:</span>
                             <span class="info-value" id="reportAssignmentStatus">-</span>
                         </div>
+                        <div class="info-row" id="responderNeedsHelpRow" style="display: none;"></div>
                         <div class="info-row" id="resolutionNoteRow" style="display: none; flex-direction: column; align-items: stretch;">
                             <span class="info-label">Resolution note (what happened):</span>
                             <span class="info-value" id="reportResolutionNote" style="white-space: pre-wrap; max-width: 100%; margin-top: 0.25rem;"></span>
@@ -590,7 +591,7 @@
                     try {
                         const { data: assignments, error } = await window.emergencySystem.supabase
                             .from('assignment')
-                            .select('*, responder:responder_id(id, name, role, phone)')
+                            .select('*, responder:responder_id(id, name, role, phone, needs_assistance)')
                             .eq('report_id', reportId)
                             .order('assigned_at', { ascending: false })
                             .limit(1);
@@ -699,16 +700,33 @@
                     `<span class="status-badge status-${assignment.status || 'assigned'}">${(assignment.status || 'assigned').toUpperCase()}</span>`;
                 document.getElementById('assignBtn').style.display = 'none';
                 document.getElementById('changeBtn').style.display = 'inline-flex';
+                // Show responder needs backup/assistance alert
+                const needsBackup = assignment.needs_backup === true;
+                const needsAssistance = assignment.responder && assignment.responder.needs_assistance === true;
+                const alertRow = document.getElementById('responderNeedsHelpRow');
+                if (alertRow) {
+                    if (needsBackup || needsAssistance) {
+                        alertRow.style.display = 'flex';
+                        alertRow.innerHTML = '<span class="info-label">⚠️ Responder:</span><span class="info-value"><strong class="text-danger">Requested backup / needs assistance</strong></span>';
+                    } else {
+                        alertRow.style.display = 'none';
+                        alertRow.innerHTML = '';
+                    }
+                }
             } else if (report.responder_name) {
                 document.getElementById('reportAssignedTo').textContent = report.responder_name;
                 document.getElementById('reportAssignmentStatus').textContent = 'Assigned';
                 document.getElementById('assignBtn').style.display = 'none';
                 document.getElementById('changeBtn').style.display = 'inline-flex';
+                const alertRow = document.getElementById('responderNeedsHelpRow');
+                if (alertRow) { alertRow.style.display = 'none'; alertRow.innerHTML = ''; }
             } else {
                 document.getElementById('reportAssignedTo').textContent = 'Not assigned';
                 document.getElementById('reportAssignmentStatus').textContent = '-';
                 document.getElementById('assignBtn').style.display = 'inline-flex';
                 document.getElementById('changeBtn').style.display = 'none';
+                const alertRow = document.getElementById('responderNeedsHelpRow');
+                if (alertRow) { alertRow.style.display = 'none'; alertRow.innerHTML = ''; }
             }
             
             // Assignment History

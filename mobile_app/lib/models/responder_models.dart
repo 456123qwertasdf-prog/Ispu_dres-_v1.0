@@ -76,6 +76,7 @@ class ResponderProfile {
     this.lastLocation,
     this.teamName,
     this.leaderName,
+    this.needsAssistance = false,
   });
 
   final String id;
@@ -87,6 +88,7 @@ class ResponderProfile {
   final dynamic lastLocation;
   final String? teamName;
   final String? leaderName;
+  final bool needsAssistance;
 
   factory ResponderProfile.fromMap(Map<String, dynamic> map) {
     String? leaderName;
@@ -112,6 +114,7 @@ class ResponderProfile {
           ? map['team_name'] as String
           : null,
       leaderName: leaderName?.trim().isNotEmpty == true ? leaderName : null,
+      needsAssistance: map['needs_assistance'] == true,
     );
   }
 
@@ -133,6 +136,7 @@ class ResponderProfile {
     dynamic lastLocation,
     String? teamName,
     String? leaderName,
+    bool? needsAssistance,
   }) {
     return ResponderProfile(
       id: id,
@@ -144,6 +148,7 @@ class ResponderProfile {
       lastLocation: lastLocation ?? this.lastLocation,
       teamName: teamName ?? this.teamName,
       leaderName: leaderName ?? this.leaderName,
+      needsAssistance: needsAssistance ?? this.needsAssistance,
     );
   }
 }
@@ -196,6 +201,7 @@ class ResponderAssignment {
     this.acceptedAt,
     this.completedAt,
     this.notes,
+    this.needsBackup = false,
   });
 
   final String id;
@@ -205,6 +211,7 @@ class ResponderAssignment {
   final DateTime? completedAt;
   final String? notes;
   final AssignmentReportSummary report;
+  final bool needsBackup;
 
   factory ResponderAssignment.fromMap(Map<String, dynamic> map) {
     final reportData = (map['reports'] ?? <String, dynamic>{}) as Map<String, dynamic>;
@@ -224,6 +231,7 @@ class ResponderAssignment {
           ? DateTime.tryParse(map['completed_at'].toString())
           : null,
       notes: notes,
+      needsBackup: map['needs_backup'] == true,
       report: AssignmentReportSummary.fromMap(
         Map<String, dynamic>.from(reportData),
       ),

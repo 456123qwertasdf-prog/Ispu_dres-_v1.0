@@ -1249,6 +1249,7 @@
                         completed_at,
                         report_id,
                         responder_id,
+                        needs_backup,
                         reports:reports!assignment_report_id_fkey (
                             id,
                             type,
@@ -1768,6 +1769,12 @@
                     iconColor = '#6b7280'; // Gray for unavailable
                     statusText = 'Unavailable';
                 }
+                const needsHelp = responder.needs_assistance === true || (activeAssignment && activeAssignment.needs_backup === true);
+                if (needsHelp) {
+                    iconColor = '#dc2626';
+                    iconEmoji = '🆘';
+                    statusText = 'Needs backup';
+                }
                 
                 if (existingMarker) {
                     // Update existing marker position smoothly
@@ -1814,6 +1821,7 @@
                             <h4>${responder.name}</h4>
                             <p><strong>Role:</strong> ${responder.role || 'Responder'}</p>
                             <p><strong>Status:</strong> <span style="color: ${iconColor}; font-weight: bold;">${statusText}</span></p>
+                            ${needsHelp ? '<p><strong style="color: #dc2626;">🆘 NEEDS BACKUP / ASSISTANCE</strong></p>' : ''}
                             <p><strong>Available:</strong> ${responder.is_available ? 'Yes' : 'No'}</p>
                             <p><strong>Last Update:</strong> ${responder.updated_at ? new Date(responder.updated_at).toLocaleTimeString() : 'Just now'}</p>
                     `;
@@ -1883,6 +1891,7 @@
                             <h4>${responder.name}</h4>
                             <p><strong>Role:</strong> ${responder.role || 'Responder'}</p>
                             <p><strong>Status:</strong> <span style="color: ${iconColor}; font-weight: bold;">${statusText}</span></p>
+                            ${needsHelp ? '<p><strong style="color: #dc2626;">🆘 NEEDS BACKUP / ASSISTANCE</strong></p>' : ''}
                             <p><strong>Available:</strong> ${responder.is_available ? 'Yes' : 'No'}</p>
                             <p><strong>Last Update:</strong> ${responder.updated_at ? new Date(responder.updated_at).toLocaleTimeString() : 'Just now'}</p>
                     `;

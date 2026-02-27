@@ -135,7 +135,7 @@ class _SuperUserMapScreenState extends State<SuperUserMapScreen> {
     try {
       final response = await SupabaseService.client
           .from('responder')
-          .select('id, name, role, status, is_available, last_location, updated_at');
+          .select('id, name, role, status, is_available, last_location, updated_at, needs_assistance');
 
       if (response != null && mounted) {
         setState(() {
@@ -161,6 +161,7 @@ class _SuperUserMapScreenState extends State<SuperUserMapScreen> {
             completed_at,
             report_id,
             responder_id,
+            needs_backup,
             reports:reports!assignment_report_id_fkey (
               id,
               type,
@@ -497,6 +498,14 @@ class _SuperUserMapScreenState extends State<SuperUserMapScreen> {
       statusText = 'Unavailable';
     }
 
+    final needsHelp = responder.needsAssistance ||
+        (assignment.isNotEmpty && assignment['needs_backup'] == true);
+    if (needsHelp) {
+      color = const Color(0xFFdc2626); // Red
+      icon = Icons.emergency_rounded;
+      statusText = 'Needs backup';
+    }
+
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -641,7 +650,36 @@ class _SuperUserMapScreenState extends State<SuperUserMapScreen> {
                         ),
                       ],
                     ),
-                    const SizedBox(height: 24),
+                    const SizedBox(height: 16),
+                    if (responder.needsAssistance ||
+                        (assignment.isNotEmpty && assignment['needs_backup'] == true)) ...[
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 14),
+                        decoration: BoxDecoration(
+                          color: Colors.red.shade50,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: Colors.red.shade200),
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(Icons.emergency_rounded, color: Colors.red.shade700, size: 22),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: Text(
+                                'NEEDS BACKUP / ASSISTANCE',
+                                style: TextStyle(
+                                  color: Colors.red.shade700,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 13,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                    ],
                     if (assignment.isNotEmpty) ...[
                       // Emergency Details Section
                       Container(

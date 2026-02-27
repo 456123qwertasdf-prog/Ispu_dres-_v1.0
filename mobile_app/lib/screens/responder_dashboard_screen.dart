@@ -39,6 +39,7 @@ class _ResponderDashboardScreenState extends State<ResponderDashboardScreen> {
   bool _isRefreshing = false;
   bool _updatingAvailability = false;
   bool _updatingLocation = false;
+  bool _updatingAssistance = false;
   String? _errorMessage;
   String? _updatingAssignmentId;
   int _selectedIndex = 0;
@@ -243,7 +244,7 @@ class _ResponderDashboardScreenState extends State<ResponderDashboardScreen> {
 
       var profileRaw = await SupabaseService.client
           .from('responder')
-          .select('id, name, role, status, phone, is_available, last_location, leader_id, team_name, leader:leader_id(name)')
+          .select('id, name, role, status, phone, is_available, last_location, leader_id, team_name, needs_assistance, leader:leader_id(name)')
           .eq('user_id', userId)
           .maybeSingle();
 
@@ -268,7 +269,7 @@ class _ResponderDashboardScreenState extends State<ResponderDashboardScreen> {
                 'status': 'active',
                 'is_available': true,
               })
-              .select('id, name, role, status, phone, is_available, last_location, leader_id, team_name, leader:leader_id(name)')
+              .select('id, name, role, status, phone, is_available, last_location, leader_id, team_name, needs_assistance, leader:leader_id(name)')
               .maybeSingle();
           if (insertResult != null) {
             profileRaw = insertResult;
@@ -305,6 +306,7 @@ class _ResponderDashboardScreenState extends State<ResponderDashboardScreen> {
             accepted_at,
             completed_at,
             notes,
+            needs_backup,
             responder_id,
             reports:reports!assignment_report_id_fkey (
               id,
@@ -444,6 +446,145 @@ class _ResponderDashboardScreenState extends State<ResponderDashboardScreen> {
       if (!mounted) return;
       setState(() => _updatingAvailability = false);
       _showSnack('Failed to update availability: ${_cleanError(e)}', isError: true);
+    }
+  }
+
+  Future<void> _requestAssistance() async {
+    final responder = _profile;
+    if (responder == null || _updatingAssistance) return;
+    setState(() => _updatingAssistance = true);
+    try {
+      await SupabaseService.client
+          .from('responder')
+          .update({
+            'needs_assistance': true,
+            'needs_assistance_at': DateTime.now().toUtc().toIso8601String(),
+          })
+          .eq('id', responder.id);
+      await SupabaseService.client.functions.invoke(
+        'notify-responder-needs-assistance',
+        body: {'kind': 'assistance', 'responder_id': responder.id},
+      );
+      if (!mounted) return;
+      setState(() {
+        _profile = responder.copyWith(needsAssistance: true);
+        _updatingAssistance = false;
+      });
+      _showSnack('Assistance requested. Supervisors have been notified.');
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _updatingAssistance = false);
+      _showSnack('Failed to request assistance: ${_cleanError(e)}', isError: true);
+    }
+  }
+
+  Future<void> _cancelAssistance() async {
+    final responder = _profile;
+    if (responder == null || _updatingAssistance) return;
+    setState(() => _updatingAssistance = true);
+    try {
+      await SupabaseService.client
+          .from('responder')
+          .update({'needs_assistance': false, 'needs_assistance_at': null})
+          .eq('id', responder.id);
+      if (!mounted) return;
+      setState(() {
+        _profile = responder.copyWith(needsAssistance: false);
+        _updatingAssistance = false;
+      });
+      _showSnack('Assistance request cancelled.');
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _updatingAssistance = false);
+      _showSnack('Failed to cancel: ${_cleanError(e)}', isError: true);
+    }
+  }
+
+  Future<void> _requestBackupForAssignment(ResponderAssignment assignment) async {
+    if (_profile == null || _updatingAssignmentId == assignment.id) return;
+    setState(() => _updatingAssignmentId = assignment.id);
+    try {
+      await SupabaseService.client
+          .from('assignment')
+          .update({
+            'needs_backup': true,
+            'needs_backup_at': DateTime.now().toUtc().toIso8601String(),
+          })
+          .eq('id', assignment.id);
+      await SupabaseService.client
+          .from('responder')
+          .update({
+            'needs_assistance': true,
+            'needs_assistance_at': DateTime.now().toUtc().toIso8601String(),
+          })
+          .eq('id', _profile!.id);
+      await SupabaseService.client.functions.invoke(
+        'notify-responder-needs-assistance',
+        body: {
+          'kind': 'backup',
+          'responder_id': _profile!.id,
+          'assignment_id': assignment.id,
+          'report_id': assignment.report.id,
+        },
+      );
+      if (!mounted) return;
+      setState(() {
+        _profile = _profile!.copyWith(needsAssistance: true);
+        _updatingAssignmentId = null;
+        final idx = _assignments.indexWhere((a) => a.id == assignment.id);
+        if (idx >= 0) {
+          _assignments = List.from(_assignments);
+          _assignments[idx] = ResponderAssignment(
+            id: assignment.id,
+            status: assignment.status,
+            assignedAt: assignment.assignedAt,
+            report: assignment.report,
+            acceptedAt: assignment.acceptedAt,
+            completedAt: assignment.completedAt,
+            notes: assignment.notes,
+            needsBackup: true,
+          );
+        }
+      });
+      _showSnack('Backup requested for this incident. Supervisors have been notified.');
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _updatingAssignmentId = null);
+      _showSnack('Failed to request backup: ${_cleanError(e)}', isError: true);
+    }
+  }
+
+  Future<void> _cancelBackupForAssignment(ResponderAssignment assignment) async {
+    if (_updatingAssignmentId == assignment.id) return;
+    setState(() => _updatingAssignmentId = assignment.id);
+    try {
+      await SupabaseService.client
+          .from('assignment')
+          .update({'needs_backup': false, 'needs_backup_at': null})
+          .eq('id', assignment.id);
+      if (!mounted) return;
+      setState(() {
+        _updatingAssignmentId = null;
+        final idx = _assignments.indexWhere((a) => a.id == assignment.id);
+        if (idx >= 0) {
+          _assignments = List.from(_assignments);
+          _assignments[idx] = ResponderAssignment(
+            id: assignment.id,
+            status: assignment.status,
+            assignedAt: assignment.assignedAt,
+            report: assignment.report,
+            acceptedAt: assignment.acceptedAt,
+            completedAt: assignment.completedAt,
+            notes: assignment.notes,
+            needsBackup: false,
+          );
+        }
+      });
+      _showSnack('Backup request cancelled for this incident.');
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _updatingAssignmentId = null);
+      _showSnack('Failed to cancel backup: ${_cleanError(e)}', isError: true);
     }
   }
 
@@ -1623,6 +1764,60 @@ class _ResponderDashboardScreenState extends State<ResponderDashboardScreen> {
             style: TextStyle(color: Colors.grey.shade600, height: 1.4),
           ),
           const SizedBox(height: 16),
+          Text(
+            'Request help',
+            style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                  fontWeight: FontWeight.w600,
+                  color: Colors.grey.shade700,
+                ),
+          ),
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              if (!responder.needsAssistance)
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: _updatingAssistance
+                        ? null
+                        : _requestAssistance,
+                    icon: _updatingAssistance
+                        ? const SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : const Icon(Icons.emergency_rounded, size: 20),
+                    label: const Text('Request backup / I need assistance'),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: Colors.orange.shade800,
+                      side: BorderSide(color: Colors.orange.shade700),
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                    ),
+                  ),
+                ),
+              if (!responder.needsAssistance) const SizedBox(width: 12),
+              if (responder.needsAssistance)
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: _updatingAssistance ? null : _cancelAssistance,
+                    icon: const Icon(Icons.cancel_outlined, size: 20),
+                    label: const Text('Cancel request'),
+                    style: OutlinedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                    ),
+                  ),
+                ),
+            ],
+          ),
+          if (responder.needsAssistance)
+            Padding(
+              padding: const EdgeInsets.only(top: 8),
+              child: Text(
+                'Supervisors have been notified. Tap "Cancel request" when no longer needed.',
+                style: TextStyle(color: Colors.orange.shade700, fontSize: 12, height: 1.3),
+              ),
+            ),
+          const SizedBox(height: 16),
           Row(
             children: [
               Icon(Icons.phone_android, color: Colors.grey.shade500, size: 20),
@@ -1867,6 +2062,53 @@ class _ResponderDashboardScreenState extends State<ResponderDashboardScreen> {
                 icon: const Icon(Icons.photo_outlined),
                 label: const Text('View Photo'),
               ),
+              if (assignment.needsBackup) ...[
+                Padding(
+                  padding: const EdgeInsets.only(top: 4),
+                  child: Text(
+                    'Backup requested. Supervisors notified.',
+                    style: TextStyle(
+                      color: Colors.orange.shade700,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+                OutlinedButton.icon(
+                  onPressed: _updatingAssignmentId == assignment.id
+                      ? null
+                      : () => _cancelBackupForAssignment(assignment),
+                  icon: _updatingAssignmentId == assignment.id
+                      ? const SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Icon(Icons.cancel_outlined, size: 18),
+                  label: const Text('Cancel backup request'),
+                  style: OutlinedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+                  ),
+                ),
+              ] else
+                OutlinedButton.icon(
+                  onPressed: _updatingAssignmentId == assignment.id
+                      ? null
+                      : () => _requestBackupForAssignment(assignment),
+                  icon: _updatingAssignmentId == assignment.id
+                      ? const SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Icon(Icons.emergency_rounded, size: 18),
+                  label: const Text('Request backup for this incident'),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: Colors.orange.shade800,
+                    side: BorderSide(color: Colors.orange.shade700),
+                    padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+                  ),
+                ),
             ],
           ),
         ],

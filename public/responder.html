@@ -199,6 +199,19 @@
                                 </div>
                                 
                                 <div class="form-group">
+                                    <label class="form-label">Request help</label>
+                                    <div class="d-flex gap-2 flex-wrap">
+                                        <button type="button" class="btn btn-warning" id="btnRequestAssistance" onclick="requestAssistance()" style="display: none;">
+                                            <i class="bi bi-life-preserver"></i> Request backup / I need assistance
+                                        </button>
+                                        <button type="button" class="btn btn-outline-secondary" id="btnCancelAssistance" onclick="cancelAssistance()" style="display: none;">
+                                            <i class="bi bi-x-circle"></i> Cancel request
+                                        </button>
+                                    </div>
+                                    <p class="form-text text-muted small mt-1" id="assistanceHelpText">Notify supervisors that you need backup or assistance.</p>
+                                </div>
+                                
+                                <div class="form-group">
                                     <label class="form-label">Response Statistics</label>
                                     <div class="form-control">
                                         <div class="d-flex justify-content-between">
@@ -337,6 +350,7 @@
         let responderNavigationRoute = null;
         let responderId = null;
         let isAvailable = true;
+        let needsAssistance = false;
         let currentLocation = null;
 
         // Open Field coordinates (walkable area)
@@ -550,7 +564,7 @@
                 
                 const { data, error } = await emergencySystem.supabase
                     .from('responder')
-                    .select('id, is_available, name, role')
+                    .select('id, is_available, name, role, needs_assistance')
                     .eq('user_id', emergencySystem.user.id)
                     .single();
                 
@@ -581,6 +595,7 @@
                 } else {
                     responderId = data.id;
                     isAvailable = data.is_available;
+                    needsAssistance = data.needs_assistance === true;
                     console.log('✅ Found existing responder ID:', responderId);
                 }
                 
@@ -589,6 +604,8 @@
                     document.getElementById('userName').textContent = data.name;
                     document.getElementById('userAvatar').textContent = data.name.charAt(0).toUpperCase();
                 }
+                
+                updateStatusToggle();
                 
             } catch (error) {
                 console.error('❌ Error getting responder ID:', error);
@@ -716,7 +733,9 @@
                             completed_at: assignment.completed_at,
                         responder_name: responder?.name,
                         responder_role: responder?.role,
-                        is_assigned_to_me: true
+                        is_assigned_to_me: true,
+                            needs_backup: assignment.needs_backup === true,
+                            needs_backup_at: assignment.needs_backup_at
                         };
                     }).filter(report => report !== null);
                     
@@ -914,11 +933,25 @@
                     <button class="btn btn-primary" onclick="navigateToReport('${report.id}')">
                         <i class="bi bi-navigation"></i> Navigate
                     </button>
-                    ${!report.is_assigned_to_me ? `
+                    ${report.is_assigned_to_me ? `
+                    <div class="form-group mt-2">
+                        <label class="form-label">Backup for this incident</label>
+                        ${report.needs_backup ? `
+                        <p class="text-warning mb-1"><i class="bi bi-exclamation-triangle"></i> Backup requested. Supervisors have been notified.</p>
+                        <button type="button" class="btn btn-outline-secondary btn-sm" onclick="cancelBackupForAssignment('${report.assignment_id}')">
+                            <i class="bi bi-x-circle"></i> Cancel backup request
+                        </button>
+                        ` : `
+                        <button type="button" class="btn btn-warning btn-sm" onclick="requestBackupForAssignment('${report.assignment_id}','${report.id}')">
+                            <i class="bi bi-life-preserver"></i> Request backup for this incident
+                        </button>
+                        `}
+                    </div>
+                    ` : `
                     <div class="alert alert-info">
                         <i class="bi bi-info-circle"></i> This assignment is assigned to another responder.
                     </div>
-                    ` : ''}
+                    `}
                     </div>
                 `;
         }
@@ -3008,17 +3041,146 @@
             }
         }
 
-        // Update status toggle UI
+        // Update status toggle UI and assistance buttons
         function updateStatusToggle() {
             const toggle = document.getElementById('availabilityToggle');
             const statusText = document.getElementById('currentStatus');
+            const btnRequest = document.getElementById('btnRequestAssistance');
+            const btnCancel = document.getElementById('btnCancelAssistance');
             
             if (toggle) {
                 toggle.classList.toggle('active', isAvailable);
             }
             
             if (statusText) {
-                statusText.textContent = isAvailable ? 'Available' : 'Unavailable';
+                if (needsAssistance) {
+                    statusText.textContent = 'Needs assistance';
+                } else {
+                    statusText.textContent = isAvailable ? 'Available' : 'Unavailable';
+                }
+            }
+            
+            if (btnRequest) btnRequest.style.display = needsAssistance ? 'none' : 'inline-flex';
+            if (btnCancel) btnCancel.style.display = needsAssistance ? 'inline-flex' : 'none';
+        }
+
+        // Request assistance (general) – notifies super users via push
+        async function requestAssistance() {
+            if (!responderId) return;
+            try {
+                const { error } = await emergencySystem.supabase
+                    .from('responder')
+                    .update({
+                        needs_assistance: true,
+                        needs_assistance_at: new Date().toISOString()
+                    })
+                    .eq('id', responderId);
+                if (error) {
+                    emergencySystem.showError('Failed to request assistance');
+                    return;
+                }
+                needsAssistance = true;
+                updateStatusToggle();
+                emergencySystem.showSuccess('Assistance requested. Supervisors have been notified.');
+                // Notify super users (push + in-app)
+                await emergencySystem.supabase.functions.invoke('notify-responder-needs-assistance', {
+                    body: { kind: 'assistance', responder_id: responderId }
+                });
+            } catch (e) {
+                console.error('requestAssistance error:', e);
+                emergencySystem.showError('Failed to send notification');
+            }
+        }
+
+        // Cancel assistance request
+        async function cancelAssistance() {
+            if (!responderId) return;
+            try {
+                const { error } = await emergencySystem.supabase
+                    .from('responder')
+                    .update({
+                        needs_assistance: false,
+                        needs_assistance_at: null
+                    })
+                    .eq('id', responderId);
+                if (error) {
+                    emergencySystem.showError('Failed to cancel request');
+                    return;
+                }
+                needsAssistance = false;
+                updateStatusToggle();
+                emergencySystem.showSuccess('Assistance request cancelled.');
+            } catch (e) {
+                console.error('cancelAssistance error:', e);
+                emergencySystem.showError('Failed to cancel');
+            }
+        }
+
+        // Request backup for a specific assignment (incident) – notifies super users via push
+        async function requestBackupForAssignment(assignmentId, reportId) {
+            if (!responderId || !assignmentId) return;
+            try {
+                const { error: assignError } = await emergencySystem.supabase
+                    .from('assignment')
+                    .update({
+                        needs_backup: true,
+                        needs_backup_at: new Date().toISOString()
+                    })
+                    .eq('id', assignmentId);
+                if (assignError) {
+                    emergencySystem.showError('Failed to request backup');
+                    return;
+                }
+                // Also set general assistance flag so supervisors see "needs help"
+                await emergencySystem.supabase
+                    .from('responder')
+                    .update({
+                        needs_assistance: true,
+                        needs_assistance_at: new Date().toISOString()
+                    })
+                    .eq('id', responderId);
+                needsAssistance = true;
+                updateStatusToggle();
+                emergencySystem.showSuccess('Backup requested for this incident. Supervisors have been notified.');
+                await emergencySystem.supabase.functions.invoke('notify-responder-needs-assistance', {
+                    body: {
+                        kind: 'backup',
+                        responder_id: responderId,
+                        assignment_id: assignmentId,
+                        report_id: reportId || null
+                    }
+                });
+                await loadAssignedReports();
+                const report = currentReports.find(r => r.assignment_id === assignmentId);
+                if (report) showAssignmentDetails(report);
+            } catch (e) {
+                console.error('requestBackupForAssignment error:', e);
+                emergencySystem.showError('Failed to request backup');
+            }
+        }
+
+        // Cancel backup request for an assignment
+        async function cancelBackupForAssignment(assignmentId) {
+            if (!assignmentId) return;
+            try {
+                const { error } = await emergencySystem.supabase
+                    .from('assignment')
+                    .update({
+                        needs_backup: false,
+                        needs_backup_at: null
+                    })
+                    .eq('id', assignmentId);
+                if (error) {
+                    emergencySystem.showError('Failed to cancel backup request');
+                    return;
+                }
+                emergencySystem.showSuccess('Backup request cancelled for this incident.');
+                await loadAssignedReports();
+                const report = currentReports.find(r => r.assignment_id === assignmentId);
+                if (report) showAssignmentDetails(report);
+            } catch (e) {
+                console.error('cancelBackupForAssignment error:', e);
+                emergencySystem.showError('Failed to cancel');
             }
         }
 
