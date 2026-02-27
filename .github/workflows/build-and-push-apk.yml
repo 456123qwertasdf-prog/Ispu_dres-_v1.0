@@ -44,7 +44,11 @@ jobs:
       - name: Install Android SDK platform 33, CMake, and NDK
         run: |
           yes | sdkmanager --licenses || true
-          sdkmanager "platforms;android-33" "build-tools;33.0.1" "cmake;3.22.1" "ndk;25.1.8937393"
+          for i in 1 2 3 4 5; do
+            sdkmanager "platforms;android-33" "build-tools;33.0.1" "cmake;3.22.1" "ndk;25.1.8937393" && break
+            echo "Attempt $i failed (e.g. 502 from dl.google.com), retrying in 45s..."
+            sleep 45
+          done
 
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
