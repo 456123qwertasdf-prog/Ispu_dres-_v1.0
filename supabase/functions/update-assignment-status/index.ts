@@ -189,7 +189,8 @@ async function fetchCurrentAssignment(
         reporter_uid,
         reporter_name,
         user_id
-      )
+      ),
+      responder!responder_id(id, name)
     `)
     .eq('id', assignmentId)
     .single()
@@ -408,66 +409,90 @@ async function sendStatusUpdateDatabaseNotifications(
       report_location: report.location
     }
 
-    // Get admin users for notification
+    // Get admin users from responder table (legacy)
     const { data: admins } = await supabaseClient
       .from('responder')
       .select('user_id')
       .eq('role', 'admin')
       .limit(5)
 
-    // Notify admins
+    // Get super users and admins from user_profiles (so super_user gets in-app notification)
+    const { data: superProfiles, error: profileError } = await supabaseClient
+      .from('user_profiles')
+      .select('user_id')
+      .in('role', ['super_user', 'admin'])
+
+    const responderName = currentAssignment.responder?.name || 'Responder'
+    const reportType = currentAssignment.reports?.type || 'report'
+    const statusMessagesForSuperUser: Record<string, string> = {
+      'accepted': `${responderName} accepted the assignment`,
+      'enroute': `${responderName} is en route to the scene`,
+      'on_scene': `${responderName} has arrived on scene`,
+      'resolved': `${responderName} resolved the ${reportType} report`
+    }
+    const statusMessageForAdmin = statusMessagesForSuperUser[result.new_status] ||
+      `Assignment status: ${responderName} — ${result.previous_status} → ${result.new_status}`
+
+    // Notify admins (responder table) - use target_type/target_id for schema
     if (admins && admins.length > 0) {
       const adminNotifications = admins.map(admin => ({
-        user_id: admin.user_id,
+        target_type: 'admin',
+        target_id: admin.user_id,
         type: 'assignment_status_update',
-        title: 'Assignment Status Updated',
-        message: `Assignment status changed from ${result.previous_status} to ${result.new_status}`,
-        data: notificationData,
-        read: false,
+        title: statusMessagesForSuperUser[result.new_status] || 'Assignment Status Updated',
+        message: statusMessageForAdmin,
+        payload: { ...notificationData, responder_name: responderName },
+        is_read: false,
         created_at: result.updated_at
       }))
-
-      const { error: adminError } = await supabaseClient
-        .from('notifications')
-        .insert(adminNotifications)
-
-      if (adminError) {
-        console.warn('Failed to insert admin notifications:', adminError)
-      } else {
-        console.log(`Inserted ${adminNotifications.length} admin notifications`)
-      }
+      const { error: adminError } = await supabaseClient.from('notifications').insert(adminNotifications)
+      if (adminError) console.warn('Failed to insert admin notifications:', adminError)
+      else console.log(`Inserted ${adminNotifications.length} admin notifications (responder admins)`)
     }
 
-    // Notify reporter if they have a user account
+    // Notify super users / admins from user_profiles (ensures super_user sees status in-app) — who did what
+    if (!profileError && superProfiles && superProfiles.length > 0) {
+      const superTitle = statusMessagesForSuperUser[result.new_status] || 'Assignment Status Updated'
+      const superUserNotifications = superProfiles.map((p: { user_id: string }) => ({
+        target_type: 'admin',
+        target_id: p.user_id,
+        type: 'assignment_status_update',
+        title: superTitle,
+        message: statusMessageForAdmin,
+        payload: { ...notificationData, responder_name: responderName },
+        is_read: false,
+        created_at: result.updated_at
+      }))
+      const { error: superError } = await supabaseClient.from('notifications').insert(superUserNotifications)
+      if (superError) console.warn('Failed to insert super user notifications:', superError)
+      else console.log(`Inserted ${superUserNotifications.length} super user/admin notifications`)
+    }
+
+    // Notify reporter (citizen) if they have a user account
     if (reporterUserId) {
-      // Create user-friendly status messages
       const statusMessages: Record<string, string> = {
         'accepted': 'A responder has accepted your emergency report',
         'enroute': 'A responder is on the way to your location',
         'on_scene': 'A responder has arrived at your location',
         'resolved': 'Your emergency report has been resolved'
       }
-
-      const statusMessage = statusMessages[result.new_status] || 
+      const statusMessage = statusMessages[result.new_status] ||
         `Your report status has been updated to ${result.new_status}`
 
       const { error: reporterError } = await supabaseClient
         .from('notifications')
         .insert({
-          user_id: reporterUserId,
+          target_type: 'reporter',
+          target_id: reporterUserId,
           type: 'assignment_status_update',
           title: 'Your Report Update',
           message: statusMessage,
-          data: notificationData,
-          read: false,
+          payload: notificationData,
+          is_read: false,
           created_at: result.updated_at
         })
-
       if (reporterError) {
-        console.warn('Failed to insert reporter notification:', reporterError, {
-          user_id: reporterUserId,
-          report_id: result.report_id
-        })
+        console.warn('Failed to insert reporter notification:', reporterError, { report_id: result.report_id })
       } else {
         console.log('Successfully inserted reporter notification for user:', reporterUserId)
       }
@@ -775,15 +800,32 @@ async function sendStatusUpdatePushNotification(
       })
     }
 
-    // Notify superusers (same update as citizen: e.g. "Help is on the Way")
+    // Notify superusers with who did what (different from citizen message) for tracking
+    const responderName = currentAssignment.responder?.name || 'Responder'
+    const reportType = currentAssignment.reports?.type || 'report'
+    const superUserStatusTitles: Record<string, string> = {
+      'accepted': `${responderName} accepted`,
+      'enroute': `${responderName} is en route`,
+      'on_scene': `${responderName} on scene`,
+      'resolved': `${responderName} resolved report`
+    }
+    const superUserStatusBodies: Record<string, string> = {
+      'accepted': `${responderName} accepted the assignment for the ${reportType} report.`,
+      'enroute': `${responderName} is en route to the scene. Track in dashboard.`,
+      'on_scene': `${responderName} has arrived on scene for the ${reportType} report.`,
+      'resolved': `${responderName} marked the ${reportType} report as resolved.`
+    }
+    const superTitle = superUserStatusTitles[result.new_status] || `Assignment: ${result.new_status}`
+    const superBody = superUserStatusBodies[result.new_status] || `Status updated to ${result.new_status}.`
     try {
       await sendOneSignalNotificationToSuperusers(
         supabaseClient,
-        statusMessage.title,
-        statusMessage.body,
+        superTitle,
+        superBody,
         {
           reportId: result.report_id,
           assignmentId: result.assignment_id,
+          responder_name: responderName,
           newStatus: result.new_status,
           lifecycleStatus: STATUS_TO_LIFECYCLE[result.new_status],
           timestamp: result.updated_at
@@ -801,7 +843,6 @@ async function sendStatusUpdatePushNotification(
 
 /**
  * Send OneSignal notification to all superusers (admin/super_user) when responder updates status.
- * Same style as citizen: "Help is on the Way", "Responder Arrived", etc.
  */
 async function sendOneSignalNotificationToSuperusers(
   supabaseClient: any,
@@ -812,36 +853,38 @@ async function sendOneSignalNotificationToSuperusers(
   try {
     if (!ONESIGNAL_REST_API_KEY || !ONESIGNAL_APP_ID) return
 
-    // Get super user and admin user_ids from user_profiles
     const { data: superProfiles, error: profileError } = await supabaseClient
       .from('user_profiles')
       .select('user_id')
       .in('role', ['super_user', 'admin'])
 
     if (profileError || !superProfiles?.length) {
-      console.log('No super users/admins to notify for status update')
+      console.log('No super users/admins in user_profiles')
       return
     }
 
     const superUserIds = superProfiles.map((p: { user_id: string }) => p.user_id).filter(Boolean)
     if (superUserIds.length === 0) return
 
-    // Get OneSignal player IDs for those users
     const { data: subscriptions, error: subError } = await supabaseClient
       .from('onesignal_subscriptions')
       .select('player_id')
       .in('user_id', superUserIds)
 
     if (subError || !subscriptions?.length) {
-      console.log('No OneSignal subscriptions for super users')
+      console.log('No OneSignal subscriptions for super users - log in on mobile app to receive push')
       return
     }
 
     const playerIds = subscriptions.map((s: { player_id: string }) => s.player_id).filter(Boolean)
     if (playerIds.length === 0) return
 
-    const isImportant = data.newStatus === 'resolved' || data.newStatus === 'on_scene'
-    const emoji = isImportant ? '✅' : '📢'
+    console.log(`Sending OneSignal notification to ${playerIds.length} device(s) for superusers:`, {
+      super_user_ids: superUserIds,
+      player_ids_count: playerIds.length
+    })
+
+    const emoji = '📢'
 
     const oneSignalPayload: any = {
       app_id: ONESIGNAL_APP_ID,
@@ -853,11 +896,11 @@ async function sendOneSignalNotificationToSuperusers(
         type: 'assignment_status_update_superuser'
       },
       android_channel_id: '62b67b1a-b2c2-4073-92c5-3b1d416a4720',
-      ...(isImportant ? { android_sound: 'emergency_alert' } : {}),
-      priority: isImportant ? 10 : 5,
+      android_sound: 'emergency_alert',
+      priority: 10,
       android_visibility: 1,
       android_accent_color: '3b82f6',
-      ...(isImportant ? { ios_sound: 'emergency_alert.wav' } : {}),
+      ios_sound: 'emergency_alert.wav',
       ios_badgeType: 'Increase',
       ios_badgeCount: 1,
       content_available: true,
@@ -879,7 +922,8 @@ async function sendOneSignalNotificationToSuperusers(
       return
     }
     const result = await response.json()
-    console.log('OneSignal status update sent to superusers:', { id: result.id, recipients: result.recipients })
+    const recipientCount = result.recipients ?? result.recipient_id?.length ?? playerIds.length
+    console.log('OneSignal status update sent to superusers:', { id: result.id, recipients: recipientCount, player_ids_sent: playerIds.length })
   } catch (error) {
     console.warn('Failed to send OneSignal notification to superusers:', error)
   }

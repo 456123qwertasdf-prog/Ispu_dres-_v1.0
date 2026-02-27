@@ -1,10 +1,17 @@
 import 'dart:convert';
+import 'dart:io';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:package_info_plus/package_info_plus.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:app_installer_plus/app_installer_plus.dart';
+import 'package:http/http.dart' as http;
 import 'supabase_service.dart';
+
+/// Method channel for installing APK from app cache (reliable with FileProvider).
+const _installChannel = MethodChannel('com.example.mobile_app/install');
 
 /// Result of checking for app updates.
 enum UpdateStatus {
@@ -115,10 +122,40 @@ class UpdateCheckService {
     }
   }
 
-  /// Download APK from [downloadUrl] and open with system installer (user taps Install once).
-  /// For in-place update (without uninstall), the APK must be signed with the same key as the
-  /// currently installed app; otherwise Android shows "App not installed". Use [onInstallError]
-  /// to show a message and suggest uninstall + install from browser.
+  /// Check if the app can install packages (Android 8+ "Install unknown apps").
+  static Future<bool> canRequestPackageInstalls() async {
+    if (defaultTargetPlatform != TargetPlatform.android) return true;
+    try {
+      final bool? result = await _installChannel.invokeMethod<bool>('canRequestPackageInstalls');
+      return result ?? false;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  /// Open system settings so user can allow "Install unknown apps" for this app (Android 8+).
+  static Future<void> openInstallUnknownAppsSettings() async {
+    if (defaultTargetPlatform != TargetPlatform.android) return;
+    try {
+      await _installChannel.invokeMethod('openInstallUnknownAppsSettings');
+    } catch (_) {}
+  }
+
+  /// APK/ZIP magic bytes (APK is a ZIP file).
+  static final _apkMagic = [0x50, 0x4B, 0x03, 0x04];
+
+  static Future<bool> _isValidApkFile(File file) async {
+    if (!file.existsSync()) return false;
+    if (file.lengthSync() < 100) return false;
+    final bytes = await file.openRead(0, 4).first;
+    if (bytes.length < 4) return false;
+    for (var i = 0; i < 4; i++) {
+      if (bytes[i] != _apkMagic[i]) return false;
+    }
+    return true;
+  }
+
+  /// Download APK to app cache and install via FileProvider (reliable on all Android versions).
   /// [onProgress] receives 0.0 to 1.0. On Android only; otherwise opens URL in browser.
   static Future<void> downloadAndInstallApk(
     String? downloadUrl, {
@@ -131,25 +168,52 @@ class UpdateCheckService {
       return;
     }
     try {
-      await AppInstallerPlus().downloadAndInstallApk(
-        downloadFileUrl: downloadUrl,
-        onProgress: (progress) => onProgress?.call(progress),
-        onError: (error) {
-          debugPrint('UpdateCheck: download/install error: $error');
-          onInstallError?.call(error);
-        },
-      );
+      final canInstall = await canRequestPackageInstalls();
+      if (!canInstall) {
+        onInstallError?.call(
+          'Please allow "Install unknown apps" for this app in the next screen, then try Download and install again.',
+        );
+        await openInstallUnknownAppsSettings();
+        return;
+      }
+
+      final dir = await getTemporaryDirectory();
+      final apkFile = File('${dir.path}/update.apk');
+      if (apkFile.existsSync()) apkFile.deleteSync();
+
+      final uri = Uri.parse(downloadUrl);
+      final request = http.Request('GET', uri);
+      final streamed = await http.Client().send(request);
+      final total = streamed.contentLength ?? 0;
+      var received = 0;
+      final sink = apkFile.openWrite();
+      await for (final chunk in streamed.stream) {
+        sink.add(chunk);
+        received += chunk.length;
+        if (total > 0) onProgress?.call(received / total);
+      }
+      await sink.close();
+
+      if (!await _isValidApkFile(apkFile)) {
+        onInstallError?.call(
+          'Downloaded file is not a valid APK (may be incomplete or the link returned a web page). Try "Open in browser" to download and install.',
+        );
+        return;
+      }
+
+      await _installChannel.invokeMethod<void>('installApkFromPath', {'path': apkFile.path});
+    } on PlatformException catch (e) {
+      debugPrint('UpdateCheck: install error: $e');
+      onInstallError?.call(e.message ?? e.code);
     } catch (e, st) {
       debugPrint('UpdateCheck: downloadAndInstallApk error: $e\n$st');
-      final message = e.toString();
-      onInstallError?.call(message);
-      await openDownloadUrl(downloadUrl);
+      onInstallError?.call(e.toString());
     }
   }
 
-  /// Show a dialog when install fails (e.g. "App not installed" due to signing mismatch).
-  /// Suggests uninstalling the current app and installing from the browser link.
+  /// Show a dialog when install fails. Suggests enabling "Install unknown apps" or using the browser.
   static void showInstallErrorDialog(BuildContext context, String message, String? downloadUrl) {
+    final isPermissionMessage = message.contains('Install unknown apps');
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -159,17 +223,19 @@ class UpdateCheckService {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
-                'The update could not be installed. This often happens when the app was previously installed from a different source (e.g. from this device vs. from the web link).',
-                style: TextStyle(fontWeight: FontWeight.w500),
-              ),
-              const SizedBox(height: 12),
-              Text('Details: $message', style: const TextStyle(fontSize: 12)),
-              const SizedBox(height: 12),
-              const Text(
-                'Try this: Uninstall the current app, then use "Open in browser" below to download and install the latest version.',
-                style: TextStyle(fontWeight: FontWeight.w500),
-              ),
+              if (isPermissionMessage)
+                const Text(
+                  'Allow this app to install other apps in the settings that just opened, then tap "Download and install" again.',
+                  style: TextStyle(fontWeight: FontWeight.w500),
+                )
+              else ...[
+                const Text(
+                  'The update could not be installed. You can try "Open in browser" to download the APK and install it from your browser or Files app.',
+                  style: TextStyle(fontWeight: FontWeight.w500),
+                ),
+                const SizedBox(height: 12),
+                Text('Details: $message', style: const TextStyle(fontSize: 12)),
+              ],
             ],
           ),
         ),
@@ -178,13 +244,14 @@ class UpdateCheckService {
             onPressed: () => Navigator.of(ctx).pop(),
             child: const Text('OK'),
           ),
-          FilledButton(
-            onPressed: () {
-              Navigator.of(ctx).pop();
-              openDownloadUrl(downloadUrl);
-            },
-            child: const Text('Open in browser'),
-          ),
+          if (downloadUrl != null && downloadUrl.isNotEmpty)
+            FilledButton(
+              onPressed: () {
+                Navigator.of(ctx).pop();
+                openDownloadUrl(downloadUrl);
+              },
+              child: const Text('Open in browser'),
+            ),
         ],
       ),
     );

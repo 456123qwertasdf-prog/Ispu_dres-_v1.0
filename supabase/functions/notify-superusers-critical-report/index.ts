@@ -143,18 +143,22 @@ serve(async (req) => {
 
     console.log(`Found ${targetUsers.length} super users with OneSignal player IDs`)
 
-    // Get player IDs
+    // Create database notifications for ALL super users (so they see in-app even without push)
+    await createDatabaseNotifications(supabaseClient, superUsers, report)
+
+    // Get player IDs for push
     const playerIds = targetUsers
       .map(user => user.onesignal_player_id)
       .filter(id => id !== null && id !== '')
 
     if (playerIds.length === 0) {
-      console.warn('No valid OneSignal player IDs found')
+      console.warn('No valid OneSignal player IDs found; database notifications still created for all super users')
       return new Response(
         JSON.stringify({ 
           success: true, 
           sent: 0,
-          message: 'No valid OneSignal player IDs' 
+          notified_users: superUsers.length,
+          message: 'No valid OneSignal player IDs; in-app notifications created for super users' 
         }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
       )
@@ -163,8 +167,7 @@ serve(async (req) => {
     // Check if OneSignal is configured
     if (!ONESIGNAL_REST_API_KEY || !ONESIGNAL_APP_ID) {
       console.warn('OneSignal not configured, skipping push notification')
-      // Still create database notifications
-      await createDatabaseNotifications(supabaseClient, targetUsers, report)
+      // Database notifications already created above for all super users
       
       return new Response(
         JSON.stringify({ 
@@ -197,11 +200,21 @@ serve(async (req) => {
       created_at: report.created_at
     }
 
-    // Send OneSignal push notification
+    // Send OneSignal push notification (database notifications already created above for all super users)
     const result = await sendOneSignalNotification(playerIds, title, message, notificationData)
 
-    // Create database notifications for all super users
-    await createDatabaseNotifications(supabaseClient, targetUsers, report)
+    // If OneSignal reported invalid player IDs, remove them so we don't keep failing. Super users must open the app again to re-register.
+    if (result.invalidPlayerIds && result.invalidPlayerIds.length > 0) {
+      const { error: deleteError } = await supabaseClient
+        .from('onesignal_subscriptions')
+        .delete()
+        .in('player_id', result.invalidPlayerIds)
+      if (deleteError) {
+        console.warn('Failed to remove invalid OneSignal player IDs:', deleteError)
+      } else {
+        console.log(`Removed ${result.invalidPlayerIds.length} invalid OneSignal player ID(s). Super users should open the app to re-enable push.`)
+      }
+    }
 
     console.log(`✅ Critical report notification sent to ${result.sent} super users/admins for report ${report_id}`)
 
@@ -209,11 +222,14 @@ serve(async (req) => {
       JSON.stringify({
         success: true,
         sent: result.sent,
-        notified_users: targetUsers.length,
+        notified_users: superUsers.length,
+        invalid_player_ids_removed: result.invalidPlayerIds?.length ?? 0,
         report_type: report.type,
         priority: report.priority,
         severity: report.severity,
-        message: `Push notification sent to ${result.sent} super users/admins`
+        message: result.sent > 0
+          ? `Push notification sent to ${result.sent} super users/admins; in-app notifications for ${superUsers.length}`
+          : `In-app notifications created for ${superUsers.length} super users. Push failed (invalid device IDs removed – have super users open the app to re-enable push).`
       }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -238,14 +254,15 @@ serve(async (req) => {
 })
 
 /**
- * Send push notification via OneSignal
+ * Send push notification via OneSignal.
+ * Returns invalid_player_ids when OneSignal rejects some IDs (e.g. app reinstalled, wrong app env) so caller can clean DB.
  */
 async function sendOneSignalNotification(
   playerIds: string[],
   title: string,
   message: string,
   data: any
-): Promise<{ sent: number }> {
+): Promise<{ sent: number; invalidPlayerIds?: string[] }> {
   try {
     const oneSignalPayload: any = {
       app_id: ONESIGNAL_APP_ID,
@@ -300,10 +317,15 @@ async function sendOneSignalNotification(
     const result = await response.json()
     console.log('OneSignal response:', result)
 
-    return {
-      sent: result.recipients || 0
+    const invalidPlayerIds: string[] = result.errors?.invalid_player_ids ?? []
+    if (invalidPlayerIds.length > 0) {
+      console.warn('OneSignal reported invalid player IDs (stale/uninstalled/wrong app). Remove from DB so super users can re-register by opening the app:', invalidPlayerIds)
     }
 
+    return {
+      sent: result.recipients ?? 0,
+      ...(invalidPlayerIds.length > 0 && { invalidPlayerIds })
+    }
   } catch (error) {
     console.error('Failed to send OneSignal notification:', error)
     throw error

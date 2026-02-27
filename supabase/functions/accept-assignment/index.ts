@@ -1,6 +1,10 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { corsHeaders } from '../_shared/cors.ts'
+import { encode as base64Encode } from "https://deno.land/std@0.168.0/encoding/base64.ts"
+
+const ONESIGNAL_APP_ID = Deno.env.get('ONESIGNAL_APP_ID') || '8d6aa625-a650-47ac-b9ba-00a247840952'
+const ONESIGNAL_REST_API_KEY = Deno.env.get('ONESIGNAL_REST_API_KEY') || ''
 
 interface AcceptAssignmentRequest {
   assignment_id: string
@@ -141,7 +145,8 @@ async function getAssignmentDetails(
         reporter_name,
         lifecycle_status,
         created_at
-      )
+      ),
+      responder!responder_id(id, name)
     `)
     .eq('id', assignmentId)
     .single()
@@ -354,21 +359,31 @@ async function sendActionNotifications(
     const action = result.action
     const status = result.status
 
-    // Get admin users for notification
+    // Get admin users from responder table (legacy)
     const { data: admins } = await supabaseClient
       .from('responder')
       .select('user_id')
       .eq('role', 'admin')
       .limit(5)
 
+    // Get super users and admins from user_profiles (so super_user gets notified too)
+    const { data: superProfiles, error: profileError } = await supabaseClient
+      .from('user_profiles')
+      .select('user_id')
+      .in('role', ['super_user', 'admin'])
+
     // Get reporter user_id if available
     const reporterUserId = report.reporter_uid
 
-    // Create notification payload
+    const responderName = assignment.responder?.name || 'A responder'
+    const reportTypeLabel = report.type || 'emergency'
+
+    // Create notification payload (include responder_name for super user tracking)
     const notificationData = {
       assignment_id: result.assignment_id,
       report_id: result.report_id,
       responder_id: result.responder_id,
+      responder_name: responderName,
       action: action,
       status: status,
       report_type: report.type,
@@ -376,21 +391,78 @@ async function sendActionNotifications(
       timestamp: result.timestamp
     }
 
-    // Notify admins
+    // Notify admins (from responder table) - insert with target_type/target_id for schema compatibility
     if (admins && admins.length > 0) {
       const adminNotifications = admins.map(admin => ({
-        user_id: admin.user_id,
+        target_type: 'admin',
+        target_id: admin.user_id,
         type: 'assignment_action',
-        title: `Assignment ${action}ed`,
-        message: `Responder ${action}ed assignment for ${report.type || 'emergency'} report`,
-        data: notificationData,
-        read: false,
+        title: action === 'accept' ? `${responderName} accepted` : `Assignment ${action}ed`,
+        message: action === 'accept'
+          ? `${responderName} accepted the assignment for the ${reportTypeLabel} report.`
+          : `${responderName} declined the assignment for the ${reportTypeLabel} report.`,
+        payload: notificationData,
+        is_read: false,
         created_at: result.timestamp
       }))
+      await supabaseClient.from('notifications').insert(adminNotifications)
+    }
 
-      await supabaseClient
-        .from('notifications')
-        .insert(adminNotifications)
+    // Notify super users / admins from user_profiles (ensures super_user gets in-app + push) — include who accepted/declined
+    if (!profileError && superProfiles && superProfiles.length > 0) {
+      const superTitle = action === 'accept' ? `${responderName} accepted` : `${responderName} declined`
+      const superMessage = action === 'accept'
+        ? `${responderName} accepted the assignment for the ${reportTypeLabel} report. You can track this assignment in the dashboard.`
+        : `${responderName} declined the assignment for the ${reportTypeLabel} report. Reassignment may be needed.`
+      const superUserNotifications = superProfiles.map((p: { user_id: string }) => ({
+        target_type: 'admin',
+        target_id: p.user_id,
+        type: 'assignment_action',
+        title: superTitle,
+        message: superMessage,
+        payload: notificationData,
+        is_read: false,
+        created_at: result.timestamp
+      }))
+      await supabaseClient.from('notifications').insert(superUserNotifications)
+      // Send OneSignal push to super users when responder accepts/declines — tell them who
+      if (action === 'accept') {
+        try {
+          await sendOneSignalToSuperusers(
+            supabaseClient,
+            `${responderName} accepted the assignment`,
+            `${responderName} accepted the ${reportTypeLabel} report. Track status in the dashboard.`,
+            {
+              type: 'assignment_status_update_superuser',
+              reportId: result.report_id,
+              assignmentId: result.assignment_id,
+              responder_name: responderName,
+              newStatus: 'accepted',
+              timestamp: result.timestamp
+            }
+          )
+        } catch (pushErr) {
+          console.warn('Superuser OneSignal push (accept) failed (non-critical):', pushErr)
+        }
+      } else {
+        try {
+          await sendOneSignalToSuperusers(
+            supabaseClient,
+            `${responderName} declined the assignment`,
+            `${responderName} declined the ${reportTypeLabel} report. Reassignment may be needed.`,
+            {
+              type: 'assignment_status_update_superuser',
+              reportId: result.report_id,
+              assignmentId: result.assignment_id,
+              responder_name: responderName,
+              newStatus: 'cancelled',
+              timestamp: result.timestamp
+            }
+          )
+        } catch (pushErr) {
+          console.warn('Superuser OneSignal push (decline) failed (non-critical):', pushErr)
+        }
+      }
     }
 
     // Notify reporter if they have a user account
@@ -428,6 +500,77 @@ async function sendActionNotifications(
     console.warn('Failed to send action notifications:', error)
     // Don't throw error as notifications are not critical
   }
+}
+
+/**
+ * Send OneSignal push to super users / admins (user_profiles + onesignal_subscriptions).
+ */
+async function sendOneSignalToSuperusers(
+  supabaseClient: any,
+  title: string,
+  message: string,
+  data: Record<string, unknown>
+): Promise<void> {
+  if (!ONESIGNAL_REST_API_KEY || !ONESIGNAL_APP_ID) return
+
+  const { data: superProfiles, error: profileError } = await supabaseClient
+    .from('user_profiles')
+    .select('user_id')
+    .in('role', ['super_user', 'admin'])
+
+  if (profileError || !superProfiles?.length) {
+    console.log('No super users/admins to notify for accept action')
+    return
+  }
+
+  const superUserIds = superProfiles.map((p: { user_id: string }) => p.user_id).filter(Boolean)
+  if (superUserIds.length === 0) return
+
+  const { data: subscriptions, error: subError } = await supabaseClient
+    .from('onesignal_subscriptions')
+    .select('player_id')
+    .in('user_id', superUserIds)
+
+  if (subError || !subscriptions?.length) {
+    console.log('No OneSignal subscriptions for super users - log in on mobile app to receive push')
+    return
+  }
+
+  const playerIds = subscriptions.map((s: { player_id: string }) => s.player_id).filter(Boolean)
+  if (playerIds.length === 0) return
+
+  const isV2Key = ONESIGNAL_REST_API_KEY.startsWith('os_v2_app_')
+  const authHeader = isV2Key
+    ? `Key ${ONESIGNAL_REST_API_KEY}`
+    : `Basic ${base64Encode(new TextEncoder().encode(`${ONESIGNAL_REST_API_KEY}:`))}`
+
+  const payload = {
+    app_id: ONESIGNAL_APP_ID,
+    include_player_ids: playerIds,
+    headings: { en: `✅ ${title}` },
+    contents: { en: message },
+    data: { ...data, type: 'assignment_status_update_superuser' },
+    android_channel_id: '62b67b1a-b2c2-4073-92c5-3b1d416a4720',
+    priority: 8,
+    android_visibility: 1,
+    android_accent_color: '3b82f6',
+    ios_badgeType: 'Increase',
+    ios_badgeCount: 1,
+    content_available: true,
+  }
+
+  const response = await fetch('https://api.onesignal.com/notifications', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Authorization': authHeader },
+    body: JSON.stringify(payload),
+  })
+
+  if (!response.ok) {
+    console.warn('OneSignal superuser (accept) API error:', response.status, await response.text())
+    return
+  }
+  const result = await response.json()
+  console.log('OneSignal accept notification sent to superusers:', { id: result.id, recipients: result.recipients })
 }
 
 /**
