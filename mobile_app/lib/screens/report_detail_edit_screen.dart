@@ -55,6 +55,10 @@ class _ReportDetailEditScreenState extends State<ReportDetailEditScreen> {
     'assigned', 'accepted', 'enroute', 'in_progress', 'on_scene',
   ];
 
+  bool get _reportNeedsAssistance =>
+      widget.report['assignment_needs_backup'] == true ||
+      widget.report['responder_needs_assistance'] == true;
+
   /// Server-side check: which of [responderIds] have an active assignment to a *different* report.
   /// When assigning to [reportId], pass it so we only treat "busy" as having another report's assignment.
   Future<Set<String>> _fetchBusyResponderIdsFromServer(List<String> responderIds, {String? reportId}) async {
@@ -594,6 +598,30 @@ class _ReportDetailEditScreenState extends State<ReportDetailEditScreen> {
                     ],
                   ],
                   const SizedBox(height: 16),
+                  if (responderName != null) ...[
+                    SizedBox(
+                      width: double.infinity,
+                      child: FilledButton.icon(
+                        onPressed: _showAssignResponderDialog,
+                        icon: Icon(
+                          _reportNeedsAssistance ? Icons.emergency : Icons.person_add,
+                          size: 22,
+                        ),
+                        label: const Text('Assign backup / Assist'),
+                        style: FilledButton.styleFrom(
+                          backgroundColor: _reportNeedsAssistance
+                              ? Colors.orange.shade700
+                              : Colors.orange.shade600,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                  ],
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton.icon(
@@ -601,7 +629,7 @@ class _ReportDetailEditScreenState extends State<ReportDetailEditScreen> {
                       icon: Icon(responderName != null ? Icons.refresh : Icons.person_add),
                       label: Text(responderName != null ? 'Change Responder' : 'Assign Responder'),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: responderName != null 
+                        backgroundColor: responderName != null
                             ? const Color(0xFF3b82f6)
                             : const Color(0xFF16a34a),
                         foregroundColor: Colors.white,
