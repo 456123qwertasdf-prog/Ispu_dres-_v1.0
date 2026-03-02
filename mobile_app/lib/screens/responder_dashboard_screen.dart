@@ -290,11 +290,16 @@ class _ResponderDashboardScreenState extends State<ResponderDashboardScreen> {
       try {
         final profileRow = await SupabaseService.client
             .from('user_profiles')
-            .select('user_type')
+            .select('user_type, user_types')
             .eq('user_id', userId)
             .maybeSingle();
-        final userType = profileRow?['user_type'] as String?;
-        isSecurityGuard = (userType ?? '').toLowerCase() == 'security_guard';
+        final userTypes = profileRow?['user_types'] as List<dynamic>?;
+        if (userTypes != null && userTypes.isNotEmpty) {
+          isSecurityGuard = userTypes.any((t) => (t?.toString() ?? '').toLowerCase() == 'security_guard');
+        } else {
+          final userType = profileRow?['user_type'] as String?;
+          isSecurityGuard = (userType ?? '').toLowerCase() == 'security_guard';
+        }
       } catch (_) {}
 
       final assignmentsResponse = await SupabaseService.client

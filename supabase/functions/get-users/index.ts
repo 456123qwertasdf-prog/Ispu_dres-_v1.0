@@ -34,11 +34,15 @@ serve(async (req) => {
     const profileUserIds = new Set((userProfiles ?? []).map((p: any) => p.user_id))
     const missingAuthUsers = authUsers.filter((u: any) => !profileUserIds.has(u.id))
     if (missingAuthUsers.length > 0) {
+      const toTypes = (u: any) => (u.user_metadata?.user_types && Array.isArray(u.user_metadata.user_types) && u.user_metadata.user_types.length)
+        ? u.user_metadata.user_types
+        : [u.user_metadata?.user_type || 'student']
       const profilesToInsert = missingAuthUsers.map((u: any) => ({
         user_id: u.id,
         role: u.user_metadata?.role || u.user_metadata?.user_role || 'citizen',
         name: u.user_metadata?.full_name || u.user_metadata?.name || u.email?.split('@')[0] || 'Unknown',
-        user_type: u.user_metadata?.user_type || 'student',
+        user_type: toTypes(u)[0],
+        user_types: toTypes(u),
         student_number: u.user_metadata?.student_number || null,
         is_active: true,
         created_at: u.created_at,
@@ -79,11 +83,15 @@ serve(async (req) => {
       }
 
       // Convert auth users to user_profiles format and insert them
+      const toTypes = (user: any) => (user.user_metadata?.user_types && Array.isArray(user.user_metadata.user_types) && user.user_metadata.user_types.length)
+        ? user.user_metadata.user_types
+        : [user.user_metadata?.user_type || 'student']
       const profilesToInsert = authUsers.users.map((user: any) => ({
         user_id: user.id,
         role: user.user_metadata?.role || user.user_metadata?.user_role || 'citizen',
         name: user.user_metadata?.full_name || user.user_metadata?.name || user.email?.split('@')[0] || 'Unknown',
-        user_type: user.user_metadata?.user_type || 'student',
+        user_type: toTypes(user)[0],
+        user_types: toTypes(user),
         student_number: user.user_metadata?.student_number || null,
         is_active: true,
         created_at: user.created_at
@@ -121,11 +129,15 @@ serve(async (req) => {
     if (!profilesError && (!userProfiles || userProfiles.length === 0)) {
       const { data: authBootstrap, error: authBootstrapErr } = await supabaseClient.auth.admin.listUsers()
       if (!authBootstrapErr && authBootstrap?.users) {
+        const toTypes = (user: any) => (user.user_metadata?.user_types && Array.isArray(user.user_metadata.user_types) && user.user_metadata.user_types.length)
+          ? user.user_metadata.user_types
+          : [user.user_metadata?.user_type || 'student']
         const profilesToInsert = authBootstrap.users.map((user: any) => ({
           user_id: user.id,
           role: user.user_metadata?.role || user.user_metadata?.user_role || 'citizen',
           name: user.user_metadata?.full_name || user.user_metadata?.name || user.email?.split('@')[0] || 'Unknown',
-          user_type: user.user_metadata?.user_type || 'student',
+          user_type: toTypes(user)[0],
+          user_types: toTypes(user),
           student_number: user.user_metadata?.student_number || null,
           is_active: true,
           created_at: user.created_at
@@ -140,18 +152,20 @@ serve(async (req) => {
       }
     }
 
-    // Enrich profiles with email, last_sign_in, and user_type from auth (already fetched above)
     let enriched = profiles
     if (authUsers.length > 0) {
       const authById = new Map(authUsers.map((u: any) => [u.id, u]))
       enriched = profiles.map((p: any) => {
         const au: any = authById.get(p.user_id)
+        const metaTypes = au?.user_metadata?.user_types
+        const hasMetaTypes = Array.isArray(metaTypes) && metaTypes.length
         return {
           ...p,
           email: au?.email || null,
           last_sign_in_at: au?.last_sign_in_at || null,
-          user_type: au?.user_metadata?.user_type || null, // Include user type from metadata
-          user_metadata: au?.user_metadata || null // Include full metadata for access
+          user_type: p.user_type ?? (hasMetaTypes ? metaTypes[0] : au?.user_metadata?.user_type) ?? null,
+          user_types: p.user_types ?? (hasMetaTypes ? metaTypes : (au?.user_metadata?.user_type ? [au.user_metadata.user_type] : null)),
+          user_metadata: au?.user_metadata || null
         }
       })
     }

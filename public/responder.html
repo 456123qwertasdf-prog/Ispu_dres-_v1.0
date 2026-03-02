@@ -477,8 +477,9 @@
                 await getResponderId();
 
                 // Show "Ongoing incidents" for security guards (awareness / cooperation)
-                const userType = emergencySystem.user?.user_metadata?.user_type || '';
-                if (userType === 'security_guard') {
+                const userTypes = emergencySystem.user?.user_metadata?.user_types || (emergencySystem.user?.user_metadata?.user_type ? [emergencySystem.user.user_metadata.user_type] : []);
+                const isSecurityGuard = Array.isArray(userTypes) ? userTypes.some(t => String(t).toLowerCase() === 'security_guard') : (String(emergencySystem.user?.user_metadata?.user_type || '').toLowerCase() === 'security_guard');
+                if (isSecurityGuard) {
                     const navOngoing = document.getElementById('nav-ongoing');
                     if (navOngoing) navOngoing.style.display = '';
                 }

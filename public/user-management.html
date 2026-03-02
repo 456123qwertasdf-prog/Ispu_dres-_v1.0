@@ -72,6 +72,28 @@
             box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
         }
         
+        .user-types-checkboxes {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.75rem 1.5rem;
+            padding: 0.75rem;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            background: #fafafa;
+        }
+        .user-types-checkboxes .checkbox-label {
+            display: flex;
+            align-items: center;
+            gap: 0.35rem;
+            cursor: pointer;
+            font-size: 0.9rem;
+            color: #374151;
+        }
+        .user-types-checkboxes input[type="checkbox"] {
+            margin: 0;
+            cursor: pointer;
+        }
+        
         .form-hint {
             font-size: 0.75rem;
             color: #6b7280;
@@ -1156,18 +1178,19 @@
                             </div>
                             
                             <div class="form-group">
-                                <label class="form-label">Change User Type</label>
-                                <select id="username" class="form-select" required>
-                                    <option value="">Select Type</option>
-                                    <option value="student">Student</option>
-                                    <option value="instructor">Instructor</option>
-                                    <option value="faculty_staff">Faculty Staff</option>
-                                    <option value="security_guard">Security Guard</option>
-                                    <option value="first_aider">First Aider</option>
-                                    <option value="responder">Responder</option>
-                                    <option value="first_aider_leader">First Aider Leader</option>
-                                    <option value="responder_leader">Responder Leader</option>
-                                </select>
+                                <label class="form-label">User Types (select all that apply)</label>
+                                <div id="userTypesCheckboxes" class="user-types-checkboxes">
+                                    <label class="checkbox-label"><input type="checkbox" name="userType" value="student"> Student</label>
+                                    <label class="checkbox-label"><input type="checkbox" name="userType" value="instructor"> Instructor</label>
+                                    <label class="checkbox-label"><input type="checkbox" name="userType" value="faculty_staff"> Faculty Staff</label>
+                                    <label class="checkbox-label"><input type="checkbox" name="userType" value="security_guard"> Security Guard</label>
+                                    <label class="checkbox-label"><input type="checkbox" name="userType" value="first_aider"> First Aider</label>
+                                    <label class="checkbox-label"><input type="checkbox" name="userType" value="responder"> Responder</label>
+                                    <label class="checkbox-label"><input type="checkbox" name="userType" value="first_aider_leader"> First Aider Leader</label>
+                                    <label class="checkbox-label"><input type="checkbox" name="userType" value="responder_leader"> Responder Leader</label>
+                                    <label class="checkbox-label"><input type="checkbox" name="userType" value="fire_volunteer"> Fire Volunteer</label>
+                                </div>
+                                <small class="form-text" style="color: #6b7280; font-size: 0.75rem; margin-top: 0.25rem; display: block;">At least one type required</small>
                             </div>
                             
                             <div class="form-group">
@@ -1377,72 +1400,46 @@
                 const users = data?.users || [];
 
                 allUsers = users.map(u => {
-                    // Get user type from multiple possible locations
-                    let userType = null;
-                    
-                    // Try direct property first (from get-users edge function)
-                    if (u.user_type && u.user_type !== 'null' && u.user_type !== '') {
-                        userType = u.user_type;
+                    // Prefer user_types array; fallback to single user_type then infer
+                    let userTypes = (u.user_types && Array.isArray(u.user_types) && u.user_types.length) ? u.user_types
+                        : (u.user_metadata?.user_types && Array.isArray(u.user_metadata.user_types) && u.user_metadata.user_types.length) ? u.user_metadata.user_types
+                        : null;
+                    if (!userTypes && u.user_type && u.user_type !== 'null' && u.user_type !== '') {
+                        userTypes = [u.user_type];
                     }
-                    // Try from user_metadata object (nested)
-                    else if (u.user_metadata?.user_type && u.user_metadata.user_type !== 'null' && u.user_metadata.user_type !== '') {
-                        userType = u.user_metadata.user_type;
+                    if (!userTypes && u.user_metadata?.user_type && u.user_metadata.user_type !== 'null' && u.user_metadata.user_type !== '') {
+                        userTypes = [u.user_metadata.user_type];
                     }
-                    // Try from raw_user_meta_data if available
-                    else if (u.raw_user_meta_data?.user_type && u.raw_user_meta_data.user_type !== 'null' && u.raw_user_meta_data.user_type !== '') {
-                        userType = u.raw_user_meta_data.user_type;
+                    if (!userTypes && u.raw_user_meta_data?.user_type && u.raw_user_meta_data.user_type !== 'null' && u.raw_user_meta_data.user_type !== '') {
+                        userTypes = [u.raw_user_meta_data.user_type];
                     }
-                    // Fallback: try to infer from email or other fields
-                    else {
+                    if (!userTypes || userTypes.length === 0) {
                         const email = (u.email || '').toLowerCase();
-                        if (email.includes('student') || email.includes('stud')) {
-                            userType = 'student';
-                        } else if (email.includes('instructor') || email.includes('instruct')) {
-                            userType = 'instructor';
-                        } else if (email.includes('faculty') || email.includes('staff')) {
-                            userType = 'faculty_staff';
-                        } else if (email.includes('teacher') || email.includes('teach')) {
-                            userType = 'instructor'; // Legacy support for teacher emails
-                        } else if (email.includes('guard') || email.includes('security')) {
-                            userType = 'security_guard';
-                        } else {
-                            // Default to student if has student_number, otherwise infer from role
-                            if (u.student_number) {
-                                userType = 'student';
-                            } else if (u.role === 'admin') {
-                                userType = 'admin'; // Admins should show as Admin
-                            } else if (u.role === 'super_user') {
-                                userType = 'admin'; // Super users should show as Admin
-                            } else {
-                                userType = 'student'; // Default to student for citizens/responders
-                            }
-                        }
+                        if (email.includes('student') || email.includes('stud')) userTypes = ['student'];
+                        else if (email.includes('instructor') || email.includes('instruct')) userTypes = ['instructor'];
+                        else if (email.includes('faculty') || email.includes('staff')) userTypes = ['faculty_staff'];
+                        else if (email.includes('teacher') || email.includes('teach')) userTypes = ['instructor'];
+                        else if (email.includes('guard') || email.includes('security')) userTypes = ['security_guard'];
+                        else if (u.student_number) userTypes = ['student'];
+                        else if (u.role === 'admin' || u.role === 'super_user') userTypes = ['admin'];
+                        else userTypes = ['student'];
                     }
-                    
-                    // Ensure userType is a string and handle null/undefined
-                    userType = (userType && userType !== 'null' && userType !== '') ? userType : 'student'; // Default to student instead of Unknown
-                    
-                    // Format user type for display (capitalize first letter, replace underscores with spaces)
-                    // Special handling for admin and super_user roles - always show as "Admin" or "Super User" regardless of user_type
+                    userTypes = userTypes.filter(t => t && t !== 'null' && String(t).trim() !== '');
+                    if (userTypes.length === 0) userTypes = ['student'];
+
+                    function formatTypeLabel(type) {
+                        return String(type).split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+                    }
                     let formattedUserType;
-                    if (u.role === 'admin') {
-                        formattedUserType = 'Admin';
-                    } else if (u.role === 'super_user') {
-                        formattedUserType = 'Super User';
-                    } else {
-                        formattedUserType = userType
-                            .split('_')
-                            .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-                            .join(' ');
-                    }
-                    
-                    // Store formatted user type for display in table
-                    // The username field will now show user type instead
-                    
+                    if (u.role === 'admin') formattedUserType = 'Admin';
+                    else if (u.role === 'super_user') formattedUserType = 'Super User';
+                    else formattedUserType = userTypes.map(formatTypeLabel).join(', ');
+
                     return {
                         id: u.user_id || u.id,
-                        username: formattedUserType, // Display user type in username column
-                        userType: userType, // Store raw type for form editing
+                        username: formattedUserType,
+                        userType: userTypes[0],
+                        userTypes: userTypes,
                         displayName: u.name || u.user_metadata?.full_name || u.email?.split('@')[0] || 'Unknown', // Store actual name separately
                         firstname: (u.name || '').split(' ')[0] || '',
                         lastname: (u.name || '').split(' ').slice(1).join(' ') || '',
@@ -1632,39 +1629,12 @@
             }
 
             // Fill form with user data
-            // Get userType from stored userType field (which is the raw value)
-            let userTypeValue = user.userType;
-            if (!userTypeValue && user.username && user.username !== 'Unknown') {
-                // Convert formatted display back to form value (e.g., "Student" -> "student", "Security Guard" -> "security_guard")
-                userTypeValue = user.username.toLowerCase().replace(/\s+/g, '_');
-            }
-            // Handle legacy 'teacher' value - convert to 'instructor'
-            if (userTypeValue === 'teacher') {
-                userTypeValue = 'instructor';
-            }
-            // If still no value, default to student if they have student number
-            if (!userTypeValue || userTypeValue === 'Unknown') {
-                userTypeValue = user.studentNumber ? 'student' : '';
-            }
-            
-            // Display formatted user type from database
-            // The username field now contains the formatted user type
-            let displayUserType = user.username || '';
-            if (!displayUserType && user.userType) {
-                // Format user type for display if username not available
-                if (user.role === 'admin') {
-                    displayUserType = 'Admin';
-                } else if (user.role === 'super_user') {
-                    displayUserType = 'Super User';
-                } else {
-                    displayUserType = user.userType
-                        .split('_')
-                        .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-                        .join(' ');
-                }
-            }
-            document.getElementById('displayUsername').value = displayUserType || 'N/A';
-            document.getElementById('username').value = userTypeValue; // Set user type for editing
+            const userTypesArr = user.userTypes && Array.isArray(user.userTypes) ? user.userTypes : (user.userType ? [user.userType] : ['student']);
+            document.getElementById('displayUsername').value = user.username || 'N/A';
+            // Set user type checkboxes
+            document.querySelectorAll('#userTypesCheckboxes input[name="userType"]').forEach(cb => {
+                cb.checked = userTypesArr.includes(cb.value);
+            });
             document.getElementById('firstname').value = user.firstname;
             document.getElementById('lastname').value = user.lastname;
             document.getElementById('gmail').value = user.gmail || '';
@@ -1752,11 +1722,8 @@
             passwordHint.textContent = '(Optional - will generate secure password if not provided)';
             passwordHintText.textContent = 'If left empty, a secure temporary password will be generated and sent via email';
             
-            // Clear username display field
-            const displayUsernameField = document.getElementById('displayUsername');
-            if (displayUsernameField) {
-                displayUsernameField.value = '';
-            }
+            document.getElementById('displayUsername').value = '';
+            document.querySelectorAll('#userTypesCheckboxes input[name="userType"]').forEach(cb => { cb.checked = false; });
         }
 
         // Archive user (server-side)
@@ -1797,17 +1764,14 @@
             e.preventDefault();
             
             try {
-                // Get user type from dropdown
-                let userType = document.getElementById('username').value;
-                
-                // Validate user type is selected
-                if (!userType || userType.trim() === '') {
-                    window.emergencySystem.showError('Please select a User Type');
+                const selectedTypes = Array.from(document.querySelectorAll('#userTypesCheckboxes input[name="userType"]:checked')).map(cb => cb.value);
+                if (!selectedTypes.length) {
+                    window.emergencySystem.showError('Please select at least one User Type');
                     return;
                 }
-                
                 const formData = {
-                    userType: userType,
+                    userTypes: selectedTypes,
+                    userType: selectedTypes[0],
                     password: document.getElementById('password').value,
                     firstname: document.getElementById('firstname').value,
                     lastname: document.getElementById('lastname').value,
@@ -1821,20 +1785,8 @@
 
                 const editingUserId = document.getElementById('userRegistrationForm').dataset.editUserId;
                 if (editingUserId) {
-                    // Ensure userType is provided - if empty, try to infer from student number
-                    let userTypeToUpdate = formData.userType;
-                    if (!userTypeToUpdate || userTypeToUpdate.trim() === '') {
-                        // If user type is empty, infer from student number
-                        userTypeToUpdate = formData.studentNumber ? 'student' : 'student'; // Default to student if has student number
-                    }
-                    
-                    console.log('Updating user with data:', {
-                        userId: editingUserId,
-                        userType: userTypeToUpdate,
-                        ...formData
-                    });
-                    
-                    // Update existing user via Edge Function
+                    const userTypesToUpdate = formData.userTypes.length ? formData.userTypes : (formData.studentNumber ? ['student'] : ['student']);
+                    console.log('Updating user with data:', { userId: editingUserId, userTypes: userTypesToUpdate, ...formData });
                     const { error } = await window.emergencySystem.supabase.functions.invoke('update-user', {
                         body: {
                             userId: editingUserId,
@@ -1845,7 +1797,7 @@
                             phone: formData.contactNumber,
                             studentNumber: formData.studentNumber,
                             password: formData.password || undefined,
-                            userType: userTypeToUpdate // Include user type in update (always set a value)
+                            userTypes: userTypesToUpdate
                         }
                     });
                     if (error) throw error;
@@ -1878,13 +1830,13 @@
                 const { data, error } = await window.emergencySystem.supabase.functions.invoke('create-user', {
                     body: {
                         email: formData.gmail,
-                        password: formData.password || undefined, // Pass undefined if empty to trigger auto-generation
+                        password: formData.password || undefined,
                         firstName: formData.firstname,
                         lastName: formData.lastname,
                         role: formData.role,
                         phone: formData.contactNumber,
                         studentNumber: formData.studentNumber,
-                        userType: formData.userType || 'student',
+                        userTypes: formData.userTypes,
                         leaderId: formData.leaderId || undefined,
                         teamName: formData.teamName || undefined
                     }
