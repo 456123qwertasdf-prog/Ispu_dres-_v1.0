@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
+import 'package:intl/intl.dart';
 import 'package:latlong2/latlong.dart' as latlong;
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../services/supabase_service.dart';
@@ -1363,7 +1364,7 @@ class _SuperUserMapScreenState extends State<SuperUserMapScreen> {
   }
 
   String _formatDate(DateTime date) {
-    return '${date.month}/${date.day}/${date.year} ${date.hour}:${date.minute.toString().padLeft(2, '0')}';
+    return DateFormat('MMM d, yyyy • h:mm a').format(date.toLocal());
   }
 
   String _getTypeEmoji(String type) {

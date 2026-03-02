@@ -39,6 +39,37 @@ const supabase = createClient(SUPABASE_URL, SERVICE_KEY, {
   auth: { persistSession: false },
 });
 
+/** Pipeline event actions for observability (report_created → classification_done → notify_superusers_called) */
+const PIPELINE_ACTIONS = {
+  CLASSIFICATION_STARTED: 'classification_started',
+  CLASSIFICATION_DONE: 'classification_done',
+  CLASSIFICATION_FAILED: 'classification_failed',
+  NOTIFY_SUPERUSERS_CALLED: 'notify_superusers_called',
+  NOTIFY_SUPERUSERS_FAILED: 'notify_superusers_failed',
+} as const;
+
+/**
+ * Log a report pipeline event to audit_log for metrics and alerting.
+ */
+async function logPipelineEvent(
+  client: typeof supabase,
+  reportId: string,
+  action: string,
+  details: Record<string, unknown>
+): Promise<void> {
+  try {
+    await client.from('audit_log').insert({
+      entity_type: 'report',
+      entity_id: reportId,
+      action,
+      details: { ...details, _pipeline: true },
+      created_at: new Date().toISOString(),
+    });
+  } catch (e) {
+    console.warn('Failed to log pipeline event:', action, e);
+  }
+}
+
 /**
  * Notify super users if report is critical/high priority
  */
@@ -46,6 +77,7 @@ async function notifySuperUsersIfCritical(
   reportId: string,
   severityAnalysis: any
 ): Promise<void> {
+  const t0 = Date.now();
   try {
     // False alarms are never critical - do not send "NEW CRITICAL REPORT" notification
     if (severityAnalysis.type === 'false_alarm') {
@@ -80,15 +112,30 @@ async function notifySuperUsersIfCritical(
       }
     );
 
+    const durationMs = Date.now() - t0;
+
     if (response.ok) {
       const result = await response.json();
       console.log(`✅ Super user notification sent:`, result);
+      await logPipelineEvent(supabase, reportId, PIPELINE_ACTIONS.NOTIFY_SUPERUSERS_CALLED, {
+        duration_ms: durationMs,
+        sent: result?.sent ?? 0,
+      });
     } else {
       const errorText = await response.text();
       console.warn('Failed to notify super users:', response.status, errorText);
+      await logPipelineEvent(supabase, reportId, PIPELINE_ACTIONS.NOTIFY_SUPERUSERS_FAILED, {
+        duration_ms: durationMs,
+        error: `${response.status}: ${errorText}`,
+      });
     }
   } catch (error) {
+    const durationMs = Date.now() - t0;
     console.warn('Failed to notify super users (non-critical):', error);
+    await logPipelineEvent(supabase, reportId, PIPELINE_ACTIONS.NOTIFY_SUPERUSERS_FAILED, {
+      duration_ms: durationMs,
+      error: error instanceof Error ? error.message : String(error),
+    });
     // Don't throw error as notification is not critical for classification
   }
 }
@@ -127,14 +174,26 @@ function calculateSeverityFromImage(classification: any, azureResult: any, image
       if (severityScore < 0.7) severityScore = 0.7;
       break;
       
-    case 'medical':
-      priority = 1;
-      responseTime = '3 minutes';
-      emergencyColor = '#FF6B6B';
-      emergencyIcon = '🚑';
-      // Medical emergencies are critical
-      if (severityScore < 0.8) severityScore = 0.8;
+    case 'medical': {
+      const isFirstAidScene = /first aid scene|first aid being administered/i.test(
+        classification.detailedTitle || classification.analysis || ''
+      );
+      if (isFirstAidScene) {
+        // First aid scene = already being handled; lower urgency than full medical emergency
+        priority = 3;
+        responseTime = '15 minutes';
+        emergencyColor = '#10b981';
+        emergencyIcon = '🩹';
+        severityScore = Math.min(severityScore, 0.6); // Cap at MEDIUM (no critical/HIGH super-user alert)
+      } else {
+        priority = 1;
+        responseTime = '3 minutes';
+        emergencyColor = '#FF6B6B';
+        emergencyIcon = '🚑';
+        if (severityScore < 0.8) severityScore = 0.8;
+      }
       break;
+    }
       
     case 'accident':
       priority = 2;
@@ -380,6 +439,8 @@ function generateSeverityRecommendations(type: string, severity: string, peopleC
     // Person with headphones / normal portrait - not an emergency
     /(wearing headphones|headphones|headphone|earphones|earphone)/,
     /(a (man|woman|person) wearing)/,  // e.g. "a man wearing headphones"
+    // Person posing / selfie / portrait - not fire or emergency
+    /(person posing|posing for|peace sign|hand gesture|gesture to camera|looking at camera|photo of a person|selfie|indoor portrait)/,
     // Screenshot / dark surface / cleaning object - not medical
     /(screenshot)/,
     /(darkness|black line|dark line|black and red mop|mop eau|mop\s|plastic)/,
@@ -439,16 +500,22 @@ function generateSeverityRecommendations(type: string, severity: string, peopleC
   const hasFireIndicators = /(fire|flame|burning|ablaze|smoke)/.test(allText) || 
                             hasObjectPattern(['fire', 'flame', 'smoke', 'burning']) ||
                             hasTagPattern(['fire', 'flame', 'smoke', 'burning']);
+  // Strong fire evidence (avoids false positives from stray "fire" in indoor/portrait captions)
+  const hasStrongFireIndicators = /(flame|flames|burning|ablaze|smoke|smoking|blaze)/.test(allText) ||
+    hasObjectPattern(['flame', 'smoke', 'burning']) || hasTagPattern(['flame', 'smoke', 'burning']);
   const hasElectricalIndicators = /(outlet|plug|cord|wire|socket|electrical)/.test(allText) ||
                                   hasObjectPattern(['outlet', 'plug', 'cord', 'wire', 'socket', 'electrical', 'power']) ||
                                   hasTagPattern(['outlet', 'plug', 'cord', 'wire', 'socket', 'electrical']);
   const hasBuildingIndicators = /(building|structure|multi-story|two-story|roof|wall)/.test(allText) ||
                                 hasObjectPattern(['building', 'structure', 'roof', 'wall']) ||
                                 hasTagPattern(['building', 'structure', 'roof']);
-  
-  if ((hasElectricalIndicators && hasFireIndicators) ||
-      (/(outlet|plug|cord|wire|socket|electrical).*(fire|flame|burning|ablaze|smoke)/.test(allText) ||
-      /(fire|flame|burning|ablaze|smoke).*(outlet|plug|cord|wire|socket|electrical)/.test(allText))) {
+  // Person in indoor/portrait setting without strong fire visuals → don't classify as fire (false positive)
+  const hasPersonIndoorScene = (people > 0) && /(indoor|interior|room|office|classroom|posing|person|people|man|woman|wall|desk|table|camera|photo)/.test(allText);
+
+  if (((hasElectricalIndicators && hasFireIndicators) ||
+      /(outlet|plug|cord|wire|socket|electrical).*(fire|flame|burning|ablaze|smoke)/.test(allText) ||
+      /(fire|flame|burning|ablaze|smoke).*(outlet|plug|cord|wire|socket|electrical)/.test(allText)) &&
+      !(hasPersonIndoorScene && !hasStrongFireIndicators)) {
     return {
       type: 'fire',
       confidence: 0.85,
@@ -464,9 +531,10 @@ function generateSeverityRecommendations(type: string, severity: string, peopleC
     };
   }
   
-  if ((hasBuildingIndicators && hasFireIndicators) ||
+  if (((hasBuildingIndicators && hasFireIndicators) ||
       /(building|structure|multi-story|two-story|roof).*(fire|flame|burning|ablaze|smoke)/.test(allText) ||
-      /(fire|flame|burning|ablaze|smoke).*(building|structure|multi-story|two-story|roof)/.test(allText)) {
+      /(fire|flame|burning|ablaze|smoke).*(building|structure|multi-story|two-story|roof)/.test(allText)) &&
+      !(hasPersonIndoorScene && !hasStrongFireIndicators)) {
     return {
       type: 'fire',
       confidence: 0.85,
@@ -2764,6 +2832,9 @@ Deno.serve(async (req) => {
     });
   }
 
+  let reportCreatedAt: string | null = null;
+  let tClassificationStart = 0;
+  let reportId: string | undefined;
   try {
     if (req.method !== "POST") {
       return new Response(JSON.stringify({ error: "POST only" }), { 
@@ -2776,7 +2847,7 @@ Deno.serve(async (req) => {
     }
 
     const body = await req.json().catch(() => null);
-    const reportId = body?.reportId;
+    reportId = body?.reportId;
     if (!reportId) return new Response(JSON.stringify({ error: "reportId required" }), { 
       status: 400, 
       headers: { 
@@ -2810,6 +2881,12 @@ Deno.serve(async (req) => {
         "Content-Type": "application/json",
         "Access-Control-Allow-Origin": "*"
       } 
+    });
+
+    reportCreatedAt = report.created_at ?? null;
+    tClassificationStart = Date.now();
+    await logPipelineEvent(supabase, reportId, PIPELINE_ACTIONS.CLASSIFICATION_STARTED, {
+      report_created_at: reportCreatedAt,
     });
 
     const path = report.image_path;
@@ -2933,6 +3010,13 @@ Deno.serve(async (req) => {
 
       if (updateErr) throw new Error("DB update failed: " + JSON.stringify(updateErr));
 
+      const mockDurationMs = Date.now() - tClassificationStart;
+      await logPipelineEvent(supabase, reportId, PIPELINE_ACTIONS.CLASSIFICATION_DONE, {
+        report_created_at: reportCreatedAt,
+        classification_duration_ms: mockDurationMs,
+        source: 'mock',
+      });
+
       return new Response(JSON.stringify({ 
         ok: true, 
         mapped: mockClassification,
@@ -2977,6 +3061,11 @@ Deno.serve(async (req) => {
       } else {
         console.log("❌ Advanced Azure Vision failed");
         console.log("Azure failure detail:", azureResult);
+        await logPipelineEvent(supabase, reportId, PIPELINE_ACTIONS.CLASSIFICATION_FAILED, {
+          report_created_at: reportCreatedAt,
+          error: "Azure v4 call failed",
+          azure_error: azureResult,
+        });
         // Return early with diagnostic info instead of 500 so we can see exact Azure error in the client
         return new Response(JSON.stringify({ ok: false, azure_error: azureResult, note: "Azure v4 call failed; no fallback executed because FORCE_AZURE is true" }), {
           status: 200,
@@ -2987,6 +3076,11 @@ Deno.serve(async (req) => {
     } catch (error) {
       console.warn("Advanced Azure Vision failed:", error);
       if (FORCE_AZURE) {
+        await logPipelineEvent(supabase, reportId, PIPELINE_ACTIONS.CLASSIFICATION_FAILED, {
+          report_created_at: reportCreatedAt,
+          error: String((error as any)?.message || error),
+          hint: "Azure analysis failed",
+        });
         // Return diagnostic payload instead of 500 to help frontend see root cause
         return new Response(JSON.stringify({ ok: false, error: String((error as any)?.message || error), hint: "Azure analysis failed. Check AZURE_VISION_ENDPOINT and AZURE_VISION_KEY secrets." }), {
           status: 200,
@@ -3344,6 +3438,12 @@ Deno.serve(async (req) => {
 
     if (updateErr) throw new Error("DB update failed: " + JSON.stringify(updateErr));
 
+    const classificationDurationMs = Date.now() - tClassificationStart;
+    await logPipelineEvent(supabase, reportId, PIPELINE_ACTIONS.CLASSIFICATION_DONE, {
+      report_created_at: reportCreatedAt,
+      classification_duration_ms: classificationDurationMs,
+    });
+
     // Notify super users if report is critical/high priority
     await notifySuperUsersIfCritical(reportId, severityAnalysis);
 
@@ -3362,8 +3462,15 @@ Deno.serve(async (req) => {
     });
   } catch (err) {
     console.error(err);
+    const errMessage = ((err as any) && (err as any).message) || String(err);
+    if (reportId) {
+      await logPipelineEvent(supabase, reportId, PIPELINE_ACTIONS.CLASSIFICATION_FAILED, {
+        report_created_at: reportCreatedAt ?? null,
+        error: errMessage,
+      }).catch((e) => console.warn('Failed to log classification_failed:', e));
+    }
     // Return diagnostic payload with 200 to avoid frontend failure loop
-    return new Response(JSON.stringify({ ok: false, error: ((err as any) && (err as any).message) || String(err) }), {
+    return new Response(JSON.stringify({ ok: false, error: errMessage }), {
       status: 200,
       headers: {
         "Content-Type": "application/json",

@@ -1078,6 +1078,11 @@ class _ResponderDashboardScreenState extends State<ResponderDashboardScreen> {
           title: const Text('Kapiyu Responder'),
           actions: [
             IconButton(
+              icon: const Icon(Icons.person_rounded),
+              tooltip: 'Profile',
+              onPressed: () => Navigator.pushNamed(context, '/edit-profile'),
+            ),
+            IconButton(
               icon: const Icon(Icons.refresh_rounded),
               onPressed: () => _loadPage(showLoader: true),
             ),
@@ -1128,6 +1133,14 @@ class _ResponderDashboardScreenState extends State<ResponderDashboardScreen> {
           style: TextStyle(fontWeight: FontWeight.w700),
         ),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.person_rounded),
+            tooltip: 'Profile',
+            onPressed: () async {
+              final result = await Navigator.pushNamed(context, '/edit-profile');
+              if (result == true && mounted) _loadPage(showLoader: false);
+            },
+          ),
           IconButton(
             icon: _isRefreshing
                 ? const SizedBox(
@@ -1374,7 +1387,7 @@ class _ResponderDashboardScreenState extends State<ResponderDashboardScreen> {
             }
             final createdAt = report['created_at'];
             final timeStr = createdAt != null
-                ? DateFormat('MMM d, h:mm a').format(DateTime.parse(createdAt.toString()))
+                ? DateFormat('MMM d, h:mm a').format(DateTime.parse(createdAt.toString()).toLocal())
                 : '—';
             final responderName = report['responder_name'] ?? (report['responder'] is Map ? (report['responder'] as Map)['name'] : null);
             return Card(

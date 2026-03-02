@@ -277,7 +277,7 @@
                 <div>
                     <h3 class="footer-section-title">Quick Links</h3>
                     <div class="space-y-2">
-                        <a href="user.html" class="footer-link">Report Emergency</a>
+                        <a href="#" id="footerDashboardLink" class="footer-link">Dashboard</a>
                         <a href="login.html" class="footer-link">Switch Role</a>
                     </div>
                 </div>
@@ -297,6 +297,14 @@
     <script src="js/supabase.js"></script>
     <script>
         let currentUser = null;
+
+        // Return the dashboard URL for the current user role (citizen = user.html, responder = responder.html, etc.)
+        function getBackUrl() {
+            const role = (currentUser && currentUser.user_metadata && currentUser.user_metadata.role) ? currentUser.user_metadata.role : 'citizen';
+            if (role === 'responder') return 'responder.html';
+            if (role === 'admin' || role === 'super_user') return 'super-user.html';
+            return 'user.html';
+        }
 
         // Initialize page
         document.addEventListener('DOMContentLoaded', async () => {
@@ -318,8 +326,17 @@
                 return;
             }
 
+            currentUser = emergencySystem.user;
+
             // Load user profile data
             await loadUserProfile();
+
+            // Set footer dashboard link by role
+            const footerLink = document.getElementById('footerDashboardLink');
+            if (footerLink) {
+                footerLink.href = getBackUrl();
+                footerLink.textContent = currentUser.user_metadata?.role === 'responder' ? 'Responder Dashboard' : (currentUser.user_metadata?.role === 'admin' || currentUser.user_metadata?.role === 'super_user' ? 'Admin Dashboard' : 'Report Emergency');
+            }
 
             // Set up form submission
             document.getElementById('profileForm').addEventListener('submit', async (e) => {
@@ -481,9 +498,10 @@
                 submitText.classList.remove('hidden');
                 submitLoading.classList.add('hidden');
 
-                // Redirect after a short delay
+                // Redirect after a short delay (to correct dashboard by role)
+                const backUrl = getBackUrl();
                 setTimeout(() => {
-                    window.location.href = 'user.html';
+                    window.location.href = backUrl;
                 }, 1500);
 
             } catch (error) {
@@ -512,9 +530,9 @@
             }, 5000);
         }
 
-        // Go back to user page
+        // Go back to dashboard (user, responder, or super-user by role)
         function goBack() {
-            window.location.href = 'user.html';
+            window.location.href = getBackUrl();
         }
     </script>
 </body>

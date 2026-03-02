@@ -40,6 +40,9 @@
                 <a href="reports.html" class="nav-item">
                     <i class="bi bi-file-text"></i> Reports
                 </a>
+                <a href="synopsis-notice.html" class="nav-item">
+                    <i class="bi bi-chat-quote"></i> Synopsis & Notice
+                </a>
                 <a href="announcements.html" class="nav-item">
                     <i class="bi bi-megaphone"></i> Announcements
                 </a>
@@ -52,11 +55,11 @@
                 <a href="evacuation-guide.html" class="nav-item">
                     <i class="bi bi-shield-check"></i> Evacuation Guide
                 </a>
-                <a href="archive.html" class="nav-item">
-                    <i class="bi bi-folder"></i> Archived
+                <a href="archive.html" class="nav-item" style="font-weight: 700;">
+                    <i class="bi bi-folder"></i> Archived Reports
                 </a>
-                <a href="analytics.html" class="nav-item active">
-                    <i class="bi bi-graph-up"></i> Analytics
+                <a href="analytics.html" class="nav-item active" style="font-weight: 700;">
+                    <i class="bi bi-graph-up"></i> Analytics Dashboard
                 </a>
                 <a href="user-management.html" class="nav-item">
                     <i class="bi bi-people"></i> User Management
@@ -511,11 +514,11 @@
                     
                     <div class="analytics-card analytics-card-warning">
                         <div class="analytics-card-icon">
-                            <i class="bi bi-people"></i>
+                            <i class="bi bi-people-fill"></i>
                         </div>
                         <div class="analytics-card-content">
                             <div class="analytics-card-number" id="activeResponders">0</div>
-                            <div class="analytics-card-label">Active Responders</div>
+                            <div class="analytics-card-label">Total Users</div>
                             <div class="analytics-card-trend" id="responderTrend">Loading...</div>
                         </div>
                     </div>
@@ -755,15 +758,17 @@
             try {
                 showLoadingState();
                 
-                // Load reports and responders data
-                const [reports, responders] = await Promise.all([
+                // Load reports, responders, and users data
+                const [reports, responders, usersResult] = await Promise.all([
                     window.emergencySystem.getReports(),
-                    window.emergencySystem.getResponders()
+                    window.emergencySystem.getResponders(),
+                    window.emergencySystem.getUsers().catch(() => [])
                 ]);
                 
                 analyticsData = {
                     reports: reports || [],
-                    responders: responders || []
+                    responders: responders || [],
+                    users: usersResult || []
                 };
                 
                 // Update overview cards
@@ -799,9 +804,9 @@
             document.getElementById('avgResponseTime').textContent = avgResponseTime || '--';
             document.getElementById('responseTrend').textContent = prevAvg ? 'vs prev: ' + prevAvg : 'Response time tracking';
             
-            const activeResponders = responders.filter(r => r.is_available).length;
-            document.getElementById('activeResponders').textContent = activeResponders;
-            document.getElementById('responderTrend').textContent = activeResponders + ' available';
+            const totalUsers = (analyticsData.users || []).length;
+            document.getElementById('activeResponders').textContent = totalUsers;
+            document.getElementById('responderTrend').textContent = totalUsers + ' registered';
             
             const resolvedCases = reports.filter(r => r.status === 'completed').length;
             const prevResolved = previous.filter(r => r.status === 'completed').length;
@@ -1417,19 +1422,19 @@
             setCell('sumChangeCritical', change(critF, critP, true), critF !== critP ? (critF <= critP ? 'change-up' : 'change-down') : 'change-neutral');
         }
 
-        // Calculate monthly trends
+        // Calculate monthly trends (last 12 calendar months; same buckets as getLast12Months)
         function calculateMonthlyTrends(reports) {
             const monthlyData = new Array(12).fill(0);
             const now = new Date();
-            
-            reports.forEach(report => {
-                const reportDate = new Date(report.created_at);
-                const monthDiff = (now.getMonth() - reportDate.getMonth() + 12) % 12;
-                if (monthDiff < 12) {
-                    monthlyData[11 - monthDiff]++;
-                }
-            });
-            
+            for (let i = 11; i >= 0; i--) {
+                const monthStart = new Date(now.getFullYear(), now.getMonth() - i, 1);
+                const monthEnd = new Date(monthStart.getFullYear(), monthStart.getMonth() + 1, 1);
+                const count = (reports || []).filter(r => {
+                    const t = new Date(r.created_at);
+                    return t >= monthStart && t < monthEnd;
+                }).length;
+                monthlyData[11 - i] = count;
+            }
             return monthlyData;
         }
 

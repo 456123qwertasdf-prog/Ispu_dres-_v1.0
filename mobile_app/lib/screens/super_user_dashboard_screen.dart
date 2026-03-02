@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'dart:convert';
+import 'package:intl/intl.dart';
 import 'package:http/http.dart' as http;
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../services/supabase_service.dart';
@@ -471,11 +472,13 @@ class _SuperUserDashboardScreenState extends State<SuperUserDashboardScreen> {
   String _formatDateTime(String? dateTimeStr) {
     if (dateTimeStr == null) return 'Unknown';
     try {
-      final dateTime = DateTime.parse(dateTimeStr);
+      final dateTime = DateTime.parse(dateTimeStr).toLocal();
       final now = DateTime.now();
       final difference = now.difference(dateTime);
 
-      if (difference.inDays > 0) {
+      if (difference.inDays > 7) {
+        return DateFormat('MMM d, yyyy • h:mm a').format(dateTime);
+      } else if (difference.inDays > 0) {
         return '${difference.inDays} day${difference.inDays > 1 ? 's' : ''} ago';
       } else if (difference.inHours > 0) {
         return '${difference.inHours} hour${difference.inHours > 1 ? 's' : ''} ago';

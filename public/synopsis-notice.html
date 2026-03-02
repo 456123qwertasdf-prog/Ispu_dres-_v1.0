@@ -1,0 +1,590 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Synopsis & Safety Notice - LSPU Emergency Response System</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/system-status.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <script src="https://cdn.jsdelivr.net/npm/supabase@2"></script>
+    <script src="js/supabase.js"></script>
+    <style>
+        /* ── Page layout ── */
+        .sn-main {
+            width: 100%;
+            padding: 2rem 1.5rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+            box-sizing: border-box;
+        }
+
+        /* ── Page header card ── */
+        .sn-header-card {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1),
+                        0 2px 4px -1px rgba(0,0,0,0.06),
+                        0 0 0 1px rgba(0,0,0,0.05);
+            border: 1px solid rgba(226,232,240,0.8);
+            overflow: hidden;
+        }
+
+        .sn-header-card-inner {
+            background: linear-gradient(135deg, #f8fafc 0%, #ffffff 100%);
+            padding: 1.5rem 1.75rem;
+            border-bottom: 1px solid rgba(226,232,240,0.8);
+            position: relative;
+        }
+
+        .sn-header-card-inner::after {
+            content: '';
+            position: absolute;
+            bottom: 0; left: 0; right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, rgba(59,130,246,0.3), transparent);
+        }
+
+        .sn-header-card h1 {
+            margin: 0 0 0.4rem 0;
+            font-size: 1.75rem;
+            font-weight: 800;
+            color: #1e293b;
+            letter-spacing: -0.02em;
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+        }
+
+        .sn-header-card h1 i {
+            font-size: 1.6rem;
+            color: #3b82f6;
+        }
+
+        .sn-header-card p {
+            margin: 0;
+            color: #64748b;
+            font-size: 0.9375rem;
+            font-weight: 400;
+            line-height: 1.5;
+        }
+
+        /* ── Panels ── */
+        .sn-panel {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06);
+            border: 1px solid rgba(0,0,0,0.05);
+            overflow: hidden;
+        }
+
+        .sn-panel-header {
+            background: linear-gradient(135deg, #0f172a 0%, #1e3a8a 100%);
+            padding: 1.4rem 1.5rem;
+            border-bottom: 2px solid #fbbf24;
+            color: white;
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .sn-panel-header-left {
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+        }
+
+        .sn-panel-title {
+            display: flex;
+            align-items: center;
+            gap: 0.625rem;
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: white;
+            margin: 0;
+        }
+
+        .sn-panel-title i {
+            font-size: 1.25rem;
+            color: #fbbf24;
+        }
+
+        .sn-panel-subtitle {
+            margin: 0;
+            font-size: 0.8125rem;
+            color: rgba(255,255,255,0.72);
+            font-weight: 400;
+        }
+
+        .sn-toggle-btn {
+            background: rgba(255,255,255,0.14);
+            border: 1px solid rgba(255,255,255,0.3);
+            border-radius: 8px;
+            color: white;
+            width: 34px;
+            height: 34px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: background 0.2s;
+            flex-shrink: 0;
+            margin-left: 0.75rem;
+        }
+
+        .sn-toggle-btn:hover {
+            background: rgba(255,255,255,0.25);
+        }
+
+        .sn-toggle-btn i {
+            transition: transform 0.3s ease;
+        }
+
+        .sn-panel-body {
+            transition: max-height 0.35s ease, opacity 0.3s ease, padding 0.3s ease;
+            overflow: hidden;
+            max-height: 1000px;
+            opacity: 1;
+        }
+
+        .sn-panel-body.collapsed {
+            max-height: 0 !important;
+            opacity: 0;
+            padding-top: 0 !important;
+            padding-bottom: 0 !important;
+        }
+
+        /* ── Synopsis body ── */
+        .synopsis-body {
+            padding: 1.5rem;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.25rem;
+        }
+
+        .synopsis-card {
+            border-left: 4px solid;
+            padding: 1rem 1.25rem;
+            border-radius: 10px;
+        }
+
+        .synopsis-card.citizen {
+            background: linear-gradient(135deg, #eff6ff 0%, #f0f9ff 100%);
+            border-color: #3b82f6;
+        }
+
+        .synopsis-card.responder {
+            background: linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 100%);
+            border-color: #059669;
+        }
+
+        .synopsis-card-label {
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            font-size: 0.875rem;
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+
+        .synopsis-card.citizen .synopsis-card-label { color: #1e40af; }
+        .synopsis-card.responder .synopsis-card-label { color: #047857; }
+
+        .synopsis-card p {
+            margin: 0;
+            color: #374151;
+            font-size: 0.9rem;
+            line-height: 1.6;
+        }
+
+        /* ── Notice body ── */
+        .notice-body {
+            padding: 1.5rem;
+        }
+
+        .notice-toggle-row {
+            display: flex;
+            align-items: center;
+            gap: 0.625rem;
+            margin-bottom: 1rem;
+        }
+
+        .notice-toggle-row input[type="checkbox"] {
+            width: 17px;
+            height: 17px;
+            cursor: pointer;
+            accent-color: #1e3a8a;
+        }
+
+        .notice-toggle-label {
+            font-weight: 500;
+            color: #374151;
+            font-size: 0.9rem;
+            cursor: pointer;
+        }
+
+        .notice-textarea {
+            width: 100%;
+            box-sizing: border-box;
+            padding: 0.75rem;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            resize: vertical;
+            font-family: inherit;
+            color: #374151;
+            transition: border-color 0.2s;
+        }
+
+        .notice-textarea:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59,130,246,0.1);
+        }
+
+        .notice-actions {
+            margin-top: 0.875rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            flex-wrap: wrap;
+        }
+
+        .btn-save-notice {
+            background: linear-gradient(135deg, #1e3a8a, #3b82f6);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 0.65rem 1.25rem;
+            font-size: 0.875rem;
+            font-weight: 600;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            transition: all 0.2s;
+        }
+
+        .btn-save-notice:hover {
+            background: linear-gradient(135deg, #1e40af, #1e3a8a);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 10px rgba(30,58,138,0.3);
+        }
+
+        .btn-save-notice:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .notice-status {
+            font-size: 0.875rem;
+            color: #6b7280;
+        }
+
+        /* ── Logout Modal (shared) ── */
+        .logout-modal {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            z-index: 10000; display: flex; align-items: center; justify-content: center;
+            animation: fadeIn 0.2s ease;
+        }
+        .logout-modal.hidden { display: none; }
+        .logout-modal-overlay {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.6); backdrop-filter: blur(4px);
+        }
+        .logout-modal-content {
+            position: relative; background: white; border-radius: 16px;
+            padding: 2rem; max-width: 420px; width: 90%;
+            box-shadow: 0 20px 25px -5px rgba(0,0,0,0.3); animation: slideUp 0.3s ease;
+            text-align: center;
+        }
+        .logout-modal-icon {
+            width: 64px; height: 64px; margin: 0 auto 1.5rem;
+            background: linear-gradient(135deg,#fef2f2,#fee2e2); border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            border: 3px solid #fca5a5;
+        }
+        .logout-modal-icon i { font-size: 2rem; color: #ef4444; }
+        .logout-modal-title { font-size: 1.5rem; font-weight: 700; color: #111827; margin: 0 0 0.75rem; }
+        .logout-modal-message { font-size: 0.9375rem; color: #6b7280; line-height: 1.6; margin: 0 0 1.75rem; }
+        .logout-modal-buttons { display: flex; gap: 0.75rem; justify-content: center; }
+        .logout-modal-btn {
+            padding: 0.75rem 1.5rem; border-radius: 8px; font-size: 0.875rem;
+            font-weight: 600; cursor: pointer; transition: all 0.2s; border: 2px solid transparent;
+            display: flex; align-items: center; gap: 0.5rem;
+        }
+        .logout-modal-btn.cancel { background: #f3f4f6; color: #374151; border-color: #e5e7eb; }
+        .logout-modal-btn.cancel:hover { background: #e5e7eb; }
+        .logout-modal-btn.confirm { background: linear-gradient(135deg,#ef4444,#dc2626); color: white; border-color: #ef4444; }
+        .logout-modal-btn.confirm:hover { background: linear-gradient(135deg,#dc2626,#b91c1c); }
+        @keyframes fadeIn { from { opacity:0; } to { opacity:1; } }
+        @keyframes slideUp {
+            from { opacity:0; transform: translateY(20px) scale(0.95); }
+            to   { opacity:1; transform: translateY(0) scale(1); }
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard-container">
+        <!-- Sidebar -->
+        <div class="sidebar" style="display: flex; flex-direction: column;">
+            <div class="sidebar-header">
+                <div class="sidebar-logo">
+                    <img src="images/logolspu.jpg" alt="LSPU Logo"
+                         style="width: 50px; height: 50px; object-fit: contain; border-radius: 50%; border: 2px solid white; display: block;">
+                    <div class="logo-text">
+                        <h3>KaPiyu</h3>
+                        <p>Admin Dashboard</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="system-status">
+                <div class="status-indicator">
+                    <span class="status-dot online"></span>
+                    <span>System Status: Online</span>
+                </div>
+            </div>
+
+            <nav class="sidebar-nav">
+                <a href="admin.html" class="nav-item">
+                    <i class="bi bi-house"></i> Dashboard
+                </a>
+                <a href="reports.html" class="nav-item">
+                    <i class="bi bi-file-text"></i> Reports
+                </a>
+                <a href="synopsis-notice.html" class="nav-item active">
+                    <i class="bi bi-chat-quote"></i> Synopsis & Notice
+                </a>
+                <a href="announcements.html" class="nav-item">
+                    <i class="bi bi-megaphone"></i> Announcements
+                </a>
+                <a href="early-warning-dashboard.html" class="nav-item">
+                    <i class="bi bi-shield-exclamation"></i> Early Warning
+                </a>
+                <a href="map.html" class="nav-item">
+                    <i class="bi bi-map"></i> Map View
+                </a>
+                <a href="evacuation-guide.html" class="nav-item">
+                    <i class="bi bi-shield-check"></i> Evacuation Guide
+                </a>
+                <a href="archive.html" class="nav-item" style="font-weight: 700;">
+                    <i class="bi bi-folder"></i> Archived Reports
+                </a>
+                <a href="analytics.html" class="nav-item" style="font-weight: 700;">
+                    <i class="bi bi-graph-up"></i> Analytics Dashboard
+                </a>
+                <a href="user-management.html" class="nav-item">
+                    <i class="bi bi-people"></i> User Management
+                </a>
+                <a href="lsm-admin.html" class="nav-item">
+                    <i class="bi bi-journal-bookmark"></i> Learning Modules
+                </a>
+            </nav>
+
+            <div class="sidebar-footer" style="margin-top: auto; padding: 1rem; border-top: 1px solid rgba(255,255,255,0.1);">
+                <div class="user-info-card" style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1rem; padding: 0.75rem; background: rgba(255,255,255,0.1); border-radius: 8px;">
+                    <div style="width:40px;height:40px;background:rgba(255,255,255,0.2);border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:600;font-size:1.125rem;color:white;">A</div>
+                    <div>
+                        <h4 style="margin:0;font-size:0.875rem;font-weight:600;color:white;" id="sidebarUserName">Admin User</h4>
+                        <p style="margin:0;font-size:0.75rem;color:rgba(255,255,255,0.7);">LSPU Emergency</p>
+                    </div>
+                </div>
+                <button onclick="showLogoutConfirm()" style="width:100%;padding:0.75rem 1rem;background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);color:#fca5a5;border-radius:8px;font-size:0.875rem;font-weight:500;cursor:pointer;display:flex;align-items:center;gap:0.5rem;">
+                    <i class="bi bi-box-arrow-right"></i> Logout
+                </button>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <div class="sn-main">
+
+                <!-- Page Header -->
+                <div class="sn-header-card">
+                    <div class="sn-header-card-inner">
+                        <h1><i class="bi bi-chat-quote"></i> Synopsis & Safety Notice</h1>
+                        <p>Manage report synopsis messages and the citizen-facing safety notice</p>
+                    </div>
+                </div>
+
+                <!-- Report Synopsis Panel -->
+                <div class="sn-panel" id="synopsisPanel">
+                    <div class="sn-panel-header" onclick="toggleSnPanel('synopsisPanel')">
+                        <div class="sn-panel-header-left">
+                            <div class="sn-panel-title">
+                                <i class="bi bi-chat-quote"></i>
+                                Report Synopsis
+                            </div>
+                            <p class="sn-panel-subtitle">Role-based messages generated from reports in the last 30 days</p>
+                        </div>
+                        <button class="sn-toggle-btn" id="synopsisPanelBtn" title="Minimize / Expand">
+                            <i class="bi bi-chevron-up"></i>
+                        </button>
+                    </div>
+                    <div class="sn-panel-body synopsis-body" id="synopsisPanelBody">
+                        <div class="synopsis-card citizen">
+                            <div class="synopsis-card-label">
+                                <i class="bi bi-people"></i> For Citizens
+                            </div>
+                            <p id="snCitizenMsg">Loading...</p>
+                        </div>
+                        <div class="synopsis-card responder">
+                            <div class="synopsis-card-label">
+                                <i class="bi bi-shield-check"></i> For Responders / Super Users
+                            </div>
+                            <p id="snResponderMsg">Loading...</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Safety Notice Panel -->
+                <div class="sn-panel" id="safetyNoticePanel">
+                    <div class="sn-panel-header" onclick="toggleSnPanel('safetyNoticePanel')">
+                        <div class="sn-panel-header-left">
+                            <div class="sn-panel-title">
+                                <i class="bi bi-info-circle"></i>
+                                Safety Notice (Citizen)
+                            </div>
+                            <p class="sn-panel-subtitle">Shown on the citizen home screen. Disable to hide it for all users.</p>
+                        </div>
+                        <button class="sn-toggle-btn" id="safetyNoticePanelBtn" title="Minimize / Expand">
+                            <i class="bi bi-chevron-up"></i>
+                        </button>
+                    </div>
+                    <div class="sn-panel-body notice-body" id="safetyNoticePanelBody">
+                        <div class="notice-toggle-row">
+                            <input type="checkbox" id="snNoticeEnabled" checked>
+                            <label class="notice-toggle-label" for="snNoticeEnabled">Show safety notice to citizens</label>
+                        </div>
+                        <textarea id="snNoticeMessage" class="notice-textarea" rows="4"
+                            placeholder="Leave empty to use an auto-generated message from recent reports."></textarea>
+                        <div class="notice-actions">
+                            <button class="btn-save-notice" id="snSaveBtn" onclick="saveNotice()">
+                                <i class="bi bi-floppy"></i> Save Safety Notice
+                            </button>
+                            <span class="notice-status" id="snSaveStatus"></span>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- Logout Confirmation Modal -->
+    <div class="logout-modal hidden" id="logoutModal">
+        <div class="logout-modal-overlay" onclick="hideLogoutConfirm()"></div>
+        <div class="logout-modal-content">
+            <div class="logout-modal-icon"><i class="bi bi-box-arrow-right"></i></div>
+            <h3 class="logout-modal-title">Confirm Logout</h3>
+            <p class="logout-modal-message">Are you sure you want to log out of the admin dashboard?</p>
+            <div class="logout-modal-buttons">
+                <button class="logout-modal-btn cancel" onclick="hideLogoutConfirm()">
+                    <i class="bi bi-x-circle"></i> Cancel
+                </button>
+                <button class="logout-modal-btn confirm" onclick="confirmLogout()">
+                    <i class="bi bi-box-arrow-right"></i> Logout
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ── Panel collapse / expand ──
+        function toggleSnPanel(id) {
+            const body = document.getElementById(id + 'Body');
+            const btn  = document.getElementById(id + 'Btn');
+            if (!body) return;
+            const collapsed = body.classList.toggle('collapsed');
+            if (btn) btn.querySelector('i').style.transform = collapsed ? 'rotate(180deg)' : 'rotate(0deg)';
+            localStorage.setItem('sn_' + id, collapsed ? 'collapsed' : 'open');
+        }
+
+        function restorePanels() {
+            ['synopsisPanel', 'safetyNoticePanel'].forEach(id => {
+                if (localStorage.getItem('sn_' + id) === 'collapsed') {
+                    const body = document.getElementById(id + 'Body');
+                    const btn  = document.getElementById(id + 'Btn');
+                    if (body) body.classList.add('collapsed');
+                    if (btn) btn.querySelector('i').style.transform = 'rotate(180deg)';
+                }
+            });
+        }
+
+        // ── Save safety notice ──
+        async function saveNotice() {
+            const btn     = document.getElementById('snSaveBtn');
+            const status  = document.getElementById('snSaveStatus');
+            const message = (document.getElementById('snNoticeMessage').value || '').trim();
+            const enabled = document.getElementById('snNoticeEnabled').checked;
+            btn.disabled = true;
+            status.textContent = 'Saving…';
+            try {
+                await window.emergencySystem.updateSafetyNotice({ message: message || null, enabled });
+                status.style.color = '#059669';
+                status.textContent = '✓ Saved successfully.';
+                setTimeout(() => { status.textContent = ''; }, 3000);
+            } catch (e) {
+                status.style.color = '#ef4444';
+                status.textContent = 'Error: ' + (e?.message || e);
+            } finally {
+                btn.disabled = false;
+            }
+        }
+
+        // ── Logout ──
+        function showLogoutConfirm() { document.getElementById('logoutModal').classList.remove('hidden'); }
+        function hideLogoutConfirm() { document.getElementById('logoutModal').classList.add('hidden'); }
+        async function confirmLogout() {
+            try { await window.emergencySystem.supabase.auth.signOut(); } catch (_) {}
+            window.location.href = 'login.html';
+        }
+
+        // ── Init ──
+        document.addEventListener('DOMContentLoaded', async () => {
+            restorePanels();
+            try {
+                await window.emergencySystem.initialize();
+
+                const user = window.emergencySystem.user;
+                const role = user?.user_metadata?.role;
+                if (!user || (role !== 'admin' && role !== 'super_user')) {
+                    window.location.href = 'login.html';
+                    return;
+                }
+
+                const name = user.user_metadata?.full_name || user.email?.split('@')[0] || 'Admin';
+                const nameEl = document.getElementById('sidebarUserName');
+                if (nameEl) nameEl.textContent = name;
+
+                // Load synopsis from recent reports
+                try {
+                    const reports = await window.emergencySystem.getReports();
+                    const synopsis = window.emergencySystem.getSynopsisForRole(reports || [], 'admin');
+                    document.getElementById('snCitizenMsg').textContent   = synopsis.citizenMessage   || 'Stay alert and report real emergencies.';
+                    document.getElementById('snResponderMsg').textContent = synopsis.responderMessage || 'Keep equipment inspected and stay ready.';
+                } catch (_) {
+                    document.getElementById('snCitizenMsg').textContent   = 'Stay alert and report real emergencies.';
+                    document.getElementById('snResponderMsg').textContent = 'Keep equipment inspected and stay ready.';
+                }
+
+                // Load saved safety notice
+                try {
+                    const notice = await window.emergencySystem.getSafetyNotice();
+                    document.getElementById('snNoticeEnabled').checked = notice ? notice.enabled !== false : true;
+                    document.getElementById('snNoticeMessage').value   = notice?.message || '';
+                } catch (_) {}
+
+            } catch (err) {
+                console.error('Failed to initialize synopsis-notice page:', err);
+            }
+        });
+    </script>
+</body>
+</html>

@@ -58,10 +58,13 @@
                 <button onclick="showSection('map')" class="nav-item" id="nav-map">
                     <i class="bi bi-map"></i> Map View
                 </button>
+                <button type="button" onclick="window.location.href='edit-profile.html'" class="nav-item" id="nav-profile" style="width: 100%; text-align: left; border: none; background: none; cursor: pointer; font: inherit; color: inherit;">
+                    <i class="bi bi-person-gear"></i> Profile
+                </button>
             </nav>
             
             <div class="sidebar-footer">
-                <div class="user-info-card">
+                <div class="user-info-card" onclick="window.location.href='edit-profile.html'" role="button" tabindex="0" style="cursor: pointer;" title="Edit profile">
                     <div class="user-avatar" id="userAvatar">R</div>
                     <div class="user-details">
                         <h4 id="userName">Demo Responder</h4>
@@ -788,7 +791,7 @@
                     <div class="emergency-details">
                         <h4 class="emergency-title">${report.type || 'Emergency'}</h4>
                         <p class="emergency-location">${formatLocation(report.location)}</p>
-                        <p class="emergency-time">Assigned: ${new Date(report.assigned_at).toLocaleString()}</p>
+                        <p class="emergency-time">Assigned: ${formatReportDateTime(report.assigned_at)}</p>
                         <p class="emergency-assignee">
                             <strong>Assigned to:</strong> ${report.responder_name || 'Unknown'} (${report.responder_role || 'Responder'})
                         </p>
@@ -826,7 +829,7 @@
                             <div class="emergency-details">
                                 <h4 class="emergency-title">${(report.type || 'Emergency').toUpperCase()}</h4>
                                 <p class="emergency-location">${formatLocation(report.location)}</p>
-                                <p class="emergency-time">Reported: ${new Date(report.created_at).toLocaleString()}</p>
+                                <p class="emergency-time">Reported: ${formatReportDateTime(report.created_at)}</p>
                                 <span class="badge badge-${report.status || 'pending'}">${(report.status || 'pending').toUpperCase()}</span>
                                 ${responderName ? `<p class="emergency-assignee"><strong>Assigned to:</strong> ${responderName}</p>` : '<p class="text-muted">Unassigned</p>'}
                                 ${report.reporter_name ? `<p class="emergency-reporter"><strong>Reporter:</strong> ${report.reporter_name}</p>` : ''}
@@ -909,18 +912,18 @@
                         </div>
                 <div class="form-group">
                     <label class="form-label">Assignment Date</label>
-                    <div class="form-control">${new Date(report.assigned_at).toLocaleString()}</div>
+                    <div class="form-control">${formatReportDateTime(report.assigned_at)}</div>
                 </div>
                 ${report.accepted_at ? `
                 <div class="form-group">
                     <label class="form-label">Accepted At</label>
-                    <div class="form-control">${new Date(report.accepted_at).toLocaleString()}</div>
+                    <div class="form-control">${formatReportDateTime(report.accepted_at)}</div>
                 </div>
                 ` : ''}
                 ${report.completed_at ? `
                 <div class="form-group">
                     <label class="form-label">Completed At</label>
-                    <div class="form-control">${new Date(report.completed_at).toLocaleString()}</div>
+                    <div class="form-control">${formatReportDateTime(report.completed_at)}</div>
                 </div>
                 ` : ''}
                 ${report.reporter_name ? `
@@ -1284,7 +1287,7 @@
                         </div>
                         <div style="margin-bottom: 10px;">
                             <p><strong>📍 Location:</strong> ${formatLocation(report.location)}</p>
-                            <p><strong>⏰ Assigned:</strong> ${new Date(report.assigned_at).toLocaleString()}</p>
+                            <p><strong>⏰ Assigned:</strong> ${formatReportDateTime(report.assigned_at)}</p>
                             <p><strong>👤 Assigned to:</strong> ${report.responder_name || 'Unknown'}</p>
                             ${report.reporter_name ? `<p><strong>📞 Reporter:</strong> ${report.reporter_name}</p>` : ''}
                         </div>
@@ -1929,7 +1932,7 @@
                             <strong>📍 Location:</strong> ${formatLocation(report.location)}
                         </div>
                         <div style="margin-bottom: 15px;">
-                            <strong>⏰ Time:</strong> ${new Date(report.created_at).toLocaleString()}
+                            <strong>⏰ Time:</strong> ${formatReportDateTime(report.created_at)}
                         </div>
                         <div style="margin-bottom: 15px;">
                             <strong>📝 Description:</strong> ${report.message || 'No description provided'}
@@ -2879,7 +2882,7 @@
                     <div class="emergency-details">
                         <h4 class="emergency-title">${report.type || 'Emergency'}</h4>
                         <p class="emergency-location">${formatLocation(report.location)}</p>
-                        <p class="emergency-time">Assigned: ${new Date(report.assigned_at).toLocaleString()}</p>
+                        <p class="emergency-time">Assigned: ${formatReportDateTime(report.assigned_at)}</p>
                         <p class="emergency-assignee">
                             <strong>To:</strong> ${report.responder_name || 'Unknown'}
                         </p>
@@ -2913,7 +2916,7 @@
                     <div class="emergency-details">
                         <h4 class="emergency-title">${report.type || 'Emergency'}</h4>
                         <p class="emergency-location">${formatLocation(report.location)}</p>
-                        <p class="emergency-time">Completed: ${report.completed_at ? new Date(report.completed_at).toLocaleString() : 'Unknown'}</p>
+                        <p class="emergency-time">Completed: ${report.completed_at ? formatReportDateTime(report.completed_at) : 'Unknown'}</p>
                         <p class="emergency-assignee">
                             <strong>Completed by:</strong> ${report.responder_name || 'Unknown'}
                         </p>
@@ -3548,7 +3551,7 @@
                                 <div class="emergency-info">
                                     <p><strong>📊 Status:</strong> <span class="badge badge-${report.status}" style="background: #3b82f6; color: white; padding: 2px 8px; border-radius: 3px; font-size: 12px;">${report.status.toUpperCase()}</span></p>
                                     <p><strong>📍 Location:</strong> ${formatLocation(report.location)}</p>
-                                    <p><strong>⏰ Time:</strong> ${new Date(report.created_at).toLocaleString()}</p>
+                                    <p><strong>⏰ Time:</strong> ${formatReportDateTime(report.created_at)}</p>
                                     <p><strong>📝 Description:</strong> ${report.message || 'No description provided'}</p>
                                     ${report.image_path ? `<p><strong>📷 Photo:</strong> <img src="${report.image_path}" alt="Emergency Photo" style="max-width: 80px; max-height: 60px; width: auto; height: auto; border-radius: 4px; cursor: pointer; margin-left: 5px; object-fit: cover;" onclick="openImageModal('${report.image_path}')"></p>` : ''}
                                     ${report.reporter_name ? `<p><strong>👤 Reporter:</strong> ${report.reporter_name}</p>` : ''}
@@ -4118,28 +4121,6 @@
             return icons[type.toLowerCase()] || '⚠️';
         }
 
-        function formatTimeAgo(dateString) {
-            if (!dateString) return '';
-            
-            try {
-                const date = new Date(dateString);
-                const now = new Date();
-                const diffMs = now - date;
-                const diffMins = Math.floor(diffMs / 60000);
-                const diffHours = Math.floor(diffMs / 3600000);
-                const diffDays = Math.floor(diffMs / 86400000);
-                
-                if (diffMins < 1) return 'Just now';
-                if (diffMins < 60) return `${diffMins} ${diffMins === 1 ? 'minute' : 'minutes'} ago`;
-                if (diffHours < 24) return `${diffHours} ${diffHours === 1 ? 'hour' : 'hours'} ago`;
-                if (diffDays < 7) return `${diffDays} ${diffDays === 1 ? 'day' : 'days'} ago`;
-                
-                return date.toLocaleDateString();
-            } catch (error) {
-                return '';
-            }
-        }
-
         function getEmergencyColor(type) {
             if (!type || typeof type !== 'string') {
                 return '#ef4444'; // Default red
@@ -4203,29 +4184,35 @@
             return location || 'Unknown Location';
         }
 
-        // Format time ago for completed assignments
+        function formatReportDateTime(dateString) {
+            if (dateString == null || dateString === '') return '—';
+            const d = new Date(dateString);
+            if (isNaN(d.getTime())) return '—';
+            return d.toLocaleString('en-PH', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit', hour12: true });
+        }
+
+        // Format time ago for completed assignments (single implementation)
         function formatTimeAgo(dateString) {
-            if (!dateString) return '';
-            
-            const now = new Date();
+            if (dateString == null || dateString === '') return '';
             const date = new Date(dateString);
+            if (isNaN(date.getTime())) return '';
+            const now = new Date();
             const diffInSeconds = Math.floor((now - date) / 1000);
-            
-            if (diffInSeconds < 60) {
-                return 'Just now';
-            } else if (diffInSeconds < 3600) {
+            if (diffInSeconds < 60) return 'Just now';
+            if (diffInSeconds < 3600) {
                 const minutes = Math.floor(diffInSeconds / 60);
                 return `${minutes} minute${minutes > 1 ? 's' : ''} ago`;
-            } else if (diffInSeconds < 86400) {
+            }
+            if (diffInSeconds < 86400) {
                 const hours = Math.floor(diffInSeconds / 3600);
                 return `${hours} hour${hours > 1 ? 's' : ''} ago`;
-            } else if (diffInSeconds < 2592000) {
+            }
+            if (diffInSeconds < 2592000) {
                 const days = Math.floor(diffInSeconds / 86400);
                 return `${days} day${days > 1 ? 's' : ''} ago`;
-            } else {
-                const months = Math.floor(diffInSeconds / 2592000);
-                return `${months} month${months > 1 ? 's' : ''} ago`;
             }
+            // Older: show localized date
+            return date.toLocaleString('en-PH', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit', hour12: true });
         }
 
         // Logout function

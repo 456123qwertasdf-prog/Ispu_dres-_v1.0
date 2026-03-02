@@ -1,0 +1,611 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Readiness & Safety Notice - LSPU Emergency Response System</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/su-header-shared.css">
+    <link rel="stylesheet" href="css/system-status.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <script src="https://cdn.jsdelivr.net/npm/supabase@2"></script>
+    <script src="js/supabase.js"></script>
+    <style>
+        /* ── Super-User Sidebar Theme ── */
+        .sidebar { background: linear-gradient(180deg, #0f172a 0%, #064e3b 100%) !important; }
+        .nav-item.active { background: rgba(16,185,129,0.2) !important; color: #34d399 !important; border-left: 3px solid #10b981 !important; border-top:none !important; border-right:none !important; border-bottom:none !important; font-weight:600; }
+        .nav-item:hover { background: rgba(16,185,129,0.1) !important; color: #a7f3d0 !important; border-left-color: rgba(16,185,129,0.4) !important; }
+        .status-dot.online { background: #10b981 !important; box-shadow: 0 0 0 3px rgba(16,185,129,0.25) !important; }
+        .user-avatar { background: rgba(16,185,129,0.25) !important; color: #34d399 !important; }
+        .sidebar-header { border-bottom: 1px solid rgba(16,185,129,0.15) !important; }
+        .system-status { padding:10px 20px; border-bottom:1px solid rgba(16,185,129,0.15); }
+        .su-role-badge { display:inline-flex; align-items:center; gap:4px; font-size:0.65rem; font-weight:700; letter-spacing:0.08em; text-transform:uppercase; background:rgba(16,185,129,0.2); color:#34d399; border:1px solid rgba(16,185,129,0.4); border-radius:9999px; padding:2px 8px; margin-top:4px; }
+        .su-logout-btn { width:100%; padding:0.75rem 1rem; background:rgba(239,68,68,0.1); border:1px solid rgba(239,68,68,0.3); color:#fca5a5; border-radius:8px; font-size:0.875rem; font-weight:500; cursor:pointer; transition:all 0.2s; display:flex; align-items:center; gap:0.5rem; }
+        .su-logout-btn:hover { background:#EF4444 !important; border-color:#EF4444 !important; color:white !important; }
+
+        /* ── Page Layout ── */
+        .rsn-header { background:linear-gradient(135deg,#0f172a 0%,#064e3b 100%); border-radius:20px; padding:1.75rem 2rem; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:1rem; box-shadow:0 8px 32px rgba(0,0,0,0.18); position:relative; overflow:hidden; }
+        .rsn-header::before { content:''; position:absolute; top:-40px; right:-40px; width:160px; height:160px; background:rgba(16,185,129,0.1); border-radius:50%; }
+        .rsn-header::after  { content:''; position:absolute; bottom:-30px; right:80px; width:100px; height:100px; background:rgba(16,185,129,0.06); border-radius:50%; }
+        .rsn-header h1 { margin:0; font-size:1.6rem; font-weight:800; color:white; display:flex; align-items:center; gap:0.7rem; letter-spacing:-0.02em; position:relative; z-index:1; }
+        .rsn-header h1 i { color:#34d399; }
+        .rsn-header p  { margin:0.3rem 0 0; font-size:0.875rem; color:rgba(255,255,255,0.7); position:relative; z-index:1; }
+        .rsn-header { background:linear-gradient(135deg,#0f172a 0%,#064e3b 100%); border-radius:20px; padding:1.75rem 2rem; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:1rem; box-shadow:0 8px 32px rgba(0,0,0,0.18); position:relative; overflow:hidden; }
+        .rsn-header::before { content:''; position:absolute; top:-40px; right:-40px; width:160px; height:160px; background:rgba(16,185,129,0.1); border-radius:50%; }
+        .rsn-header::after  { content:''; position:absolute; bottom:-30px; right:80px; width:100px; height:100px; background:rgba(16,185,129,0.06); border-radius:50%; }
+        .rsn-header h1 { margin:0; font-size:1.6rem; font-weight:800; color:white; display:flex; align-items:center; gap:0.7rem; letter-spacing:-0.02em; position:relative; z-index:1; }
+        .rsn-header h1 i { color:#34d399; }
+        .rsn-header p  { margin:0.3rem 0 0; font-size:0.875rem; color:rgba(255,255,255,0.7); position:relative; z-index:1; }
+        .rsn-main { padding:1.75rem; background:#f1f5f9; min-height:100vh; display:flex; flex-direction:column; gap:1.25rem; }
+
+        /* ── Page Header ── */
+        .rsn-su-badge  { background:rgba(16,185,129,0.18); border:1px solid rgba(16,185,129,0.4); color:#34d399; border-radius:9999px; padding:0.3rem 0.9rem; font-size:0.72rem; font-weight:700; letter-spacing:0.06em; text-transform:uppercase; display:inline-flex; align-items:center; gap:0.35rem; position:relative; z-index:1; }
+
+        /* ── Stats Row ── */
+        .rsn-stats { display:grid; grid-template-columns:repeat(4,1fr); gap:1rem; }
+        @media(max-width:800px){ .rsn-stats { grid-template-columns:1fr 1fr; } }
+        .rsn-stat { background:white; border-radius:14px; padding:1rem 1.25rem; box-shadow:0 1px 6px rgba(0,0,0,0.06); border:1px solid rgba(0,0,0,0.04); display:flex; align-items:center; gap:0.9rem; }
+        .rsn-stat-icon { width:44px; height:44px; border-radius:12px; display:flex; align-items:center; justify-content:center; font-size:1.2rem; flex-shrink:0; }
+        .rsn-stat-label { font-size:0.7rem; font-weight:700; text-transform:uppercase; letter-spacing:0.06em; color:#9ca3af; }
+        .rsn-stat-value { font-size:1.2rem; font-weight:800; color:#0f172a; margin-top:1px; }
+
+        /* ── Main Grid — equal height like announcements page ── */
+        .rsn-grid { display:grid; grid-template-columns:1fr 1fr; gap:1.25rem; align-items:stretch; }
+        @media(max-width:900px){ .rsn-grid { grid-template-columns:1fr; } }
+        /* Left col inner panels stacked — checklist grows to fill */
+        .rsn-left-col { display:flex; flex-direction:column; gap:1.25rem; }
+        .rsn-left-col .rsn-panel:last-child { flex:1; }
+
+        /* ── Panel ── */
+        .rsn-panel { background:white; border-radius:16px; box-shadow:0 2px 12px rgba(0,0,0,0.06); border:1px solid rgba(0,0,0,0.04); overflow:hidden; display:flex; flex-direction:column; }
+        .rsn-panel-header { padding:1rem 1.5rem; border-bottom:1px solid #f1f5f9; display:flex; align-items:center; justify-content:space-between; gap:0.6rem; flex-wrap:wrap; flex-shrink:0; }
+        .rsn-panel-title { font-size:0.95rem; font-weight:700; color:#0f172a; display:flex; align-items:center; gap:0.5rem; }
+        .rsn-panel-title i { color:#10b981; }
+        .rsn-panel-body { padding:1.5rem; flex:1; overflow-y:auto; }
+        .rsn-panel-body::-webkit-scrollbar { width:5px; }
+        .rsn-panel-body::-webkit-scrollbar-track { background:#f1f5f9; border-radius:9999px; }
+        .rsn-panel-body::-webkit-scrollbar-thumb { background:#a7f3d0; border-radius:9999px; }
+
+        /* ── Buttons ── */
+        .rsn-btn { border-radius:10px; padding:0.5rem 1.1rem; border:none; font-size:0.83rem; font-weight:700; cursor:pointer; display:inline-flex; align-items:center; gap:0.4rem; transition:filter 0.15s,transform 0.15s; }
+        .rsn-btn:hover { filter:brightness(1.08); transform:translateY(-1px); }
+        .rsn-btn-green { background:linear-gradient(135deg,#10b981,#059669); color:white; box-shadow:0 2px 8px rgba(16,185,129,0.3); }
+        .rsn-btn-gray  { background:#f3f4f6; color:#374151; border:1.5px solid #e5e7eb; }
+        .rsn-btn-blue  { background:linear-gradient(135deg,#3b82f6,#2563eb); color:white; box-shadow:0 2px 8px rgba(59,130,246,0.3); }
+        .rsn-btn-sm    { padding:0.3rem 0.75rem; font-size:0.75rem; }
+
+        /* ── Readiness readout ── */
+        .rsn-readout { font-size:0.9rem; color:#374151; line-height:1.75; padding:1rem 1.25rem; background:#f0fdf4; border-radius:12px; border:1.5px solid #bbf7d0; margin-bottom:1rem; min-height:80px; }
+        .rsn-readout-empty { color:#9ca3af; font-style:italic; }
+
+        /* Checklist */
+        .rsn-checklist { display:flex; flex-direction:column; gap:0.5rem; }
+        .rsn-check-item { display:flex; align-items:center; gap:0.6rem; padding:0.55rem 0.75rem; border-radius:9px; border:1.5px solid #e5e7eb; cursor:pointer; font-size:0.82rem; color:#374151; transition:all 0.15s; user-select:none; }
+        .rsn-check-item:hover { border-color:#a7f3d0; background:#f0fdf4; }
+        .rsn-check-item.checked { border-color:#10b981; background:#f0fdf4; color:#065f46; font-weight:600; }
+        .rsn-check-item i { font-size:1rem; color:#10b981; }
+        .rsn-check-item .ci-box { width:18px; height:18px; border-radius:5px; border:2px solid #d1d5db; display:flex; align-items:center; justify-content:center; flex-shrink:0; transition:all 0.15s; }
+        .rsn-check-item.checked .ci-box { background:#10b981; border-color:#10b981; }
+        .rsn-check-item.checked .ci-box::after { content:'✓'; color:white; font-size:0.65rem; font-weight:900; }
+        .rsn-checklist-progress { height:5px; background:#e5e7eb; border-radius:9999px; margin-bottom:0.75rem; overflow:hidden; }
+        .rsn-checklist-bar { height:100%; background:linear-gradient(90deg,#10b981,#059669); border-radius:9999px; transition:width 0.4s ease; }
+        .rsn-checklist-label { font-size:0.72rem; font-weight:700; color:#6b7280; text-transform:uppercase; letter-spacing:0.06em; margin-bottom:0.5rem; display:flex; justify-content:space-between; }
+
+        /* ── Toggle Switch ── */
+        .rsn-toggle-wrap { display:flex; align-items:center; gap:0.75rem; margin-bottom:1rem; }
+        .rsn-toggle { position:relative; width:44px; height:24px; flex-shrink:0; }
+        .rsn-toggle input { opacity:0; width:0; height:0; }
+        .rsn-slider { position:absolute; inset:0; background:#d1d5db; border-radius:9999px; cursor:pointer; transition:background 0.2s; }
+        .rsn-slider::before { content:''; position:absolute; height:18px; width:18px; left:3px; bottom:3px; background:white; border-radius:50%; transition:transform 0.2s; box-shadow:0 1px 4px rgba(0,0,0,0.2); }
+        .rsn-toggle input:checked + .rsn-slider { background:linear-gradient(135deg,#10b981,#059669); }
+        .rsn-toggle input:checked + .rsn-slider::before { transform:translateX(20px); }
+        .rsn-toggle-label { font-size:0.875rem; font-weight:600; color:#374151; }
+        .rsn-toggle-sub { font-size:0.72rem; color:#9ca3af; }
+
+        /* ── Textarea + char counter ── */
+        .rsn-textarea-wrap { position:relative; }
+        .rsn-textarea { width:100%; padding:0.75rem 0.9rem; border:1.5px solid #e5e7eb; border-radius:10px; font-size:0.875rem; resize:vertical; box-sizing:border-box; font-family:inherit; line-height:1.6; min-height:110px; transition:border-color 0.2s,box-shadow 0.2s; outline:none; background:#fafafa; color:#111827; }
+        .rsn-textarea:focus { border-color:#10b981; box-shadow:0 0 0 3px rgba(16,185,129,0.12); background:white; }
+        .rsn-char-count { font-size:0.7rem; color:#9ca3af; text-align:right; margin-top:0.3rem; }
+        .rsn-char-count.warn { color:#f59e0b; font-weight:600; }
+        .rsn-char-count.over { color:#ef4444; font-weight:700; }
+
+        /* ── Quick message templates ── */
+        .rsn-tpl-label { font-size:0.7rem; font-weight:800; text-transform:uppercase; letter-spacing:0.07em; color:#6b7280; margin-bottom:0.45rem; display:flex; align-items:center; gap:0.35rem; }
+        .rsn-tpl-chips { display:flex; flex-wrap:wrap; gap:0.4rem; margin-bottom:1rem; }
+        .rsn-tpl-chip { padding:0.25rem 0.7rem; border-radius:9999px; font-size:0.73rem; font-weight:700; cursor:pointer; border:1.5px solid #d1d5db; color:#374151; background:white; transition:all 0.15s; }
+        .rsn-tpl-chip:hover { border-color:#10b981; color:#065f46; background:#f0fdf4; }
+
+        /* ── Citizen Preview ── */
+        .rsn-preview { border:1.5px dashed #a7f3d0; border-radius:12px; background:#f0fdf4; padding:1rem 1.25rem; margin-top:1rem; }
+        .rsn-preview-label { font-size:0.68rem; font-weight:800; text-transform:uppercase; letter-spacing:0.07em; color:#10b981; margin-bottom:0.5rem; display:flex; align-items:center; gap:0.35rem; }
+        .rsn-preview-msg { font-size:0.82rem; color:#374151; line-height:1.6; white-space:pre-wrap; }
+        .rsn-preview-off { font-size:0.82rem; color:#9ca3af; font-style:italic; }
+
+        /* ── Last saved ── */
+        .rsn-saved-ts { font-size:0.72rem; color:#9ca3af; display:flex; align-items:center; gap:0.3rem; }
+        .rsn-saved-ts i { color:#10b981; }
+
+        /* ── Logout Modal ── */
+        .logout-modal { position:fixed; inset:0; z-index:9999; display:flex; align-items:center; justify-content:center; }
+        .logout-modal.hidden { display:none; }
+        .logout-modal-overlay { position:absolute; inset:0; background:rgba(0,0,0,0.55); backdrop-filter:blur(4px); }
+        .logout-modal-content { position:relative; background:linear-gradient(135deg,#0f172a,#064e3b); border:1px solid rgba(52,211,153,0.25); border-radius:18px; padding:2rem; width:90%; max-width:360px; text-align:center; box-shadow:0 24px 60px rgba(0,0,0,0.35); animation:rsnSlide 0.25s ease; }
+        @keyframes rsnSlide { from{opacity:0;transform:translateY(16px) scale(0.97)} to{opacity:1;transform:translateY(0) scale(1)} }
+        .logout-modal-icon { font-size:2rem; color:#f87171; margin-bottom:0.75rem; background:rgba(239,68,68,0.15); width:56px; height:56px; display:flex; align-items:center; justify-content:center; border-radius:50%; margin:0 auto 1rem; border:2px solid rgba(239,68,68,0.35); }
+        .logout-modal-title { margin:0 0 0.5rem; font-size:1.2rem; font-weight:800; color:white; }
+        .logout-modal-message { margin:0 0 1.5rem; color:rgba(255,255,255,0.65); font-size:0.875rem; }
+        .logout-modal-buttons { display:flex; gap:0.75rem; justify-content:center; }
+        .logout-modal-btn { padding:0.6rem 1.4rem; border-radius:10px; font-size:0.875rem; font-weight:700; cursor:pointer; border:none; display:flex; align-items:center; gap:0.4rem; transition:all 0.2s; }
+        .logout-modal-btn.cancel  { background:rgba(255,255,255,0.1); color:rgba(255,255,255,0.85); border:1.5px solid rgba(255,255,255,0.15); }
+        .logout-modal-btn.cancel:hover  { background:rgba(255,255,255,0.18); }
+        .logout-modal-btn.confirm { background:linear-gradient(135deg,#ef4444,#dc2626); color:white; }
+        .logout-modal-btn.confirm:hover { filter:brightness(1.1); }
+
+        @keyframes spin { to{transform:rotate(360deg)} }
+    </style>
+</head>
+<body>
+<div class="dashboard-container">
+
+    <!-- Sidebar -->
+    <div class="sidebar" style="display:flex;flex-direction:column;">
+        <div class="sidebar-header">
+            <div class="sidebar-logo">
+                <img src="images/logolspu.jpg" alt="LSPU Logo"
+                     style="width:50px;height:50px;object-fit:contain;border-radius:50%;border:2px solid rgba(52,211,153,0.6);display:block;">
+                <div class="logo-text">
+                    <h3 style="margin:0;font-size:15px;font-weight:700;color:white;">Super User</h3>
+                    <p style="margin:2px 0 0 0;font-size:11px;color:rgba(255,255,255,0.6);">Emergency Response</p>
+                    <span class="su-role-badge"><i class="bi bi-shield-star-fill"></i> Super User</span>
+                </div>
+            </div>
+        </div>
+        <div class="system-status">
+            <div class="status-indicator">
+                <span class="status-dot online"></span>
+                <span style="font-size:0.8rem;color:rgba(255,255,255,0.75);">System Status: Online</span>
+            </div>
+        </div>
+        <nav class="sidebar-nav">
+            <a href="super-user.html" class="nav-item"><i class="bi bi-house"></i> Dashboard</a>
+            <a href="super-user-reports.html" class="nav-item"><i class="bi bi-clipboard-data"></i> Recent Reports</a>
+            <a href="super-user-early-warning.html" class="nav-item"><i class="bi bi-shield-exclamation"></i> Early Warning</a>
+            <a href="super-user-map.html" class="nav-item"><i class="bi bi-map"></i> Map View</a>
+            <a href="super-user-announcements.html" class="nav-item"><i class="bi bi-megaphone-fill"></i> Announcements</a>
+            <a href="readiness-safety-notice.html" class="nav-item active"><i class="bi bi-shield-check"></i> Readiness &amp; Safety</a>
+            <a href="super-user-sos-alerts.html" class="nav-item"><i class="bi bi-exclamation-octagon-fill"></i> SOS Alerts</a>
+        </nav>
+        <div class="sidebar-footer">
+            <div class="user-info-card">
+                <div class="user-avatar">S</div>
+                <div class="user-details">
+                    <h4 id="suUserName" style="margin:0;font-size:0.875rem;font-weight:600;color:white;">Super User</h4>
+                    <p style="margin:0;font-size:0.75rem;color:rgba(255,255,255,0.55);">LSPU Command</p>
+                </div>
+            </div>
+            <button class="su-logout-btn" onclick="showLogoutConfirm()">
+                <i class="bi bi-box-arrow-right"></i> Logout
+            </button>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <div class="rsn-main">
+
+            <!-- Page Header -->
+            <div class="su-page-header">
+                <div>
+                    <h1><i class="bi bi-shield-check"></i> Readiness &amp; Safety Notice</h1>
+                    <p>Manage campus readiness information and the citizen-facing safety notice</p>
+                </div>
+                <div class="su-header-right">
+                    <span class="su-badge"><i class="bi bi-shield-star-fill"></i> Super User</span>
+                    <div class="su-header-time">
+                        <div class="time-label">Logged in as</div>
+                        <div class="time-value" id="userEmail">Super User</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Stats Row -->
+            <div class="rsn-stats">
+                <div class="rsn-stat">
+                    <div class="rsn-stat-icon" style="background:#d1fae5;">
+                        <i class="bi bi-shield-fill-check" style="color:#059669;"></i>
+                    </div>
+                    <div>
+                        <div class="rsn-stat-label">Readiness</div>
+                        <div class="rsn-stat-value" id="statReadiness">—</div>
+                    </div>
+                </div>
+                <div class="rsn-stat">
+                    <div class="rsn-stat-icon" style="background:#dbeafe;">
+                        <i class="bi bi-megaphone-fill" style="color:#2563eb;"></i>
+                    </div>
+                    <div>
+                        <div class="rsn-stat-label">Citizen Notice</div>
+                        <div class="rsn-stat-value" id="statNotice">—</div>
+                    </div>
+                </div>
+                <div class="rsn-stat">
+                    <div class="rsn-stat-icon" style="background:#fef3c7;">
+                        <i class="bi bi-check2-all" style="color:#d97706;"></i>
+                    </div>
+                    <div>
+                        <div class="rsn-stat-label">Checklist</div>
+                        <div class="rsn-stat-value" id="statChecklist">0 / 6</div>
+                    </div>
+                </div>
+                <div class="rsn-stat">
+                    <div class="rsn-stat-icon" style="background:#f3e8ff;">
+                        <i class="bi bi-clock-history" style="color:#7c3aed;"></i>
+                    </div>
+                    <div>
+                        <div class="rsn-stat-label">Last Updated</div>
+                        <div class="rsn-stat-value" id="statLastSaved" style="font-size:0.82rem;">Never</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Main Grid -->
+            <div class="rsn-grid">
+
+                <!-- LEFT: Readiness Notice + Checklist -->
+                <div class="rsn-left-col">
+
+                    <!-- Readiness Notice Panel -->
+                    <div class="rsn-panel">
+                        <div class="rsn-panel-header">
+                            <div class="rsn-panel-title">
+                                <i class="bi bi-shield-fill-check"></i> Readiness Notice
+                            </div>
+                            <button class="rsn-btn rsn-btn-gray rsn-btn-sm" onclick="refreshReadiness()">
+                                <i class="bi bi-arrow-clockwise"></i> Refresh
+                            </button>
+                        </div>
+                        <div class="rsn-panel-body">
+                            <p style="font-size:0.72rem;color:#9ca3af;margin:0 0 0.75rem;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;">
+                                <i class="bi bi-robot" style="color:#10b981;"></i> Auto-generated · Shown to responders &amp; super users
+                            </p>
+                            <div class="rsn-readout" id="readinessSynopsis">
+                                <span class="rsn-readout-empty"><i class="bi bi-hourglass-split" style="animation:spin 1.2s linear infinite;margin-right:0.35rem;"></i>Loading readiness information…</span>
+                            </div>
+                            <div style="display:flex;gap:0.5rem;flex-wrap:wrap;">
+                                <span id="rsnStatusBadge" style="font-size:0.7rem;padding:0.2rem 0.65rem;border-radius:9999px;font-weight:800;background:#d1fae5;color:#065f46;">● READY</span>
+                                <span style="font-size:0.7rem;padding:0.2rem 0.65rem;border-radius:9999px;background:#eff6ff;color:#2563eb;font-weight:700;">
+                                    <i class="bi bi-people-fill"></i> Responders &amp; Super Users
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Readiness Checklist Panel -->
+                    <div class="rsn-panel">
+                        <div class="rsn-panel-header">
+                            <div class="rsn-panel-title">
+                                <i class="bi bi-list-check"></i> Readiness Checklist
+                            </div>
+                            <button class="rsn-btn rsn-btn-gray rsn-btn-sm" onclick="resetChecklist()">
+                                <i class="bi bi-arrow-counterclockwise"></i> Reset
+                            </button>
+                        </div>
+                        <div class="rsn-panel-body">
+                            <div class="rsn-checklist-label">
+                                <span>Progress</span>
+                                <span id="checklistCount">0 / 6 items</span>
+                            </div>
+                            <div class="rsn-checklist-progress">
+                                <div class="rsn-checklist-bar" id="checklistBar" style="width:0%"></div>
+                            </div>
+                            <div class="rsn-checklist" id="checklistContainer">
+                                <!-- Items rendered by JS -->
+                            </div>
+                        </div>
+                    </div>
+
+                </div><!-- end rsn-left-col -->
+
+                <!-- RIGHT: Safety Notice Editor -->
+                <div class="rsn-panel">
+                    <div class="rsn-panel-header">
+                        <div class="rsn-panel-title">
+                            <i class="bi bi-person-fill-exclamation"></i> Safety Notice (Citizen)
+                        </div>
+                        <div class="rsn-saved-ts" id="savedTimestamp">
+                            <i class="bi bi-clock"></i> Not yet saved
+                        </div>
+                    </div>
+                    <div class="rsn-panel-body">
+                        <p style="font-size:0.72rem;color:#9ca3af;margin:0 0 1rem;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;">
+                            <i class="bi bi-eye" style="color:#10b981;"></i> Shown on citizen home page
+                        </p>
+
+                        <!-- Toggle Switch -->
+                        <div class="rsn-toggle-wrap">
+                            <label class="rsn-toggle">
+                                <input type="checkbox" id="safetyNoticeEnabled" checked onchange="updatePreview()">
+                                <span class="rsn-slider"></span>
+                            </label>
+                            <div>
+                                <div class="rsn-toggle-label">Show safety notice to citizens</div>
+                                <div class="rsn-toggle-sub">When off, the notice is hidden for all users</div>
+                            </div>
+                        </div>
+
+                        <!-- Quick Templates -->
+                        <div class="rsn-tpl-label"><i class="bi bi-lightning-charge-fill" style="color:#10b981;"></i> Quick Messages</div>
+                        <div class="rsn-tpl-chips">
+                            <button class="rsn-tpl-chip" onclick="applyNoticeTemplate('general')">🛡️ General Safety</button>
+                            <button class="rsn-tpl-chip" onclick="applyNoticeTemplate('weather')">⛅ Weather</button>
+                            <button class="rsn-tpl-chip" onclick="applyNoticeTemplate('heat')">🌡️ Heat Index</button>
+                            <button class="rsn-tpl-chip" onclick="applyNoticeTemplate('flood')">🌊 Flood</button>
+                            <button class="rsn-tpl-chip" onclick="applyNoticeTemplate('earthquake')">🌍 Earthquake</button>
+                            <button class="rsn-tpl-chip" onclick="applyNoticeTemplate('fire')">🔥 Fire</button>
+                            <button class="rsn-tpl-chip" onclick="applyNoticeTemplate('typhoon')">🌪️ Typhoon</button>
+                            <button class="rsn-tpl-chip" onclick="applyNoticeTemplate('clear')">✅ All Clear</button>
+                        </div>
+
+                        <!-- Textarea -->
+                        <div class="form-group" style="margin-bottom:0.25rem;">
+                            <label style="display:block;font-size:0.72rem;font-weight:800;text-transform:uppercase;letter-spacing:0.05em;color:#374151;margin-bottom:0.4rem;">
+                                <i class="bi bi-chat-text-fill" style="color:#10b981;"></i> Message
+                            </label>
+                            <div class="rsn-textarea-wrap">
+                                <textarea id="safetyNoticeMessage" class="rsn-textarea" rows="5"
+                                    placeholder="Leave empty to use the auto-generated message from recent reports…"
+                                    oninput="updateCharCount();updatePreview()" maxlength="600"></textarea>
+                            </div>
+                            <div class="rsn-char-count" id="charCount">0 / 600</div>
+                        </div>
+
+                        <!-- Citizen Preview -->
+                        <div class="rsn-preview">
+                            <div class="rsn-preview-label"><i class="bi bi-phone-fill"></i> Citizen Preview</div>
+                            <div id="citizenPreview" class="rsn-preview-msg">—</div>
+                        </div>
+
+                        <!-- Save Actions -->
+                        <div style="display:flex;align-items:center;gap:0.75rem;margin-top:1.1rem;flex-wrap:wrap;">
+                            <button class="rsn-btn rsn-btn-green" id="saveNoticeBtn" onclick="saveSafetyNotice()">
+                                <i class="bi bi-floppy-fill"></i> Save Safety Notice
+                            </button>
+                            <button class="rsn-btn rsn-btn-gray" onclick="clearNotice()">
+                                <i class="bi bi-x-circle"></i> Clear
+                            </button>
+                            <span id="saveStatus" style="font-size:0.82rem;color:#6b7280;"></span>
+                        </div>
+                    </div>
+                </div><!-- end right col -->
+
+            </div><!-- end rsn-grid -->
+        </div><!-- end rsn-main -->
+    </div><!-- end main-content -->
+</div><!-- end dashboard-container -->
+
+<!-- Logout Modal -->
+<div class="logout-modal hidden" id="logoutModal">
+    <div class="logout-modal-overlay" onclick="hideLogoutConfirm()"></div>
+    <div class="logout-modal-content">
+        <div class="logout-modal-icon"><i class="bi bi-box-arrow-right"></i></div>
+        <h3 class="logout-modal-title">Confirm Logout</h3>
+        <p class="logout-modal-message">Are you sure you want to log out of the system?</p>
+        <div class="logout-modal-buttons">
+            <button class="logout-modal-btn cancel" onclick="hideLogoutConfirm()">
+                <i class="bi bi-x-circle"></i> Cancel
+            </button>
+            <button class="logout-modal-btn confirm" onclick="confirmLogout()">
+                <i class="bi bi-box-arrow-right"></i> Logout
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+    // ── Logout ──
+    function showLogoutConfirm() { document.getElementById('logoutModal').classList.remove('hidden'); }
+    function hideLogoutConfirm() { document.getElementById('logoutModal').classList.add('hidden'); }
+    async function confirmLogout() {
+        try { await window.emergencySystem.supabase.auth.signOut(); } catch (_) {}
+        window.location.href = 'login.html';
+    }
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') hideLogoutConfirm(); });
+
+    // ── Checklist ──
+    const CHECKLIST_ITEMS = [
+        { id:'c1', icon:'bi-heart-pulse-fill',  label:'First aid kits & AED availability checked' },
+        { id:'c2', icon:'bi-fire',              label:'Fire equipment & extinguishers inspected' },
+        { id:'c3', icon:'bi-signpost-split',    label:'Evacuation routes & muster points reviewed' },
+        { id:'c4', icon:'bi-telephone-fill',    label:'Communication channels tested' },
+        { id:'c5', icon:'bi-box-seam-fill',     label:'Emergency response kits prepared' },
+        { id:'c6', icon:'bi-people-fill',       label:'Responders briefed & on standby' },
+    ];
+    let checkedItems = new Set(JSON.parse(localStorage.getItem('rsn_checklist') || '[]'));
+
+    function renderChecklist() {
+        const container = document.getElementById('checklistContainer');
+        container.innerHTML = CHECKLIST_ITEMS.map(item => `
+            <div class="rsn-check-item ${checkedItems.has(item.id) ? 'checked' : ''}"
+                 onclick="toggleCheck('${item.id}')">
+                <div class="ci-box"></div>
+                <i class="bi ${item.icon}" style="color:#10b981;font-size:0.95rem;flex-shrink:0;"></i>
+                <span>${item.label}</span>
+            </div>
+        `).join('');
+        updateChecklistProgress();
+    }
+
+    function toggleCheck(id) {
+        checkedItems.has(id) ? checkedItems.delete(id) : checkedItems.add(id);
+        localStorage.setItem('rsn_checklist', JSON.stringify([...checkedItems]));
+        renderChecklist();
+    }
+
+    function resetChecklist() {
+        checkedItems.clear();
+        localStorage.removeItem('rsn_checklist');
+        renderChecklist();
+    }
+
+    function updateChecklistProgress() {
+        const total = CHECKLIST_ITEMS.length;
+        const done  = checkedItems.size;
+        const pct   = Math.round((done / total) * 100);
+        document.getElementById('checklistBar').style.width   = pct + '%';
+        document.getElementById('checklistCount').textContent = `${done} / ${total} items`;
+        document.getElementById('statChecklist').textContent  = `${done} / ${total}`;
+    }
+
+    // ── Notice Templates ──
+    const NOTICE_TEMPLATES = {
+        general:    '🛡️ Stay safe, LSPU Community! Always be alert and follow emergency protocols. In case of emergency, proceed to the nearest evacuation area and contact LSPU DRES immediately.',
+        weather:    '⛅ Weather Advisory: Inclement weather conditions are expected. Avoid unnecessary travel. Stay indoors and away from flooded areas. Monitor official PAGASA updates.',
+        heat:       '🌡️ Heat Index Alert: High heat index levels have been recorded in our area. Stay hydrated, avoid direct sunlight from 10AM–3PM, and wear light clothing. Seek shade or air-conditioned areas.',
+        flood:      '🌊 Flood Warning: Rising water levels have been reported in low-lying areas. Avoid flooded roads and waterways. Move to higher ground and follow evacuation instructions from authorities.',
+        earthquake: '🌍 Earthquake Reminder: If shaking occurs — DROP, COVER, and HOLD ON. After shaking stops, evacuate calmly and proceed to open evacuation areas. Stay away from damaged structures.',
+        fire:       '🔥 Fire Safety Alert: In case of fire — sound the alarm, evacuate immediately, and call 911/BFP. Do NOT use elevators. Stay low if there is smoke. Go to the designated muster point.',
+        typhoon:    '🌪️ Typhoon Alert: A typhoon signal has been raised in our area. Stay indoors, secure windows and doors, avoid floodwaters, and keep emergency supplies ready. Follow all official advisories.',
+        clear:      '✅ All Clear: The emergency situation has been resolved. You may now resume normal activities. Thank you for your cooperation and stay safe, LSPU Community!',
+    };
+
+    function applyNoticeTemplate(key) {
+        const msg = NOTICE_TEMPLATES[key];
+        if (!msg) return;
+        document.getElementById('safetyNoticeMessage').value = msg;
+        updateCharCount();
+        updatePreview();
+    }
+
+    // ── Char count ──
+    function updateCharCount() {
+        const ta  = document.getElementById('safetyNoticeMessage');
+        const len = ta.value.length;
+        const el  = document.getElementById('charCount');
+        el.textContent = `${len} / 600`;
+        el.className = 'rsn-char-count' + (len > 550 ? ' over' : len > 450 ? ' warn' : '');
+    }
+
+    // ── Preview ──
+    function updatePreview() {
+        const enabled = document.getElementById('safetyNoticeEnabled').checked;
+        const msg     = document.getElementById('safetyNoticeMessage').value.trim();
+        const preview = document.getElementById('citizenPreview');
+        if (!enabled) {
+            preview.className = 'rsn-preview-off';
+            preview.textContent = 'Notice is currently hidden from citizens.';
+        } else if (msg) {
+            preview.className = 'rsn-preview-msg';
+            preview.textContent = msg;
+        } else {
+            preview.className = 'rsn-preview-off';
+            preview.textContent = 'Auto-generated message will appear here based on recent reports.';
+        }
+    }
+
+    function clearNotice() {
+        document.getElementById('safetyNoticeMessage').value = '';
+        updateCharCount();
+        updatePreview();
+    }
+
+    // ── Stats ──
+    function updateStats() {
+        const enabled = document.getElementById('safetyNoticeEnabled').checked;
+        document.getElementById('statNotice').textContent = enabled ? 'Visible' : 'Hidden';
+        document.getElementById('statNotice').style.color = enabled ? '#059669' : '#9ca3af';
+    }
+
+    // ── Refresh readiness ──
+    async function refreshReadiness() {
+        const el = document.getElementById('readinessSynopsis');
+        el.innerHTML = '<span class="rsn-readout-empty"><i class="bi bi-hourglass-split" style="animation:spin 1.2s linear infinite;margin-right:0.35rem;"></i>Refreshing…</span>';
+        try {
+            const reports  = await window.emergencySystem.getReports();
+            const synopsis = window.emergencySystem.getSynopsisForRole(reports || [], 'super_user');
+            const txt = synopsis.responderMessage
+                || 'Prepare and be ready: Check first aid kits and AED availability. Be ready for medical calls. Inspect fire equipment and evacuation routes. Prepare extinguishers and muster points. Review general response kits and communication channels.';
+            el.textContent = txt;
+            document.getElementById('statReadiness').textContent = 'Ready';
+            document.getElementById('statReadiness').style.color = '#059669';
+        } catch {
+            el.textContent = 'Prepare and be ready: Check first aid kits and AED availability. Be ready for medical calls. Inspect fire equipment and evacuation routes. Prepare extinguishers and muster points.';
+            document.getElementById('statReadiness').textContent = 'Ready';
+        }
+    }
+
+    // ── Save ──
+    async function saveSafetyNotice() {
+        const btn     = document.getElementById('saveNoticeBtn');
+        const statusEl = document.getElementById('saveStatus');
+        const message = (document.getElementById('safetyNoticeMessage').value || '').trim();
+        const enabled = document.getElementById('safetyNoticeEnabled').checked;
+
+        btn.disabled = true;
+        btn.innerHTML = '<i class="bi bi-hourglass-split" style="animation:spin 1s linear infinite;"></i> Saving…';
+        statusEl.textContent = '';
+
+        try {
+            await window.emergencySystem.updateSafetyNotice({ message: message || null, enabled });
+            const now = new Date().toLocaleString('en-PH',{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'});
+            document.getElementById('savedTimestamp').innerHTML = `<i class="bi bi-check-circle-fill" style="color:#10b981;"></i> Saved ${now}`;
+            document.getElementById('statLastSaved').textContent = now;
+            document.getElementById('statNotice').textContent = enabled ? 'Visible' : 'Hidden';
+            statusEl.style.color = '#059669';
+            statusEl.innerHTML = '<i class="bi bi-check2"></i> Saved successfully!';
+            setTimeout(() => { statusEl.textContent = ''; }, 3000);
+        } catch (e) {
+            statusEl.style.color = '#ef4444';
+            statusEl.textContent = 'Error: ' + (e?.message || e);
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="bi bi-floppy-fill"></i> Save Safety Notice';
+        }
+    }
+
+    // ── Init ──
+    document.addEventListener('DOMContentLoaded', async () => {
+        try {
+            await window.emergencySystem.initialize();
+            const user = window.emergencySystem.user;
+            const role = user?.user_metadata?.role;
+            if (!user || (role !== 'admin' && role !== 'super_user')) {
+                window.location.href = 'login.html'; return;
+            }
+            const name = user.user_metadata?.full_name || user.email?.split('@')[0] || 'Super User';
+            const nameEl = document.getElementById('suUserName');
+            if (nameEl) nameEl.textContent = name;
+
+            // Render checklist
+            renderChecklist();
+            updatePreview();
+            updateCharCount();
+
+            // Load readiness synopsis
+            await refreshReadiness();
+
+            // Load saved safety notice
+            try {
+                const notice = await window.emergencySystem.getSafetyNotice();
+                document.getElementById('safetyNoticeEnabled').checked = notice ? notice.enabled !== false : true;
+                document.getElementById('safetyNoticeMessage').value   = notice?.message || '';
+                if (notice?.updated_at) {
+                    const ts = new Date(notice.updated_at).toLocaleString('en-PH',{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'});
+                    document.getElementById('savedTimestamp').innerHTML = `<i class="bi bi-clock" style="color:#10b981;"></i> Last saved ${ts}`;
+                    document.getElementById('statLastSaved').textContent = ts;
+                }
+                updateCharCount();
+                updatePreview();
+                const enabled = notice ? notice.enabled !== false : true;
+                document.getElementById('statNotice').textContent = enabled ? 'Visible' : 'Hidden';
+                document.getElementById('statNotice').style.color = enabled ? '#059669' : '#9ca3af';
+            } catch (_) {
+                updatePreview();
+            }
+        } catch (err) {
+            console.error('Init error:', err);
+        }
+    });
+</script>
+</body>
+</html>

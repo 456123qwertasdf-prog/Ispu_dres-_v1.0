@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 
 import '../services/supabase_service.dart';
 
@@ -705,28 +706,8 @@ class _MyReportsScreenState extends State<MyReportsScreen> {
   }
 
   String _formatDate(DateTime? date) {
-    if (date == null) {
-      return 'Unknown time';
-    }
-    const months = [
-      'Jan',
-      'Feb',
-      'Mar',
-      'Apr',
-      'May',
-      'Jun',
-      'Jul',
-      'Aug',
-      'Sep',
-      'Oct',
-      'Nov',
-      'Dec'
-    ];
-    final month = months[date.month - 1];
-    final hour = date.hour % 12 == 0 ? 12 : date.hour % 12;
-    final minute = date.minute.toString().padLeft(2, '0');
-    final amPm = date.hour >= 12 ? 'PM' : 'AM';
-    return '$month ${date.day}, ${date.year} • $hour:$minute $amPm';
+    if (date == null) return 'Unknown time';
+    return DateFormat('MMM d, yyyy • h:mm a').format(date.toLocal());
   }
 
   String _getEmergencyEmoji(String type) {
