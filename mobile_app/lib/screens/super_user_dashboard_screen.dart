@@ -579,15 +579,17 @@ class _SuperUserDashboardScreenState extends State<SuperUserDashboardScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: const Color(0xFFf1f5f9),
       appBar: AppBar(
         title: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisSize: MainAxisSize.min,
           children: [
-            ClipOval(
+            ClipRRect(
+              borderRadius: BorderRadius.circular(10),
               child: Image.asset(
                 'assets/images/udrrmo-logo.jpg',
-                height: 40,
-                width: 40,
+                height: 36,
+                width: 36,
                 fit: BoxFit.cover,
               ),
             ),
@@ -595,19 +597,30 @@ class _SuperUserDashboardScreenState extends State<SuperUserDashboardScreen> {
             const Text(
               'Super User',
               style: TextStyle(
-                fontWeight: FontWeight.bold,
-                letterSpacing: 1,
+                fontWeight: FontWeight.w700,
+                letterSpacing: 0.5,
+                fontSize: 20,
               ),
             ),
           ],
         ),
         centerTitle: true,
-        backgroundColor: const Color(0xFF3b82f6),
+        backgroundColor: Colors.transparent,
         foregroundColor: Colors.white,
         elevation: 0,
+        scrolledUnderElevation: 0,
+        flexibleSpace: Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [Color(0xFF2563eb), Color(0xFF1d4ed8)],
+            ),
+          ),
+        ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.logout),
+            icon: const Icon(Icons.logout_rounded),
             tooltip: 'Logout',
             onPressed: _showLogoutDialog,
           ),
@@ -1151,26 +1164,21 @@ class _SuperUserDashboardScreenState extends State<SuperUserDashboardScreen> {
             ),
           ),
           const SizedBox(width: 12),
-          // Content
+          // Content - must take only remaining space to avoid overflow
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
               children: [
-                Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        title,
-                        style: TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.grey.shade900,
-                        ),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                  ],
+                Text(
+                  title,
+                  style: TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.grey.shade900,
+                  ),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
                 ),
                 const SizedBox(height: 6),
                 Row(
@@ -1181,20 +1189,24 @@ class _SuperUserDashboardScreenState extends State<SuperUserDashboardScreen> {
                       color: Colors.grey.shade600,
                     ),
                     const SizedBox(width: 4),
-                    Text(
-                      'Started: ${_formatDateTime(createdAt)}',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Colors.grey.shade600,
+                    Expanded(
+                      child: Text(
+                        'Started: ${_formatDateTime(createdAt)}',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.grey.shade600,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ),
                     if (!isActive) ...[
-                      const SizedBox(width: 8),
+                      const SizedBox(width: 6),
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                         decoration: BoxDecoration(
                           color: Colors.grey.shade200,
-                          borderRadius: BorderRadius.circular(12),
+                          borderRadius: BorderRadius.circular(10),
                         ),
                         child: Text(
                           status == 'expired' ? 'EXPIRED' : 'RESOLVED',
@@ -1211,43 +1223,23 @@ class _SuperUserDashboardScreenState extends State<SuperUserDashboardScreen> {
               ],
             ),
           ),
-          // Action Button
-          if (isActive)
-            Padding(
-              padding: const EdgeInsets.only(left: 8),
-              child: FilledButton(
-                onPressed: () => _resolveAlert(alertId),
-                style: FilledButton.styleFrom(
-                  backgroundColor: const Color(0xFF16a34a),
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                  minimumSize: const Size(0, 36),
-                ),
-                child: const Text(
-                  'Resolve',
-                  style: TextStyle(fontSize: 12),
-                ),
-              ),
-            )
-          else
-            Padding(
-              padding: const EdgeInsets.only(left: 8),
-              child: Container(
+          // Action Button - only for active; resolved shows single RESOLVED chip above
+          if (isActive) ...[
+            const SizedBox(width: 8),
+            FilledButton(
+              onPressed: () => _resolveAlert(alertId),
+              style: FilledButton.styleFrom(
+                backgroundColor: const Color(0xFF16a34a),
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                decoration: BoxDecoration(
-                  color: Colors.grey.shade100,
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: Colors.grey.shade300),
-                ),
-                child: const Text(
-                  'Done',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Colors.grey,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
+                minimumSize: const Size(0, 36),
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              ),
+              child: const Text(
+                'Resolve',
+                style: TextStyle(fontSize: 12),
               ),
             ),
+          ],
         ],
       ),
     );
@@ -1685,11 +1677,12 @@ class _SuperUserDashboardScreenState extends State<SuperUserDashboardScreen> {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.1),
-            blurRadius: 10,
-            offset: const Offset(0, -2),
+            color: Colors.black.withOpacity(0.08),
+            blurRadius: 20,
+            offset: const Offset(0, -4),
           ),
         ],
       ),

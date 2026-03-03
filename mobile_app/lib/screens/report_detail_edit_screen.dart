@@ -446,8 +446,10 @@ class _ReportDetailEditScreenState extends State<ReportDetailEditScreen> {
     final lifecycleStatus =
         report['lifecycle_status']?.toString() ?? status;
     final message = report['message']?.toString() ?? 'No description';
+    // Created = when the report was created
     final createdAt = report['created_at']?.toString();
-    final lastUpdate = report['last_update']?.toString();
+    // Last Updated = when super user assigned the responder (assignment time)
+    final assignedAt = _currentAssignment?['assigned_at']?.toString();
     final reporterName = report['reporter_name']?.toString() ?? 'Unknown';
     final responderName = _currentAssignment?['responder']?['name']?.toString() ??
         report['responder_name']?.toString();
@@ -564,13 +566,13 @@ class _ReportDetailEditScreenState extends State<ReportDetailEditScreen> {
                         ? _formatDate(createdAt)
                         : 'Unknown',
                   ),
-                  if (lastUpdate != null) ...[
-                    const Divider(height: 24),
-                    _buildDetailRow(
-                      'Last Updated',
-                      _formatDate(lastUpdate),
-                    ),
-                  ],
+                  const Divider(height: 24),
+                  _buildDetailRow(
+                    'Last Updated',
+                    assignedAt != null
+                        ? _formatDate(assignedAt)
+                        : 'Not assigned yet',
+                  ),
                 ],
               ),
             ),
@@ -995,7 +997,29 @@ class _ReportDetailEditScreenState extends State<ReportDetailEditScreen> {
             border: OutlineInputBorder(),
             contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 16),
           ),
+          isExpanded: true,
           items: responderItems,
+          selectedItemBuilder: (context) {
+            return responderItems.map<Widget>((item) {
+              String label = 'Select responder';
+              if (item.value != null && item.child is Text) {
+                label = (item.child as Text).data ?? 'Unknown';
+              } else if (item.value == null) {
+                label = 'Select responder';
+              } else {
+                label = 'Unknown';
+              }
+              return Align(
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  label,
+                  style: const TextStyle(fontSize: 14),
+                  overflow: TextOverflow.ellipsis,
+                  maxLines: 1,
+                ),
+              );
+            }).toList();
+          },
           onChanged: (value) {
             setState(() {
               _selectedResponderId = value;

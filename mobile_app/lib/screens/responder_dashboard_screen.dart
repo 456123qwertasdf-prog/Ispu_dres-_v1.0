@@ -311,6 +311,7 @@ class _ResponderDashboardScreenState extends State<ResponderDashboardScreen> {
             assigned_at,
             accepted_at,
             completed_at,
+            updated_at,
             notes,
             needs_backup,
             responder_id,
@@ -697,7 +698,7 @@ class _ResponderDashboardScreenState extends State<ResponderDashboardScreen> {
 
   Future<void> _showResolveNoteDialog(ResponderAssignment assignment) async {
     final controller = TextEditingController();
-    await showDialog(
+    final notes = await showDialog<String>(
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Mark as Resolved'),
@@ -733,14 +734,7 @@ class _ResponderDashboardScreenState extends State<ResponderDashboardScreen> {
             child: const Text('Cancel'),
           ),
           ElevatedButton(
-            onPressed: () {
-              Navigator.of(context).pop();
-              _updateAssignmentStatus(
-                assignment,
-                'resolved',
-                notes: controller.text.trim().isEmpty ? null : controller.text.trim(),
-              );
-            },
+            onPressed: () => Navigator.of(context).pop(controller.text.trim()),
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFF10B981),
               foregroundColor: Colors.white,
@@ -751,6 +745,13 @@ class _ResponderDashboardScreenState extends State<ResponderDashboardScreen> {
       ),
     );
     controller.dispose();
+    if (notes != null && mounted) {
+      _updateAssignmentStatus(
+        assignment,
+        'resolved',
+        notes: notes.isEmpty ? null : notes,
+      );
+    }
   }
 
   Future<void> _captureLocation() async {
@@ -1429,8 +1430,6 @@ class _ResponderDashboardScreenState extends State<ResponderDashboardScreen> {
       children: [
         _buildHeader(),
         const SizedBox(height: 20),
-        _buildStatsGrid(),
-        const SizedBox(height: 24),
         _buildReadinessNoticeCard(),
         const SizedBox(height: 24),
         _buildAvailabilityCard(),
@@ -2080,120 +2079,6 @@ class _ResponderDashboardScreenState extends State<ResponderDashboardScreen> {
     );
   }
 
-  Widget _buildStatsGrid() {
-    final assigned = _activeAssignments.length;
-    final completed = _completedAssignments.length;
-    final responseTime = _averageResponseMinutes;
-
-    return GridView.count(
-      crossAxisCount: 2,
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      crossAxisSpacing: 16,
-      mainAxisSpacing: 16,
-      childAspectRatio: 0.75,
-      children: [
-        _buildStatCard(
-          title: 'Assigned Reports',
-          value: assigned.toString(),
-          icon: Icons.assignment_rounded,
-          color: const Color(0xFF2563EB),
-          subtitle: 'Active right now',
-        ),
-        _buildStatCard(
-          title: 'Completed',
-          value: completed.toString(),
-          icon: Icons.verified_rounded,
-          color: const Color(0xFF10B981),
-          subtitle: 'Resolved successfully',
-        ),
-        _buildStatCard(
-          title: 'Avg Response',
-          value: responseTime == null ? '--' : '${responseTime.round()} min',
-          icon: Icons.timer_rounded,
-          color: const Color(0xFFF97316),
-          subtitle: responseTime == null ? 'Need more data' : 'Based on resolved tasks',
-        ),
-        _buildStatCard(
-          title: 'Coverage Radius',
-          value: '5 km',
-          icon: Icons.radar_rounded,
-          color: const Color(0xFFA855F7),
-          subtitle: 'Sta. Cruz Campus',
-        ),
-      ],
-    );
-  }
-
-  Widget _buildStatCard({
-    required String title,
-    required String value,
-    required IconData icon,
-    required Color color,
-    required String subtitle,
-  }) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: color.withValues(alpha: 0.12)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(
-              color: color.withValues(alpha: 0.12),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Icon(icon, color: color, size: 22),
-          ),
-          const SizedBox(height: 14),
-          Text(
-            title,
-            style: TextStyle(
-              color: Colors.grey.shade600,
-              fontWeight: FontWeight.w600,
-              fontSize: 12,
-              letterSpacing: 0.2,
-            ),
-          ),
-          const SizedBox(height: 6),
-          Text(
-            value,
-            style: TextStyle(
-              color: Colors.grey.shade900,
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
-              letterSpacing: -0.5,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            subtitle,
-            style: TextStyle(
-              color: Colors.grey.shade500,
-              fontSize: 11,
-              height: 1.3,
-            ),
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-          ),
-        ],
-      ),
-    );
-  }
-
   Widget _buildAvailabilityCard() {
     final responder = _profile;
     if (responder == null) return const SizedBox.shrink();
@@ -2807,7 +2692,7 @@ class _ResponderDashboardScreenState extends State<ResponderDashboardScreen> {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  'Completed ${_formatDate(assignment.completedAt)}',
+                  'Completed ${_formatDate(assignment.completedAt ?? assignment.updatedAt)}',
                   style: const TextStyle(
                     color: Color(0xFF047857),
                     fontSize: 13,

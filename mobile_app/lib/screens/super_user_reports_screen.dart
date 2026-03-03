@@ -141,17 +141,32 @@ class _SuperUserReportsScreenState extends State<SuperUserReportsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: const Color(0xFFf1f5f9),
       appBar: AppBar(
         title: const Text(
           'Recent Reports',
-          style: TextStyle(fontWeight: FontWeight.bold),
+          style: TextStyle(
+            fontWeight: FontWeight.w700,
+            fontSize: 20,
+            letterSpacing: -0.3,
+          ),
         ),
-        backgroundColor: const Color(0xFF3b82f6),
+        backgroundColor: Colors.transparent,
         foregroundColor: Colors.white,
         elevation: 0,
+        scrolledUnderElevation: 0,
+        flexibleSpace: Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [Color(0xFF2563eb), Color(0xFF1d4ed8)],
+            ),
+          ),
+        ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.refresh),
+            icon: const Icon(Icons.refresh_rounded),
             onPressed: _loadReports,
             tooltip: 'Refresh',
           ),
@@ -161,13 +176,13 @@ class _SuperUserReportsScreenState extends State<SuperUserReportsScreen> {
         children: [
           // Filter Chips
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
             decoration: BoxDecoration(
               color: Colors.white,
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
-                  blurRadius: 4,
+                  color: Colors.black.withOpacity(0.04),
+                  blurRadius: 12,
                   offset: const Offset(0, 2),
                 ),
               ],
@@ -177,13 +192,13 @@ class _SuperUserReportsScreenState extends State<SuperUserReportsScreen> {
               child: Row(
                 children: [
                   _buildFilterChip('All'),
-                  const SizedBox(width: 8),
+                  const SizedBox(width: 10),
                   _buildFilterChip('Pending'),
-                  const SizedBox(width: 8),
+                  const SizedBox(width: 10),
                   _buildFilterChip('Assigned'),
-                  const SizedBox(width: 8),
+                  const SizedBox(width: 10),
                   _buildFilterChip('Active'),
-                  const SizedBox(width: 8),
+                  const SizedBox(width: 10),
                   _buildFilterChip('Resolved'),
                 ],
               ),
@@ -192,27 +207,76 @@ class _SuperUserReportsScreenState extends State<SuperUserReportsScreen> {
           // Reports List
           Expanded(
             child: _isLoading
-                ? const Center(child: CircularProgressIndicator())
+                ? Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const SizedBox(
+                          width: 40,
+                          height: 40,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2.5,
+                            color: Color(0xFF3b82f6),
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        Text(
+                          'Loading reports...',
+                          style: TextStyle(
+                            color: Colors.grey.shade600,
+                            fontSize: 14,
+                          ),
+                        ),
+                      ],
+                    ),
+                  )
                 : _errorMessage != null
                     ? Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(Icons.error_outline,
-                                size: 64, color: Colors.grey.shade400),
-                            const SizedBox(height: 16),
-                            Text(
-                              _errorMessage!,
-                              style: TextStyle(color: Colors.grey.shade600),
-                              textAlign: TextAlign.center,
-                            ),
-                            const SizedBox(height: 16),
-                            ElevatedButton.icon(
-                              onPressed: _loadReports,
-                              icon: const Icon(Icons.refresh),
-                              label: const Text('Retry'),
-                            ),
-                          ],
+                        child: Padding(
+                          padding: const EdgeInsets.all(32),
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(20),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFfef2f2),
+                                  shape: BoxShape.circle,
+                                ),
+                                child: Icon(
+                                  Icons.error_outline_rounded,
+                                  size: 48,
+                                  color: Colors.red.shade400,
+                                ),
+                              ),
+                              const SizedBox(height: 20),
+                              Text(
+                                _errorMessage!,
+                                style: TextStyle(
+                                  color: Colors.grey.shade700,
+                                  fontSize: 15,
+                                  height: 1.4,
+                                ),
+                                textAlign: TextAlign.center,
+                              ),
+                              const SizedBox(height: 24),
+                              FilledButton.icon(
+                                onPressed: _loadReports,
+                                icon: const Icon(Icons.refresh_rounded, size: 20),
+                                label: const Text('Retry'),
+                                style: FilledButton.styleFrom(
+                                  backgroundColor: const Color(0xFF3b82f6),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 24,
+                                    vertical: 14,
+                                  ),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                       )
                     : _filteredReports.isEmpty
@@ -220,18 +284,33 @@ class _SuperUserReportsScreenState extends State<SuperUserReportsScreen> {
                             child: Column(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                Icon(Icons.assignment_outlined,
-                                    size: 64, color: Colors.grey.shade400),
-                                const SizedBox(height: 16),
+                                Container(
+                                  padding: const EdgeInsets.all(24),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFFeff6ff),
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: Icon(
+                                    Icons.assignment_outlined,
+                                    size: 56,
+                                    color: Colors.blue.shade300,
+                                  ),
+                                ),
+                                const SizedBox(height: 20),
                                 Text(
                                   'No reports found',
-                                  style: TextStyle(color: Colors.grey.shade600),
+                                  style: TextStyle(
+                                    color: Colors.grey.shade700,
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w500,
+                                  ),
                                 ),
                               ],
                             ),
                           )
                         : RefreshIndicator(
                             onRefresh: _loadReports,
+                            color: const Color(0xFF3b82f6),
                             child: ListView.builder(
                               padding: const EdgeInsets.all(16),
                               itemCount: _filteredReports.length,
@@ -249,19 +328,38 @@ class _SuperUserReportsScreenState extends State<SuperUserReportsScreen> {
 
   Widget _buildFilterChip(String label) {
     final isSelected = _filterStatus == label;
-    return FilterChip(
-      label: Text(label),
-      selected: isSelected,
-      onSelected: (selected) {
-        setState(() {
-          _filterStatus = label;
-        });
-      },
-      selectedColor: const Color(0xFF3b82f6).withOpacity(0.2),
-      checkmarkColor: const Color(0xFF3b82f6),
-      labelStyle: TextStyle(
-        color: isSelected ? const Color(0xFF3b82f6) : Colors.grey.shade700,
-        fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: () => setState(() => _filterStatus = label),
+        borderRadius: BorderRadius.circular(20),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
+          decoration: BoxDecoration(
+            color: isSelected
+                ? const Color(0xFF3b82f6)
+                : Colors.grey.shade100,
+            borderRadius: BorderRadius.circular(20),
+            boxShadow: isSelected
+                ? [
+                    BoxShadow(
+                      color: const Color(0xFF3b82f6).withOpacity(0.3),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    ),
+                  ]
+                : null,
+          ),
+          child: Text(
+            label,
+            style: TextStyle(
+              color: isSelected ? Colors.white : Colors.grey.shade700,
+              fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+              fontSize: 14,
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -290,26 +388,28 @@ class _SuperUserReportsScreenState extends State<SuperUserReportsScreen> {
           _loadReports();
         }
       },
-      borderRadius: BorderRadius.circular(16),
+      borderRadius: BorderRadius.circular(20),
       child: Container(
-        margin: const EdgeInsets.only(bottom: 12),
+        margin: const EdgeInsets.only(bottom: 14),
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: _getStatusColorValue(statusColor).withOpacity(0.2),
-            width: 1,
+          borderRadius: BorderRadius.circular(20),
+          border: Border(
+            left: BorderSide(
+              color: _getStatusColorValue(statusColor),
+              width: 4,
+            ),
           ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.05),
-              blurRadius: 8,
-              offset: const Offset(0, 2),
+              color: Colors.black.withOpacity(0.06),
+              blurRadius: 14,
+              offset: const Offset(0, 4),
             ),
           ],
         ),
         child: Padding(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(18),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -360,7 +460,7 @@ class _SuperUserReportsScreenState extends State<SuperUserReportsScreen> {
                       ],
                     ),
                   ),
-                  Icon(Icons.chevron_right,
+                  Icon(Icons.chevron_right_rounded,
                       color: Colors.grey.shade400, size: 24),
                 ],
               ),

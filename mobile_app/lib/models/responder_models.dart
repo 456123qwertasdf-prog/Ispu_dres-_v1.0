@@ -200,6 +200,7 @@ class ResponderAssignment {
     required this.report,
     this.acceptedAt,
     this.completedAt,
+    this.updatedAt,
     this.notes,
     this.needsBackup = false,
   });
@@ -209,6 +210,7 @@ class ResponderAssignment {
   final DateTime? assignedAt;
   final DateTime? acceptedAt;
   final DateTime? completedAt;
+  final DateTime? updatedAt;
   final String? notes;
   final AssignmentReportSummary report;
   final bool needsBackup;
@@ -229,6 +231,9 @@ class ResponderAssignment {
           : null,
       completedAt: map['completed_at'] != null
           ? DateTime.tryParse(map['completed_at'].toString())
+          : null,
+      updatedAt: map['updated_at'] != null
+          ? DateTime.tryParse(map['updated_at'].toString())
           : null,
       notes: notes,
       needsBackup: map['needs_backup'] == true,

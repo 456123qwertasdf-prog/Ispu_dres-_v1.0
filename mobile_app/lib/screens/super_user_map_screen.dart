@@ -1392,14 +1392,28 @@ class _SuperUserMapScreenState extends State<SuperUserMapScreen> {
       appBar: AppBar(
         title: const Text(
           'Super User Map',
-          style: TextStyle(fontWeight: FontWeight.bold),
+          style: TextStyle(
+            fontWeight: FontWeight.w700,
+            fontSize: 20,
+            letterSpacing: -0.3,
+          ),
         ),
-        backgroundColor: const Color(0xFF3b82f6),
+        backgroundColor: Colors.transparent,
         foregroundColor: Colors.white,
         elevation: 0,
+        scrolledUnderElevation: 0,
+        flexibleSpace: Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [Color(0xFF2563eb), Color(0xFF1d4ed8)],
+            ),
+          ),
+        ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.refresh),
+            icon: const Icon(Icons.refresh_rounded),
             onPressed: _loadData,
             tooltip: 'Refresh',
           ),
@@ -1444,24 +1458,24 @@ class _SuperUserMapScreenState extends State<SuperUserMapScreen> {
             left: 16,
             right: 16,
             child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
               decoration: BoxDecoration(
                 color: Colors.white,
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(16),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.1),
-                    blurRadius: 8,
-                    offset: const Offset(0, 2),
+                    color: Colors.black.withOpacity(0.08),
+                    blurRadius: 16,
+                    offset: const Offset(0, 4),
                   ),
                 ],
               ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
-                  _buildFilterButton('all', 'All', Icons.list),
-                  _buildFilterButton('active', 'Active', Icons.warning, isDefault: true),
-                  _buildFilterButton('completed', 'Completed', Icons.check_circle),
+                  _buildFilterButton('all', 'All', Icons.list_rounded),
+                  _buildFilterButton('active', 'Active', Icons.warning_rounded, isDefault: true),
+                  _buildFilterButton('completed', 'Completed', Icons.check_circle_rounded),
                 ],
               ),
             ),
@@ -1471,15 +1485,15 @@ class _SuperUserMapScreenState extends State<SuperUserMapScreen> {
             top: 80,
             right: 16,
             child: Container(
-              padding: const EdgeInsets.all(12),
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
               decoration: BoxDecoration(
                 color: Colors.white,
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(16),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.1),
-                    blurRadius: 8,
-                    offset: const Offset(0, 2),
+                    color: Colors.black.withOpacity(0.08),
+                    blurRadius: 16,
+                    offset: const Offset(0, 4),
                   ),
                 ],
               ),
@@ -1491,14 +1505,15 @@ class _SuperUserMapScreenState extends State<SuperUserMapScreen> {
                     'Legend',
                     style: TextStyle(
                       fontSize: 14,
-                      fontWeight: FontWeight.bold,
+                      fontWeight: FontWeight.w700,
+                      color: Color(0xFF1e293b),
                     ),
                   ),
-                  const SizedBox(height: 8),
-                  _buildLegendItem(Icons.warning, 'Emergency', Colors.red),
-                  _buildLegendItem(Icons.person, 'Available', Colors.green),
+                  const SizedBox(height: 10),
+                  _buildLegendItem(Icons.warning_rounded, 'Emergency', Colors.red),
+                  _buildLegendItem(Icons.person_rounded, 'Available', Colors.green),
                   _buildLegendItem(Icons.airport_shuttle_rounded, 'En Route', Colors.cyan),
-                  _buildLegendItem(Icons.location_on, 'On Scene', Colors.green),
+                  _buildLegendItem(Icons.location_on_rounded, 'On Scene', Colors.green),
                 ],
               ),
             ),
@@ -1513,25 +1528,25 @@ class _SuperUserMapScreenState extends State<SuperUserMapScreen> {
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: const BorderRadius.only(
-                  topLeft: Radius.circular(20),
-                  topRight: Radius.circular(20),
+                  topLeft: Radius.circular(24),
+                  topRight: Radius.circular(24),
                 ),
                 boxShadow: [
                   BoxShadow(
                     color: Colors.black.withOpacity(0.1),
-                    blurRadius: 10,
-                    offset: const Offset(0, -2),
+                    blurRadius: 20,
+                    offset: const Offset(0, -4),
                   ),
                 ],
               ),
               child: Column(
                 children: [
                   Container(
-                    margin: const EdgeInsets.only(top: 8),
+                    margin: const EdgeInsets.only(top: 12),
                     width: 40,
                     height: 4,
                     decoration: BoxDecoration(
-                      color: Colors.grey.shade300,
+                      color: Colors.grey.shade400,
                       borderRadius: BorderRadius.circular(2),
                     ),
                   ),
@@ -1597,18 +1612,24 @@ class _SuperUserMapScreenState extends State<SuperUserMapScreen> {
           color: Colors.transparent,
           child: InkWell(
             onTap: () => _setFilter(filter),
-            borderRadius: BorderRadius.circular(8),
-            child: Container(
-              padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+            borderRadius: BorderRadius.circular(12),
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
               decoration: BoxDecoration(
                 color: isActive
                     ? const Color(0xFF3b82f6)
                     : Colors.grey.shade100,
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(
-                  color: isActive ? const Color(0xFF2563eb) : Colors.transparent,
-                  width: 2,
-                ),
+                borderRadius: BorderRadius.circular(12),
+                boxShadow: isActive
+                    ? [
+                        BoxShadow(
+                          color: const Color(0xFF3b82f6).withOpacity(0.3),
+                          blurRadius: 8,
+                          offset: const Offset(0, 2),
+                        ),
+                      ]
+                    : null,
               ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -1616,16 +1637,16 @@ class _SuperUserMapScreenState extends State<SuperUserMapScreen> {
                 children: [
                   Icon(
                     icon,
-                    size: 16,
+                    size: 18,
                     color: isActive ? Colors.white : Colors.grey.shade700,
                   ),
-                  const SizedBox(width: 4),
+                  const SizedBox(width: 6),
                   Flexible(
                     child: Text(
                       label,
                       style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: isActive ? FontWeight.w600 : FontWeight.normal,
+                        fontSize: 13,
+                        fontWeight: isActive ? FontWeight.w600 : FontWeight.w500,
                         color: isActive ? Colors.white : Colors.grey.shade700,
                       ),
                       overflow: TextOverflow.ellipsis,
@@ -1661,20 +1682,21 @@ class _SuperUserMapScreenState extends State<SuperUserMapScreen> {
     final type = report['type']?.toString() ?? 'Unknown';
     final status = report['status']?.toString() ?? 'Unknown';
     final message = report['message']?.toString() ?? 'No description';
+    final statusColor = _getStatusColor(status);
 
     return Container(
       width: 200,
       margin: const EdgeInsets.only(right: 12),
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey.shade200),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: statusColor.withOpacity(0.3)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 4,
-            offset: const Offset(0, 2),
+            color: Colors.black.withOpacity(0.06),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
           ),
         ],
       ),
@@ -1714,17 +1736,17 @@ class _SuperUserMapScreenState extends State<SuperUserMapScreen> {
           ),
           const SizedBox(height: 8),
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
             decoration: BoxDecoration(
-              color: const Color(0xFF3b82f6).withOpacity(0.1),
-              borderRadius: BorderRadius.circular(8),
+              color: statusColor.withOpacity(0.12),
+              borderRadius: BorderRadius.circular(10),
             ),
             child: Text(
               status.toUpperCase(),
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 10,
-                fontWeight: FontWeight.w600,
-                color: Color(0xFF3b82f6),
+                fontWeight: FontWeight.w700,
+                color: statusColor,
               ),
             ),
           ),

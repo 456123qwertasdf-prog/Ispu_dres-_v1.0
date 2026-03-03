@@ -223,36 +223,53 @@ class _SuperUserSOSAlertsScreenState extends State<SuperUserSOSAlertsScreen> {
         height: MediaQuery.of(context).size.height * 0.7,
         decoration: const BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+          boxShadow: [
+            BoxShadow(
+              color: Color(0x1A000000),
+              blurRadius: 20,
+              offset: Offset(0, -4),
+            ),
+          ],
         ),
         child: Column(
           children: [
             Container(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.fromLTRB(20, 16, 8, 16),
               decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
                 border: Border(
                   bottom: BorderSide(color: Colors.grey.shade200),
                 ),
               ),
               child: Row(
                 children: [
-                  const Icon(
-                    Icons.warning,
-                    color: Color(0xFFef4444),
-                    size: 28,
+                  Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFef4444).withOpacity(0.12),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Icon(
+                      Icons.emergency_rounded,
+                      color: Color(0xFFef4444),
+                      size: 24,
+                    ),
                   ),
-                  const SizedBox(width: 12),
+                  const SizedBox(width: 14),
                   const Expanded(
                     child: Text(
                       'SOS Alert Details',
                       style: TextStyle(
                         fontSize: 20,
-                        fontWeight: FontWeight.bold,
+                        fontWeight: FontWeight.w700,
+                        color: Color(0xFF1e293b),
                       ),
                     ),
                   ),
                   IconButton(
-                    icon: const Icon(Icons.close),
+                    icon: const Icon(Icons.close_rounded),
                     onPressed: () => Navigator.pop(context),
                   ),
                 ],
@@ -368,17 +385,32 @@ class _SuperUserSOSAlertsScreenState extends State<SuperUserSOSAlertsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: const Color(0xFFf1f5f9),
       appBar: AppBar(
         title: const Text(
           'SOS Emergency Alerts',
-          style: TextStyle(fontWeight: FontWeight.bold),
+          style: TextStyle(
+            fontWeight: FontWeight.w700,
+            fontSize: 20,
+            letterSpacing: -0.3,
+          ),
         ),
-        backgroundColor: const Color(0xFFef4444),
+        backgroundColor: Colors.transparent,
         foregroundColor: Colors.white,
         elevation: 0,
+        scrolledUnderElevation: 0,
+        flexibleSpace: Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [Color(0xFFdc2626), Color(0xFFb91c1c)],
+            ),
+          ),
+        ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.refresh),
+            icon: const Icon(Icons.refresh_rounded),
             onPressed: _loadSOSAlerts,
             tooltip: 'Refresh',
           ),
@@ -388,14 +420,20 @@ class _SuperUserSOSAlertsScreenState extends State<SuperUserSOSAlertsScreen> {
         children: [
           // Stats Cards
           Container(
+            margin: const EdgeInsets.fromLTRB(16, 16, 16, 0),
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: const Color(0xFFef4444),
+              gradient: const LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [Color(0xFFdc2626), Color(0xFFb91c1c)],
+              ),
+              borderRadius: BorderRadius.circular(20),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.1),
-                  blurRadius: 4,
-                  offset: const Offset(0, 2),
+                  color: const Color(0xFFef4444).withOpacity(0.35),
+                  blurRadius: 16,
+                  offset: const Offset(0, 6),
                 ),
               ],
             ),
@@ -404,15 +442,15 @@ class _SuperUserSOSAlertsScreenState extends State<SuperUserSOSAlertsScreen> {
                 Expanded(
                   child: _buildStatCard('Total', _totalAlerts, Colors.white),
                 ),
-                const SizedBox(width: 8),
+                const SizedBox(width: 10),
                 Expanded(
                   child: _buildStatCard('Active', _activeAlerts, Colors.white),
                 ),
-                const SizedBox(width: 8),
+                const SizedBox(width: 10),
                 Expanded(
-                  child: _buildStatCard('Acknowledged', _acknowledgedAlerts, Colors.white),
+                  child: _buildStatCard('Ack.', _acknowledgedAlerts, Colors.white),
                 ),
-                const SizedBox(width: 8),
+                const SizedBox(width: 10),
                 Expanded(
                   child: _buildStatCard('Resolved', _resolvedAlerts, Colors.white),
                 ),
@@ -421,13 +459,14 @@ class _SuperUserSOSAlertsScreenState extends State<SuperUserSOSAlertsScreen> {
           ),
           // Filter Chips
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            margin: const EdgeInsets.only(top: 16),
             decoration: BoxDecoration(
               color: Colors.white,
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
-                  blurRadius: 4,
+                  color: Colors.black.withOpacity(0.04),
+                  blurRadius: 12,
                   offset: const Offset(0, 2),
                 ),
               ],
@@ -437,11 +476,11 @@ class _SuperUserSOSAlertsScreenState extends State<SuperUserSOSAlertsScreen> {
               child: Row(
                 children: [
                   _buildFilterChip('All'),
-                  const SizedBox(width: 8),
+                  const SizedBox(width: 10),
                   _buildFilterChip('Active'),
-                  const SizedBox(width: 8),
+                  const SizedBox(width: 10),
                   _buildFilterChip('Acknowledged'),
-                  const SizedBox(width: 8),
+                  const SizedBox(width: 10),
                   _buildFilterChip('Resolved'),
                 ],
               ),
@@ -450,27 +489,76 @@ class _SuperUserSOSAlertsScreenState extends State<SuperUserSOSAlertsScreen> {
           // Alerts List
           Expanded(
             child: _isLoading
-                ? const Center(child: CircularProgressIndicator())
+                ? Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const SizedBox(
+                          width: 40,
+                          height: 40,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2.5,
+                            color: Color(0xFFef4444),
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        Text(
+                          'Loading SOS alerts...',
+                          style: TextStyle(
+                            color: Colors.grey.shade600,
+                            fontSize: 14,
+                          ),
+                        ),
+                      ],
+                    ),
+                  )
                 : _errorMessage != null
                     ? Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(Icons.error_outline,
-                                size: 64, color: Colors.grey.shade400),
-                            const SizedBox(height: 16),
-                            Text(
-                              _errorMessage!,
-                              style: TextStyle(color: Colors.grey.shade600),
-                              textAlign: TextAlign.center,
-                            ),
-                            const SizedBox(height: 16),
-                            ElevatedButton.icon(
-                              onPressed: _loadSOSAlerts,
-                              icon: const Icon(Icons.refresh),
-                              label: const Text('Retry'),
-                            ),
-                          ],
+                        child: Padding(
+                          padding: const EdgeInsets.all(32),
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(20),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFfef2f2),
+                                  shape: BoxShape.circle,
+                                ),
+                                child: Icon(
+                                  Icons.error_outline_rounded,
+                                  size: 48,
+                                  color: Colors.red.shade400,
+                                ),
+                              ),
+                              const SizedBox(height: 20),
+                              Text(
+                                _errorMessage!,
+                                style: TextStyle(
+                                  color: Colors.grey.shade700,
+                                  fontSize: 15,
+                                  height: 1.4,
+                                ),
+                                textAlign: TextAlign.center,
+                              ),
+                              const SizedBox(height: 24),
+                              FilledButton.icon(
+                                onPressed: _loadSOSAlerts,
+                                icon: const Icon(Icons.refresh_rounded, size: 20),
+                                label: const Text('Retry'),
+                                style: FilledButton.styleFrom(
+                                  backgroundColor: const Color(0xFFef4444),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 24,
+                                    vertical: 14,
+                                  ),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                       )
                     : _filteredAlerts.isEmpty
@@ -478,18 +566,33 @@ class _SuperUserSOSAlertsScreenState extends State<SuperUserSOSAlertsScreen> {
                             child: Column(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                Icon(Icons.warning_outlined,
-                                    size: 64, color: Colors.grey.shade400),
-                                const SizedBox(height: 16),
+                                Container(
+                                  padding: const EdgeInsets.all(24),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFFfef2f2),
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: Icon(
+                                    Icons.warning_amber_rounded,
+                                    size: 56,
+                                    color: Colors.red.shade300,
+                                  ),
+                                ),
+                                const SizedBox(height: 20),
                                 Text(
                                   'No SOS alerts found',
-                                  style: TextStyle(color: Colors.grey.shade600),
+                                  style: TextStyle(
+                                    color: Colors.grey.shade700,
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w500,
+                                  ),
                                 ),
                               ],
                             ),
                           )
                         : RefreshIndicator(
                             onRefresh: _loadSOSAlerts,
+                            color: const Color(0xFFef4444),
                             child: ListView.builder(
                               padding: const EdgeInsets.all(16),
                               itemCount: _filteredAlerts.length,
@@ -507,19 +610,22 @@ class _SuperUserSOSAlertsScreenState extends State<SuperUserSOSAlertsScreen> {
 
   Widget _buildStatCard(String label, int value, Color textColor) {
     return Container(
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
       decoration: BoxDecoration(
         color: Colors.white.withOpacity(0.2),
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: Colors.white.withOpacity(0.3), width: 1),
       ),
       child: Column(
+        mainAxisSize: MainAxisSize.min,
         children: [
           Text(
             value.toString(),
             style: TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
+              fontSize: 22,
+              fontWeight: FontWeight.w800,
               color: textColor,
+              letterSpacing: -0.5,
             ),
           ),
           const SizedBox(height: 4),
@@ -527,7 +633,8 @@ class _SuperUserSOSAlertsScreenState extends State<SuperUserSOSAlertsScreen> {
             label,
             style: TextStyle(
               fontSize: 11,
-              color: textColor.withOpacity(0.9),
+              fontWeight: FontWeight.w500,
+              color: textColor.withOpacity(0.95),
             ),
             textAlign: TextAlign.center,
             maxLines: 1,
@@ -540,19 +647,38 @@ class _SuperUserSOSAlertsScreenState extends State<SuperUserSOSAlertsScreen> {
 
   Widget _buildFilterChip(String label) {
     final isSelected = _filterStatus == label;
-    return FilterChip(
-      label: Text(label),
-      selected: isSelected,
-      onSelected: (selected) {
-        setState(() {
-          _filterStatus = label;
-        });
-      },
-      selectedColor: const Color(0xFFef4444).withOpacity(0.2),
-      checkmarkColor: const Color(0xFFef4444),
-      labelStyle: TextStyle(
-        color: isSelected ? const Color(0xFFef4444) : Colors.grey.shade700,
-        fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: () => setState(() => _filterStatus = label),
+        borderRadius: BorderRadius.circular(20),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
+          decoration: BoxDecoration(
+            color: isSelected
+                ? const Color(0xFFef4444)
+                : Colors.grey.shade100,
+            borderRadius: BorderRadius.circular(20),
+            boxShadow: isSelected
+                ? [
+                    BoxShadow(
+                      color: const Color(0xFFef4444).withOpacity(0.3),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    ),
+                  ]
+                : null,
+          ),
+          child: Text(
+            label,
+            style: TextStyle(
+              color: isSelected ? Colors.white : Colors.grey.shade700,
+              fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+              fontSize: 14,
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -568,40 +694,44 @@ class _SuperUserSOSAlertsScreenState extends State<SuperUserSOSAlertsScreen> {
     final isAcknowledged = status.toLowerCase() == 'acknowledged';
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 12),
+      margin: const EdgeInsets.only(bottom: 14),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: statusColor.withOpacity(0.3),
-          width: 2,
+        borderRadius: BorderRadius.circular(20),
+        border: Border(
+          left: BorderSide(
+            color: statusColor,
+            width: 4,
+          ),
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
+            color: Colors.black.withOpacity(0.06),
+            blurRadius: 14,
+            offset: const Offset(0, 4),
           ),
         ],
       ),
-      child: InkWell(
-        onTap: () => _showAlertDetails(alert),
-        borderRadius: BorderRadius.circular(16),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: () => _showAlertDetails(alert),
+          borderRadius: BorderRadius.circular(20),
+          child: Padding(
+            padding: const EdgeInsets.all(18),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
               Row(
                 children: [
                   Container(
                     padding: const EdgeInsets.all(10),
                     decoration: BoxDecoration(
-                      color: statusColor.withOpacity(0.15),
-                      borderRadius: BorderRadius.circular(12),
+                      color: statusColor.withOpacity(0.12),
+                      borderRadius: BorderRadius.circular(14),
                     ),
                     child: const Icon(
-                      Icons.warning,
+                      Icons.emergency_rounded,
                       color: Color(0xFFef4444),
                       size: 24,
                     ),
@@ -638,7 +768,7 @@ class _SuperUserSOSAlertsScreenState extends State<SuperUserSOSAlertsScreen> {
                       ],
                     ),
                   ),
-                  Icon(Icons.chevron_right, color: Colors.grey.shade400, size: 24),
+                  Icon(Icons.chevron_right_rounded, color: Colors.grey.shade400, size: 24),
                 ],
               ),
               const SizedBox(height: 12),
@@ -690,38 +820,45 @@ class _SuperUserSOSAlertsScreenState extends State<SuperUserSOSAlertsScreen> {
                   ),
                 ],
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 14),
               Row(
                 children: [
                   if (isActive)
                     Expanded(
                       child: FilledButton.icon(
                         onPressed: () => _acknowledgeAlert(alert['id']?.toString() ?? ''),
-                        icon: const Icon(Icons.check_circle, size: 16),
+                        icon: const Icon(Icons.check_circle_rounded, size: 18),
                         label: const Text('Acknowledge'),
                         style: FilledButton.styleFrom(
                           backgroundColor: const Color(0xFFf59e0b),
                           padding: const EdgeInsets.symmetric(vertical: 12),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
                         ),
                       ),
                     ),
                   if (isActive || isAcknowledged) ...[
-                    if (isActive) const SizedBox(width: 8),
+                    if (isActive) const SizedBox(width: 10),
                     Expanded(
                       child: FilledButton.icon(
                         onPressed: () => _resolveAlert(alert['id']?.toString() ?? ''),
-                        icon: const Icon(Icons.done_all, size: 16),
+                        icon: const Icon(Icons.done_all_rounded, size: 18),
                         label: const Text('Resolve'),
                         style: FilledButton.styleFrom(
                           backgroundColor: const Color(0xFF10b981),
                           padding: const EdgeInsets.symmetric(vertical: 12),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
                         ),
                       ),
                     ),
                   ],
                 ],
               ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
