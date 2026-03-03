@@ -162,6 +162,7 @@ serve(async (req) => {
         return {
           ...p,
           email: au?.email || null,
+          email_confirmed_at: au?.email_confirmed_at ?? null,
           last_sign_in_at: au?.last_sign_in_at || null,
           user_type: p.user_type ?? (hasMetaTypes ? metaTypes[0] : au?.user_metadata?.user_type) ?? null,
           user_types: p.user_types ?? (hasMetaTypes ? metaTypes : (au?.user_metadata?.user_type ? [au.user_metadata.user_type] : null)),

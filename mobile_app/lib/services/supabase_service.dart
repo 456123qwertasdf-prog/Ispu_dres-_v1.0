@@ -1,10 +1,17 @@
+import 'dart:math';
+
 import 'package:supabase_flutter/supabase_flutter.dart';
+
+/// Same channel name as web admin "online now" so mobile users are counted.
+const String _onlinePresenceChannelName = 'lspu-dres-online';
 
 class SupabaseService {
   static const String supabaseUrl = 'https://hmolyqzbvxxliemclrld.supabase.co';
   static const String supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imhtb2x5cXpidnh4bGllbWNscmxkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjAyNDY5NzAsImV4cCI6MjA3NTgyMjk3MH0.G2AOT-8zZ5sk8qGQUBifFqq5ww2W7Hxvtux0tlQ0Q-4';
 
   static SupabaseClient get client => Supabase.instance.client;
+
+  static RealtimeChannel? _onlinePresenceChannel;
 
   static Future<void> initialize() async {
     await Supabase.initialize(
@@ -56,7 +63,45 @@ class SupabaseService {
   }
 
   static Future<void> signOut() async {
+    stopOnlinePresence();
     await client.auth.signOut();
+  }
+
+  /// Join the global presence channel so this user is counted as "online" on admin (web).
+  /// Call once when user is authenticated (e.g. from RoleRouter or first dashboard).
+  static void startOnlinePresence() {
+    if (_onlinePresenceChannel != null) return;
+    final userId = currentUserId;
+    final presenceKey = userId ?? 'anon-${Random().nextDouble().toStringAsFixed(9)}';
+    try {
+      _onlinePresenceChannel = client.channel(
+        _onlinePresenceChannelName,
+        opts: RealtimeChannelConfig(key: presenceKey, enabled: true),
+      );
+      _onlinePresenceChannel!.subscribe((status, [error]) {
+        if (status == RealtimeSubscribeStatus.subscribed) {
+          _onlinePresenceChannel!.track({
+            'user_id': userId,
+            'page': 'mobile',
+            'at': DateTime.now().toUtc().toIso8601String(),
+          });
+        }
+      });
+    } catch (e) {
+      // ignore: avoid_print
+      print('SupabaseService.startOnlinePresence: $e');
+    }
+  }
+
+  /// Leave the presence channel (e.g. on sign out).
+  static Future<void> stopOnlinePresence() async {
+    final ch = _onlinePresenceChannel;
+    _onlinePresenceChannel = null;
+    if (ch != null) {
+      try {
+        await client.removeChannel(ch);
+      } catch (_) {}
+    }
   }
 
   static User? get currentUser => client.auth.currentUser;

@@ -486,6 +486,9 @@ class _RoleRouterState extends State<RoleRouter> {
         return;
       }
 
+      // Count this user as "online" for admin (web User Management "Online now"; same channel as web)
+      SupabaseService.startOnlinePresence();
+
       // Retry saving OneSignal player ID if user is already authenticated
       debugPrint('✅ User already authenticated (ID: ${userId.substring(0, 8)}...), retrying OneSignal Player ID save...');
       await OneSignalService().retrySavePlayerIdToSupabase();

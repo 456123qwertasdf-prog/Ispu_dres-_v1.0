@@ -460,6 +460,10 @@ class _ResponderDashboardScreenState extends State<ResponderDashboardScreen> {
   Future<void> _requestAssistance() async {
     final responder = _profile;
     if (responder == null || _updatingAssistance) return;
+    if (_activeAssignments.isEmpty) {
+      _showSnack('You need an active assignment to request assistance.', isError: true);
+      return;
+    }
     setState(() => _updatingAssistance = true);
     try {
       await SupabaseService.client
@@ -1171,12 +1175,14 @@ class _ResponderDashboardScreenState extends State<ResponderDashboardScreen> {
                     ),
               tooltip: _profile?.needsAssistance == true
                   ? 'Cancel assistance request'
-                  : 'Request backup / I need assistance',
+                  : (_activeAssignments.isEmpty
+                      ? 'Request only available with an active assignment'
+                      : 'Request backup / I need assistance'),
               onPressed: _updatingAssistance
                   ? null
                   : (_profile?.needsAssistance == true
                       ? _cancelAssistance
-                      : _requestAssistance),
+                      : (_activeAssignments.isEmpty ? null : _requestAssistance)),
             ),
           ],
           IconButton(
@@ -1906,32 +1912,24 @@ class _ResponderDashboardScreenState extends State<ResponderDashboardScreen> {
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  responder.role,
+                  (responder.teamName != null && responder.teamName!.trim().isNotEmpty)
+                      ? responder.teamName!
+                      : 'No team',
                   style: TextStyle(
                     color: Colors.white.withValues(alpha: 0.9),
                     fontSize: 13,
                     letterSpacing: 0.3,
                   ),
                 ),
-                if (responder.teamName != null || responder.leaderName != null) ...[
-                  const SizedBox(height: 6),
-                  if (responder.teamName != null)
-                    Text(
-                      'Team: ${responder.teamName}',
-                      style: TextStyle(
-                        color: Colors.white.withValues(alpha: 0.85),
-                        fontSize: 12,
-                      ),
+                if (responder.leaderName != null && responder.leaderName!.trim().isNotEmpty) ...[
+                  const SizedBox(height: 4),
+                  Text(
+                    'Leader: ${responder.leaderName!}',
+                    style: TextStyle(
+                      color: Colors.white.withValues(alpha: 0.85),
+                      fontSize: 12,
                     ),
-                  if (responder.teamName != null && responder.leaderName != null) const SizedBox(height: 2),
-                  if (responder.leaderName != null)
-                    Text(
-                      'Leader: ${responder.leaderName}',
-                      style: TextStyle(
-                        color: Colors.white.withValues(alpha: 0.85),
-                        fontSize: 12,
-                      ),
-                    ),
+                  ),
                 ],
                 const SizedBox(height: 10),
                 Align(
@@ -2028,7 +2026,7 @@ class _ResponderDashboardScreenState extends State<ResponderDashboardScreen> {
           Text(
             responder.needsAssistance
                 ? 'Supervisors have been notified. Tap below to cancel when no longer needed.'
-                : 'Notify supervisors if you need backup or assistance.',
+                : 'Notify supervisors if you need backup or assistance. You can only request when you have an active assignment.',
             style: TextStyle(
               color: Colors.grey.shade700,
               fontSize: 13,
@@ -2053,7 +2051,9 @@ class _ResponderDashboardScreenState extends State<ResponderDashboardScreen> {
                     ),
                   )
                 : FilledButton.icon(
-                    onPressed: _updatingAssistance ? null : _requestAssistance,
+                    onPressed: (_updatingAssistance || _activeAssignments.isEmpty)
+                        ? null
+                        : _requestAssistance,
                     icon: _updatingAssistance
                         ? const SizedBox(
                             width: 18,

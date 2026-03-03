@@ -55,6 +55,12 @@ class EmergencyResponseSystem {
       await this.ensureResponderForCurrentUser();
       await this.ensureSeedResponderIfEmpty();
       
+      // Track this client as "online" for admin (web + mobile use same channel)
+      const pageName = (typeof window !== 'undefined' && window.location && window.location.pathname)
+        ? (window.location.pathname.replace(/^\//, '').replace(/\.html$/, '') || 'app')
+        : 'app';
+      this.trackOnlinePresence(pageName);
+      
       return true;
     } catch (error) {
       console.error('❌ Failed to initialize system:', error);
@@ -1700,6 +1706,33 @@ class EmergencyResponseSystem {
     }
   }
 
+
+  /**
+   * Join the global presence channel so this user is counted as "online" on admin.
+   * Call from any page that should count as "using the system" (e.g. user dashboard, map).
+   * @param {string} pageName - e.g. 'user', 'map', 'reports'
+   */
+  trackOnlinePresence(pageName) {
+    try {
+      if (!this.supabase) return;
+      const userId = this.user?.id;
+      const presenceKey = userId || 'anon-' + Math.random().toString(36).slice(2, 12);
+      const channel = this.supabase.channel('lspu-dres-online', {
+        config: { presence: { key: presenceKey } }
+      });
+      channel.subscribe(async (status) => {
+        if (status === 'SUBSCRIBED') {
+          await channel.track({
+            user_id: userId || null,
+            page: pageName || 'app',
+            at: new Date().toISOString()
+          });
+        }
+      });
+    } catch (e) {
+      console.warn('trackOnlinePresence failed:', e);
+    }
+  }
 
   cleanup() {
     if (this.watchId) {

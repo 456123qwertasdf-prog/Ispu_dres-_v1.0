@@ -176,6 +176,86 @@
             line-height: 1.5;
         }
         
+        .header-title-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 1.5rem;
+            flex-wrap: wrap;
+        }
+        
+        .admin-stats-row {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            flex-shrink: 0;
+        }
+        
+        .stat-card {
+            display: flex;
+            align-items: center;
+            gap: 0.875rem;
+            padding: 0.875rem 1.25rem;
+            background: white;
+            border-radius: 12px;
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+            min-width: 140px;
+        }
+        
+        .stat-card.stat-online {
+            background: linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 100%);
+            border-color: #bbf7d0;
+        }
+        
+        .stat-icon-wrap {
+            position: relative;
+            width: 44px;
+            height: 44px;
+            border-radius: 10px;
+            background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.25rem;
+        }
+        
+        .stat-pulse {
+            position: absolute;
+            inset: -2px;
+            border-radius: 12px;
+            background: rgba(34, 197, 94, 0.4);
+            animation: stat-pulse 2s ease-out infinite;
+            pointer-events: none;
+        }
+        
+        @keyframes stat-pulse {
+            0% { transform: scale(1); opacity: 0.6; }
+            100% { transform: scale(1.15); opacity: 0; }
+        }
+        
+        .stat-content {
+            display: flex;
+            flex-direction: column;
+            gap: 0.125rem;
+        }
+        
+        .stat-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #166534;
+            line-height: 1.2;
+        }
+        
+        .stat-label {
+            font-size: 0.75rem;
+            font-weight: 500;
+            color: #15803d;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+        }
+        
         /* Users Section Styles */
         .users-section {
             margin-top: 2rem;
@@ -224,7 +304,10 @@
             border-radius: 12px;
             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
             overflow: hidden;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
         }
+        .users-table { min-width: 880px; }
         
         .users-table {
             width: 100%;
@@ -435,6 +518,91 @@
             background-color: #d97706;
         }
         
+        .verified-badge {
+            display: inline-block;
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+        .verified-badge.verified {
+            background-color: #d1fae5;
+            color: #065f46;
+        }
+        .verified-badge.unverified {
+            background-color: #fef3c7;
+            color: #92400e;
+        }
+        .btn-resend-verify {
+            margin-left: 0.35rem;
+            background-color: #3b82f6;
+            color: white;
+            border: none;
+            padding: 0.3rem 0.6rem;
+            border-radius: 4px;
+            font-size: 0.7rem;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        .btn-resend-verify:hover {
+            background-color: #2563eb;
+        }
+        
+        .verification-requests-section { margin-top: 1.5rem; }
+        .verification-requests-count {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 1.5rem;
+            height: 1.5rem;
+            padding: 0 0.4rem;
+            background: #f59e0b;
+            color: white;
+            border-radius: 999px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+        .verification-requests-count.zero { background: #9ca3af; }
+        .verification-requests-list {
+            background: #f9fafb;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 1rem;
+        }
+        .verification-request-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 0.75rem;
+            padding: 0.75rem 0;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        .verification-request-item:last-child { border-bottom: none; }
+        .verification-request-item .email { font-weight: 500; color: #374151; }
+        .verification-request-item .date { font-size: 0.8125rem; color: #6b7280; }
+        .verification-request-item .actions { display: flex; gap: 0.5rem; }
+        .verification-request-item .btn-send-verify {
+            background: #3b82f6;
+            color: white;
+            border: none;
+            padding: 0.35rem 0.65rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            cursor: pointer;
+        }
+        .verification-request-item .btn-send-verify:hover { background: #2563eb; }
+        .verification-request-item .btn-dismiss-request {
+            background: #6b7280;
+            color: white;
+            border: none;
+            padding: 0.35rem 0.65rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            cursor: pointer;
+        }
+        .verification-request-item .btn-dismiss-request:hover { background: #4b5563; }
+        
         /* Form Minimize/Maximize Styles */
         .form-header-container {
             display: flex;
@@ -572,14 +740,164 @@
             color: #6b7280;
         }
 
+        /* Mobile: top bar and sidebar */
+        .mobile-top-bar {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 56px;
+            background: linear-gradient(180deg, var(--primary-navy) 0%, var(--primary-blue) 100%);
+            color: white;
+            align-items: center;
+            gap: 12px;
+            padding: 0 16px;
+            z-index: 1001;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+            border-bottom: 2px solid var(--accent-yellow);
+        }
+        .mobile-menu-btn {
+            background: rgba(255,255,255,0.15);
+            border: none;
+            color: white;
+            width: 44px;
+            height: 44px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 1.5rem;
+            transition: background 0.2s;
+        }
+        .mobile-menu-btn:hover { background: rgba(255,255,255,0.25); }
+        .mobile-top-bar-title { font-size: 1.125rem; font-weight: 700; }
+        .sidebar-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 999;
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+        .sidebar-overlay.visible { opacity: 1; }
+
+        /* User cards for mobile (replaces table on small screens) */
+        .users-cards { display: none; }
+        .user-card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.08);
+            padding: 1rem;
+            margin-bottom: 0.75rem;
+            border: 1px solid #eee;
+        }
+        .user-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 0.5rem;
+            margin-bottom: 0.75rem;
+        }
+        .user-card-name { font-weight: 600; color: #1e293b; font-size: 1rem; }
+        .user-card-role { flex-shrink: 0; }
+        .user-card-row { font-size: 0.8125rem; color: #64748b; margin-bottom: 0.25rem; }
+        .user-card-row strong { color: #374151; margin-right: 0.35rem; }
+        .user-card-actions {
+            display: flex;
+            gap: 0.5rem;
+            margin-top: 0.75rem;
+            padding-top: 0.75rem;
+            border-top: 1px solid #f1f3f4;
+        }
+        .user-card-actions .btn-edit, .user-card-actions .btn-archive, .user-card-actions .btn-delete {
+            flex: 1;
+            padding: 0.5rem 0.5rem;
+            font-size: 0.75rem;
+        }
+        /* Touch-friendly action buttons in cards (min 44px for tap targets) */
+        .user-card-actions .btn-edit, .user-card-actions .btn-archive, .user-card-actions .btn-delete {
+            min-height: 44px;
+            cursor: pointer;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        /* From 992px down: show card view so Edit/Archive/Delete are always visible */
+        @media (max-width: 992px) {
+            .table-container { display: none !important; }
+            .users-cards { display: block !important; }
+            .section-header-top {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 0.75rem;
+            }
+            .search-container {
+                max-width: none;
+                margin-left: 0;
+                flex-direction: column;
+            }
+            .filter-dropdown { min-width: 100%; }
+            .pagination-wrapper { flex-direction: column; align-items: center; gap: 0.5rem; text-align: center; }
+            .pagination-controls { flex-wrap: wrap; justify-content: center; }
+            .pagination-btn { min-width: 44px; height: 44px; }
+        }
+
+        @media (max-width: 768px) {
+            .mobile-top-bar { display: flex; }
+            .sidebar-overlay.visible { display: block; }
+            .sidebar {
+                top: 56px;
+                left: -250px;
+                height: calc(100vh - 56px);
+                transition: left 0.25s ease;
+                z-index: 1000;
+            }
+            .sidebar.open { left: 0; }
+            .main-content {
+                margin-left: 0;
+                padding: 72px 12px 24px;
+                width: 100%;
+            }
+            .header-content { padding: 1rem; }
+            .header-title-row { flex-direction: column; align-items: stretch; }
+            .admin-stats-row { justify-content: flex-start; }
+            .stat-card { min-width: 120px; }
+            .form-grid { grid-template-columns: 1fr; gap: 1rem; }
+            .registration-form { padding: 1rem; margin: 0; }
+            .table-container { display: none !important; }
+            .users-cards { display: block !important; }
+            .users-table th, .users-table td { padding: 0.5rem 0.35rem; font-size: 0.8125rem; }
+            .action-buttons { flex-wrap: wrap; gap: 0.35rem; }
+            .button-group { flex-wrap: wrap; }
+        }
+        @media (max-width: 480px) {
+            .main-content { padding: 72px 10px 20px; }
+            .user-card-actions { flex-direction: column; gap: 0.5rem; }
+            .user-card-actions .btn-edit, .user-card-actions .btn-archive, .user-card-actions .btn-delete { flex: none; width: 100%; min-height: 44px; }
+        }
+
     </style>
     <script src="https://cdn.jsdelivr.net/npm/supabase@2"></script>
     <script src="js/supabase.js"></script>
 </head>
 <body>
+    <!-- Mobile top bar (visible only on small screens) -->
+    <header class="mobile-top-bar" id="mobileTopBar" aria-hidden="true">
+        <button type="button" class="mobile-menu-btn" id="mobileMenuBtn" onclick="toggleSidebar()" aria-label="Open menu">
+            <i class="bi bi-list"></i>
+        </button>
+        <span class="mobile-top-bar-title">User Management</span>
+    </header>
+    <!-- Overlay when sidebar is open on mobile -->
+    <div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()" aria-hidden="true"></div>
     <div class="dashboard-container">
         <!-- Sidebar -->
-        <div class="sidebar">
+        <div class="sidebar" id="sidebar">
             <div class="sidebar-header">
                 <div class="sidebar-logo">
                     <img src="images/logolspu.jpg" alt="LSPU Logo" 
@@ -1149,8 +1467,24 @@
                 <!-- Header Card -->
                 <div class="header-card">
                     <div class="header-content">
-                        <h2 class="header-title">User Management</h2>
-                        <p class="header-subtitle">Create and manage user accounts for the emergency response system</p>
+                        <div class="header-title-row">
+                            <div>
+                                <h2 class="header-title">User Management</h2>
+                                <p class="header-subtitle">Create and manage user accounts for the emergency response system</p>
+                            </div>
+                            <div class="admin-stats-row">
+                                <div class="stat-card stat-online" id="onlineNowCard" title="Users currently using the system">
+                                    <div class="stat-icon-wrap">
+                                        <span class="stat-pulse"></span>
+                                        <i class="bi bi-people-fill"></i>
+                                    </div>
+                                    <div class="stat-content">
+                                        <span class="stat-value" id="onlineNowCount">—</span>
+                                        <span class="stat-label">Online now</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
                 
@@ -1260,6 +1594,22 @@
                     </div>
                 </div>
                 
+                <!-- Verification link requests (users who asked for a new link) -->
+                <div class="users-section verification-requests-section">
+                    <div class="section-header">
+                        <div class="section-header-top">
+                            <div style="display: flex; align-items: center; gap: 0.75rem;">
+                                <h3>Verification link requests</h3>
+                                <span id="verificationRequestsCount" class="verification-requests-count">0</span>
+                            </div>
+                        </div>
+                        <p>Users who requested a new verification email (e.g. link expired). Send them a new link or dismiss.</p>
+                    </div>
+                    <div id="verificationRequestsList" class="verification-requests-list">
+                        <div class="no-data">Loading...</div>
+                    </div>
+                </div>
+                
                 <!-- Users List Section -->
                 <div class="users-section">
                     <div class="section-header">
@@ -1313,16 +1663,18 @@
                                     <th>Role</th>
                                     <th>Contact</th>
                                     <th>Created</th>
+                                    <th>Verified</th>
                                     <th>Actions</th>
                                 </tr>
                             </thead>
                             <tbody id="usersTableBody">
                                 <tr>
-                                    <td colspan="9" class="no-data">No users registered yet</td>
+                                    <td colspan="10" class="no-data">No users registered yet</td>
                                 </tr>
                             </tbody>
                         </table>
                     </div>
+                    <div id="usersCardsContainer" class="users-cards"></div>
                     <div id="paginationContainer" class="pagination-wrapper"></div>
                     </div>
                 </div>
@@ -1331,6 +1683,34 @@
     </div>
 
     <script>
+        // Mobile sidebar toggle
+        function toggleSidebar() {
+            var sidebar = document.getElementById('sidebar');
+            var overlay = document.getElementById('sidebarOverlay');
+            var btn = document.getElementById('mobileMenuBtn');
+            if (sidebar && overlay && btn) {
+                sidebar.classList.toggle('open');
+                overlay.classList.toggle('visible');
+                var icon = btn.querySelector('i');
+                if (icon) {
+                    icon.className = sidebar.classList.contains('open') ? 'bi bi-x-lg' : 'bi bi-list';
+                }
+                btn.setAttribute('aria-label', sidebar.classList.contains('open') ? 'Close menu' : 'Open menu');
+            }
+        }
+        function closeSidebar() {
+            var sidebar = document.getElementById('sidebar');
+            var overlay = document.getElementById('sidebarOverlay');
+            var btn = document.getElementById('mobileMenuBtn');
+            if (sidebar && overlay && btn) {
+                sidebar.classList.remove('open');
+                overlay.classList.remove('visible');
+                var icon = btn.querySelector('i');
+                if (icon) icon.className = 'bi bi-list';
+                btn.setAttribute('aria-label', 'Open menu');
+            }
+        }
+
         // Toggle registered users section
         function toggleRegisteredUsers() {
             const body = document.getElementById('registeredUsersBody');
@@ -1376,15 +1756,75 @@
 
                 // Load users and populate table
                 await loadUsers();
+                await loadVerificationRequests();
+                
+                // Show how many users are online (Realtime presence)
+                initOnlinePresence();
                 
                 console.log('✅ User management page initialized successfully');
             } catch (error) {
                 console.error('❌ Error initializing user management page:', error);
             }
         });
+        
+        const PRESENCE_CHANNEL = 'lspu-dres-online';
+        let presenceChannel = null;
+
+        function setOnlineCount(n) {
+            const el = document.getElementById('onlineNowCount');
+            if (el) el.textContent = n;
+        }
+
+        function countPresenceState(state) {
+            const userIds = new Set();
+            Object.keys(state || {}).forEach(ref => {
+                (state[ref] || []).forEach(p => {
+                    if (p.user_id) userIds.add(p.user_id);
+                });
+            });
+            return userIds.size;
+        }
+        
+        function initOnlinePresence() {
+            // Show at least 1 (you) so we never show "—" while Realtime may be unconfigured
+            setOnlineCount(1);
+            try {
+                const supabase = window.emergencySystem?.supabase;
+                const user = window.emergencySystem?.user;
+                if (!supabase) return;
+                
+                presenceChannel = supabase.channel(PRESENCE_CHANNEL, {
+                    config: { presence: { key: user?.id || 'anon-' + Math.random().toString(36).slice(2) } }
+                });
+                
+                presenceChannel
+                    .on('presence', { event: 'sync' }, () => {
+                        const state = presenceChannel.presenceState();
+                        const n = countPresenceState(state);
+                        setOnlineCount(n > 0 ? n : 1);
+                    })
+                    .subscribe(async (status) => {
+                        if (status === 'SUBSCRIBED') {
+                            await presenceChannel.track({
+                                user_id: user?.id || null,
+                                page: 'user-management',
+                                at: new Date().toISOString()
+                            });
+                            // Update count once after we join (works even if sync never fires)
+                            const state = presenceChannel.presenceState();
+                            const n = countPresenceState(state);
+                            setOnlineCount(n > 0 ? n : 1);
+                        }
+                    });
+            } catch (e) {
+                console.warn('Online presence init failed:', e);
+                setOnlineCount(1);
+            }
+        }
 
         // User Management Functions
         let allUsers = [];
+        let allUsersForEmailLookup = []; // all users (including inactive) for email lookup when fulfilling verification requests
         let currentPage = 1;
         const USERS_PER_PAGE = 10;
         let currentFilteredUsers = [];
@@ -1399,7 +1839,7 @@
                 if (error) throw error;
                 const users = data?.users || [];
 
-                allUsers = users.map(u => {
+                const mapped = users.map(u => {
                     // Prefer user_types array; fallback to single user_type then infer
                     let userTypes = (u.user_types && Array.isArray(u.user_types) && u.user_types.length) ? u.user_types
                         : (u.user_metadata?.user_types && Array.isArray(u.user_metadata.user_types) && u.user_metadata.user_types.length) ? u.user_metadata.user_types
@@ -1448,11 +1888,12 @@
                         role: (u.role || 'citizen').toLowerCase(),
                         contactNumber: u.phone || '',
                         status: u.is_active === false ? 'inactive' : 'active',
-                        created: u.created_at || new Date().toISOString()
+                        created: u.created_at || new Date().toISOString(),
+                        verifiedAt: u.email_confirmed_at || null
                     };
-                })
-                // only show active users in this table
-                .filter(u => u.status === 'active');
+                });
+                allUsersForEmailLookup = mapped;
+                allUsers = mapped.filter(u => u.status === 'active');
 
                 displayUsersTable();
                 console.log('Users loaded successfully:', allUsers.length);
@@ -1474,7 +1915,9 @@
             const users = currentFilteredUsers;
 
             if (users.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="9" class="no-data">No users found</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="10" class="no-data">No users found</td></tr>';
+                var cardsEl = document.getElementById('usersCardsContainer');
+                if (cardsEl) cardsEl.innerHTML = '<div class="no-data" style="padding: 2rem; text-align: center;">No users found</div>';
                 renderPaginationControls(0, 0);
                 return;
             }
@@ -1487,7 +1930,13 @@
             const end = Math.min(start + USERS_PER_PAGE, users.length);
             const pageUsers = users.slice(start, end);
 
-            tbody.innerHTML = pageUsers.map(user => `
+            tbody.innerHTML = pageUsers.map(user => {
+                const verified = !!user.verifiedAt;
+                const verifiedHtml = verified
+                    ? '<span class="verified-badge verified">Yes</span>'
+                    : '<span class="verified-badge unverified">No</span>';
+                const resendBtn = verified ? '' : `<button type="button" class="btn-resend-verify" onclick="resendVerification('${user.id}')" title="Send verification email again">Resend</button>`;
+                return `
                 <tr>
                     <td>${user.id.substring(0, 8)}...</td>
                     <td>${user.username || 'N/A'}</td>
@@ -1497,6 +1946,7 @@
                     <td><span class="role-badge role-${user.role}">${user.role.toUpperCase()}</span></td>
                     <td>${user.contactNumber || 'N/A'}</td>
                     <td>${formatDate(user.created)}</td>
+                    <td>${verifiedHtml} ${resendBtn}</td>
                     <td>
                         <div class="action-buttons">
                             <button class="btn-edit" onclick="editUser('${user.id}')">Edit</button>
@@ -1505,7 +1955,36 @@
                         </div>
                     </td>
                 </tr>
-            `).join('');
+            `;
+            }).join('');
+
+            var cardsEl = document.getElementById('usersCardsContainer');
+            if (cardsEl) {
+                cardsEl.innerHTML = pageUsers.map(user => {
+                    const verified = !!user.verifiedAt;
+                    const verifiedLabel = verified ? '<span class="verified-badge verified">Verified</span>' : '<span class="verified-badge unverified">Not verified</span>';
+                    const resendBtn = verified ? '' : `<button type="button" class="btn-resend-verify" onclick="resendVerification('${user.id}')">Resend verification</button>`;
+                    return `
+                    <div class="user-card">
+                        <div class="user-card-header">
+                            <span class="user-card-name">${user.firstname} ${user.lastname}</span>
+                            <span class="role-badge role-${user.role} user-card-role">${user.role.toUpperCase()}</span>
+                        </div>
+                        <div class="user-card-row"><strong>Type:</strong> ${user.username || 'N/A'}</div>
+                        <div class="user-card-row"><strong>Gmail:</strong> ${user.gmail || 'N/A'}</div>
+                        <div class="user-card-row"><strong>ID:</strong> ${user.studentNumber || 'N/A'}</div>
+                        <div class="user-card-row"><strong>Contact:</strong> ${user.contactNumber || 'N/A'}</div>
+                        <div class="user-card-row"><strong>Created:</strong> ${formatDate(user.created)}</div>
+                        <div class="user-card-row"><strong>Verified:</strong> ${verifiedLabel} ${resendBtn}</div>
+                        <div class="user-card-actions">
+                            <button type="button" class="btn-edit" onclick="editUser('${user.id}')">Edit</button>
+                            <button type="button" class="btn-archive" onclick="archiveUser('${user.id}')">Archive</button>
+                            <button type="button" class="btn-delete" onclick="deleteUser('${user.id}')">Delete</button>
+                        </div>
+                    </div>
+                `;
+                }).join('');
+            }
 
             renderPaginationControls(totalPages, users.length, start + 1, end);
         }
@@ -1578,7 +2057,7 @@
             });
         }
 
-        // Populate Team Leader dropdown (responders who can be leaders)
+        // Populate Team Leader dropdown (only responders who are leaders: no leader_id)
         async function loadResponderLeadersDropdown() {
             const sel = document.getElementById('responderLeaderId');
             const firstOpt = sel.options[0];
@@ -1586,7 +2065,8 @@
             sel.appendChild(firstOpt);
             try {
                 const responders = await window.emergencySystem.getResponders();
-                (responders || []).forEach(r => {
+                const leadersOnly = (responders || []).filter(r => r.leader_id == null);
+                leadersOnly.forEach(r => {
                     const opt = document.createElement('option');
                     opt.value = r.id;
                     opt.textContent = r.name + (r.role ? ' (' + r.role + ')' : '');
@@ -1757,6 +2237,109 @@
                 console.error('Failed to delete user:', error);
                 window.emergencySystem.showError('Failed to delete user: ' + (error.message || 'Unknown error'));
             }
+        }
+
+        async function resendVerification(userId) {
+            try {
+                const { data, error } = await window.emergencySystem.supabase.functions.invoke('resend-verification', {
+                    body: { user_id: userId }
+                });
+                if (error) throw error;
+                if (data?.already_verified) {
+                    window.emergencySystem.showSuccess('User is already verified.');
+                } else {
+                    window.emergencySystem.showSuccess(data?.message || 'Verification email sent.');
+                }
+                await loadUsers();
+            } catch (error) {
+                console.error('Resend verification failed:', error);
+                const msg = error?.message || (typeof error === 'string' ? error : 'Unknown error');
+                window.emergencySystem.showError('Failed to resend verification: ' + msg);
+            }
+        }
+
+        async function loadVerificationRequests() {
+            const listEl = document.getElementById('verificationRequestsList');
+            const countEl = document.getElementById('verificationRequestsCount');
+            try {
+                const { data, error } = await window.emergencySystem.supabase.functions.invoke('get-verification-requests', {});
+                if (error) throw error;
+                const requests = data?.requests || [];
+                if (countEl) {
+                    countEl.textContent = requests.length;
+                    countEl.classList.toggle('zero', requests.length === 0);
+                }
+                if (listEl) {
+                    if (requests.length === 0) {
+                        listEl.innerHTML = '<div class="no-data">No verification link requests.</div>';
+                    } else {
+                        listEl.innerHTML = requests.map(r => {
+                            const reqDate = r.requested_at ? formatDate(r.requested_at) : '—';
+                            return `
+                            <div class="verification-request-item" data-request-id="${r.id}" data-email="${(r.email || '').replace(/"/g, '&quot;')}">
+                                <div>
+                                    <span class="email">${escapeHtml(r.email || '')}</span>
+                                    <span class="date">Requested ${reqDate}</span>
+                                </div>
+                                <div class="actions">
+                                    <button type="button" class="btn-send-verify" onclick="handleSendVerificationForRequest('${r.id}', '${(r.email || '').replace(/'/g, "\\'")}')">Send verification</button>
+                                    <button type="button" class="btn-dismiss-request" onclick="handleDismissVerificationRequest('${r.id}')">Dismiss</button>
+                                </div>
+                            </div>`;
+                        }).join('');
+                    }
+                }
+            } catch (e) {
+                console.error('Load verification requests failed:', e);
+                if (listEl) listEl.innerHTML = '<div class="no-data">Could not load requests.</div>';
+                if (countEl) { countEl.textContent = '0'; countEl.classList.add('zero'); }
+            }
+        }
+
+        async function markVerificationRequestFulfilled(requestId) {
+            try {
+                const { error } = await window.emergencySystem.supabase.functions.invoke('mark-verification-request-fulfilled', {
+                    body: { request_id: requestId }
+                });
+                if (error) throw error;
+                await loadVerificationRequests();
+            } catch (e) {
+                console.error('Mark fulfilled failed:', e);
+                window.emergencySystem.showError('Failed to update request.');
+            }
+        }
+
+        async function handleSendVerificationForRequest(requestId, requestEmail) {
+            const email = (requestEmail || '').trim().toLowerCase();
+            if (!email) return;
+            const user = allUsersForEmailLookup.find(u => (u.gmail || '').toLowerCase() === email);
+            if (!user) {
+                window.emergencySystem.showError('No user found with email ' + email + '. You can dismiss the request or ensure the user exists.');
+                return;
+            }
+            try {
+                const { data, error } = await window.emergencySystem.supabase.functions.invoke('resend-verification', {
+                    body: { user_id: user.id }
+                });
+                if (error) throw error;
+                window.emergencySystem.showSuccess(data?.message || 'Verification email sent.');
+                await markVerificationRequestFulfilled(requestId);
+            } catch (e) {
+                console.error('Send verification for request failed:', e);
+                window.emergencySystem.showError('Failed to send verification: ' + (e?.message || 'Unknown error'));
+            }
+        }
+
+        async function handleDismissVerificationRequest(requestId) {
+            await markVerificationRequestFulfilled(requestId);
+            window.emergencySystem.showSuccess('Request dismissed.');
+        }
+
+        function escapeHtml(text) {
+            if (!text) return '';
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
         }
 
         // Handle form submission: create user via Edge Function (service role)
