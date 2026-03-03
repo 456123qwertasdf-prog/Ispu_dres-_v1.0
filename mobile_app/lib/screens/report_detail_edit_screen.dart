@@ -331,8 +331,17 @@ class _ReportDetailEditScreenState extends State<ReportDetailEditScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(_isEditMode ? 'Edit Report' : 'Report Details'),
-        backgroundColor: const Color(0xFF3b82f6),
+        elevation: 0,
+        centerTitle: true,
+        title: Text(
+          _isEditMode ? 'Edit Report' : 'Report Details',
+          style: const TextStyle(
+            fontWeight: FontWeight.w600,
+            fontSize: 18,
+            letterSpacing: 0.2,
+          ),
+        ),
+        backgroundColor: const Color(0xFF2563EB),
         foregroundColor: Colors.white,
         actions: [
           if (!_isEditMode)
@@ -373,17 +382,32 @@ class _ReportDetailEditScreenState extends State<ReportDetailEditScreen> {
     if (!needsBackup && !needsAssistance) return const SizedBox.shrink();
     return Container(
       width: double.infinity,
-      margin: const EdgeInsets.only(bottom: 16),
-      padding: const EdgeInsets.all(14),
+      margin: const EdgeInsets.only(bottom: 20),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.orange.shade50,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.orange.shade300),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.orange.shade200),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.orange.withValues(alpha: 0.06),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(Icons.emergency_rounded, color: Colors.orange.shade700, size: 28),
-          const SizedBox(width: 12),
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: Colors.orange.shade100,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Icon(Icons.emergency_rounded, color: Colors.orange.shade700, size: 24),
+          ),
+          const SizedBox(width: 14),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -395,14 +419,16 @@ class _ReportDetailEditScreenState extends State<ReportDetailEditScreen> {
                     color: Colors.orange.shade900,
                     fontWeight: FontWeight.bold,
                     fontSize: 15,
+                    letterSpacing: 0.2,
                   ),
                 ),
-                const SizedBox(height: 4),
+                const SizedBox(height: 6),
                 Text(
                   'Use "Assign responder" below to send backup or assist.',
                   style: TextStyle(
                     color: Colors.orange.shade800,
                     fontSize: 13,
+                    height: 1.35,
                   ),
                 ),
               ],
@@ -427,26 +453,47 @@ class _ReportDetailEditScreenState extends State<ReportDetailEditScreen> {
         report['responder_name']?.toString();
 
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(20),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _buildNeedsAssistanceBanner(),
           // Type and Status Card
-          Card(
-            elevation: 2,
+          Container(
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: Colors.grey.shade200),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.04),
+                  blurRadius: 12,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
             child: Padding(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(20),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        _getTypeEmoji(type),
-                        style: const TextStyle(fontSize: 40),
+                      Container(
+                        width: 52,
+                        height: 52,
+                        alignment: Alignment.center,
+                        decoration: BoxDecoration(
+                          color: _getStatusColor(status).withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                        child: Text(
+                          _getTypeEmoji(type),
+                          style: const TextStyle(fontSize: 28),
+                        ),
                       ),
-                      const SizedBox(width: 12),
+                      const SizedBox(width: 16),
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -456,9 +503,10 @@ class _ReportDetailEditScreenState extends State<ReportDetailEditScreen> {
                               style: const TextStyle(
                                 fontSize: 18,
                                 fontWeight: FontWeight.bold,
+                                letterSpacing: 0.3,
                               ),
                             ),
-                            const SizedBox(height: 8),
+                            const SizedBox(height: 10),
                             Wrap(
                               spacing: 8,
                               runSpacing: 8,
@@ -476,13 +524,24 @@ class _ReportDetailEditScreenState extends State<ReportDetailEditScreen> {
               ),
             ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 20),
 
           // Details Card
-          Card(
-            elevation: 2,
+          Container(
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: Colors.grey.shade200),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.04),
+                  blurRadius: 12,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
             child: Padding(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(20),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -491,13 +550,14 @@ class _ReportDetailEditScreenState extends State<ReportDetailEditScreen> {
                     style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
+                      letterSpacing: 0.2,
                     ),
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 16),
                   _buildDetailRow('Message', message),
-                  const Divider(),
+                  const Divider(height: 24),
                   _buildDetailRow('Reporter', reporterName),
-                  const Divider(),
+                  const Divider(height: 24),
                   _buildDetailRow(
                     'Created',
                     createdAt != null
@@ -505,7 +565,7 @@ class _ReportDetailEditScreenState extends State<ReportDetailEditScreen> {
                         : 'Unknown',
                   ),
                   if (lastUpdate != null) ...[
-                    const Divider(),
+                    const Divider(height: 24),
                     _buildDetailRow(
                       'Last Updated',
                       _formatDate(lastUpdate),
@@ -515,13 +575,24 @@ class _ReportDetailEditScreenState extends State<ReportDetailEditScreen> {
               ),
             ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 20),
 
           // Responder Assignment Card
-          Card(
-            elevation: 2,
+          Container(
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: Colors.grey.shade200),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.04),
+                  blurRadius: 12,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
             child: Padding(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(20),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -530,6 +601,7 @@ class _ReportDetailEditScreenState extends State<ReportDetailEditScreen> {
                     style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
+                      letterSpacing: 0.2,
                     ),
                   ),
                   const SizedBox(height: 12),
@@ -643,12 +715,12 @@ class _ReportDetailEditScreenState extends State<ReportDetailEditScreen> {
                       label: Text(responderName != null ? 'Change Responder' : 'Assign Responder'),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: responderName != null
-                            ? const Color(0xFF3b82f6)
+                            ? const Color(0xFF2563EB)
                             : const Color(0xFF16a34a),
                         foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        padding: const EdgeInsets.symmetric(vertical: 14),
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
+                          borderRadius: BorderRadius.circular(12),
                         ),
                       ),
                     ),
@@ -659,11 +731,22 @@ class _ReportDetailEditScreenState extends State<ReportDetailEditScreen> {
           ),
           // Report image (Superuser can see what was reported)
           if (_reportImageUrl != null) ...[
-            const SizedBox(height: 16),
-            Card(
-              elevation: 2,
+            const SizedBox(height: 20),
+            Container(
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: Colors.grey.shade200),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.04),
+                    blurRadius: 12,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
               child: Padding(
-                padding: const EdgeInsets.all(16),
+                padding: const EdgeInsets.all(20),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -672,6 +755,7 @@ class _ReportDetailEditScreenState extends State<ReportDetailEditScreen> {
                       style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
+                        letterSpacing: 0.2,
                       ),
                     ),
                     const SizedBox(height: 12),
@@ -924,16 +1008,17 @@ class _ReportDetailEditScreenState extends State<ReportDetailEditScreen> {
 
   Widget _buildDetailRow(String label, String value) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8),
+      padding: const EdgeInsets.symmetric(vertical: 10),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           SizedBox(
-            width: 100,
+            width: 110,
             child: Text(
               label,
               style: TextStyle(
                 fontWeight: FontWeight.w600,
+                fontSize: 14,
                 color: Colors.grey.shade700,
               ),
             ),
@@ -941,7 +1026,7 @@ class _ReportDetailEditScreenState extends State<ReportDetailEditScreen> {
           Expanded(
             child: Text(
               value,
-              style: const TextStyle(fontSize: 14),
+              style: const TextStyle(fontSize: 14, height: 1.4),
             ),
           ),
         ],

@@ -1069,7 +1069,9 @@ class _ResponderDashboardScreenState extends State<ResponderDashboardScreen> {
     if (_errorMessage != null) {
       return Scaffold(
         appBar: AppBar(
-          backgroundColor: const Color(0xFF3b82f6),
+          elevation: 0,
+          centerTitle: true,
+          backgroundColor: const Color(0xFF2563EB),
           foregroundColor: Colors.white,
           leading: Padding(
             padding: const EdgeInsets.all(8.0),
@@ -1122,7 +1124,10 @@ class _ResponderDashboardScreenState extends State<ResponderDashboardScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: const Color(0xFF3b82f6),
+        elevation: 0,
+        scrolledUnderElevation: 2,
+        centerTitle: true,
+        backgroundColor: const Color(0xFF2563EB),
         foregroundColor: Colors.white,
         leading: Padding(
           padding: const EdgeInsets.all(8.0),
@@ -1135,7 +1140,11 @@ class _ResponderDashboardScreenState extends State<ResponderDashboardScreen> {
         ),
         title: const Text(
           'Kapiyu Responder',
-          style: TextStyle(fontWeight: FontWeight.w700),
+          style: TextStyle(
+            fontWeight: FontWeight.w700,
+            fontSize: 18,
+            letterSpacing: 0.3,
+          ),
         ),
         actions: [
           IconButton(
@@ -1184,20 +1193,35 @@ class _ResponderDashboardScreenState extends State<ResponderDashboardScreen> {
                 ],
         ),
       ),
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _selectedIndex,
-        onTap: (index) {
-          setState(() {
-            _selectedIndex = index;
-            if (_isSecurityGuard && index == 2 && _ongoingReports.isEmpty && !_ongoingLoading) {
-              _loadOngoingReports();
-            }
-          });
-        },
-        selectedItemColor: const Color(0xFF3b82f6),
-        unselectedItemColor: Colors.grey,
-        type: BottomNavigationBarType.fixed,
-        items: _isSecurityGuard
+      bottomNavigationBar: Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.06),
+              blurRadius: 12,
+              offset: const Offset(0, -4),
+            ),
+          ],
+        ),
+        child: BottomNavigationBar(
+          currentIndex: _selectedIndex,
+          onTap: (index) {
+            setState(() {
+              _selectedIndex = index;
+              if (_isSecurityGuard && index == 2 && _ongoingReports.isEmpty && !_ongoingLoading) {
+                _loadOngoingReports();
+              }
+            });
+          },
+          elevation: 0,
+          backgroundColor: Colors.white,
+          selectedItemColor: const Color(0xFF2563EB),
+          unselectedItemColor: Colors.grey.shade600,
+          type: BottomNavigationBarType.fixed,
+          selectedLabelStyle: const TextStyle(fontWeight: FontWeight.w600, fontSize: 12),
+          unselectedLabelStyle: const TextStyle(fontSize: 12),
+          items: _isSecurityGuard
             ? const [
                 BottomNavigationBarItem(
                   icon: Icon(Icons.dashboard_customize),
@@ -1230,6 +1254,7 @@ class _ResponderDashboardScreenState extends State<ResponderDashboardScreen> {
                   label: 'Map View',
                 ),
               ],
+        ),
       ),
     );
   }
@@ -1256,7 +1281,7 @@ class _ResponderDashboardScreenState extends State<ResponderDashboardScreen> {
         'Keep equipment inspected and stay ready for anything.';
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
         gradient: const LinearGradient(
           colors: [Color(0xFFf0fdf4), Color(0xFFecfdf5)],
@@ -1265,30 +1290,46 @@ class _ResponderDashboardScreenState extends State<ResponderDashboardScreen> {
         ),
         borderRadius: BorderRadius.circular(16),
         border: Border(left: BorderSide(color: const Color(0xFF059669), width: 4)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.green.withValues(alpha: 0.06),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              Icon(Icons.shield_outlined, color: const Color(0xFF059669), size: 22),
-              const SizedBox(width: 8),
+              Container(
+                padding: const EdgeInsets.all(6),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF059669).withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Icon(Icons.shield_outlined, color: Color(0xFF059669), size: 20),
+              ),
+              const SizedBox(width: 10),
               const Text(
                 'Readiness Notice',
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.bold,
                   color: Color(0xFF047857),
+                  letterSpacing: 0.2,
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 6),
+          const SizedBox(height: 8),
           Text(
             'Based on recent system reports (last 30 days)',
             style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: 12),
           Text(
             message,
             style: const TextStyle(
@@ -1526,27 +1567,32 @@ class _ResponderDashboardScreenState extends State<ResponderDashboardScreen> {
     if (responder == null) return const SizedBox.shrink();
 
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
       decoration: BoxDecoration(
-        color: const Color(0xFF1D4ED8),
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Color(0xFF2563EB), Color(0xFF1D4ED8)],
+        ),
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF1D4ED8).withValues(alpha: 0.2),
-            blurRadius: 18,
-            offset: const Offset(0, 10),
+            color: const Color(0xFF1D4ED8).withValues(alpha: 0.25),
+            blurRadius: 20,
+            offset: const Offset(0, 8),
           ),
         ],
       ),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           CircleAvatar(
-            radius: 32,
+            radius: 30,
             backgroundColor: Colors.white,
             child: Text(
               responder.initials,
               style: const TextStyle(
-                fontSize: 24,
+                fontSize: 22,
                 fontWeight: FontWeight.bold,
                 color: Color(0xFF1D4ED8),
               ),
@@ -1556,21 +1602,24 @@ class _ResponderDashboardScreenState extends State<ResponderDashboardScreen> {
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
                   responder.name,
                   style: const TextStyle(
                     color: Colors.white,
-                    fontSize: 20,
+                    fontSize: 19,
                     fontWeight: FontWeight.bold,
+                    letterSpacing: 0.2,
                   ),
                 ),
-                const SizedBox(height: 4),
+                const SizedBox(height: 2),
                 Text(
                   responder.role,
-                  style: const TextStyle(
-                    color: Colors.white70,
-                    letterSpacing: 0.5,
+                  style: TextStyle(
+                    color: Colors.white.withValues(alpha: 0.9),
+                    fontSize: 13,
+                    letterSpacing: 0.3,
                   ),
                 ),
                 if (responder.teamName != null || responder.leaderName != null) ...[
@@ -1578,31 +1627,47 @@ class _ResponderDashboardScreenState extends State<ResponderDashboardScreen> {
                   if (responder.teamName != null)
                     Text(
                       'Team: ${responder.teamName}',
-                      style: const TextStyle(
-                        color: Colors.white70,
-                        fontSize: 13,
+                      style: TextStyle(
+                        color: Colors.white.withValues(alpha: 0.85),
+                        fontSize: 12,
                       ),
                     ),
                   if (responder.teamName != null && responder.leaderName != null) const SizedBox(height: 2),
                   if (responder.leaderName != null)
                     Text(
                       'Leader: ${responder.leaderName}',
-                      style: const TextStyle(
-                        color: Colors.white70,
-                        fontSize: 13,
+                      style: TextStyle(
+                        color: Colors.white.withValues(alpha: 0.85),
+                        fontSize: 12,
                       ),
                     ),
                 ],
-                const SizedBox(height: 12),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                  decoration: BoxDecoration(
-                    color: responder.isAvailable ? Colors.green : Colors.grey.shade500,
-                    borderRadius: BorderRadius.circular(30),
-                  ),
-                  child: Text(
-                    responder.isAvailable ? 'Available for dispatch' : 'Unavailable',
-                    style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
+                const SizedBox(height: 10),
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: responder.isAvailable
+                          ? Colors.green.withValues(alpha: 0.95)
+                          : Colors.grey.shade600,
+                      borderRadius: BorderRadius.circular(24),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.15),
+                          blurRadius: 6,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: Text(
+                      responder.isAvailable ? 'Available' : 'Unavailable',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w600,
+                        fontSize: 12,
+                      ),
+                    ),
                   ),
                 ),
               ],
@@ -1617,23 +1682,23 @@ class _ResponderDashboardScreenState extends State<ResponderDashboardScreen> {
     final responder = _profile;
     if (responder == null) return const SizedBox.shrink();
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: responder.needsAssistance
             ? Colors.orange.shade50
             : Colors.white,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(20),
         border: Border.all(
           color: responder.needsAssistance
               ? Colors.orange.shade300
-              : Colors.orange.shade200,
-          width: 1.5,
+              : Colors.orange.shade100,
+          width: 1,
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.orange.withValues(alpha: 0.08),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
+            color: Colors.orange.withValues(alpha: 0.06),
+            blurRadius: 16,
+            offset: const Offset(0, 6),
           ),
         ],
       ),
@@ -1641,23 +1706,34 @@ class _ResponderDashboardScreenState extends State<ResponderDashboardScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              Icon(
-                Icons.emergency_rounded,
-                color: Colors.orange.shade700,
-                size: 24,
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: Colors.orange.shade100,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(
+                  Icons.emergency_rounded,
+                  color: Colors.orange.shade700,
+                  size: 22,
+                ),
               ),
-              const SizedBox(width: 10),
-              Text(
-                'Request assistance',
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
-                      color: Colors.orange.shade900,
-                    ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  'Request assistance',
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: Colors.orange.shade900,
+                        letterSpacing: 0.2,
+                      ),
+                ),
               ),
             ],
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 14),
           Text(
             responder.needsAssistance
                 ? 'Supervisors have been notified. Tap below to cancel when no longer needed.'
@@ -1665,15 +1741,27 @@ class _ResponderDashboardScreenState extends State<ResponderDashboardScreen> {
             style: TextStyle(
               color: Colors.grey.shade700,
               fontSize: 13,
-              height: 1.35,
+              height: 1.45,
             ),
           ),
-          const SizedBox(height: 14),
-          Row(
-            children: [
-              if (!responder.needsAssistance)
-                Expanded(
-                  child: FilledButton.icon(
+          const SizedBox(height: 16),
+          SizedBox(
+            width: double.infinity,
+            child: responder.needsAssistance
+                ? OutlinedButton.icon(
+                    onPressed: _updatingAssistance ? null : _cancelAssistance,
+                    icon: const Icon(Icons.cancel_outlined, size: 20),
+                    label: const Text('Cancel request'),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: Colors.orange.shade700,
+                      side: BorderSide(color: Colors.orange.shade700),
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                  )
+                : FilledButton.icon(
                     onPressed: _updatingAssistance ? null : _requestAssistance,
                     icon: _updatingAssistance
                         ? const SizedBox(
@@ -1687,27 +1775,14 @@ class _ResponderDashboardScreenState extends State<ResponderDashboardScreen> {
                         : const Icon(Icons.emergency_rounded, size: 20),
                     label: const Text('Request backup / I need assistance'),
                     style: FilledButton.styleFrom(
-                      backgroundColor: Colors.orange.shade700,
+                      backgroundColor: Colors.orange.shade600,
                       foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
                     ),
                   ),
-                ),
-              if (!responder.needsAssistance) const SizedBox(width: 12),
-              if (responder.needsAssistance)
-                Expanded(
-                  child: OutlinedButton.icon(
-                    onPressed: _updatingAssistance ? null : _cancelAssistance,
-                    icon: const Icon(Icons.cancel_outlined, size: 20),
-                    label: const Text('Cancel request'),
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: Colors.orange.shade700,
-                      side: BorderSide(color: Colors.orange.shade700),
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                    ),
-                  ),
-                ),
-            ],
           ),
         ],
       ),
@@ -1767,16 +1842,16 @@ class _ResponderDashboardScreenState extends State<ResponderDashboardScreen> {
     required String subtitle,
   }) {
     return Container(
-      padding: const EdgeInsets.all(14),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: color.withValues(alpha: 0.15)),
+        border: Border.all(color: color.withValues(alpha: 0.12)),
         boxShadow: [
           BoxShadow(
-            color: color.withValues(alpha: 0.08),
-            blurRadius: 16,
-            offset: const Offset(0, 8),
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
           ),
         ],
       ),
@@ -1788,32 +1863,38 @@ class _ResponderDashboardScreenState extends State<ResponderDashboardScreen> {
             padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
               color: color.withValues(alpha: 0.12),
-              borderRadius: BorderRadius.circular(14),
+              borderRadius: BorderRadius.circular(12),
             ),
             child: Icon(icon, color: color, size: 22),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 14),
           Text(
             title,
             style: TextStyle(
               color: Colors.grey.shade600,
               fontWeight: FontWeight.w600,
-              fontSize: 13,
+              fontSize: 12,
+              letterSpacing: 0.2,
             ),
           ),
-          const SizedBox(height: 4),
+          const SizedBox(height: 6),
           Text(
             value,
             style: TextStyle(
               color: Colors.grey.shade900,
-              fontSize: 22,
+              fontSize: 24,
               fontWeight: FontWeight.bold,
+              letterSpacing: -0.5,
             ),
           ),
-          const SizedBox(height: 3),
+          const SizedBox(height: 4),
           Text(
             subtitle,
-            style: TextStyle(color: Colors.grey.shade500, fontSize: 11),
+            style: TextStyle(
+              color: Colors.grey.shade500,
+              fontSize: 11,
+              height: 1.3,
+            ),
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
           ),
@@ -1834,8 +1915,8 @@ class _ResponderDashboardScreenState extends State<ResponderDashboardScreen> {
         border: Border.all(color: Colors.grey.shade200),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 12,
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 16,
             offset: const Offset(0, 6),
           ),
         ],
@@ -1844,16 +1925,26 @@ class _ResponderDashboardScreenState extends State<ResponderDashboardScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              const Icon(Icons.toggle_on_rounded, color: Color(0xFF2563EB), size: 28),
-              const SizedBox(width: 8),
-              Text(
-                'My Availability',
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w700,
-                    ),
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF2563EB).withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Icon(Icons.toggle_on_rounded, color: Color(0xFF2563EB), size: 24),
               ),
-              const Spacer(),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  'My Availability',
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 0.2,
+                      ),
+                ),
+              ),
               Switch.adaptive(
                 value: responder.isAvailable,
                 onChanged: _updatingAvailability ? null : (_) => _toggleAvailability(),
@@ -2060,26 +2151,36 @@ class _ResponderDashboardScreenState extends State<ResponderDashboardScreen> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: statusColor.withValues(alpha: 0.2)),
+        border: Border.all(color: statusColor.withValues(alpha: 0.15)),
         boxShadow: [
           BoxShadow(
-            color: statusColor.withValues(alpha: 0.08),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 14,
-            offset: const Offset(0, 8),
+            offset: const Offset(0, 6),
           ),
         ],
       ),
-      padding: const EdgeInsets.all(18),
+      padding: const EdgeInsets.all(20),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                _typeEmoji(assignment.report.type),
-                style: const TextStyle(fontSize: 32),
+              Container(
+                width: 48,
+                height: 48,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color: statusColor.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: Text(
+                  _typeEmoji(assignment.report.type),
+                  style: const TextStyle(fontSize: 26),
+                ),
               ),
-              const SizedBox(width: 12),
+              const SizedBox(width: 14),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -2092,18 +2193,19 @@ class _ResponderDashboardScreenState extends State<ResponderDashboardScreen> {
                         letterSpacing: 0.4,
                       ),
                     ),
-                    const SizedBox(height: 6),
+                    const SizedBox(height: 8),
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                       decoration: BoxDecoration(
                         color: statusColor.withValues(alpha: 0.15),
-                        borderRadius: BorderRadius.circular(30),
+                        borderRadius: BorderRadius.circular(24),
                       ),
                       child: Text(
                         assignment.status.toUpperCase(),
                         style: TextStyle(
                           color: statusColor.darken(),
                           fontWeight: FontWeight.w700,
+                          fontSize: 12,
                         ),
                       ),
                     ),
@@ -2120,20 +2222,25 @@ class _ResponderDashboardScreenState extends State<ResponderDashboardScreen> {
               ),
             ],
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 14),
           Text(
             assignment.report.message ?? 'No description provided.',
-            style: TextStyle(color: Colors.grey.shade800, height: 1.4),
+            style: TextStyle(
+              color: Colors.grey.shade800,
+              height: 1.45,
+              fontSize: 14,
+            ),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 14),
           Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Icon(Icons.place_outlined, color: Colors.grey.shade500, size: 18),
-              const SizedBox(width: 6),
+              const SizedBox(width: 8),
               Expanded(
                 child: Text(
                   locationText,
-                  style: TextStyle(color: Colors.grey.shade600),
+                  style: TextStyle(color: Colors.grey.shade600, fontSize: 13),
                 ),
               ),
             ],
@@ -2142,17 +2249,17 @@ class _ResponderDashboardScreenState extends State<ResponderDashboardScreen> {
           Row(
             children: [
               Icon(Icons.access_time_rounded, color: Colors.grey.shade500, size: 18),
-              const SizedBox(width: 6),
+              const SizedBox(width: 8),
               Text(
                 _formatDate(assignment.assignedAt),
-                style: TextStyle(color: Colors.grey.shade600),
+                style: TextStyle(color: Colors.grey.shade600, fontSize: 13),
               ),
             ],
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 18),
           Wrap(
-            spacing: 12,
-            runSpacing: 12,
+            spacing: 10,
+            runSpacing: 10,
             children: [
               if (primaryTarget != null)
                 ElevatedButton.icon(
@@ -2294,11 +2401,26 @@ class _ResponderDashboardScreenState extends State<ResponderDashboardScreen> {
         color: Colors.green.shade50,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: Colors.green.shade100),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.green.withValues(alpha: 0.04),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Icon(Icons.verified, color: Color(0xFF10B981)),
-          const SizedBox(width: 12),
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: const Color(0xFF10B981).withValues(alpha: 0.15),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: const Icon(Icons.check_circle_rounded, color: Color(0xFF10B981), size: 22),
+          ),
+          const SizedBox(width: 14),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -2308,17 +2430,19 @@ class _ResponderDashboardScreenState extends State<ResponderDashboardScreen> {
                   style: const TextStyle(
                     fontWeight: FontWeight.w700,
                     color: Color(0xFF065F46),
+                    fontSize: 14,
                   ),
                 ),
                 const SizedBox(height: 4),
                 Text(
                   'Completed ${_formatDate(assignment.completedAt)}',
-                  style: const TextStyle(color: Color(0xFF047857)),
+                  style: const TextStyle(color: Color(0xFF047857), fontSize: 13),
                 ),
                 if (assignment.notes != null && assignment.notes!.isNotEmpty) ...[
-                  const SizedBox(height: 6),
+                  const SizedBox(height: 8),
                   Container(
-                    padding: const EdgeInsets.all(8),
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(10),
                     decoration: BoxDecoration(
                       color: Colors.green.shade100.withValues(alpha: 0.5),
                       borderRadius: BorderRadius.circular(8),
@@ -2354,16 +2478,16 @@ class _ResponderDashboardScreenState extends State<ResponderDashboardScreen> {
     final center = _mapCenter();
 
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: Colors.grey.shade200),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
+            color: Colors.black.withValues(alpha: 0.04),
             blurRadius: 16,
-            offset: const Offset(0, 10),
+            offset: const Offset(0, 6),
           ),
         ],
       ),
@@ -2371,14 +2495,23 @@ class _ResponderDashboardScreenState extends State<ResponderDashboardScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              const Icon(Icons.map_rounded, color: Color(0xFF2563EB)),
-              const SizedBox(width: 8),
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF2563EB).withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: const Icon(Icons.map_rounded, color: Color(0xFF2563EB), size: 22),
+              ),
+              const SizedBox(width: 12),
               Expanded(
                 child: Text(
                   'Live Map View',
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
                         fontWeight: FontWeight.w700,
+                        letterSpacing: 0.2,
                       ),
                 ),
               ),
@@ -2390,10 +2523,11 @@ class _ResponderDashboardScreenState extends State<ResponderDashboardScreen> {
                         height: 16,
                         child: CircularProgressIndicator(strokeWidth: 2),
                       )
-                    : const Icon(Icons.my_location),
-                label: const Text(
-                  'Update',
-                  style: TextStyle(fontSize: 13),
+                    : const Icon(Icons.my_location, size: 20),
+                label: const Text('Update'),
+                style: TextButton.styleFrom(
+                  foregroundColor: const Color(0xFF2563EB),
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                 ),
               ),
             ],
