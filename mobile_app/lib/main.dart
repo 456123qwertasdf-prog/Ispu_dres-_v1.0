@@ -240,6 +240,13 @@ class _UpdateCheckGateState extends State<_UpdateCheckGate> {
         body: Center(child: CircularProgressIndicator()),
       );
     }
+    // In debug (e.g. flutter run), skip update blocks so you can edit and test locally without pushing
+    if (kDebugMode) {
+      if (widget.isAuthenticated) {
+        return const RoleRouter();
+      }
+      return const LoginScreen();
+    }
     if (_updateRequired && _updateResult != null) {
       return _UpdateRequiredScreen(result: _updateResult!);
     }
