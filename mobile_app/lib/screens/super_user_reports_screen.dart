@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../services/supabase_service.dart';
+import '../utils/report_date_helper.dart';
 import 'report_detail_edit_screen.dart';
 
 class SuperUserReportsScreen extends StatefulWidget {
@@ -369,6 +370,7 @@ class _SuperUserReportsScreenState extends State<SuperUserReportsScreen> {
     final status = report['status']?.toString() ?? 'Unknown';
     final message = report['message']?.toString() ?? 'No description';
     final createdAt = report['created_at']?.toString();
+    final createdAtFormatted = ReportDateHelper.formatReportCreatedAt(createdAt);
     final reporterName = report['reporter_name']?.toString() ?? 'Unknown';
     final statusColor = _getStatusColor(status);
     final hasResponder = report['responder_id'] != null ||
@@ -492,7 +494,7 @@ class _SuperUserReportsScreenState extends State<SuperUserReportsScreen> {
                       size: 14, color: Colors.grey.shade600),
                   const SizedBox(width: 4),
                   Text(
-                    _formatDate(createdAt),
+                    createdAtFormatted,
                     style: TextStyle(
                       color: Colors.grey.shade600,
                       fontSize: 12,

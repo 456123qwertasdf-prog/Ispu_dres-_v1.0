@@ -1318,18 +1318,16 @@
     }
 
     /**
-     * Format report date in user's local time.
-     * Backend often stores "local" time but sends it as UTC (Z or +00:00). We strip
-     * the timezone so the time part is shown as-is (e.g. 14:54 displays as 2:54 PM local).
+     * Format report date. Backend returns timestamps with +00 (e.g. 15:18:54+00).
+     * That value is the submitter's local time stored as-is (not true UTC), so we
+     * strip the timezone and parse as local so it displays correctly (e.g. 15:18 → 3:18 PM).
      */
     function formatReportDate(dateString) {
         if (dateString == null || dateString === '') return 'N/A';
         let toParse = String(dateString).trim();
-        // Strip UTC indicator so the datetime is parsed as local (no conversion)
         if (toParse.endsWith('Z')) {
             toParse = toParse.slice(0, -1);
         } else if (/[+-]\d{2}:?\d{2}$/.test(toParse)) {
-            // e.g. +00:00 or +0000 or -05:00
             toParse = toParse.replace(/[+-]\d{2}:?\d{2}$/, '');
         }
         const date = new Date(toParse);

@@ -6,6 +6,7 @@ import 'package:latlong2/latlong.dart' as latlong;
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../services/supabase_service.dart';
 import '../models/responder_models.dart';
+import '../utils/report_date_helper.dart';
 import 'report_detail_loader_screen.dart';
 
 class SuperUserMapScreen extends StatefulWidget {
@@ -856,13 +857,13 @@ class _SuperUserMapScreenState extends State<SuperUserMapScreen> {
                             if (assignment['reports']?['created_at'] != null) ...[
                               _buildInfoRow(
                                 'Reported At',
-                                _formatDate(DateTime.parse(assignment['reports']?['created_at'])),
+                                ReportDateHelper.formatReportCreatedAt(assignment['reports']?['created_at']?.toString()),
                                 Icons.schedule,
                               ),
                               const SizedBox(height: 12),
                               _buildInfoRow(
                                 'Time Since',
-                                _getTimeSince(DateTime.parse(assignment['reports']?['created_at'])),
+                                _getTimeSince(ReportDateHelper.parseReportCreatedAt(assignment['reports']?['created_at']?.toString()) ?? DateTime.now()),
                                 Icons.timer_outlined,
                               ),
                               const SizedBox(height: 12),
@@ -1270,13 +1271,13 @@ class _SuperUserMapScreenState extends State<SuperUserMapScreen> {
                           if (createdAt != null) ...[
                             _buildInfoRow(
                               'Reported At',
-                              _formatDate(DateTime.parse(createdAt.toString())),
+                              ReportDateHelper.formatReportCreatedAt(createdAt.toString()),
                               Icons.schedule,
                             ),
                             const SizedBox(height: 12),
                             _buildInfoRow(
                               'Time Since',
-                              _getTimeSince(DateTime.parse(createdAt.toString())),
+                              _getTimeSince(ReportDateHelper.parseReportCreatedAt(createdAt.toString()) ?? DateTime.now()),
                               Icons.timer_outlined,
                             ),
                             const SizedBox(height: 12),

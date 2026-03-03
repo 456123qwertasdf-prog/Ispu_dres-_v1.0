@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
 import '../services/supabase_service.dart';
+import '../utils/report_date_helper.dart';
 
 class MyReportsScreen extends StatefulWidget {
   /// When set (e.g. from notification tap), scroll to and highlight this report after load.
@@ -549,7 +550,7 @@ class _MyReportsScreenState extends State<MyReportsScreen> {
               ),
               const SizedBox(width: 6),
               Text(
-                _formatDate(report.createdAt),
+                ReportDateHelper.formatReportCreatedAtDateTime(report.createdAt),
                 style: TextStyle(
                   color: Colors.grey.shade600,
                   fontSize: 13,
@@ -772,9 +773,7 @@ class EmergencyReport {
       aiDescription: map['ai_description'] as String?,
       message: (map['description'] ?? map['message']) as String?,
       location: map['location'],
-      createdAt: map['created_at'] != null
-          ? DateTime.tryParse(map['created_at'].toString())
-          : null,
+      createdAt: ReportDateHelper.parseReportCreatedAt(map['created_at']?.toString()),
     );
   }
 

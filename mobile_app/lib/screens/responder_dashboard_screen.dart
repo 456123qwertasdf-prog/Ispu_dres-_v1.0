@@ -15,6 +15,7 @@ import '../models/responder_models.dart';
 import '../services/supabase_service.dart';
 import '../services/onesignal_service.dart';
 import 'report_detail_loader_screen.dart';
+import '../utils/report_date_helper.dart';
 import '../utils/synopsis_helper.dart';
 
 class ResponderDashboardScreen extends StatefulWidget {
@@ -1723,7 +1724,7 @@ class _ResponderDashboardScreenState extends State<ResponderDashboardScreen> {
             }
             final createdAt = report['created_at'];
             final timeStr = createdAt != null
-                ? DateFormat('MMM d, h:mm a').format(DateTime.parse(createdAt.toString()).toLocal())
+                ? ReportDateHelper.formatReportCreatedAtShort(createdAt.toString())
                 : '—';
             final responderName = report['responder_name'] ?? (report['responder'] is Map ? (report['responder'] as Map)['name'] : null);
             return Card(

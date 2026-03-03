@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../services/supabase_service.dart';
+import '../utils/report_date_helper.dart';
 
 class ReportDetailEditScreen extends StatefulWidget {
   final Map<String, dynamic> report;
@@ -562,9 +563,7 @@ class _ReportDetailEditScreenState extends State<ReportDetailEditScreen> {
                   const Divider(height: 24),
                   _buildDetailRow(
                     'Created',
-                    createdAt != null
-                        ? _formatDate(createdAt)
-                        : 'Unknown',
+                    ReportDateHelper.formatReportCreatedAt(createdAt),
                   ),
                   const Divider(height: 24),
                   _buildDetailRow(

@@ -1044,12 +1044,13 @@
                 submitText.classList.add('hidden');
                 submitLoading.classList.remove('hidden');
 
-                // Get form data
+                // Get form data (capture submit time so created_at reflects when user submitted)
                 const formData = {
                     type: 'other', // Will be determined by AI
                     message: document.getElementById('description').value || 'Emergency reported via photo',
                     reporter_name: document.getElementById('reporterName').value,
-                    location: document.getElementById('location').value
+                    location: document.getElementById('location').value,
+                    created_at: new Date().toISOString()
                 };
 
                 // Upload image if provided
