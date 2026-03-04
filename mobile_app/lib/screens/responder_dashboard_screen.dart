@@ -17,6 +17,7 @@ import '../services/onesignal_service.dart';
 import 'report_detail_loader_screen.dart';
 import '../utils/report_date_helper.dart';
 import '../utils/synopsis_helper.dart';
+import 'package:showcaseview/showcaseview.dart';
 
 class ResponderDashboardScreen extends StatefulWidget {
   /// When set (e.g. from notification tap), switch to My Assignments and scroll to this report after load.
@@ -32,6 +33,22 @@ class _ResponderDashboardScreenState extends State<ResponderDashboardScreen> {
   final MapController _mapController = MapController();
   final DateFormat _dateFormat = DateFormat('MMM d, yyyy • h:mm a');
   final GlobalKey _initialAssignmentCardKey = GlobalKey();
+
+  // Tour
+  final GlobalKey _tourWelcome = GlobalKey();
+  final GlobalKey _tourReadiness = GlobalKey();
+  final GlobalKey _tourAvailability = GlobalKey();
+  final GlobalKey _tourAssignmentsBtn = GlobalKey();
+  final GlobalKey _tourBottomNav = GlobalKey();
+  final GlobalKey _tourNavDashboard = GlobalKey();
+  final GlobalKey _tourNavAssignments = GlobalKey();
+  final GlobalKey _tourNavOngoing = GlobalKey();
+  final GlobalKey _tourNavMap = GlobalKey();
+  final GlobalKey _tourNavProfile = GlobalKey();
+  final GlobalKey<ShowCaseWidgetState> _showCaseWidgetKey = GlobalKey<ShowCaseWidgetState>();
+  static const Color _tourAccent = Color(0xFF0d9488);
+  static const String _keyTourAutoShow = 'tour_auto_show';
+  bool _tourAutoShow = true;
 
   // Open Field coordinates (walkable area)
   static const latlong.LatLng _openFieldCenter = latlong.LatLng(14.262689, 121.398464);
@@ -78,6 +95,10 @@ class _ResponderDashboardScreenState extends State<ResponderDashboardScreen> {
   void initState() {
     super.initState();
     _loadPage();
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      final prefs = await SharedPreferences.getInstance();
+      if (mounted) setState(() => _tourAutoShow = prefs.getBool(_keyTourAutoShow) ?? true);
+    });
   }
 
   @override
@@ -353,6 +374,14 @@ class _ResponderDashboardScreenState extends State<ResponderDashboardScreen> {
       if (widget.initialReportId != null &&
           _assignments.any((a) => a.report.id == widget.initialReportId)) {
         WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToInitialAssignment());
+      }
+
+      // Auto-show tour on open if setting is on
+      final prefs = await SharedPreferences.getInstance();
+      if (prefs.getBool(_keyTourAutoShow) ?? true) {
+        Future.delayed(const Duration(milliseconds: 600), () {
+          if (mounted) _startTutorial();
+        });
       }
 
       // Load readiness synopsis (prepare / be ready / inspect)
@@ -1129,7 +1158,38 @@ class _ResponderDashboardScreenState extends State<ResponderDashboardScreen> {
       );
     }
 
-    return Scaffold(
+    return ShowCaseWidget(
+      key: _showCaseWidgetKey,
+      enableAutoScroll: true,
+      onComplete: (int? index, GlobalKey<State<StatefulWidget>>? key) {},
+      onFinish: () {},
+      globalTooltipActionConfig: const TooltipActionConfig(
+        position: TooltipActionPosition.inside,
+        alignment: MainAxisAlignment.spaceBetween,
+        actionGap: 12,
+        gapBetweenContentAndAction: 16,
+      ),
+      globalTooltipActions: [
+        TooltipActionButton(
+          type: TooltipDefaultActionType.previous,
+          name: 'Back',
+          backgroundColor: _tourAccent.withOpacity(0.2),
+          textStyle: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 14),
+        ),
+        TooltipActionButton(
+          type: TooltipDefaultActionType.next,
+          name: 'Next',
+          backgroundColor: _tourAccent,
+          textStyle: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 14),
+        ),
+        TooltipActionButton(
+          type: TooltipDefaultActionType.skip,
+          name: 'Skip',
+          backgroundColor: Colors.white24,
+          textStyle: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 14),
+        ),
+      ],
+      builder: (context) => Scaffold(
       appBar: AppBar(
         elevation: 0,
         scrolledUnderElevation: 2,
@@ -1145,15 +1205,29 @@ class _ResponderDashboardScreenState extends State<ResponderDashboardScreen> {
             ),
           ),
         ),
-        title: const Text(
-          'Kapiyu Responder',
-          style: TextStyle(
-            fontWeight: FontWeight.w700,
-            fontSize: 18,
-            letterSpacing: 0.3,
+        title: Showcase(
+          key: _tourWelcome,
+          title: 'Welcome to Kapiyu Responder',
+          description: 'As a responder you can view assignments, update your availability, get directions to incidents, and request backup. This tour will show you around.',
+          tooltipBackgroundColor: _tourAccent,
+          textColor: Colors.white,
+          titleTextStyle: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w700),
+          descTextStyle: TextStyle(color: Colors.white.withOpacity(0.95), fontSize: 14, height: 1.4),
+          child: const Text(
+            'Kapiyu Responder',
+            style: TextStyle(
+              fontWeight: FontWeight.w700,
+              fontSize: 18,
+              letterSpacing: 0.3,
+            ),
           ),
         ),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.help_outline_rounded),
+            tooltip: 'Take a tour',
+            onPressed: _startTutorial,
+          ),
           if (_selectedIndex == 1) ...[
             IconButton(
               icon: _updatingAssistance
@@ -1185,37 +1259,46 @@ class _ResponderDashboardScreenState extends State<ResponderDashboardScreen> {
                       : (_activeAssignments.isEmpty ? null : _requestAssistance)),
             ),
           ],
-          IconButton(
-            icon: Stack(
-              clipBehavior: Clip.none,
-              children: [
-                const Icon(Icons.notifications_outlined),
-                if (_activeAssignments.isNotEmpty)
-                  Positioned(
-                    right: -2,
-                    top: -2,
-                    child: Container(
-                      padding: const EdgeInsets.all(4),
-                      decoration: const BoxDecoration(
-                        color: Colors.orange,
-                        shape: BoxShape.circle,
-                      ),
-                      constraints: const BoxConstraints(minWidth: 18, minHeight: 18),
-                      child: Text(
-                        '${_activeAssignments.length > 9 ? '9+' : _activeAssignments.length}',
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 10,
-                          fontWeight: FontWeight.w700,
+          Showcase(
+            key: _tourAssignmentsBtn,
+            title: 'Assignments',
+            description: 'Tap to see your active and completed assignments. New assignments appear here.',
+            tooltipBackgroundColor: _tourAccent,
+            textColor: Colors.white,
+            titleTextStyle: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w700),
+            descTextStyle: TextStyle(color: Colors.white.withOpacity(0.95), fontSize: 14, height: 1.4),
+            child: IconButton(
+              icon: Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  const Icon(Icons.notifications_outlined),
+                  if (_activeAssignments.isNotEmpty)
+                    Positioned(
+                      right: -2,
+                      top: -2,
+                      child: Container(
+                        padding: const EdgeInsets.all(4),
+                        decoration: const BoxDecoration(
+                          color: Colors.orange,
+                          shape: BoxShape.circle,
                         ),
-                        textAlign: TextAlign.center,
+                        constraints: const BoxConstraints(minWidth: 18, minHeight: 18),
+                        child: Text(
+                          '${_activeAssignments.length > 9 ? '9+' : _activeAssignments.length}',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 10,
+                            fontWeight: FontWeight.w700,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
                       ),
                     ),
-                  ),
-              ],
+                ],
+              ),
+              tooltip: 'Assignments',
+              onPressed: _showAssignmentNotificationOverlay,
             ),
-            tooltip: 'Assignments',
-            onPressed: _showAssignmentNotificationOverlay,
           ),
           IconButton(
             icon: _isRefreshing
@@ -1252,75 +1335,169 @@ class _ResponderDashboardScreenState extends State<ResponderDashboardScreen> {
                       ],
         ),
       ),
-      bottomNavigationBar: Container(
-        decoration: BoxDecoration(
-          color: Colors.white,
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.06),
-              blurRadius: 12,
-              offset: const Offset(0, -4),
+      bottomNavigationBar: Showcase(
+        key: _tourBottomNav,
+        title: 'Navigation',
+        description: 'Switch between Dashboard, Assignments, Map View, and Profile. Use Map to navigate to incidents.',
+        tooltipBackgroundColor: _tourAccent,
+        textColor: Colors.white,
+        titleTextStyle: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w700),
+        descTextStyle: TextStyle(color: Colors.white.withOpacity(0.95), fontSize: 14, height: 1.4),
+        child: Container(
+          decoration: BoxDecoration(
+            color: Colors.white,
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.06),
+                blurRadius: 12,
+                offset: const Offset(0, -4),
+              ),
+            ],
+          ),
+          child: SafeArea(
+            child: Container(
+              height: 70,
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                children: [
+                  Showcase(
+                    key: _tourNavDashboard,
+                    title: 'Dashboard',
+                    description: 'Readiness notice and availability. Your home tab.',
+                    tooltipBackgroundColor: _tourAccent,
+                    textColor: Colors.white,
+                    titleTextStyle: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w700),
+                    descTextStyle: TextStyle(color: Colors.white.withOpacity(0.95), fontSize: 14, height: 1.4),
+                    child: _buildResponderNavItem(Icons.dashboard_customize, 'Dashboard', 0),
+                  ),
+                  Showcase(
+                    key: _tourNavAssignments,
+                    title: 'Assignments',
+                    description: 'Your active and completed assignments. Tap a report to navigate or update status.',
+                    tooltipBackgroundColor: _tourAccent,
+                    textColor: Colors.white,
+                    titleTextStyle: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w700),
+                    descTextStyle: TextStyle(color: Colors.white.withOpacity(0.95), fontSize: 14, height: 1.4),
+                    child: _buildResponderNavItem(Icons.list_alt, 'Assignments', 1),
+                  ),
+                  if (_isSecurityGuard)
+                    Showcase(
+                      key: _tourNavOngoing,
+                      title: 'Ongoing',
+                      description: 'All active incidents. Stay aware of campus-wide emergencies.',
+                      tooltipBackgroundColor: _tourAccent,
+                      textColor: Colors.white,
+                      titleTextStyle: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w700),
+                      descTextStyle: TextStyle(color: Colors.white.withOpacity(0.95), fontSize: 14, height: 1.4),
+                      child: _buildResponderNavItem(Icons.campaign_outlined, 'Ongoing', 2),
+                    ),
+                  Showcase(
+                    key: _tourNavMap,
+                    title: 'Map View',
+                    description: 'Map of incidents and your location. Get directions to assigned reports.',
+                    tooltipBackgroundColor: _tourAccent,
+                    textColor: Colors.white,
+                    titleTextStyle: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w700),
+                    descTextStyle: TextStyle(color: Colors.white.withOpacity(0.95), fontSize: 14, height: 1.4),
+                    child: _buildResponderNavItem(Icons.map, 'Map View', _isSecurityGuard ? 3 : 2),
+                  ),
+                  Showcase(
+                    key: _tourNavProfile,
+                    title: 'Profile',
+                    description: 'Your account and edit profile. Log out from here.\n\nTo see this tour again, tap the help (?) icon in the app bar. To turn off the automatic tour, open Profile and switch off "Show tour when I open the app".',
+                    tooltipBackgroundColor: _tourAccent,
+                    textColor: Colors.white,
+                    titleTextStyle: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w700),
+                    descTextStyle: TextStyle(color: Colors.white.withOpacity(0.95), fontSize: 14, height: 1.4),
+                    child: _buildResponderNavItem(Icons.person_rounded, 'Profile', _isSecurityGuard ? 4 : 3),
+                  ),
+                ],
+              ),
             ),
-          ],
+          ),
         ),
-        child: BottomNavigationBar(
-          currentIndex: _selectedIndex,
-          onTap: (index) {
-            setState(() {
-              _selectedIndex = index;
-              if (_isSecurityGuard && index == 2 && _ongoingReports.isEmpty && !_ongoingLoading) {
-                _loadOngoingReports();
-              }
-            });
-          },
-          elevation: 0,
-          backgroundColor: Colors.white,
-          selectedItemColor: const Color(0xFF2563EB),
-          unselectedItemColor: Colors.grey.shade600,
-          type: BottomNavigationBarType.fixed,
-          selectedLabelStyle: const TextStyle(fontWeight: FontWeight.w600, fontSize: 12),
-          unselectedLabelStyle: const TextStyle(fontSize: 12),
-          items: _isSecurityGuard
-            ? const [
-                BottomNavigationBarItem(
-                  icon: Icon(Icons.dashboard_customize),
-                  label: 'Dashboard',
+      ),
+      ),
+    );
+  }
+
+  void _startTutorial() {
+    if (!mounted) return;
+    setState(() => _selectedIndex = 0);
+    final keys = <GlobalKey>[
+      _tourWelcome,
+      _tourReadiness,
+      _tourAvailability,
+      _tourAssignmentsBtn,
+      _tourBottomNav,
+      _tourNavDashboard,
+      _tourNavAssignments,
+      if (_isSecurityGuard) _tourNavOngoing,
+      _tourNavMap,
+      _tourNavProfile,
+    ];
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      Future.delayed(const Duration(milliseconds: 350), () {
+        if (!mounted) return;
+        try {
+          _showCaseWidgetKey.currentState?.startShowCase(keys);
+        } catch (e, st) {
+          debugPrint('Responder tour error: $e\n$st');
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('Could not start tour: ${e.toString()}'), backgroundColor: Colors.red),
+            );
+          }
+        }
+      });
+    });
+  }
+
+  Widget _buildResponderNavItem(IconData icon, String label, int index) {
+    final isSelected = _selectedIndex == index;
+    return Expanded(
+      child: GestureDetector(
+        onTap: () {
+          setState(() {
+            _selectedIndex = index;
+            if (_isSecurityGuard && index == 2 && _ongoingReports.isEmpty && !_ongoingLoading) {
+              _loadOngoingReports();
+            }
+          });
+        },
+        behavior: HitTestBehavior.opaque,
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 4),
+          decoration: isSelected
+              ? BoxDecoration(
+                  color: const Color(0xFF2563EB).withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(12),
+                )
+              : null,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                icon,
+                color: isSelected ? const Color(0xFF2563EB) : Colors.grey.shade600,
+                size: 24,
+              ),
+              const SizedBox(height: 2),
+              Text(
+                label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  color: isSelected ? const Color(0xFF2563EB) : Colors.grey.shade600,
+                  fontSize: 11,
+                  fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
                 ),
-                BottomNavigationBarItem(
-                  icon: Icon(Icons.list_alt),
-                  label: 'Assignments',
-                ),
-                BottomNavigationBarItem(
-                  icon: Icon(Icons.campaign_outlined),
-                  label: 'Ongoing',
-                ),
-                BottomNavigationBarItem(
-                  icon: Icon(Icons.map),
-                  label: 'Map View',
-                ),
-                BottomNavigationBarItem(
-                  icon: Icon(Icons.person_rounded),
-                  label: 'Profile',
-                ),
-              ]
-            : const [
-                BottomNavigationBarItem(
-                  icon: Icon(Icons.dashboard_customize),
-                  label: 'Dashboard',
-                ),
-                BottomNavigationBarItem(
-                  icon: Icon(Icons.list_alt),
-                  label: 'Assignments',
-                ),
-                BottomNavigationBarItem(
-                  icon: Icon(Icons.map),
-                  label: 'Map View',
-                ),
-                BottomNavigationBarItem(
-                  icon: Icon(Icons.person_rounded),
-                  label: 'Profile',
-                ),
-              ],
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -1437,9 +1614,27 @@ class _ResponderDashboardScreenState extends State<ResponderDashboardScreen> {
       children: [
         _buildHeader(),
         const SizedBox(height: 20),
-        _buildReadinessNoticeCard(),
+        Showcase(
+          key: _tourReadiness,
+          title: 'Readiness Notice',
+          description: 'Guidance based on recent reports. Stay prepared and check equipment.',
+          tooltipBackgroundColor: _tourAccent,
+          textColor: Colors.white,
+          titleTextStyle: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w700),
+          descTextStyle: TextStyle(color: Colors.white.withOpacity(0.95), fontSize: 14, height: 1.4),
+          child: _buildReadinessNoticeCard(),
+        ),
         const SizedBox(height: 24),
-        _buildAvailabilityCard(),
+        Showcase(
+          key: _tourAvailability,
+          title: 'My Availability',
+          description: 'Toggle on when you can receive assignments. Dispatchers only see available responders.',
+          tooltipBackgroundColor: _tourAccent,
+          textColor: Colors.white,
+          titleTextStyle: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w700),
+          descTextStyle: TextStyle(color: Colors.white.withOpacity(0.95), fontSize: 14, height: 1.4),
+          child: _buildAvailabilityCard(),
+        ),
       ],
     );
   }
@@ -1622,6 +1817,36 @@ class _ResponderDashboardScreenState extends State<ResponderDashboardScreen> {
           ),
         ),
         const SizedBox(height: 24),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: Colors.grey.shade200),
+          ),
+          child: Row(
+            children: [
+              Icon(Icons.help_outline_rounded, color: _tourAccent, size: 22),
+              const SizedBox(width: 16),
+              const Expanded(
+                child: Text(
+                  'Show tour when I open the app',
+                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+                ),
+              ),
+              Switch.adaptive(
+                value: _tourAutoShow,
+                onChanged: (bool value) async {
+                  final prefs = await SharedPreferences.getInstance();
+                  await prefs.setBool(_keyTourAutoShow, value);
+                  if (mounted) setState(() => _tourAutoShow = value);
+                },
+                activeColor: _tourAccent,
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 12),
         SizedBox(
           width: double.infinity,
           child: FilledButton.icon(

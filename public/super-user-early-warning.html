@@ -7,6 +7,7 @@
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="css/su-header-shared.css">
     <link rel="stylesheet" href="css/system-status.css">
+    <link rel="stylesheet" href="css/su-tour.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
     <script src="https://cdn.jsdelivr.net/npm/supabase@2"></script>
     <script src="js/supabase.js"></script>
@@ -643,6 +644,7 @@
                 <p>Real-time weather, air quality &amp; safety metrics · LSPU Sta. Cruz Campus</p>
             </div>
             <div class="su-header-right">
+                <button type="button" id="su-take-tour-btn" class="su-tour-btn" title="Take a guided tour"><i class="bi bi-question-circle-fill"></i> Take a tour</button>
                 <button onclick="refreshAllData()" class="ew-btn ew-btn-green">
                     <i class="bi bi-arrow-clockwise"></i> Refresh All
                 </button>
@@ -778,6 +780,14 @@
         </div>
     </div>
 
+<script>
+window.SU_TOUR_STEPS = [
+    { sel: '.su-page-header', title: 'Early Warning Dashboard', desc: 'Real-time weather, air quality, and safety metrics for LSPU Sta. Cruz Campus. Use Refresh All and Generate Report from here.' },
+    { sel: '.ew-grid', title: 'Weather & metrics', desc: 'Weather overview, forecasts, and safety status. Monitor temperature, humidity, and alerts.' },
+    { sel: '.sidebar-nav', title: 'Navigation', desc: 'Go to Dashboard, Emergency Reports, Map View, Announcements, Readiness & Safety, or SOS Alerts.' }
+];
+</script>
+<script src="js/su-tour.js"></script>
     <script>
         let weatherData = null;
 

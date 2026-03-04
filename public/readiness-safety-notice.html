@@ -7,6 +7,7 @@
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="css/su-header-shared.css">
     <link rel="stylesheet" href="css/system-status.css">
+    <link rel="stylesheet" href="css/su-tour.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
     <script src="https://cdn.jsdelivr.net/npm/supabase@2"></script>
     <script src="js/supabase.js"></script>
@@ -201,6 +202,7 @@
                     <p>Manage campus readiness information and the citizen-facing safety notice</p>
                 </div>
                 <div class="su-header-right">
+                    <button type="button" id="su-take-tour-btn" class="su-tour-btn" title="Take a guided tour"><i class="bi bi-question-circle-fill"></i> Take a tour</button>
                     <span class="su-badge"><i class="bi bi-shield-star-fill"></i> Super User</span>
                     <div class="su-header-time">
                         <div class="time-label">Logged in as</div>
@@ -402,6 +404,15 @@
     </div>
 </div>
 
+<script>
+window.SU_TOUR_STEPS = [
+    { sel: '.su-page-header', title: 'Readiness & Safety Notice', desc: 'Manage campus readiness information and the citizen-facing safety notice.' },
+    { sel: '.rsn-stats', title: 'Readiness stats', desc: 'Readiness status, citizen notice, checklist progress, and last updated.' },
+    { sel: '.rsn-grid', title: 'Notice & checklist', desc: 'Left: readiness notice and checklist. Right: citizen safety notice and quick templates.' },
+    { sel: '.sidebar-nav', title: 'Navigation', desc: 'Go to Dashboard, Emergency Reports, Early Warning, Map View, Announcements, or SOS Alerts.' }
+];
+</script>
+<script src="js/su-tour.js"></script>
 <script>
     // ── Logout ──
     function showLogoutConfirm() { document.getElementById('logoutModal').classList.remove('hidden'); }

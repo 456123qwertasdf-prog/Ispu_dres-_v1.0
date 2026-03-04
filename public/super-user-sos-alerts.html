@@ -7,6 +7,7 @@
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="css/su-header-shared.css">
     <link rel="stylesheet" href="css/system-status.css">
+    <link rel="stylesheet" href="css/su-tour.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
     <script src="https://cdn.jsdelivr.net/npm/supabase@2"></script>
     <script src="js/supabase.js"></script>
@@ -243,6 +244,7 @@
                 <p>Life-or-death emergency alerts requiring immediate attention</p>
             </div>
             <div class="su-header-right">
+                <button type="button" id="su-take-tour-btn" class="su-tour-btn" title="Take a guided tour"><i class="bi bi-question-circle-fill"></i> Take a tour</button>
                 <span class="su-badge"><i class="bi bi-shield-star-fill"></i> Super User</span>
                 <div class="su-header-time">
                     <div class="time-label">Logged in as</div>
@@ -391,6 +393,15 @@
     </div>
 </div>
 
+<script>
+window.SU_TOUR_STEPS = [
+    { sel: '.su-page-header', title: 'SOS Emergency Alerts', desc: 'Life-or-death emergency alerts requiring immediate attention. Monitor and manage critical SOS reports here.' },
+    { sel: '.sos-stats', title: 'Alert stats', desc: 'Total alerts, active, acknowledged, and resolved counts at a glance.' },
+    { sel: '.sos-panel', title: 'All SOS Alerts', desc: 'Search and filter alerts. Use the table to acknowledge or resolve each alert. Refresh to load latest data.' },
+    { sel: '.sidebar-nav', title: 'Navigation', desc: 'Go to Dashboard, Emergency Reports, Early Warning, Map View, Announcements, Readiness & Safety.' }
+];
+</script>
+<script src="js/su-tour.js"></script>
 <script>
     let alertsCache = [];
     let currentAlertId = null;

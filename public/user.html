@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Emergency Report - LSPU Emergency Response</title>
     <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/su-tour.css">
     <link rel="manifest" href="manifest.json">
     <link rel="icon" type="image/x-icon" href="images/favicon.ico">
     <!-- Bootstrap Icons -->
@@ -259,6 +260,7 @@
                 </div>
                 <div class="navbar-nav">
                     <div data-auth="required" class="hidden" style="display: flex; align-items: center; gap: 15px;">
+                        <button type="button" id="su-take-tour-btn" class="su-tour-btn" title="Take a guided tour"><i class="bi bi-question-circle-fill"></i> Take a tour</button>
                         <!-- Notification Icon -->
                         <div class="notification-container" style="position: relative;">
                             <button onclick="toggleNotifications()" class="notification-btn" style="background: none; border: none; color: white; font-size: 1.5rem; cursor: pointer; position: relative;">
@@ -768,6 +770,17 @@
 
     <!-- Scripts -->
     <script src="js/supabase.js"></script>
+    <script>
+    window.SU_TOUR_STEPS = [
+        { sel: 'main section.text-center.mb-8', title: 'Welcome', desc: 'Your LSPU Emergency Application for reporting emergencies. Stay safe and connected.' },
+        { sel: 'main section.grid.gap-6.mb-8', title: 'Quick actions', desc: 'Access Modules, view My Reports, and learn Safety Tips. Use these shortcuts to navigate the app.' },
+        { sel: '#citizenSynopsisSection', title: 'Safety Notice', desc: 'Current safety information based on recent reports in your area. Click to expand or minimize.' },
+        { sel: '#weatherSection', title: 'Weather', desc: 'Daily weather outlook for LSPU Sta. Cruz Campus. Check conditions before heading out.' },
+        { sel: '#reportForm', title: 'Emergency Report', desc: 'Submit an emergency report with a photo and optional details. Location can be auto-detected. Use this when you need to report an emergency.' },
+        { sel: '.navbar', title: 'Navigation', desc: 'Notifications and profile. Open your profile to edit details or logout.' }
+    ];
+    </script>
+    <script src="js/su-tour.js"></script>
     <script>
         // Real-time announcements functionality
         let announcementsSubscription = null;

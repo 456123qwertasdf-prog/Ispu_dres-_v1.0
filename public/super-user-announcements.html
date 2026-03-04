@@ -7,6 +7,7 @@
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="css/su-header-shared.css">
     <link rel="stylesheet" href="css/system-status.css">
+    <link rel="stylesheet" href="css/su-tour.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
     <script src="https://cdn.jsdelivr.net/npm/supabase@2"></script>
     <script src="js/supabase.js"></script>
@@ -551,6 +552,7 @@
                 <p>Create and manage announcements for all citizens &amp; campus users</p>
             </div>
             <div class="su-header-right">
+                <button type="button" id="su-take-tour-btn" class="su-tour-btn" title="Take a guided tour"><i class="bi bi-question-circle-fill"></i> Take a tour</button>
                 <span class="su-badge"><i class="bi bi-shield-star-fill"></i> Super User</span>
                 <div class="su-header-time">
                     <div class="time-label">Logged in as</div>
@@ -748,6 +750,14 @@
     </div>
 </div>
 
+<script>
+window.SU_TOUR_STEPS = [
+    { sel: '.su-page-header', title: 'General Announcements', desc: 'Create and manage announcements for all citizens and campus users.' },
+    { sel: '.an-grid', title: 'Create & list', desc: 'Left: compose new announcements with quick templates (Weather, Fire, Earthquake, etc.). Right: view and manage existing announcements.' },
+    { sel: '.sidebar-nav', title: 'Navigation', desc: 'Go to Dashboard, Emergency Reports, Early Warning, Map View, Readiness & Safety, or SOS Alerts.' }
+];
+</script>
+<script src="js/su-tour.js"></script>
 <script>
     document.addEventListener('DOMContentLoaded', async () => {
         await window.emergencySystem.initialize();

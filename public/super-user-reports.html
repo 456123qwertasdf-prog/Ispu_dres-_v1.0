@@ -7,6 +7,7 @@
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="css/su-header-shared.css">
     <link rel="stylesheet" href="css/system-status.css">
+    <link rel="stylesheet" href="css/su-tour.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
     <script src="https://cdn.jsdelivr.net/npm/supabase@2"></script>
     <script src="js/supabase.js"></script>
@@ -224,6 +225,7 @@
                 <p>Manage and monitor all emergency reports across the system</p>
             </div>
             <div class="su-header-right">
+                <button type="button" id="su-take-tour-btn" class="su-tour-btn" title="Take a guided tour"><i class="bi bi-question-circle-fill"></i> Take a tour</button>
                 <span class="su-badge"><i class="bi bi-shield-star-fill"></i> Super User</span>
                 <div class="su-header-time">
                     <div class="time-label">Logged in as</div>
@@ -623,6 +625,16 @@
     </div>
 </div>
 
+<script>
+window.SU_TOUR_STEPS = [
+    { sel: '.su-page-header', title: 'Emergency Reports', desc: 'View and manage all emergency reports. Filter by status, type, and priority. Use Refresh to reload and Export to download CSV.' },
+    { sel: '.rp-panel', title: 'Filter & table', desc: 'Filter reports by status, type, and priority. Use Refresh, Sync All, and Export CSV. The table shows ID, type, reporter, location, status, priority, and actions (View, Edit, Map).' },
+    { sel: '.rp-table-wrap', title: 'Reports list', desc: 'All emergency reports appear here. Click View to see details, Edit to update, or Map to open the location on the map.' },
+    { sel: '.rp-pagination', title: 'Pagination', desc: 'Navigate through pages of reports. Use Prev/Next or click a page number.' },
+    { sel: '.sidebar-nav', title: 'Navigation', desc: 'Jump to Dashboard, Early Warning, Map View, Announcements, Readiness & Safety, or SOS Alerts.' }
+];
+</script>
+<script src="js/su-tour.js"></script>
 <script>
     function escapeHtml(text) {
         const map = { '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;' };

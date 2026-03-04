@@ -7,6 +7,7 @@
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="css/su-header-shared.css">
     <link rel="stylesheet" href="css/system-status.css">
+    <link rel="stylesheet" href="css/su-tour.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.css" />
@@ -1006,6 +1007,7 @@
                 </div>
             </div>
             <div class="su-header-right">
+                <button type="button" id="su-take-tour-btn" class="su-tour-btn" title="Take a guided tour"><i class="bi bi-question-circle-fill"></i> Take a tour</button>
                 <span class="mv-live-badge"><span class="mv-live-dot"></span> LIVE</span>
                 <button onclick="refreshMap()" class="mv-btn mv-btn-green">
                     <i class="bi bi-arrow-clockwise"></i> Refresh
@@ -1134,6 +1136,15 @@
     </div><!-- end .main-content -->
 </div><!-- end .dashboard-container -->
 
+<script>
+window.SU_TOUR_STEPS = [
+    { sel: '.su-page-header', title: 'Map View', desc: 'Real-time emergency locations and response teams for LSPU Sta. Cruz Campus. Use Refresh to update the map.' },
+    { sel: '.summary-cards', title: 'Summary stats', desc: 'Total emergencies, active responders, average response time, and coverage radius at a glance.' },
+    { sel: '.mv-panel', title: 'Emergency map', desc: 'Interactive map showing emergency reports and responders. Use All / Active / Completed to filter. Click markers for details.' },
+    { sel: '.sidebar-nav', title: 'Navigation', desc: 'Go to Dashboard, Emergency Reports, Early Warning, Announcements, Readiness & Safety, or SOS Alerts.' }
+];
+</script>
+<script src="js/su-tour.js"></script>
     <script>
         let map;
         let emergencyMarkers = [];

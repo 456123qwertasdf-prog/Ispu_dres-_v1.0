@@ -9,6 +9,8 @@ import '../utils/synopsis_helper.dart';
 import 'super_user_reports_screen.dart';
 import 'super_user_announcements_screen.dart';
 import 'report_detail_loader_screen.dart';
+import 'package:showcaseview/showcaseview.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class SuperUserDashboardScreen extends StatefulWidget {
   const SuperUserDashboardScreen({super.key});
@@ -46,6 +48,21 @@ class _SuperUserDashboardScreenState extends State<SuperUserDashboardScreen> {
   // Realtime subscriptions
   RealtimeChannel? _notificationsChannel;
   RealtimeChannel? _announcementsChannel;
+
+  // Tour
+  final GlobalKey _tourWelcome = GlobalKey();
+  final GlobalKey _tourDashboardHeader = GlobalKey();
+  final GlobalKey _tourSafetyNotice = GlobalKey();
+  final GlobalKey _tourReadiness = GlobalKey();
+  final GlobalKey _tourNavDashboard = GlobalKey();
+  final GlobalKey _tourNavReports = GlobalKey();
+  final GlobalKey _tourNavAlerts = GlobalKey();
+  final GlobalKey _tourNavAnnouncements = GlobalKey();
+  final GlobalKey _tourNavProfile = GlobalKey();
+  final GlobalKey<ShowCaseWidgetState> _showCaseWidgetKey = GlobalKey<ShowCaseWidgetState>();
+  static const Color _tourAccent = Color(0xFF0d9488);
+  static const String _keyTourAutoShow = 'tour_auto_show';
+  bool _tourAutoShow = true;
   
   // Use centralized Supabase service
   String get _supabaseUrl => SupabaseService.supabaseUrl;
@@ -60,6 +77,17 @@ class _SuperUserDashboardScreenState extends State<SuperUserDashboardScreen> {
     _loadStats();
     _loadActiveAlerts();
     _setupRealtimeSubscriptions();
+
+    // Auto-show tour on open if setting is on
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      final prefs = await SharedPreferences.getInstance();
+      final showTour = prefs.getBool(_keyTourAutoShow) ?? true;
+      if (mounted) setState(() => _tourAutoShow = showTour);
+      if (mounted && showTour) {
+        await Future.delayed(const Duration(milliseconds: 700));
+        if (mounted) _startTutorial();
+      }
+    });
   }
 
   @override
@@ -576,33 +604,105 @@ class _SuperUserDashboardScreenState extends State<SuperUserDashboardScreen> {
     );
   }
 
+  void _startTutorial() {
+    if (!mounted) return;
+    setState(() => _selectedIndex = 0);
+    final keys = <GlobalKey>[
+      _tourWelcome,
+      _tourDashboardHeader,
+      _tourSafetyNotice,
+      _tourReadiness,
+      _tourNavDashboard,
+      _tourNavReports,
+      _tourNavAlerts,
+      _tourNavAnnouncements,
+      _tourNavProfile,
+    ];
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      Future.delayed(const Duration(milliseconds: 350), () {
+        if (!mounted) return;
+        try {
+          _showCaseWidgetKey.currentState?.startShowCase(keys);
+        } catch (e, st) {
+          debugPrint('Super user tour error: $e\n$st');
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('Could not start tour: ${e.toString()}'), backgroundColor: Colors.red),
+            );
+          }
+        }
+      });
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return ShowCaseWidget(
+      key: _showCaseWidgetKey,
+      enableAutoScroll: true,
+      onComplete: (int? index, GlobalKey<State<StatefulWidget>>? key) {},
+      onFinish: () {},
+      globalTooltipActionConfig: const TooltipActionConfig(
+        position: TooltipActionPosition.inside,
+        alignment: MainAxisAlignment.spaceBetween,
+        actionGap: 12,
+        gapBetweenContentAndAction: 16,
+      ),
+      globalTooltipActions: [
+        TooltipActionButton(
+          type: TooltipDefaultActionType.previous,
+          name: 'Back',
+          backgroundColor: _tourAccent.withOpacity(0.2),
+          textStyle: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 14),
+        ),
+        TooltipActionButton(
+          type: TooltipDefaultActionType.next,
+          name: 'Next',
+          backgroundColor: _tourAccent,
+          textStyle: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 14),
+        ),
+        TooltipActionButton(
+          type: TooltipDefaultActionType.skip,
+          name: 'Skip',
+          backgroundColor: Colors.white24,
+          textStyle: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 14),
+        ),
+      ],
+      builder: (context) => Scaffold(
       backgroundColor: const Color(0xFFf1f5f9),
       appBar: AppBar(
-        title: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ClipRRect(
-              borderRadius: BorderRadius.circular(10),
-              child: Image.asset(
-                'assets/images/udrrmo-logo.jpg',
-                height: 36,
-                width: 36,
-                fit: BoxFit.cover,
+        title: Showcase(
+          key: _tourWelcome,
+          title: 'Welcome to Kapiyu Super User',
+          description: 'Manage emergency reports, SOS alerts, announcements, and safety notices for campus. This tour will show you the main features.',
+          tooltipBackgroundColor: _tourAccent,
+          textColor: Colors.white,
+          titleTextStyle: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w700),
+          descTextStyle: TextStyle(color: Colors.white.withOpacity(0.95), fontSize: 14, height: 1.4),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ClipRRect(
+                borderRadius: BorderRadius.circular(10),
+                child: Image.asset(
+                  'assets/images/udrrmo-logo.jpg',
+                  height: 36,
+                  width: 36,
+                  fit: BoxFit.cover,
+                ),
               ),
-            ),
-            const SizedBox(width: 12),
-            const Text(
-              'Super User',
-              style: TextStyle(
-                fontWeight: FontWeight.w700,
-                letterSpacing: 0.5,
-                fontSize: 20,
+              const SizedBox(width: 12),
+              const Text(
+                'Super User',
+                style: TextStyle(
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 0.5,
+                  fontSize: 20,
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
         centerTitle: true,
         backgroundColor: Colors.transparent,
@@ -619,6 +719,11 @@ class _SuperUserDashboardScreenState extends State<SuperUserDashboardScreen> {
           ),
         ),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.help_outline_rounded),
+            tooltip: 'Take a tour',
+            onPressed: _startTutorial,
+          ),
           IconButton(
             icon: const Icon(Icons.logout_rounded),
             tooltip: 'Logout',
@@ -637,6 +742,7 @@ class _SuperUserDashboardScreenState extends State<SuperUserDashboardScreen> {
         ],
       ),
       bottomNavigationBar: _buildCustomBottomNav(),
+      ),
     );
   }
 
@@ -650,7 +756,15 @@ class _SuperUserDashboardScreenState extends State<SuperUserDashboardScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Header Card
-            Container(
+            Showcase(
+              key: _tourDashboardHeader,
+              title: 'Dashboard',
+              description: 'Overview and stats. Use the tabs below to open Reports, Alerts, and Announcements.',
+              tooltipBackgroundColor: _tourAccent,
+              textColor: Colors.white,
+              titleTextStyle: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w700),
+              descTextStyle: TextStyle(color: Colors.white.withOpacity(0.95), fontSize: 14, height: 1.4),
+              child: Container(
               padding: const EdgeInsets.all(24),
               decoration: BoxDecoration(
                 gradient: const LinearGradient(
@@ -750,6 +864,7 @@ class _SuperUserDashboardScreenState extends State<SuperUserDashboardScreen> {
                 ],
               ),
             ),
+            ),
             const SizedBox(height: 24),
 
             // Stats Grid
@@ -796,9 +911,27 @@ class _SuperUserDashboardScreenState extends State<SuperUserDashboardScreen> {
                 ],
               ),
             const SizedBox(height: 24),
-            _buildSafetyNoticeAdminCard(),
+            Showcase(
+              key: _tourSafetyNotice,
+              title: 'Safety Notice (Citizen)',
+              description: 'Edit or turn off the message citizens see on the Home screen.',
+              tooltipBackgroundColor: _tourAccent,
+              textColor: Colors.white,
+              titleTextStyle: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w700),
+              descTextStyle: TextStyle(color: Colors.white.withOpacity(0.95), fontSize: 14, height: 1.4),
+              child: _buildSafetyNoticeAdminCard(),
+            ),
             const SizedBox(height: 24),
-            _buildReadinessNoticeCard(),
+            Showcase(
+              key: _tourReadiness,
+              title: 'Readiness Notice',
+              description: 'Guidance for responders based on recent reports. Shown on their dashboard.',
+              tooltipBackgroundColor: _tourAccent,
+              textColor: Colors.white,
+              titleTextStyle: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w700),
+              descTextStyle: TextStyle(color: Colors.white.withOpacity(0.95), fontSize: 14, height: 1.4),
+              child: _buildReadinessNoticeCard(),
+            ),
           ],
         ),
       ),
@@ -1347,6 +1480,51 @@ class _SuperUserDashboardScreenState extends State<SuperUserDashboardScreen> {
           ),
           const SizedBox(height: 24),
 
+          // Tour setting
+          Container(
+            margin: const EdgeInsets.only(bottom: 10),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.04),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: _tourAccent.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Icon(Icons.help_outline_rounded, color: Color(0xFF0d9488), size: 22),
+                ),
+                const SizedBox(width: 16),
+                const Expanded(
+                  child: Text(
+                    'Show tour when I open the app',
+                    style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: Color(0xFF374151)),
+                  ),
+                ),
+                Switch.adaptive(
+                  value: _tourAutoShow,
+                  onChanged: (bool value) async {
+                    final prefs = await SharedPreferences.getInstance();
+                    await prefs.setBool(_keyTourAutoShow, value);
+                    if (mounted) setState(() => _tourAutoShow = value);
+                  },
+                  activeColor: _tourAccent,
+                ),
+              ],
+            ),
+          ),
+
           // Menu Items
           _buildMenuItem(
             icon: Icons.map,
@@ -1693,40 +1871,85 @@ class _SuperUserDashboardScreenState extends State<SuperUserDashboardScreen> {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
-              _buildNavItem(
-                icon: Icons.dashboard_outlined,
-                activeIcon: Icons.dashboard,
-                label: 'Dashboard',
-                index: 0,
-                isEmergency: false,
+              Showcase(
+                key: _tourNavDashboard,
+                title: 'Dashboard',
+                description: 'Overview, stats, safety notice, and readiness message.',
+                tooltipBackgroundColor: _tourAccent,
+                textColor: Colors.white,
+                titleTextStyle: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w700),
+                descTextStyle: TextStyle(color: Colors.white.withOpacity(0.95), fontSize: 14, height: 1.4),
+                child: _buildNavItem(
+                  icon: Icons.dashboard_outlined,
+                  activeIcon: Icons.dashboard,
+                  label: 'Dashboard',
+                  index: 0,
+                  isEmergency: false,
+                ),
               ),
-              _buildNavItem(
-                icon: Icons.assignment_outlined,
-                activeIcon: Icons.assignment,
-                label: 'Reports',
-                index: 1,
-                isEmergency: false,
+              Showcase(
+                key: _tourNavReports,
+                title: 'Reports',
+                description: 'View and manage all emergency reports. To assign a responder: tap a report to open it, then tap "Assign Responder" to choose who to send. You can also assign backup responders from the same screen.',
+                tooltipBackgroundColor: _tourAccent,
+                textColor: Colors.white,
+                titleTextStyle: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w700),
+                descTextStyle: TextStyle(color: Colors.white.withOpacity(0.95), fontSize: 14, height: 1.4),
+                child: _buildNavItem(
+                  icon: Icons.assignment_outlined,
+                  activeIcon: Icons.assignment,
+                  label: 'Reports',
+                  index: 1,
+                  isEmergency: false,
+                ),
               ),
-              _buildNavItem(
-                icon: Icons.bolt_outlined,
-                activeIcon: Icons.bolt,
-                label: 'Alerts',
-                index: 2,
-                isEmergency: true,
+              Showcase(
+                key: _tourNavAlerts,
+                title: 'Alerts',
+                description: 'SOS and quick alerts. Tap for urgent notifications.',
+                tooltipBackgroundColor: _tourAccent,
+                textColor: Colors.white,
+                titleTextStyle: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w700),
+                descTextStyle: TextStyle(color: Colors.white.withOpacity(0.95), fontSize: 14, height: 1.4),
+                child: _buildNavItem(
+                  icon: Icons.bolt_outlined,
+                  activeIcon: Icons.bolt,
+                  label: 'Alerts',
+                  index: 2,
+                  isEmergency: true,
+                ),
               ),
-              _buildNavItem(
-                icon: Icons.campaign_outlined,
-                activeIcon: Icons.campaign,
-                label: 'Announcements',
-                index: 3,
-                isEmergency: false,
+              Showcase(
+                key: _tourNavAnnouncements,
+                title: 'Announcements',
+                description: 'Create and manage announcements for citizens and responders.',
+                tooltipBackgroundColor: _tourAccent,
+                textColor: Colors.white,
+                titleTextStyle: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w700),
+                descTextStyle: TextStyle(color: Colors.white.withOpacity(0.95), fontSize: 14, height: 1.4),
+                child: _buildNavItem(
+                  icon: Icons.campaign_outlined,
+                  activeIcon: Icons.campaign,
+                  label: 'Announcements',
+                  index: 3,
+                  isEmergency: false,
+                ),
               ),
-              _buildNavItem(
-                icon: Icons.person_outline,
-                activeIcon: Icons.person,
-                label: 'Profile',
-                index: 4,
-                isEmergency: false,
+              Showcase(
+                key: _tourNavProfile,
+                title: 'Profile',
+                description: 'Map, SOS, Early Warning, and account options.\n\nTo see this tour again, tap the help (?) icon in the app bar. To turn off the automatic tour, open Profile and switch off "Show tour when I open the app".',
+                tooltipBackgroundColor: _tourAccent,
+                textColor: Colors.white,
+                titleTextStyle: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w700),
+                descTextStyle: TextStyle(color: Colors.white.withOpacity(0.95), fontSize: 14, height: 1.4),
+                child: _buildNavItem(
+                  icon: Icons.person_outline,
+                  activeIcon: Icons.person,
+                  label: 'Profile',
+                  index: 4,
+                  isEmergency: false,
+                ),
               ),
             ],
           ),

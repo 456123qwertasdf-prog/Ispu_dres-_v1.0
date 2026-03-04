@@ -6,6 +6,7 @@
     <title>Responder Dashboard - LSPU Emergency Response System</title>
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="css/responder-dashboard.css">
+    <link rel="stylesheet" href="css/su-tour.css">
     <link rel="manifest" href="manifest.json">
     <link rel="icon" type="image/x-icon" href="images/favicon.ico">
     <!-- Bootstrap Icons -->
@@ -86,10 +87,13 @@
             <div id="dashboard-section" class="admin-section active">
                 <!-- Dashboard Header -->
                 <div class="card">
-                    <div class="card-header">
-                        <h2 class="card-title">Responder Dashboard</h2>
-                        <p class="card-subtitle">Emergency response management and assignment tracking</p>
-            </div>
+                    <div class="card-header" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:0.5rem;">
+                        <div>
+                            <h2 class="card-title">Responder Dashboard</h2>
+                            <p class="card-subtitle">Emergency response management and assignment tracking</p>
+                        </div>
+                        <button type="button" id="su-take-tour-btn" class="su-tour-btn su-tour-btn-light" title="Take a guided tour"><i class="bi bi-question-circle-fill"></i> Take a tour</button>
+                    </div>
                 </div>
                 
                 <!-- Statistics Cards -->
@@ -339,6 +343,16 @@
     </div>
 
     <!-- Scripts -->
+    <script>
+    window.SU_TOUR_STEPS = [
+        { sel: '#dashboard-section > .card', title: 'Responder Dashboard', desc: 'Your emergency response hub. Here you see assignments, readiness, and status. Use the sidebar to switch to My Assignments, Map View, or Profile.' },
+        { sel: '.stats-grid', title: 'Your stats', desc: 'Assigned reports, completed count, average response time, and coverage radius at a glance.' },
+        { sel: '#dashboard-section .card:nth-of-type(2)', title: 'Readiness Notice', desc: 'Current readiness message based on recent system reports. Stay prepared.' },
+        { sel: '.dashboard-cards-row', title: 'Assignments', desc: 'My Assignments shows your active tasks. Completed Assignments shows your history. Click an assignment to view details and navigate.' },
+        { sel: '.sidebar-nav', title: 'Navigation', desc: 'Dashboard, My Assignments, Map View, and Profile. Use Map View to see emergencies and get directions.' }
+    ];
+    </script>
+    <script src="js/su-tour.js"></script>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <!-- Leaflet Routing Machine -->
     <script src="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.js"></script>

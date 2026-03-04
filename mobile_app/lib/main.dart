@@ -1,5 +1,8 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
+import 'dart:ui' as ui;
 import 'services/supabase_service.dart';
 import 'services/onesignal_service.dart';
 import 'services/auto_sync_service.dart';
@@ -85,18 +88,52 @@ void _setupNotificationTapNavigation() {
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  
-  // Initialize Supabase
-  await SupabaseService.initialize();
-  
-  // Initialize OneSignal for push notifications
-  await OneSignalService().initialize();
-  _setupNotificationTapNavigation();
 
-  // Initialize auto-sync service for offline reports
-  AutoSyncService().initialize(navigatorKey: navigatorKey);
-  
-  runApp(const MyApp());
+  // Log Flutter framework errors so you see them when debugging
+  FlutterError.onError = (FlutterErrorDetails details) {
+    FlutterError.presentError(details);
+    debugPrint('═══════════════════════════════════════════════════════');
+    debugPrint('FLUTTER ERROR: ${details.exception}');
+    debugPrint('LIBRARY: ${details.library}');
+    debugPrint('STACK:\n${details.stack}');
+    debugPrint('═══════════════════════════════════════════════════════');
+  };
+
+  // Catch errors that might otherwise kill the app without logging
+  ui.PlatformDispatcher.instance.onError = (Object error, StackTrace stack) {
+    debugPrint('═══════════════════════════════════════════════════════');
+    debugPrint('PLATFORM ERROR (app may exit): $error');
+    debugPrint('STACK:\n$stack');
+    debugPrint('═══════════════════════════════════════════════════════');
+    return true; // we handled it (logged it)
+  };
+
+  runZonedGuarded(() async {
+    try {
+      // Initialize Supabase
+      await SupabaseService.initialize();
+
+      // Initialize OneSignal for push notifications
+      await OneSignalService().initialize();
+      _setupNotificationTapNavigation();
+
+      // Initialize auto-sync service for offline reports
+      AutoSyncService().initialize(navigatorKey: navigatorKey);
+
+      runApp(const MyApp());
+    } catch (e, st) {
+      debugPrint('═══════════════════════════════════════════════════════');
+      debugPrint('STARTUP ERROR: $e');
+      debugPrint('STACK:\n$st');
+      debugPrint('═══════════════════════════════════════════════════════');
+      rethrow;
+    }
+  }, (error, stack) {
+    debugPrint('═══════════════════════════════════════════════════════');
+    debugPrint('UNCAUGHT ASYNC ERROR: $error');
+    debugPrint('STACK:\n$stack');
+    debugPrint('═══════════════════════════════════════════════════════');
+  });
 }
 
 class MyApp extends StatefulWidget {
