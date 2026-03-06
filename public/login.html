@@ -1483,14 +1483,18 @@
                 checkInit();
             });
 
-            // Check if this is a password reset redirect
+            // Check if this is a password reset redirect (hash tokens or PKCE code)
             const urlParams = new URLSearchParams(window.location.search);
             const hashParams = new URLSearchParams(window.location.hash.substring(1));
             const hasResetToken = hashParams.get('access_token') || hashParams.get('type') === 'recovery';
+            const hasResetCode = urlParams.get('code');
             
             if (hasResetToken || urlParams.get('reset') === 'true') {
-                // Redirect to reset password page
                 window.location.href = 'reset-password.html' + window.location.hash;
+                return;
+            }
+            if (hasResetCode) {
+                window.location.href = 'reset-password.html' + window.location.search + (window.location.hash || '');
                 return;
             }
 

@@ -924,7 +924,22 @@ window.SU_TOUR_STEPS = [
         const updatedAt = report.last_update ? formatReportDate(report.last_update) : 'Never updated';
         let classification = report.corrected_description || report.ai_description || '';
         if (classification && classification.includes('-')) { const parts = classification.split('-').map(p=>p.trim()); if(parts.length>1) classification=parts.slice(1).join('-').trim(); }
-        if (!classification) { classification = report.message || 'Not specified'; if(classification.length>50) classification=classification.substring(0,50)+'...'; }
+        if (!classification) {
+            const msg = (report.message || '').trim();
+            const isGenericSource = /emergency\s+reported\s+from\s+mobile\s+app/i.test(msg);
+            const alreadyClassified = (report.status || '').toLowerCase() === 'classified' && (report.type || '').length > 0;
+            if (isGenericSource) {
+                const t = report.type || '';
+                if (alreadyClassified && t) {
+                    classification = t.charAt(0).toUpperCase() + t.slice(1).replace(/_/g, ' ') + ' Emergency';
+                } else {
+                    classification = t ? (t.charAt(0).toUpperCase() + t.slice(1).replace(/_/g, ' ') + ' (pending)') : 'Pending classification';
+                }
+            } else {
+                classification = msg || 'Not specified';
+                if (classification.length > 50) classification = classification.substring(0, 50) + '...';
+            }
+        }
         const rName = report.reporter_full_name || report.reporter_name || 'Anonymous';
         const rEmail = report.reporter_email || report.email || report.gmail || 'Not provided';
         const rStuNo = report.reporter_student_number || report.student_number || 'Not provided';

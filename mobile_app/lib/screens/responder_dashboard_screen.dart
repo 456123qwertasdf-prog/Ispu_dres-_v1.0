@@ -1707,7 +1707,7 @@ class _ResponderDashboardScreenState extends State<ResponderDashboardScreen> {
           if (_readinessNoticeExpanded) ...[
             const SizedBox(height: 8),
             Text(
-              'Based on recent system reports (last 30 days)',
+              'Based on recent system reports (this month)',
               style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
             ),
             const SizedBox(height: 12),

@@ -580,7 +580,7 @@ async function copyExistingClassification(
     // Find a report with the same image hash that has been classified
     const { data: existingReport, error: findError } = await supabaseClient
       .from('reports')
-      .select('id, type, confidence, ai_labels, priority, severity, emergency_icon, response_time, status')
+      .select('id, type, confidence, ai_labels, ai_description, ai_analysis, priority, severity, emergency_icon, response_time, status')
       .eq('image_hash', imageHash)
       .not('type', 'is', null)
       .not('status', 'eq', 'pending')
@@ -605,7 +605,7 @@ async function copyExistingClassification(
       severity: existingReport.severity
     })
     
-    // Copy classification fields to new report
+    // Copy classification fields to new report (including AI text so duplicate shows same classification)
     const updateData: any = {
       type: existingReport.type,
       confidence: existingReport.confidence,
@@ -614,7 +614,9 @@ async function copyExistingClassification(
       lifecycle_status: 'classified',
       last_update: new Date().toISOString()
     }
-    
+    if (existingReport.ai_description) updateData.ai_description = existingReport.ai_description
+    if (existingReport.ai_analysis) updateData.ai_analysis = existingReport.ai_analysis
+
     // Copy priority/severity if available
     if (existingReport.priority) updateData.priority = existingReport.priority
     if (existingReport.severity) updateData.severity = existingReport.severity

@@ -352,8 +352,9 @@ class EmergencyResponseSystem {
 
   async resetPassword(email) {
     try {
+      const baseUrl = typeof window !== 'undefined' && window.location ? window.location.origin : 'https://dres-lspu-edu-ph.456123qwert-asdf.workers.dev';
       const { data, error } = await this.supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `https://dres-lspu-edu-ph.456123qwert-asdf.workers.dev/reset-password.html`,
+        redirectTo: `${baseUrl}/reset-password.html`,
       });
 
       if (error) throw error;
@@ -765,6 +766,7 @@ class EmergencyResponseSystem {
 
   /**
    * Build role-based synopsis from report data.
+   * Uses the current calendar month (e.g. "the month of March").
    * @param {Array} reports - List of report objects (with type, corrected_type, created_at)
    * @param {string} role - 'citizen' | 'responder' | 'super_user' | 'admin'
    * @returns {{ citizenMessage: string, responderMessage: string }}
@@ -772,8 +774,14 @@ class EmergencyResponseSystem {
   getSynopsisForRole(reports, role) {
     const list = Array.isArray(reports) ? reports : [];
     const now = new Date();
-    const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
-    const recent = list.filter(r => new Date(r.created_at || 0) >= thirtyDaysAgo);
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    const recent = list.filter(r => {
+      const d = new Date(r.created_at || 0);
+      return d >= startOfMonth && d <= now;
+    });
+    const monthNames = ['January', 'February', 'March', 'April', 'May', 'June',
+      'July', 'August', 'September', 'October', 'November', 'December'];
+    const monthName = monthNames[now.getMonth()];
 
     const getEffectiveType = (r) => (r.corrected_type || r.type || '').toLowerCase().trim();
 
@@ -805,8 +813,8 @@ class EmergencyResponseSystem {
       .sort((a, b) => b[1] - a[1])
       .map(([k, n]) => ({ type: k, count: n, label: typeLabels[k] || k }));
 
-    // Citizen message: "Be more careful because ..."
-    let citizenMessage = 'No recent emergency reports. Stay alert and report any real emergency you see.';
+    // Citizen message — smooth opening, month-based, action-oriented
+    let citizenMessage = `No emergency reports in the month of ${monthName}. Stay alert and report any real emergency you see.`;
     if (emergencies.length > 0) {
       const parts = typesWithCount.map(({ label, count }) => `${count} ${label}`).join(', ');
       const top = typesWithCount[0];
@@ -817,26 +825,26 @@ class EmergencyResponseSystem {
         else if (top.type === 'flood') caution = 'Avoid flooded areas and follow flood advisories.';
         else if (top.type === 'accident') caution = 'Drive safely and report any hazard you see.';
       }
-      citizenMessage = `Be more careful: we've had ${parts} incident(s) in the last 30 days. ${caution}`;
+      citizenMessage = `In the month of ${monthName} we've had ${parts} incident(s). ${caution}`;
     }
     if (falseAlarms.length > 0 && falseAlarms.length >= emergencies.length) {
       citizenMessage += ' Many reports were false alarms—please only report real emergencies so responders can focus on those in need.';
     }
 
-    // Responder message: "Prepare / be ready / inspect ..."
+    // Responder message — month-based, prepare-and-be-ready
     const prepByType = {
-      medical: 'Check first aid kits and AED availability. Be ready for medical calls.',
-      fire: 'Inspect fire equipment and evacuation routes. Prepare extinguishers and muster points.',
-      flood: 'Be ready for flood response: inspect sandbags, life vests, and flood alert procedures.',
-      accident: 'Prepare traffic cones and first aid. Ensure vehicle recovery contacts are ready.',
-      structural: 'Inspect caution tape and hard hats. Be ready for structural assessment support.',
-      environmental: 'Review heat/cold protocols and weather monitoring. Have drinking water and shade ready.',
-      other: 'Review general response kits and communication channels.'
+      medical: 'Check first aid kits and AED availability. Be ready for medical calls. ',
+      fire: 'Inspect fire equipment and evacuation routes. Prepare extinguishers and muster points. ',
+      flood: 'Be ready for flood response: inspect sandbags, life vests, and flood alert procedures. ',
+      accident: 'Prepare traffic cones and first aid. Ensure vehicle recovery contacts are ready. ',
+      structural: 'Inspect caution tape and hard hats. Be ready for structural assessment support. ',
+      environmental: 'Review heat/cold protocols and weather monitoring. Have drinking water and shade ready. ',
+      other: 'Review general response kits and communication channels. '
     };
-    let responderMessage = 'No recent emergencies. Keep equipment inspected and stay ready for anything.';
+    let responderMessage = 'No recent emergencies this month. Keep equipment inspected and stay ready for anything.';
     if (typesWithCount.length > 0) {
       const prepLines = typesWithCount.slice(0, 4).map(({ type }) => prepByType[type] || prepByType.other);
-      responderMessage = 'Prepare and be ready: ' + prepLines.join(' ') + ' Inspect and prepare so you\'re ready when something happens.';
+      responderMessage = `For the month of ${monthName}: Prepare and be ready—${prepLines.join('')} Inspect and prepare so you're ready when something happens.`;
     }
 
     return { citizenMessage, responderMessage };
@@ -862,13 +870,15 @@ class EmergencyResponseSystem {
   }
 
   /**
-   * Update safety notice (admin/super_user only). Pass null to leave unchanged.
+   * Update safety notice (admin/super_user only).
+   * Pass message (string), null to clear (use synopsis), or omit to leave unchanged.
+   * Pass enabled or omit to leave unchanged.
    */
-  async updateSafetyNotice({ message = null, enabled = null }) {
+  async updateSafetyNotice({ message, enabled = null }) {
     const notice = await this.getSafetyNotice();
     if (!notice || !notice.id) throw new Error('No safety notice row found');
     const updates = { updated_at: new Date().toISOString() };
-    if (message !== null) updates.message = message;
+    if (message !== undefined) updates.message = message;
     if (enabled !== null) updates.enabled = enabled;
     const { error } = await this.supabase
       .from('safety_notice')

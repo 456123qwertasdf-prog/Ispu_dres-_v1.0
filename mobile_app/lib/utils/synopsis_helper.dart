@@ -1,5 +1,5 @@
 /// Role-based synopsis from report data (mirrors web getSynopsisForRole).
-/// Uses last 30 days of reports to build citizen and responder messages.
+/// Uses the current calendar month to build citizen and responder messages.
 class SynopsisHelper {
   static const _emergencyTypes = [
     'fire',
@@ -10,6 +10,11 @@ class SynopsisHelper {
     'environmental',
   ];
 
+  static const _monthNames = [
+    'January', 'February', 'March', 'April', 'May', 'June',
+    'July', 'August', 'September', 'October', 'November', 'December',
+  ];
+
   static String _getEffectiveType(Map<String, dynamic> r) {
     final t = (r['corrected_type'] ?? r['type'] ?? '').toString().toLowerCase().trim();
     return t;
@@ -17,24 +22,27 @@ class SynopsisHelper {
 
   /// Returns [citizenMessage, responderMessage] from report list.
   /// Reports should have: type, corrected_type (optional), created_at.
+  /// Uses the current calendar month for the time window (e.g. "the month of March").
   static Map<String, String> getSynopsisForRole(
     List<dynamic> reports, [
     String role = 'citizen',
   ]) {
     final list = reports is List ? reports : <dynamic>[];
     final now = DateTime.now();
-    final thirtyDaysAgo = now.subtract(const Duration(days: 30));
+    final startOfMonth = DateTime(now.year, now.month, 1);
     final recent = list.where((r) {
       if (r is! Map<String, dynamic>) return false;
       final createdAt = r['created_at']?.toString();
       if (createdAt == null || createdAt.isEmpty) return false;
       try {
         final d = DateTime.parse(createdAt);
-        return d.isAfter(thirtyDaysAgo) || d.isAtSameMomentAs(thirtyDaysAgo);
+        return !d.isBefore(startOfMonth) && !d.isAfter(now);
       } catch (_) {
         return false;
       }
     }).cast<Map<String, dynamic>>().toList();
+
+    final monthName = _monthNames[now.month - 1];
 
     final emergencies = recent.where((r) {
       final t = _getEffectiveType(r);
@@ -65,8 +73,9 @@ class SynopsisHelper {
       ..sort((a, b) => b.value.compareTo(a.value));
     final top = typesWithCount.isNotEmpty ? typesWithCount.first.key : null;
 
-    // Citizen message
-    String citizenMessage = 'No recent emergency reports. Stay alert and report any real emergency you see.';
+    // Citizen message — smooth opening, month-based, action-oriented
+    String citizenMessage =
+        'No emergency reports in the month of $monthName. Stay alert and report any real emergency you see.';
     if (emergencies.isNotEmpty) {
       final parts = typesWithCount
           .map((e) => '${e.value} ${typeLabels[e.key] ?? e.key}')
@@ -88,14 +97,15 @@ class SynopsisHelper {
             break;
         }
       }
-      citizenMessage = "Be more careful: we've had $parts incident(s) in the last 30 days. $caution";
+      citizenMessage =
+          "In the month of $monthName we've had $parts incident(s). $caution";
     }
     if (falseAlarms > 0 && falseAlarms >= emergencies.length) {
       citizenMessage +=
           ' Many reports were false alarms—please only report real emergencies so responders can focus on those in need.';
     }
 
-    // Responder message
+    // Responder message — month-based, prepare-and-be-ready
     const prepByType = <String, String>{
       'medical': 'Check first aid kits and AED availability. Be ready for medical calls. ',
       'fire': 'Inspect fire equipment and evacuation routes. Prepare extinguishers and muster points. ',
@@ -106,14 +116,14 @@ class SynopsisHelper {
       'other': 'Review general response kits and communication channels. ',
     };
     String responderMessage =
-        'No recent emergencies. Keep equipment inspected and stay ready for anything.';
+        'No recent emergencies this month. Keep equipment inspected and stay ready for anything.';
     if (typesWithCount.isNotEmpty) {
       final prepLines = typesWithCount
           .take(4)
           .map((e) => prepByType[e.key] ?? prepByType['other']!)
           .join();
       responderMessage =
-          'Prepare and be ready: $prepLines Inspect and prepare so you\'re ready when something happens.';
+          'For the month of $monthName: Prepare and be ready—$prepLines Inspect and prepare so you\'re ready when something happens.';
     }
 
     return {'citizenMessage': citizenMessage, 'responderMessage': responderMessage};

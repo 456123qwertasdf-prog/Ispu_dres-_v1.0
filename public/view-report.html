@@ -899,12 +899,21 @@
                     classification = parts.slice(1).join('-').trim();
                 }
             }
-            // If no classification, try to get from message or description
+            // If no classification, only use message when it's not the generic "from mobile app" text
             if (!classification || classification === '') {
-                classification = report.message || 'Not specified';
-                // Limit message length if used as classification
-                if (classification.length > 50) {
-                    classification = classification.substring(0, 50) + '...';
+                const msg = (report.message || '').trim();
+                const isGenericSource = /emergency\s+reported\s+from\s+mobile\s+app/i.test(msg);
+                const alreadyClassified = (report.status || '').toLowerCase() === 'classified' && (report.type || '').length > 0;
+                if (isGenericSource) {
+                    const t = report.type || '';
+                    if (alreadyClassified && t) {
+                        classification = t.charAt(0).toUpperCase() + t.slice(1).replace(/_/g, ' ') + ' Emergency';
+                    } else {
+                        classification = t ? (t.charAt(0).toUpperCase() + t.slice(1).replace(/_/g, ' ') + ' (pending)') : 'Pending classification';
+                    }
+                } else {
+                    classification = msg || 'Not specified';
+                    if (classification.length > 50) classification = classification.substring(0, 50) + '...';
                 }
             }
             document.getElementById('emergencyClassification').textContent = classification || 'Not specified';

@@ -154,7 +154,7 @@ class SupabaseService {
     );
   }
 
-  /// Fetch recent reports for synopsis (type, corrected_type, created_at). Last 30 days filtered in app.
+  /// Fetch recent reports for synopsis (type, corrected_type, created_at). Current month filtered in app.
   static Future<List<Map<String, dynamic>>> getReportsForSynopsis() async {
     try {
       final response = await client
@@ -188,10 +188,13 @@ class SupabaseService {
     }
   }
 
-  /// Update safety notice (admin/super_user only). Pass null to leave unchanged.
+  /// Update safety notice (admin/super_user only).
+  /// When [clearMessage] is true, sets message to null so citizen view falls back to synopsis.
+  /// Otherwise pass [message] to set, or omit both to leave unchanged.
   static Future<void> updateSafetyNotice({
     String? message,
     bool? enabled,
+    bool clearMessage = false,
   }) async {
     final notice = await getSafetyNotice();
     if (notice == null) return;
@@ -201,7 +204,11 @@ class SupabaseService {
       'updated_at': DateTime.now().toUtc().toIso8601String(),
       'updated_by': currentUserId,
     };
-    if (message != null) updates['message'] = message;
+    if (clearMessage) {
+      updates['message'] = null;
+    } else if (message != null) {
+      updates['message'] = message;
+    }
     if (enabled != null) updates['enabled'] = enabled;
     await client.from('safety_notice').update(updates).eq('id', id);
   }
