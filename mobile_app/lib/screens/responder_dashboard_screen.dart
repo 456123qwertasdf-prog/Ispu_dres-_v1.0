@@ -30,6 +30,14 @@ class ResponderDashboardScreen extends StatefulWidget {
 }
 
 class _ResponderDashboardScreenState extends State<ResponderDashboardScreen> {
+  static const List<String> _resolveNoteTemplates = [
+    'Arrived on scene and assessed the situation.',
+    'Provided first aid and stabilized the patient.',
+    'Patient was transported to the hospital.',
+    'Incident was handled and the area was secured.',
+    'Coordinated with other responders and completed the response.',
+  ];
+
   final MapController _mapController = MapController();
   final DateFormat _dateFormat = DateFormat('MMM d, yyyy • h:mm a');
   final GlobalKey _initialAssignmentCardKey = GlobalKey();
@@ -67,6 +75,7 @@ class _ResponderDashboardScreenState extends State<ResponderDashboardScreen> {
   CoordinatePoint? _deviceLocation;
   CoordinatePoint? _pendingMapTarget;
   String? _pendingMapLabel;
+  String? _pendingEnrouteAssignmentId;
   List<latlong.LatLng> _routePolyline = [];
   bool _isFetchingRoute = false;
   String? _routeError;
@@ -634,6 +643,14 @@ class _ResponderDashboardScreenState extends State<ResponderDashboardScreen> {
     String newStatus, {
     String? notes,
   }) async {
+    if (newStatus == 'resolved' && (notes == null || notes.trim().isEmpty)) {
+      _showSnack(
+        'Please enter what happened before marking this assignment as resolved.',
+        isError: true,
+      );
+      return;
+    }
+
     if (_updatingAssignmentId != null) return;
     setState(() => _updatingAssignmentId = assignment.id);
 
@@ -719,6 +736,9 @@ class _ResponderDashboardScreenState extends State<ResponderDashboardScreen> {
       }
 
       await _loadPage(showLoader: false);
+      if (mounted && _pendingEnrouteAssignmentId == assignment.id && newStatus == 'enroute') {
+        setState(() => _pendingEnrouteAssignmentId = null);
+      }
       _showSnack('Assignment marked as ${newStatus.toUpperCase()}');
     } catch (e) {
       debugPrint('❌ Error updating assignment status: $e');
@@ -734,48 +754,87 @@ class _ResponderDashboardScreenState extends State<ResponderDashboardScreen> {
     final controller = TextEditingController();
     final notes = await showDialog<String>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Mark as Resolved'),
-        content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Add a note about what happened (optional). This will be saved with the emergency report.',
-                style: TextStyle(
-                  fontSize: 14,
-                  color: Colors.grey.shade700,
-                ),
+      builder: (context) => StatefulBuilder(
+        builder: (context, setDialogState) {
+          final trimmedNotes = controller.text.trim();
+          final canSubmit = trimmedNotes.isNotEmpty;
+
+          return AlertDialog(
+            title: const Text('Mark as Resolved'),
+            content: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Add a note about what happened. This is required and will be saved with the emergency report.',
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Colors.grey.shade700,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    'Quick note options',
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w700,
+                      color: Colors.grey.shade800,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: _resolveNoteTemplates.map((template) {
+                      final isSelected = trimmedNotes == template;
+                      return ChoiceChip(
+                        label: Text(template),
+                        selected: isSelected,
+                        onSelected: (_) {
+                          controller.text = template;
+                          controller.selection = TextSelection.fromPosition(
+                            TextPosition(offset: controller.text.length),
+                          );
+                          setDialogState(() {});
+                        },
+                      );
+                    }).toList(),
+                  ),
+                  const SizedBox(height: 16),
+                  TextField(
+                    controller: controller,
+                    maxLines: 4,
+                    maxLength: 1000,
+                    onChanged: (_) => setDialogState(() {}),
+                    decoration: const InputDecoration(
+                      hintText: 'e.g. Arrived on scene, provided first aid. Patient transferred to hospital.',
+                      helperText: 'Resolution note is required.',
+                      border: OutlineInputBorder(),
+                      alignLabelWithHint: true,
+                    ),
+                  ),
+                ],
               ),
-              const SizedBox(height: 16),
-              TextField(
-                controller: controller,
-                maxLines: 4,
-                maxLength: 1000,
-                decoration: const InputDecoration(
-                  hintText: 'e.g. Arrived on scene, provided first aid. Patient transferred to hospital.',
-                  border: OutlineInputBorder(),
-                  alignLabelWithHint: true,
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text('Cancel'),
+              ),
+              ElevatedButton(
+                onPressed: canSubmit
+                    ? () => Navigator.of(context).pop(trimmedNotes)
+                    : null,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF10B981),
+                  foregroundColor: Colors.white,
                 ),
+                child: const Text('Mark Resolved'),
               ),
             ],
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: () => Navigator.of(context).pop(controller.text.trim()),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF10B981),
-              foregroundColor: Colors.white,
-            ),
-            child: const Text('Mark Resolved'),
-          ),
-        ],
+          );
+        },
       ),
     );
     controller.dispose();
@@ -783,7 +842,7 @@ class _ResponderDashboardScreenState extends State<ResponderDashboardScreen> {
       _updateAssignmentStatus(
         assignment,
         'resolved',
-        notes: notes.isEmpty ? null : notes,
+        notes: notes,
       );
     }
   }
@@ -956,7 +1015,11 @@ class _ResponderDashboardScreenState extends State<ResponderDashboardScreen> {
       ),
     );
   }
-  void _showAssignmentOnMap(AssignmentReportSummary report) {
+  void _showAssignmentOnMap(
+    AssignmentReportSummary report, {
+    ResponderAssignment? assignment,
+    bool markEnrouteWhenRouteReady = false,
+  }) {
     final coords = report.coordinates;
     if (coords == null) {
       _showSnack('No location provided for this report', isError: true);
@@ -969,6 +1032,10 @@ class _ResponderDashboardScreenState extends State<ResponderDashboardScreen> {
       _routeError = null;
       _routeDistanceKm = null;
       _routeDurationMin = null;
+      _pendingEnrouteAssignmentId =
+          markEnrouteWhenRouteReady && assignment?.status == 'accepted'
+          ? assignment!.id
+          : null;
       _selectedIndex = _isSecurityGuard ? 3 : 2; // Switch to Map View tab
     });
 
@@ -980,6 +1047,32 @@ class _ResponderDashboardScreenState extends State<ResponderDashboardScreen> {
       return;
     }
     _fetchRoute(origin, coords);
+  }
+
+  Future<void> _markPendingAssignmentEnrouteIfNeeded() async {
+    final assignmentId = _pendingEnrouteAssignmentId;
+    if (assignmentId == null || _updatingAssignmentId != null) return;
+
+    ResponderAssignment? assignment;
+    for (final item in _assignments) {
+      if (item.id == assignmentId) {
+        assignment = item;
+        break;
+      }
+    }
+
+    if (assignment == null || assignment.status != 'accepted') {
+      if (mounted) {
+        setState(() => _pendingEnrouteAssignmentId = null);
+      }
+      return;
+    }
+
+    if (mounted) {
+      setState(() => _pendingEnrouteAssignmentId = null);
+    }
+
+    await _updateAssignmentStatus(assignment, 'enroute');
   }
 
   // Check if a coordinate is near the Open Field (walkable area)
@@ -1050,6 +1143,7 @@ class _ResponderDashboardScreenState extends State<ResponderDashboardScreen> {
         _routeDurationMin = (totalDistance / 1000 / 5) * 60; // 5 km/h walking speed
         _isFetchingRoute = false;
       });
+      await _markPendingAssignmentEnrouteIfNeeded();
       return;
     }
 
@@ -1084,6 +1178,7 @@ class _ResponderDashboardScreenState extends State<ResponderDashboardScreen> {
         _routeDurationMin = ((route['duration'] as num?) ?? 0) / 60;
         _isFetchingRoute = false;
       });
+      await _markPendingAssignmentEnrouteIfNeeded();
     } catch (e) {
       if (!mounted) return;
       setState(() {
@@ -2631,7 +2726,11 @@ class _ResponderDashboardScreenState extends State<ResponderDashboardScreen> {
                   child: InkWell(
                     onTap: assignment.report.coordinates == null
                         ? null
-                        : () => _showAssignmentOnMap(assignment.report),
+                        : () => _showAssignmentOnMap(
+                            assignment.report,
+                            assignment: assignment,
+                            markEnrouteWhenRouteReady: true,
+                          ),
                     borderRadius: BorderRadius.circular(12),
                     child: const Padding(
                       padding: EdgeInsets.all(10),
