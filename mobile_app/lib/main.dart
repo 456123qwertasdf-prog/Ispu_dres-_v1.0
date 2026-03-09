@@ -2,10 +2,12 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:ui' as ui;
 import 'services/supabase_service.dart';
 import 'services/onesignal_service.dart';
 import 'services/auto_sync_service.dart';
+import 'services/connectivity_service.dart';
 import 'services/update_check_service.dart';
 import 'screens/login_screen.dart';
 import 'screens/home_screen.dart';
@@ -248,6 +250,7 @@ class _UpdateCheckGate extends StatefulWidget {
 class _UpdateCheckGateState extends State<_UpdateCheckGate> {
   bool _checking = true;
   bool _updateRequired = false;
+  bool _allowOfflineCitizenMode = false;
   UpdateCheckResult? _updateResult;
 
   @override
@@ -259,15 +262,37 @@ class _UpdateCheckGateState extends State<_UpdateCheckGate> {
   Future<void> _runCheck() async {
     setState(() => _checking = true);
     final result = await UpdateCheckService.checkForUpdate();
+    final allowOfflineCitizenMode =
+        result == null ? await _canOpenOfflineCitizenMode() : false;
     if (!mounted) return;
     setState(() {
       _checking = false;
       _updateResult = result;
       _updateRequired = result?.status == UpdateStatus.updateRequired;
+      _allowOfflineCitizenMode = allowOfflineCitizenMode;
     });
     if (!_updateRequired && result != null && result.status == UpdateStatus.updateAvailable) {
       UpdateCheckService.showUpdateDialogIfNeeded(context, result);
     }
+  }
+
+  Future<bool> _canOpenOfflineCitizenMode() async {
+    if (!widget.isAuthenticated) return false;
+
+    final isConnected = await ConnectivityService().checkConnectivity();
+    if (isConnected) return false;
+
+    final metadataRole = (SupabaseService.currentUser?.userMetadata?['role'] as String?)
+        ?.toLowerCase();
+    if (metadataRole == 'citizen') return true;
+    if (metadataRole == 'responder' ||
+        metadataRole == 'admin' ||
+        metadataRole == 'super_user') {
+      return false;
+    }
+
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString('user_role')?.toLowerCase() == 'citizen';
   }
 
   @override
@@ -289,6 +314,9 @@ class _UpdateCheckGateState extends State<_UpdateCheckGate> {
     }
     // Version check failed (null): block until check succeeds; no bypass so old builds cannot be used
     if (_updateResult == null) {
+      if (_allowOfflineCitizenMode) {
+        return const HomeScreen(forceOfflineMode: true);
+      }
       return _UpdateCheckFailedScreen(onRetry: _runCheck);
     }
     if (widget.isAuthenticated) {
@@ -564,6 +592,11 @@ class _RoleRouterState extends State<RoleRouter> {
       }
 
       if (!mounted) return;
+
+      if (_role != null) {
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString('user_role', _role!);
+      }
     } catch (_) {
       if (!mounted) return;
       _role = null;

@@ -11,13 +11,17 @@ import 'package:showcaseview/showcaseview.dart';
 import '../services/supabase_service.dart';
 import '../services/emergency_sound_service.dart';
 import '../services/onesignal_service.dart';
+import '../services/connectivity_service.dart';
 import '../utils/synopsis_helper.dart';
+import '../widgets/offline_info_banner.dart';
 import 'learning_modules_screen.dart';
 import 'notifications_screen.dart';
 
 
 class HomeScreen extends StatefulWidget {
-  const HomeScreen({super.key});
+  final bool forceOfflineMode;
+
+  const HomeScreen({super.key, this.forceOfflineMode = false});
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
@@ -51,6 +55,9 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   String? _citizenSynopsisMessage;
   bool _synopsisLoaded = false;
   bool _safetyNoticeEnabled = true;
+  bool _isOnline = true;
+  StreamSubscription<bool>? _connectivitySubscription;
+  final ConnectivityService _connectivityService = ConnectivityService();
 
   // Tutorial walkthrough keys (order matches tour steps)
   final GlobalKey _tourWelcome = GlobalKey();
@@ -83,15 +90,10 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    _isOnline = !widget.forceOfflineMode;
     // Retry saving OneSignal player ID if user is already authenticated
     _retrySaveOneSignalPlayerId();
-    
-    _loadWeatherData();
-    _loadUserProfile();
-    _loadActiveEmergencyAlert();
-    _subscribeToEmergencyAlerts();
-    _startEmergencyPolling();
-    _loadCitizenSynopsis();
+    _initConnectivity();
 
     // Auto-show tour on open if setting is on
     WidgetsBinding.instance.addPostFrameCallback((_) async {
@@ -108,11 +110,8 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
-    _emergencyPollTimer?.cancel();
-    _announcementChannel?.unsubscribe();
-    if (_announcementChannel != null) {
-      SupabaseService.client.removeChannel(_announcementChannel!);
-    }
+    _connectivitySubscription?.cancel();
+    _stopEmergencyListeners();
     _soundService.stopSound();
     super.dispose();
   }
@@ -124,10 +123,90 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       OneSignalService().retrySavePlayerIdToSupabase();
       // Refresh safety notice when app comes back (e.g. after admin turned it off on web)
       _loadCitizenSynopsis();
+      if (_isOnline) {
+        _loadWeatherData();
+        _loadActiveEmergencyAlert();
+      }
+    }
+  }
+
+  Future<void> _initConnectivity() async {
+    final initialStatus = widget.forceOfflineMode
+        ? false
+        : await _connectivityService.checkConnectivity();
+
+    if (!mounted) return;
+
+    setState(() {
+      _isOnline = initialStatus;
+      if (!_isOnline) {
+        _weatherStatus = 'Offline';
+      }
+    });
+
+    await _refreshCitizenDataForConnectivity(initialStatus);
+
+    _connectivitySubscription =
+        _connectivityService.onConnectivityChanged.listen((isConnected) {
+      _handleConnectivityChanged(isConnected);
+    });
+  }
+
+  Future<void> _handleConnectivityChanged(bool isConnected) async {
+    if (!mounted || _isOnline == isConnected) return;
+
+    setState(() {
+      _isOnline = isConnected;
+      if (!isConnected) {
+        _weatherStatus = 'Offline';
+      }
+    });
+
+    await _refreshCitizenDataForConnectivity(isConnected);
+  }
+
+  Future<void> _refreshCitizenDataForConnectivity(bool isConnected) async {
+    await _loadUserProfile();
+    await _loadCitizenSynopsis();
+
+    if (!isConnected) {
+      _stopEmergencyListeners();
+      if (mounted) {
+        setState(() {
+          _activeEmergency = null;
+        });
+      }
+      return;
+    }
+
+    _loadWeatherData();
+    _loadActiveEmergencyAlert();
+    _subscribeToEmergencyAlerts();
+    _startEmergencyPolling();
+  }
+
+  void _stopEmergencyListeners() {
+    _emergencyPollTimer?.cancel();
+    _announcementChannel?.unsubscribe();
+    if (_announcementChannel != null) {
+      SupabaseService.client.removeChannel(_announcementChannel!);
+      _announcementChannel = null;
     }
   }
 
   Future<void> _loadCitizenSynopsis() async {
+    if (!_isOnline) {
+      if (mounted) {
+        setState(() {
+          _safetyNoticeEnabled = true;
+          _citizenSynopsisMessage =
+              'Offline mode is active. You can still submit an emergency report, and it will sync automatically when internet is restored.';
+          _synopsisLoaded = true;
+        });
+      }
+      return;
+    }
+
     try {
       // Don't show safety notice to admin/super_user (they manage it from their dashboard)
       final role = SupabaseService.currentUser?.userMetadata?['role']?.toString() ?? _userRole;
@@ -212,6 +291,16 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   }
 
   Future<void> _loadWeatherData() async {
+    if (!_isOnline) {
+      if (mounted) {
+        setState(() {
+          _isLoadingWeather = false;
+          _weatherStatus = 'Offline';
+        });
+      }
+      return;
+    }
+
     setState(() {
       _isLoadingWeather = true;
       _weatherStatus = 'Loading...';
@@ -247,7 +336,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
         _weatherStatus = 'Error';
         _isLoadingWeather = false;
       });
-      if (mounted) {
+      if (mounted && _isOnline) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Failed to load weather data: $e')),
         );
@@ -261,11 +350,22 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     });
 
     try {
+      final prefs = await SharedPreferences.getInstance();
       // Try to get user ID from Supabase auth or SharedPreferences
-      final userId = SupabaseService.currentUserId ?? 
-          (await SharedPreferences.getInstance()).getString('user_id');
-      final userEmail = SupabaseService.currentUserEmail ?? 
-          (await SharedPreferences.getInstance()).getString('user_email');
+      final userId = SupabaseService.currentUserId ?? prefs.getString('user_id');
+      final userEmail =
+          SupabaseService.currentUserEmail ?? prefs.getString('user_email');
+      final storedRole = prefs.getString('user_role')?.toLowerCase();
+
+      if (!_isOnline) {
+        setState(() {
+          _userEmail = userEmail ?? _userEmail;
+          _username = userEmail?.split('@')[0] ?? _username;
+          _userRole = storedRole ?? 'citizen';
+          _isLoadingProfile = false;
+        });
+        return;
+      }
 
       if (userId != null && userId.isNotEmpty) {
         // Fetch user profile from Supabase using the client
@@ -276,10 +376,13 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
             .maybeSingle();
 
         if (response != null) {
+          final resolvedRole =
+              (response['role'] as String?)?.toLowerCase() ?? _userRole;
+          await prefs.setString('user_role', resolvedRole);
           setState(() {
             _username = response['name'] ?? 'Kapiyu';
             _userEmail = userEmail ?? response['email'] ?? 'user@lspu.edu.ph';
-            _userRole = (response['role'] as String?)?.toLowerCase() ?? _userRole;
+            _userRole = resolvedRole;
             _isLoadingProfile = false;
           });
           return;
@@ -288,15 +391,18 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
 
       // Fallback: Use stored email or default values
       if (userEmail != null && userEmail.isNotEmpty) {
+        if (storedRole != null && storedRole.isNotEmpty) {
+          await prefs.setString('user_role', storedRole);
+        }
         setState(() {
           _userEmail = userEmail;
           _username = userEmail.split('@')[0];
-          _userRole = 'citizen';
+          _userRole = storedRole ?? 'citizen';
           _isLoadingProfile = false;
         });
       } else {
         setState(() {
-          _userRole = 'citizen';
+          _userRole = storedRole ?? 'citizen';
           _isLoadingProfile = false;
         });
       }
@@ -363,6 +469,8 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   }
 
   Future<void> _loadActiveEmergencyAlert() async {
+    if (!_isOnline) return;
+
     try {
       final alert = await SupabaseService.client
           .from('announcements')
@@ -387,6 +495,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   }
 
   void _startEmergencyPolling() {
+    if (!_isOnline) return;
     _emergencyPollTimer?.cancel();
     // Fallback in case Realtime connection is lost or unavailable.
     _emergencyPollTimer = Timer.periodic(
@@ -396,6 +505,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   }
 
   void _subscribeToEmergencyAlerts() {
+    if (!_isOnline || _announcementChannel != null) return;
     _announcementChannel =
         SupabaseService.client.channel('mobile-admin-announcements-home');
 
@@ -828,6 +938,13 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          if (!_isOnline) ...[
+            const OfflineInfoBanner(
+              message:
+                  'No internet connection. You can still submit an emergency report while offline. It will send automatically when connection is restored.',
+            ),
+            const SizedBox(height: 20),
+          ],
           if (_activeEmergency != null) ...[
             _buildEmergencyBanner(),
             const SizedBox(height: 20),
@@ -1285,7 +1402,7 @@ tooltipBackgroundColor: _tourAccent,
                             borderRadius: BorderRadius.circular(10),
                           ),
                           child: IconButton(
-                            onPressed: _loadWeatherData,
+                            onPressed: _isOnline ? _loadWeatherData : null,
                             icon: const Icon(Icons.refresh_rounded, color: Color(0xFF3b82f6), size: 20),
                             padding: const EdgeInsets.all(8),
                             constraints: const BoxConstraints(),
@@ -1322,7 +1439,9 @@ tooltipBackgroundColor: _tourAccent,
               padding: const EdgeInsets.all(40.0),
               child: Center(
                 child: Text(
-                  'Weather data unavailable',
+                  _isOnline
+                      ? 'Weather data unavailable'
+                      : 'No internet connection. Weather updates are unavailable offline.',
                   style: TextStyle(color: Colors.grey.shade600),
                 ),
               ),
