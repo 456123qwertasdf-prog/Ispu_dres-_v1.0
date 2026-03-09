@@ -1,10 +1,13 @@
 import 'dart:convert';
+import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
+import '../services/connectivity_service.dart';
 import '../services/supabase_service.dart';
 import '../utils/report_date_helper.dart';
+import '../widgets/offline_info_banner.dart';
 
 class MyReportsScreen extends StatefulWidget {
   /// When set (e.g. from notification tap), scroll to and highlight this report after load.
@@ -19,16 +22,69 @@ class MyReportsScreen extends StatefulWidget {
 class _MyReportsScreenState extends State<MyReportsScreen> {
   final List<EmergencyReport> _reports = [];
   bool _isLoading = true;
+  bool _isOnline = true;
   String? _errorMessage;
   final GlobalKey _highlightCardKey = GlobalKey();
+  final ConnectivityService _connectivityService = ConnectivityService();
+  StreamSubscription<bool>? _connectivitySubscription;
 
   @override
   void initState() {
     super.initState();
-    _loadReports();
+    _initConnectivity();
+  }
+
+  @override
+  void dispose() {
+    _connectivitySubscription?.cancel();
+    super.dispose();
+  }
+
+  Future<void> _initConnectivity() async {
+    final isConnected = await _connectivityService.checkConnectivity();
+    if (!mounted) return;
+
+    setState(() {
+      _isOnline = isConnected;
+    });
+
+    if (_isOnline) {
+      _loadReports();
+    } else {
+      _showOfflineState();
+    }
+
+    _connectivitySubscription =
+        _connectivityService.onConnectivityChanged.listen((isConnected) {
+      if (!mounted) return;
+
+      setState(() {
+        _isOnline = isConnected;
+      });
+
+      if (isConnected) {
+        _loadReports();
+      } else {
+        _showOfflineState();
+      }
+    });
+  }
+
+  void _showOfflineState() {
+    setState(() {
+      _isLoading = false;
+      _reports.clear();
+      _errorMessage =
+          'Offline mode: No internet connection. Connect to the internet to load your synced reports.';
+    });
   }
 
   Future<void> _loadReports() async {
+    if (!_isOnline) {
+      _showOfflineState();
+      return;
+    }
+
     final userId = SupabaseService.currentUserId;
 
     if (userId == null) {
@@ -81,12 +137,14 @@ class _MyReportsScreenState extends State<MyReportsScreen> {
         _errorMessage = friendly;
         _reports.clear();
       });
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Failed to load reports: $friendly'),
-          backgroundColor: Colors.red,
-        ),
-      );
+      if (_isOnline) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to load reports: $friendly'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     } finally {
       if (!mounted) return;
       setState(() {
@@ -230,49 +288,54 @@ class _MyReportsScreenState extends State<MyReportsScreen> {
   }
 
   Widget _buildErrorState() {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(24.0),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.error_outline,
-              size: 48,
-              color: Colors.red.shade400,
+    return Padding(
+      padding: const EdgeInsets.all(24.0),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          if (!_isOnline) ...[
+            const OfflineInfoBanner(
+              message:
+                  'No internet connection. Your online reports history will appear again once the connection is restored.',
             ),
-            const SizedBox(height: 16),
-            Text(
-              'Unable to load reports',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: Colors.grey.shade800,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              _errorMessage ?? 'Please try again later.',
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                color: Colors.grey.shade600,
-                height: 1.4,
-              ),
-            ),
-            const SizedBox(height: 20),
-            ElevatedButton.icon(
-              onPressed: _loadReports,
-              icon: const Icon(Icons.refresh_rounded),
-              label: const Text('Retry'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF3b82f6),
-                foregroundColor: Colors.white,
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 28, vertical: 14),
-              ),
-            ),
+            const SizedBox(height: 24),
           ],
-        ),
+          Icon(
+            _isOnline ? Icons.error_outline : Icons.cloud_off,
+            size: 48,
+            color: _isOnline ? Colors.red.shade400 : Colors.orange.shade400,
+          ),
+          const SizedBox(height: 16),
+          Text(
+            _isOnline ? 'Unable to load reports' : 'Reports unavailable offline',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: Colors.grey.shade800,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            _errorMessage ?? 'Please try again later.',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: Colors.grey.shade600,
+              height: 1.4,
+            ),
+          ),
+          const SizedBox(height: 20),
+          ElevatedButton.icon(
+            onPressed: _isOnline ? _loadReports : null,
+            icon: const Icon(Icons.refresh_rounded),
+            label: Text(_isOnline ? 'Retry' : 'Waiting for internet'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF3b82f6),
+              foregroundColor: Colors.white,
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 28, vertical: 14),
+            ),
+          ),
+        ],
       ),
     );
   }

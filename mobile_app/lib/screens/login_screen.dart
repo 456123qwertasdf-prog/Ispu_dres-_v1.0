@@ -170,6 +170,9 @@ class _LoginScreenState extends State<LoginScreen> {
       if (role == 'responder' || role == 'admin') {
         destination = '/responder-dashboard';
       }
+
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('user_role', role ?? 'citizen');
     } catch (_) {
       // Fallback to citizen home on any lookup issue.
     }

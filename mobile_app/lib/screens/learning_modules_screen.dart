@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+import 'dart:async';
+import '../services/connectivity_service.dart';
 import '../services/supabase_service.dart';
+import '../widgets/offline_info_banner.dart';
 import 'learning_module_detail_screen.dart';
 
 class LearningModulesScreen extends StatefulWidget {
@@ -15,6 +18,10 @@ class _LearningModulesScreenState extends State<LearningModulesScreen> {
   List<Map<String, dynamic>> _userProgress = [];
   String? _selectedCourseId;
   bool _isLoading = true;
+  bool _isOnline = true;
+  String? _offlineMessage;
+  final ConnectivityService _connectivityService = ConnectivityService();
+  StreamSubscription<bool>? _connectivitySubscription;
   // Get user ID from Supabase auth
   String get _userId => SupabaseService.currentUserId ?? 'demo_user';
 
@@ -24,12 +31,65 @@ class _LearningModulesScreenState extends State<LearningModulesScreen> {
   @override
   void initState() {
     super.initState();
-    _loadData();
+    _initConnectivity();
+  }
+
+  @override
+  void dispose() {
+    _connectivitySubscription?.cancel();
+    super.dispose();
+  }
+
+  Future<void> _initConnectivity() async {
+    final isConnected = await _connectivityService.checkConnectivity();
+    if (!mounted) return;
+
+    setState(() {
+      _isOnline = isConnected;
+    });
+
+    if (_isOnline) {
+      _loadData();
+    } else {
+      _showOfflineState();
+    }
+
+    _connectivitySubscription =
+        _connectivityService.onConnectivityChanged.listen((isConnected) {
+      if (!mounted) return;
+
+      setState(() {
+        _isOnline = isConnected;
+      });
+
+      if (isConnected) {
+        _loadData();
+      } else {
+        _showOfflineState();
+      }
+    });
+  }
+
+  void _showOfflineState() {
+    setState(() {
+      _isLoading = false;
+      _courses = [];
+      _modules = [];
+      _userProgress = [];
+      _offlineMessage =
+          'Offline mode: No internet connection. Learning modules will be available again when the device reconnects.';
+    });
   }
 
   Future<void> _loadData() async {
+    if (!_isOnline) {
+      _showOfflineState();
+      return;
+    }
+
     setState(() {
       _isLoading = true;
+      _offlineMessage = null;
     });
 
     try {
@@ -77,7 +137,7 @@ class _LearningModulesScreenState extends State<LearningModulesScreen> {
       setState(() {
         _isLoading = false;
       });
-      if (mounted) {
+      if (mounted && _isOnline) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Failed to load modules: $e')),
         );
@@ -235,6 +295,10 @@ class _LearningModulesScreenState extends State<LearningModulesScreen> {
       child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  if (!_isOnline) ...[
+                    OfflineInfoBanner(message: _offlineMessage ?? 'No internet connection.'),
+                    const SizedBox(height: 20),
+                  ],
                   // Header Section
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -337,12 +401,27 @@ class _LearningModulesScreenState extends State<LearningModulesScreen> {
                             Icon(Icons.menu_book, size: 64, color: Colors.grey.shade400),
                             const SizedBox(height: 16),
                             Text(
-                              'No modules available',
+                              _isOnline
+                                  ? 'No modules available'
+                                  : 'Learning modules are unavailable offline',
                               style: TextStyle(
                                 fontSize: 16,
                                 color: Colors.grey.shade600,
                               ),
                             ),
+                            if (!_isOnline) ...[
+                              const SizedBox(height: 8),
+                              Text(
+                                _offlineMessage ??
+                                    'Reconnect to the internet to load course content.',
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  color: Colors.grey.shade500,
+                                  height: 1.4,
+                                ),
+                              ),
+                            ],
                           ],
                         ),
                       ),
