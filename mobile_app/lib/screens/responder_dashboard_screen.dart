@@ -29,15 +29,19 @@ class ResponderDashboardScreen extends StatefulWidget {
   State<ResponderDashboardScreen> createState() => _ResponderDashboardScreenState();
 }
 
-class _ResponderDashboardScreenState extends State<ResponderDashboardScreen> {
-  static const List<String> _resolveNoteTemplates = [
-    'Arrived on scene and assessed the situation.',
-    'Provided first aid and stabilized the patient.',
-    'Patient was transported to the hospital.',
-    'Incident was handled and the area was secured.',
-    'Coordinated with other responders and completed the response.',
-  ];
+class _ResolveNoteSection {
+  const _ResolveNoteSection({
+    required this.title,
+    required this.icon,
+    required this.notes,
+  });
 
+  final String title;
+  final IconData icon;
+  final List<String> notes;
+}
+
+class _ResponderDashboardScreenState extends State<ResponderDashboardScreen> {
   final MapController _mapController = MapController();
   final DateFormat _dateFormat = DateFormat('MMM d, yyyy • h:mm a');
   final GlobalKey _initialAssignmentCardKey = GlobalKey();
@@ -752,6 +756,7 @@ class _ResponderDashboardScreenState extends State<ResponderDashboardScreen> {
 
   Future<void> _showResolveNoteDialog(ResponderAssignment assignment) async {
     final controller = TextEditingController();
+    final noteSections = _resolveNoteSectionsFor(assignment);
     final notes = await showDialog<String>(
       context: context,
       builder: (context) => StatefulBuilder(
@@ -760,55 +765,121 @@ class _ResponderDashboardScreenState extends State<ResponderDashboardScreen> {
           final canSubmit = trimmedNotes.isNotEmpty;
 
           return AlertDialog(
-            title: const Text('Mark as Resolved'),
+            insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+            titlePadding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
             content: SingleChildScrollView(
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    'Add a note about what happened. This is required and will be saved with the emergency report.',
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: Colors.grey.shade700,
+                  Row(
+                    children: [
+                      Container(
+                        width: 44,
+                        height: 44,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF10B981).withValues(alpha: 0.12),
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                        child: const Icon(
+                          Icons.assignment_turned_in_rounded,
+                          color: Color(0xFF059669),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      const Expanded(
+                        child: Text(
+                          'Mark as Resolved',
+                          style: TextStyle(
+                            fontSize: 26,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 14),
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF8FAFC),
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: const Color(0xFFE2E8F0)),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Choose a university-appropriate resolution note or edit one before submitting.',
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: Colors.grey.shade700,
+                            height: 1.4,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          'Suggested for ${_resolveTypeLabel(assignment.report.type)} incidents.',
+                          style: const TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: Color(0xFF475569),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                   const SizedBox(height: 16),
-                  Text(
-                    'Quick note options',
-                    style: TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w700,
-                      color: Colors.grey.shade800,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: _resolveNoteTemplates.map((template) {
-                      final isSelected = trimmedNotes == template;
-                      return ChoiceChip(
-                        label: Text(template),
-                        selected: isSelected,
-                        onSelected: (_) {
-                          controller.text = template;
-                          controller.selection = TextSelection.fromPosition(
-                            TextPosition(offset: controller.text.length),
-                          );
-                          setDialogState(() {});
-                        },
-                      );
-                    }).toList(),
-                  ),
-                  const SizedBox(height: 16),
+                  ...noteSections.map((section) {
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 14),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Icon(section.icon, size: 18, color: const Color(0xFF2563EB)),
+                              const SizedBox(width: 8),
+                              Text(
+                                section.title,
+                                style: const TextStyle(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w700,
+                                  color: Color(0xFF0F172A),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 8),
+                          ...section.notes.map((template) {
+                            return Padding(
+                              padding: const EdgeInsets.only(bottom: 8),
+                              child: _buildResolveNoteOption(
+                                note: template,
+                                isSelected: trimmedNotes == template,
+                                onTap: () {
+                                  controller.text = template;
+                                  controller.selection = TextSelection.fromPosition(
+                                    TextPosition(offset: controller.text.length),
+                                  );
+                                  setDialogState(() {});
+                                },
+                              ),
+                            );
+                          }),
+                        ],
+                      ),
+                    );
+                  }),
                   TextField(
                     controller: controller,
                     maxLines: 4,
                     maxLength: 1000,
                     onChanged: (_) => setDialogState(() {}),
                     decoration: const InputDecoration(
-                      hintText: 'e.g. Arrived on scene, provided first aid. Patient transferred to hospital.',
+                      hintText: 'e.g. First aid was provided and the student was endorsed to the campus clinic.',
                       helperText: 'Resolution note is required.',
                       border: OutlineInputBorder(),
                       alignLabelWithHint: true,
@@ -845,6 +916,176 @@ class _ResponderDashboardScreenState extends State<ResponderDashboardScreen> {
         notes: notes,
       );
     }
+  }
+
+  List<_ResolveNoteSection> _resolveNoteSectionsFor(ResponderAssignment assignment) {
+    final type = (assignment.report.type ?? '').toLowerCase();
+
+    final sections = <_ResolveNoteSection>[
+      const _ResolveNoteSection(
+        title: 'General notes',
+        icon: Icons.notes_rounded,
+        notes: [
+          'Responder arrived on scene, assessed the incident, and completed the response.',
+          'The situation was stabilized and the affected area was secured.',
+          'Campus authorities were informed and the incident was resolved on site.',
+        ],
+      ),
+      _ResolveNoteSection(
+        title: '${_resolveTypeLabel(assignment.report.type)} notes',
+        icon: _resolveTypeIcon(type),
+        notes: _resolveTypeSpecificNotes(type),
+      ),
+      const _ResolveNoteSection(
+        title: 'Turnover and outcome',
+        icon: Icons.how_to_reg_rounded,
+        notes: [
+          'The patient was assisted and endorsed to the campus clinic for further care.',
+          'The incident was endorsed to campus security for follow-up action.',
+          'The concern was endorsed to campus maintenance for corrective action.',
+          'The report was verified on scene and no active threat remained.',
+        ],
+      ),
+    ];
+
+    return sections.where((section) => section.notes.isNotEmpty).toList();
+  }
+
+  List<String> _resolveTypeSpecificNotes(String type) {
+    switch (type) {
+      case 'medical':
+        return const [
+          'First aid was provided and the patient was stabilized on scene.',
+          'The student was assisted and endorsed to the campus clinic for evaluation.',
+          'The medical concern was addressed and no further transport was needed.',
+        ];
+      case 'fire':
+        return const [
+          'The fire hazard was contained and the area was secured.',
+          'Occupants were guided to evacuate safely and the scene was cleared.',
+          'The incident was verified on site and no continuing fire threat remained.',
+        ];
+      case 'accident':
+        return const [
+          'The injured person was assisted and given first aid on scene.',
+          'The accident area was secured and involved persons were assisted.',
+          'The accident was documented and endorsed for campus follow-up.',
+        ];
+      case 'flood':
+        return const [
+          'The flooded area was secured and affected persons were moved to a safer location.',
+          'Campus authorities were informed and the area was monitored until conditions stabilized.',
+          'Flood-related assistance was provided and no injuries were reported.',
+        ];
+      case 'earthquake':
+        return const [
+          'Occupants were guided to evacuate and the area was checked for hazards.',
+          'A post-earthquake assessment was completed and immediate risks were cleared.',
+          'Minor injuries were assisted and affected persons were endorsed to the campus clinic.',
+        ];
+      default:
+        return const [
+          'The concern was verified on scene and the situation was resolved safely.',
+          'Immediate response was completed and the area was cleared.',
+          'The incident was handled and appropriate campus personnel were informed.',
+        ];
+    }
+  }
+
+  String _resolveTypeLabel(String? type) {
+    switch ((type ?? '').toLowerCase()) {
+      case 'medical':
+        return 'medical';
+      case 'fire':
+        return 'fire';
+      case 'accident':
+        return 'accident';
+      case 'flood':
+        return 'flood';
+      case 'earthquake':
+        return 'earthquake';
+      default:
+        return 'general';
+    }
+  }
+
+  IconData _resolveTypeIcon(String type) {
+    switch (type) {
+      case 'medical':
+        return Icons.medical_services_rounded;
+      case 'fire':
+        return Icons.local_fire_department_rounded;
+      case 'accident':
+        return Icons.car_crash_rounded;
+      case 'flood':
+        return Icons.water_rounded;
+      case 'earthquake':
+        return Icons.public_rounded;
+      default:
+        return Icons.shield_rounded;
+    }
+  }
+
+  Widget _buildResolveNoteOption({
+    required String note,
+    required bool isSelected,
+    required VoidCallback onTap,
+  }) {
+    return Material(
+      color: isSelected ? const Color(0xFFEFF6FF) : Colors.white,
+      borderRadius: BorderRadius.circular(16),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(16),
+        child: Container(
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: isSelected ? const Color(0xFF2563EB) : const Color(0xFFE2E8F0),
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.03),
+                blurRadius: 10,
+                offset: const Offset(0, 3),
+              ),
+            ],
+          ),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                width: 24,
+                height: 24,
+                decoration: BoxDecoration(
+                  color: isSelected ? const Color(0xFF2563EB) : const Color(0xFFF1F5F9),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  isSelected ? Icons.check_rounded : Icons.add_rounded,
+                  size: 16,
+                  color: isSelected ? Colors.white : const Color(0xFF64748B),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  note,
+                  style: TextStyle(
+                    fontSize: 13.5,
+                    height: 1.35,
+                    color: const Color(0xFF0F172A),
+                    fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 
   Future<void> _captureLocation() async {
