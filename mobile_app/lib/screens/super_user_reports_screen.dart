@@ -110,6 +110,19 @@ class _SuperUserReportsScreenState extends State<SuperUserReportsScreen> {
     }
   }
 
+  /// Human-readable title from AI classification (e.g. "Medical Emergency - Sports Injury") or type.
+  String _getReportDisplayTitle(Map<String, dynamic> report) {
+    final aiDesc = report['ai_description']?.toString()?.trim();
+    if (aiDesc != null && aiDesc.isNotEmpty && aiDesc.contains('-')) {
+      return aiDesc;
+    }
+    final type = report['type']?.toString()?.trim();
+    if (type != null && type.isNotEmpty) {
+      return '${type[0].toUpperCase()}${type.substring(1).toLowerCase()} Emergency';
+    }
+    return 'Emergency Report';
+  }
+
   String _getTypeEmoji(String? type) {
     switch (type?.toLowerCase()) {
       case 'fire':
@@ -369,6 +382,7 @@ class _SuperUserReportsScreenState extends State<SuperUserReportsScreen> {
     final type = report['type']?.toString() ?? 'Unknown';
     final status = report['status']?.toString() ?? 'Unknown';
     final message = report['message']?.toString() ?? 'No description';
+    final displayTitle = _getReportDisplayTitle(report);
     final createdAt = report['created_at']?.toString();
     final createdAtFormatted = ReportDateHelper.formatReportCreatedAt(createdAt);
     final reporterName = report['reporter_name']?.toString() ?? 'Unknown';
@@ -376,6 +390,7 @@ class _SuperUserReportsScreenState extends State<SuperUserReportsScreen> {
     final hasResponder = report['responder_id'] != null ||
         report['responder_name'] != null;
     final assignmentStatus = report['assignment_status']?.toString();
+    final hasAiClassification = (report['ai_description']?.toString()?.trim() ?? '').isNotEmpty;
 
     return InkWell(
       onTap: () async {
@@ -427,7 +442,7 @@ class _SuperUserReportsScreenState extends State<SuperUserReportsScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          type.toUpperCase(),
+                          displayTitle,
                           style: const TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
@@ -467,6 +482,24 @@ class _SuperUserReportsScreenState extends State<SuperUserReportsScreen> {
                 ],
               ),
               const SizedBox(height: 12),
+              if (hasAiClassification)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 6),
+                  child: Row(
+                    children: [
+                      Icon(Icons.auto_awesome, size: 14, color: Colors.blue.shade700),
+                      const SizedBox(width: 6),
+                      Text(
+                        'Identified: $displayTitle',
+                        style: TextStyle(
+                          color: Colors.blue.shade800,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               Text(
                 message,
                 style: TextStyle(

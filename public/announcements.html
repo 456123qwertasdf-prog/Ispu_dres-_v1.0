@@ -605,6 +605,144 @@
             font-size: 1rem;
         }
 
+        /* ── Two-column layout (same as super user, admin colors) ── */
+        .admin-an-main { padding: 1.75rem; background: #f1f5f9; min-height: 100vh; }
+        .admin-an-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem; align-items: stretch; }
+        .admin-an-grid > .admin-an-panel { display: flex; flex-direction: column; }
+        .admin-an-grid > .admin-an-panel .admin-an-panel-body { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+        @media (max-width: 900px) { .admin-an-grid { grid-template-columns: 1fr; } }
+
+        .admin-an-panel {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+            border: 1px solid rgba(0,0,0,0.04);
+            overflow: hidden;
+            margin-bottom: 0;
+        }
+        .admin-an-panel-header {
+            padding: 1rem 1.5rem;
+            border-bottom: 1px solid #f1f5f9;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 0.6rem;
+        }
+        .admin-an-panel-title {
+            font-size: 0.95rem;
+            font-weight: 700;
+            color: #0f172a;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .admin-an-panel-title i { color: #2563eb; }
+        .admin-an-panel-body { padding: 1.5rem; overflow-y: auto; }
+        .admin-an-panel-body::-webkit-scrollbar { width: 5px; }
+        .admin-an-panel-body::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 9999px; }
+        .admin-an-panel-body::-webkit-scrollbar-thumb { background: #93c5fd; border-radius: 9999px; }
+
+        .admin-an-btn {
+            border-radius: 10px;
+            padding: 0.5rem 1.1rem;
+            border: none;
+            font-size: 0.83rem;
+            font-weight: 700;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            transition: filter 0.15s, transform 0.15s;
+        }
+        .admin-an-btn:hover { filter: brightness(1.08); transform: translateY(-1px); }
+        .admin-an-btn-primary { background: linear-gradient(135deg, #2563eb, #1d4ed8); color: white; box-shadow: 0 2px 8px rgba(37, 99, 235, 0.3); }
+        .admin-an-btn-gray { background: #f3f4f6; color: #374151; border: 1.5px solid #e5e7eb; }
+        .admin-an-btn-sm { padding: 0.3rem 0.75rem; font-size: 0.75rem; }
+
+        .admin-form-group { margin-bottom: 1.1rem; }
+        .admin-form-label { display: block; font-size: 0.72rem; font-weight: 800; color: #374151; margin-bottom: 0.4rem; text-transform: uppercase; letter-spacing: 0.05em; }
+        .admin-form-label i { color: #2563eb; margin-right: 0.3rem; }
+        .admin-form-input, .admin-form-textarea, .admin-form-select {
+            width: 100%;
+            padding: 0.6rem 0.9rem;
+            border: 1.5px solid #d1d5db;
+            border-radius: 10px;
+            font-size: 0.875rem;
+            color: #111827;
+            background: #fafafa;
+            transition: border-color 0.2s, box-shadow 0.2s;
+            outline: none;
+            box-sizing: border-box;
+        }
+        .admin-form-input:focus, .admin-form-textarea:focus, .admin-form-select:focus {
+            border-color: #2563eb;
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+            background: white;
+        }
+        .admin-form-textarea { min-height: 110px; resize: vertical; }
+
+        .admin-qa-section { margin-bottom: 1.1rem; }
+        .admin-qa-label { font-size: 0.7rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.07em; color: #6b7280; margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.35rem; }
+        .admin-qa-label i { color: #2563eb; }
+        .admin-qa-chips { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+        .admin-qa-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+            padding: 0.3rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            cursor: pointer;
+            border: 1.5px solid transparent;
+            transition: all 0.18s;
+            white-space: nowrap;
+            background: white;
+        }
+        .admin-qa-chip:hover { transform: translateY(-1px); box-shadow: 0 3px 10px rgba(0,0,0,0.1); }
+        .admin-qa-chip.qa-weather { border-color: #93c5fd; color: #1d4ed8; background: #eff6ff; }
+        .admin-qa-chip.qa-fire { border-color: #fca5a5; color: #b91c1c; background: #fff1f2; }
+        .admin-qa-chip.qa-quake { border-color: #fdba74; color: #c2410c; background: #fff7ed; }
+        .admin-qa-chip.qa-class { border-color: #a5b4fc; color: #4338ca; background: #eef2ff; }
+        .admin-qa-chip.qa-flood { border-color: #67e8f9; color: #0e7490; background: #ecfeff; }
+        .admin-qa-chip.qa-drill { border-color: #86efac; color: #15803d; background: #f0fdf4; }
+        .admin-qa-chip.qa-health { border-color: #f9a8d4; color: #9d174d; background: #fdf2f8; }
+        .admin-qa-chip.qa-power { border-color: #fde68a; color: #92400e; background: #fffbeb; }
+        .admin-qa-chip.qa-general { border-color: #93c5fd; color: #1d4ed8; background: #eff6ff; }
+        .admin-qa-chip.qa-active { outline: 2px solid currentColor; outline-offset: 1px; }
+
+        .admin-img-preview-box { margin-top: 0.6rem; border-radius: 10px; overflow: hidden; border: 1.5px solid #e5e7eb; background: #f9fafb; display: none; }
+        .admin-img-preview-box img { width: 100%; max-height: 220px; object-fit: cover; display: block; }
+        .admin-img-preview-box.show { display: block; }
+        .admin-fb-hint { font-size: 0.72rem; color: #6b7280; margin-top: 0.35rem; display: flex; align-items: flex-start; gap: 0.35rem; }
+
+        /* List panel: filter chips + scrollable list */
+        .admin-an-filter-row { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.75rem; flex-wrap: wrap; }
+        .admin-an-filter-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+            padding: 0.25rem 0.65rem;
+            border-radius: 9999px;
+            font-size: 0.72rem;
+            font-weight: 700;
+            cursor: pointer;
+            border: 1.5px solid #e5e7eb;
+            background: #f9fafb;
+            color: #6b7280;
+            transition: all 0.18s;
+        }
+        .admin-an-filter-chip:hover { background: #f3f4f6; color: #374151; }
+        .admin-an-filter-chip.active { background: #dbeafe; color: #1d4ed8; border-color: #93c5fd; }
+        #announcementsList { flex: 1; overflow-y: auto; padding-right: 2px; min-height: 200px; max-height: 60vh; }
+        #announcementsList::-webkit-scrollbar { width: 5px; }
+        #announcementsList::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 9999px; }
+        #announcementsList::-webkit-scrollbar-thumb { background: #93c5fd; border-radius: 9999px; }
+        .admin-an-empty { text-align: center; padding: 3rem 1rem; color: #9ca3af; }
+        .admin-an-empty i { font-size: 2.5rem; display: block; margin-bottom: 0.75rem; color: #d1d5db; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
         /* Toast Notification Styles */
         .toast-notification {
             position: fixed;
@@ -838,99 +976,92 @@
         </style>
 
         <!-- Main Content -->
-        <div class="main-content">
-            <!-- Alerts Container -->
+        <div class="main-content admin-an-main">
             <div class="alerts-container"></div>
 
-            <!-- Announcements Section -->
             <div class="admin-section active">
-                <!-- Header Section -->
-                <div class="card announcements-header-card">
+                <!-- Page Header (like super user) -->
+                <div class="card announcements-header-card" style="margin-bottom: 1.25rem;">
                     <div class="card-header">
-                        <h2 class="card-title">Announcements Management</h2>
+                        <h2 class="card-title"><i class="bi bi-megaphone-fill"></i> Announcements Management</h2>
                         <p class="card-subtitle">Create and manage emergency alerts, weather updates, and general announcements</p>
                     </div>
-                    <div class="card-body">
-                        <div class="flex gap-4" style="flex-direction: column;">
-                            <button onclick="showCreateAnnouncementModal()" class="create-announcement-btn" style="width: fit-content;">
-                                <i class="bi bi-plus-circle"></i> Create Announcement
-                            </button>
-                            <div style="margin-top: 0.5rem;">
-                                <label style="font-size: 0.875rem; font-weight: 600; color: #374151; margin-bottom: 0.5rem; display: block;">Quick Actions:</label>
-                                <div class="quick-actions-container">
-                                    <button type="button" onclick="quickAction('emergency')" class="quick-action-btn emergency">
-                                        <i class="bi bi-exclamation-triangle"></i> Emergency Alert
-                                    </button>
-                                    <button type="button" onclick="quickAction('weather')" class="quick-action-btn weather">
-                                        <i class="bi bi-cloud-rain"></i> Weather Update
-                                    </button>
-                                    <button type="button" onclick="quickAction('general')" class="quick-action-btn general">
-                                        <i class="bi bi-megaphone"></i> General Announcement
-                                    </button>
-                                    <button type="button" onclick="quickAction('maintenance')" class="quick-action-btn maintenance">
-                                        <i class="bi bi-tools"></i> Maintenance Notice
-                                    </button>
-                                    <button type="button" onclick="quickAction('safety')" class="quick-action-btn safety">
-                                        <i class="bi bi-shield-check"></i> Safety Alert
-                                    </button>
-                                </div>
+                </div>
+
+                <!-- Two-column grid: Create (left) + Recent Announcements (right) -->
+                <div class="admin-an-grid">
+                    <!-- LEFT: Create Announcement -->
+                    <div class="admin-an-panel">
+                        <div class="admin-an-panel-header">
+                            <div class="admin-an-panel-title">
+                                <i class="bi bi-pencil-square"></i> Create Announcement
                             </div>
+                            <span style="font-size: 0.75rem; color: #9ca3af; font-weight: 600;">Emergency · Weather · General</span>
+                        </div>
+                        <div class="admin-an-panel-body">
+                            <form id="adminCreateAnnouncementForm" onsubmit="handleAdminCreateAnnouncement(event)">
+                                <div class="admin-qa-section">
+                                    <div class="admin-qa-label"><i class="bi bi-lightning-charge-fill"></i> Quick Templates</div>
+                                    <div class="admin-qa-chips">
+                                        <button type="button" class="admin-qa-chip qa-weather" onclick="applyAdminTemplate('weather')">⛅ Weather Advisory</button>
+                                        <button type="button" class="admin-qa-chip qa-fire" onclick="applyAdminTemplate('fire')">🔥 Fire Alert</button>
+                                        <button type="button" class="admin-qa-chip qa-quake" onclick="applyAdminTemplate('earthquake')">🌍 Earthquake Alert</button>
+                                        <button type="button" class="admin-qa-chip qa-class" onclick="applyAdminTemplate('class')">📚 Class Suspension</button>
+                                        <button type="button" class="admin-qa-chip qa-flood" onclick="applyAdminTemplate('flood')">🌊 Flood Warning</button>
+                                        <button type="button" class="admin-qa-chip qa-drill" onclick="applyAdminTemplate('drill')">🚨 Emergency Drill</button>
+                                        <button type="button" class="admin-qa-chip qa-health" onclick="applyAdminTemplate('health')">🏥 Health Advisory</button>
+                                        <button type="button" class="admin-qa-chip qa-power" onclick="applyAdminTemplate('power')">⚡ Power Interruption</button>
+                                        <button type="button" class="admin-qa-chip qa-general" onclick="applyAdminTemplate('general')">📢 General</button>
+                                    </div>
+                                </div>
+                                <div class="admin-form-group">
+                                    <label class="admin-form-label" for="adminGaTitle"><i class="bi bi-fonts"></i> Title</label>
+                                    <input id="adminGaTitle" type="text" class="admin-form-input" placeholder="e.g. Class Suspension Notice" required>
+                                </div>
+                                <div class="admin-form-group">
+                                    <label class="admin-form-label" for="adminGaAudience"><i class="bi bi-people-fill"></i> Target Audience</label>
+                                    <select id="adminGaAudience" class="admin-form-select">
+                                        <option value="all">🌐 All Users</option>
+                                        <option value="students">🎓 Students</option>
+                                        <option value="faculty">👨‍🏫 Faculty</option>
+                                        <option value="staff">🏢 Staff</option>
+                                        <option value="responders">🚨 Responders</option>
+                                    </select>
+                                </div>
+                                <div class="admin-form-group">
+                                    <label class="admin-form-label" for="adminGaMessage"><i class="bi bi-chat-text-fill"></i> Message</label>
+                                    <textarea id="adminGaMessage" class="admin-form-input admin-form-textarea" placeholder="Write the full details of the announcement here..." required></textarea>
+                                </div>
+                                <div class="admin-form-group">
+                                    <label class="admin-form-label" for="adminGaImageUrl"><i class="bi bi-image-fill"></i> Image URL <span style="font-weight:400;text-transform:none;color:#9ca3af;">(Optional)</span></label>
+                                    <input id="adminGaImageUrl" type="url" class="admin-form-input" placeholder="https://..." oninput="previewAdminImage(this.value)">
+                                    <div class="admin-fb-hint"><i class="bi bi-info-circle"></i> Paste a direct image URL to show in the announcement.</div>
+                                    <div class="admin-img-preview-box" id="adminImgPreviewBox">
+                                        <img id="adminImgPreviewImg" src="" alt="Preview">
+                                    </div>
+                                </div>
+                                <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
+                                    <button type="submit" class="admin-an-btn admin-an-btn-primary"><i class="bi bi-send-fill"></i> Post Announcement</button>
+                                    <button type="button" class="admin-an-btn admin-an-btn-gray" onclick="clearAdminCreateForm()"><i class="bi bi-x-circle"></i> Clear</button>
+                                </div>
+                            </form>
                         </div>
                     </div>
-                </div>
 
-                <!-- Statistics Cards -->
-                <div class="stats-grid mb-6">
-                    <div class="stat-card">
-                        <div class="stat-icon">
-                            <i class="bi bi-exclamation-triangle"></i>
+                    <!-- RIGHT: Recent Announcements -->
+                    <div class="admin-an-panel">
+                        <div class="admin-an-panel-header">
+                            <div class="admin-an-panel-title"><i class="bi bi-collection-fill"></i> Recent Announcements</div>
+                            <button type="button" class="admin-an-btn admin-an-btn-gray admin-an-btn-sm" onclick="loadAnnouncements()"><i class="bi bi-arrow-clockwise"></i> Refresh</button>
                         </div>
-                        <div class="stat-content">
-                            <div class="stat-number" id="totalAnnouncements">0</div>
-                            <div class="stat-label">Total Announcements</div>
-                            <div class="stat-trend">All announcements</div>
-                        </div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-icon">
-                            <i class="bi bi-check-circle"></i>
-                        </div>
-                        <div class="stat-content">
-                            <div class="stat-number" id="activeAnnouncements">0</div>
-                            <div class="stat-label">Active</div>
-                            <div class="stat-trend">Currently active</div>
-                        </div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-icon">
-                            <i class="bi bi-cloud-rain"></i>
-                        </div>
-                        <div class="stat-content">
-                            <div class="stat-number" id="weatherAlerts">0</div>
-                            <div class="stat-label">Weather Alerts</div>
-                            <div class="stat-trend">Weather notifications</div>
-                        </div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-icon">
-                            <i class="bi bi-exclamation-circle"></i>
-                        </div>
-                        <div class="stat-content">
-                            <div class="stat-number" id="emergencyAlerts">0</div>
-                            <div class="stat-label">Emergency Alerts</div>
-                            <div class="stat-trend">Emergency notifications</div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Announcements List -->
-                <div class="card">
-                    <div class="card-header">
-                        <h3 class="card-title">Announcements</h3>
-                    </div>
-                    <div class="card-body">
-                        <div id="announcementsList" class="space-y-4" style="max-height: 60vh; overflow-y: auto; padding-right: 8px;">
-                            <!-- Announcements will be loaded here -->
+                        <div class="admin-an-panel-body">
+                            <div class="admin-an-filter-row">
+                                <button type="button" class="admin-an-filter-chip active" id="filterAll" onclick="setAnnouncementFilter('all')"><i class="bi bi-list-ul"></i> All</button>
+                                <button type="button" class="admin-an-filter-chip" id="filterActive" onclick="setAnnouncementFilter('active')"><i class="bi bi-broadcast"></i> Active</button>
+                            </div>
+                            <div id="announcementsList">
+                                <div class="admin-an-empty"><i class="bi bi-hourglass-split"></i> Loading announcements…</div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -1089,6 +1220,7 @@
     <script>
         let announcements = [];
         let filteredAnnouncements = [];
+        let announcementListFilter = 'all'; // 'all' | 'active'
 
         // Toast notification function
         function showToast(message, type = 'info') {
@@ -1197,102 +1329,202 @@
 
         // Load announcements
         async function loadAnnouncements() {
+            const container = document.getElementById('announcementsList');
+            if (container) {
+                container.innerHTML = '<div class="admin-an-empty"><i class="bi bi-hourglass-split" style="animation: spin 1.2s linear infinite;"></i> Loading announcements…</div>';
+            }
             try {
-                console.log('Loading announcements...');
                 const { data, error } = await emergencySystem.supabase
                     .from('announcements')
                     .select('*')
                     .order('created_at', { ascending: false });
 
-                if (error) {
-                    console.error('Database error:', error);
-                    throw error;
-                }
+                if (error) throw error;
 
-                // Before displaying, automatically expire any announcements
-                // whose expires_at is in the past but are still marked active.
                 await autoExpireAnnouncements(data || []);
 
-                console.log('Announcements loaded:', data);
                 announcements = data || [];
                 filteredAnnouncements = [...announcements];
                 displayAnnouncements();
                 updateStatistics();
             } catch (error) {
                 console.error('Failed to load announcements:', error);
-                // Error logged to console
+                if (container) {
+                    container.innerHTML = '<div class="admin-an-empty" style="color:#b91c1c;"><i class="bi bi-exclamation-circle"></i> Failed to load announcements.</div>';
+                }
             }
         }
 
-        // Display announcements
+        function escapeHtml(text) {
+            const map = { '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;' };
+            return String(text || '').replace(/[&<>"']/g, m => map[m]);
+        }
+
+        function setAnnouncementFilter(filter) {
+            announcementListFilter = filter;
+            document.getElementById('filterAll').classList.toggle('active', filter === 'all');
+            document.getElementById('filterActive').classList.toggle('active', filter === 'active');
+            displayAnnouncements();
+        }
+
+        function applyAdminTemplate(key) {
+            const tpl = getAdminTemplates()[key];
+            if (!tpl) return;
+            document.querySelectorAll('.admin-qa-chip').forEach(c => c.classList.remove('qa-active'));
+            const chip = document.querySelector(`.admin-qa-chip.qa-${key === 'earthquake' ? 'quake' : key}`);
+            if (chip) chip.classList.add('qa-active');
+            document.getElementById('adminGaTitle').value = tpl.title;
+            document.getElementById('adminGaMessage').value = tpl.message;
+            document.getElementById('adminGaAudience').value = tpl.audience || 'all';
+        }
+        function getAdminTemplates() {
+            return {
+                weather: { title: '⛅ Weather Advisory — LSPU Santa Cruz Campus', audience: 'all', message: 'WEATHER ADVISORY\n\nDear LSPU Community,\n\nPlease be advised that weather conditions may affect campus operations. Stay indoors during heavy rainfall. Avoid flooded areas. Monitor PAGASA bulletins.\n\n— LSPU DRES' },
+                fire: { title: '🔥 Fire Alert — Immediate Safety Notice', audience: 'all', message: 'FIRE ALERT\n\nEvacuate via nearest exit. Do NOT use elevators. Stay low if smoke. Proceed to evacuation area. Call 911 if not yet reported.\n\n— LSPU Emergency Response' },
+                earthquake: { title: '🌍 Earthquake Alert — Safety Reminder', audience: 'all', message: 'EARTHQUAKE SAFETY\n\nDROP, COVER, HOLD ON. Stay away from windows. After shaking: evacuate cautiously, check for damage, be alert for aftershocks.\n\n— LSPU DRES' },
+                class: { title: '📚 Class Suspension Notice', audience: 'students', message: 'CLASS SUSPENSION\n\nClasses are SUSPENDED for all levels. Date: [DATE]. Reason: [REASON]. Stay safe. Monitor for updates.\n\n— LSPU Administration' },
+                flood: { title: '🌊 Flood Warning — Campus Alert', audience: 'all', message: 'FLOOD WARNING\n\nAvoid flooded roads. Move to higher ground. Do NOT attempt to swim through floodwaters. Stay updated.\n\n— LSPU DRES' },
+                drill: { title: '🚨 Emergency Drill — Scheduled', audience: 'all', message: 'EMERGENCY DRILL\n\nScheduled evacuation drill. Date: [DATE] Time: [TIME]. Remain calm. Proceed to muster points. Assist others.\n\n— LSPU Safety Office' },
+                health: { title: '🏥 Health Advisory', audience: 'all', message: 'HEALTH ADVISORY\n\n[Details]. Practice handwashing. Wear masks in crowded areas. Stay home if unwell. Seek medical attention if needed.\n\n— LSPU Health Services' },
+                power: { title: '⚡ Power Interruption Notice', audience: 'all', message: 'POWER INTERRUPTION\n\nScheduled power interruption. Date: [DATE] Time: [START]–[END]. Save work. Unplug equipment.\n\n— LSPU Administration' },
+                general: { title: '📢 General Announcement', audience: 'all', message: 'ANNOUNCEMENT\n\nThis is a general announcement for the community. Please review the information below.\n\n— LSPU Administration' }
+            };
+        }
+
+        function previewAdminImage(url) {
+            const box = document.getElementById('adminImgPreviewBox');
+            const img = document.getElementById('adminImgPreviewImg');
+            if (!url) { box.classList.remove('show'); img.src = ''; return; }
+            img.onload = () => box.classList.add('show');
+            img.onerror = () => box.classList.remove('show');
+            img.src = url;
+        }
+
+        async function handleAdminCreateAnnouncement(event) {
+            event.preventDefault();
+            const title = document.getElementById('adminGaTitle').value.trim();
+            const message = document.getElementById('adminGaMessage').value.trim();
+            const audience = document.getElementById('adminGaAudience').value;
+            const imageUrl = document.getElementById('adminGaImageUrl').value.trim();
+            if (!title || !message) {
+                showToast('Please provide both a title and a message.', 'error');
+                return;
+            }
+            try {
+                const formData = {
+                    title,
+                    message,
+                    type: 'general',
+                    priority: 'medium',
+                    target_audience: audience,
+                    status: 'active',
+                    created_by: emergencySystem.user.id
+                };
+                if (imageUrl) {
+                    const safe = getSafeImageUrl(imageUrl);
+                    if (safe) formData.image_url = safe;
+                }
+                const { data, error } = await emergencySystem.supabase.from('announcements').insert([formData]).select();
+                if (error) throw error;
+                showToast('Announcement posted successfully!', 'success');
+                clearAdminCreateForm();
+                await loadAnnouncements();
+                if (data && data[0] && data[0].id) {
+                    try {
+                        const { data: sessionData } = await emergencySystem.supabase.auth.getSession();
+                        const token = sessionData?.session?.access_token;
+                        const supabaseUrl = 'https://hmolyqzbvxxliemclrld.supabase.co';
+                        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imhtb2x5cXpidnh4bGllbWNscmxkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjAyNDY5NzAsImV4cCI6MjA3NTgyMjk3MH0.G2AOT-8zZ5sk8qGQUBifFqq5ww2W7Hxvtux0tlQ0Q-4';
+                        await fetch(`${supabaseUrl}/functions/v1/announcement-notify`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token || supabaseKey}`, 'apikey': supabaseKey },
+                            body: JSON.stringify({ announcementId: data[0].id })
+                        });
+                    } catch (e) { console.warn('Notify error:', e); }
+                }
+            } catch (e) {
+                console.error(e);
+                showToast('Failed to create announcement', 'error');
+            }
+        }
+
+        function clearAdminCreateForm() {
+            document.getElementById('adminCreateAnnouncementForm').reset();
+            document.getElementById('adminImgPreviewBox').classList.remove('show');
+            document.getElementById('adminImgPreviewImg').src = '';
+            document.querySelectorAll('.admin-qa-chip').forEach(c => c.classList.remove('qa-active'));
+        }
+
+        // Display announcements (same card layout as super user, admin colors)
         function displayAnnouncements() {
             const container = document.getElementById('announcementsList');
-            
-            if (filteredAnnouncements.length === 0) {
+            const toShow = announcementListFilter === 'active'
+                ? filteredAnnouncements.filter(a => a.status === 'active')
+                : filteredAnnouncements;
+
+            if (toShow.length === 0) {
                 container.innerHTML = `
-                    <div class="text-center py-12">
-                        <div class="text-6xl mb-4 text-gray-300">
-                            <i class="bi bi-megaphone"></i>
-                        </div>
-                        <h3 class="text-xl font-semibold text-gray-600 mb-2">No Announcements</h3>
-                        <p class="text-gray-500">Create your first announcement to get started</p>
+                    <div class="admin-an-empty">
+                        <i class="bi bi-megaphone"></i>
+                        ${announcementListFilter === 'active' ? 'No active announcements.' : 'No announcements yet.'}
+                        <br><span style="font-size:0.8rem;">${announcementListFilter === 'active' ? 'Switch to All to see inactive ones.' : 'Create one using the form on the left.'}</span>
                     </div>
                 `;
                 return;
             }
 
-            container.innerHTML = filteredAnnouncements.map(announcement => {
+            const audienceEmoji = { all:'🌐', students:'🎓', faculty:'👨‍🏫', staff:'🏢', responders:'🚨' };
+
+            container.innerHTML = toShow.map(announcement => {
                 const title = announcement.title || 'Untitled announcement';
                 const message = announcement.message || 'No message provided.';
                 const type = announcement.type || 'general';
                 const status = announcement.status || 'active';
+                const isActive = status === 'active';
                 const priority = announcement.priority || 'medium';
                 const audience = announcement.target_audience || 'all';
                 const createdAt = announcement.created_at ? formatDate(announcement.created_at) : 'Unknown time';
                 const imageUrl = getSafeImageUrl(announcement.image_url);
+                const audEmoji = audienceEmoji[audience] || '🌐';
+                const audLabel = audience.charAt(0).toUpperCase() + audience.slice(1);
 
-                // Very simple, high-contrast card so content is guaranteed visible
+                const imgTop = imageUrl
+                    ? `<img class="admin-an-item-img" src="${escapeHtml(imageUrl)}" alt="" onerror="this.style.display='none'">`
+                    : '';
+
                 return `
-                    <div style="margin-bottom: 1rem; border-radius: 12px; border: 1px solid #e5e7eb; background: #ffffff; padding: 1rem; box-shadow: 0 1px 3px rgba(0,0,0,0.08);">
-                        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:0.75rem;">
-                            <div style="flex:1;min-width:0;">
-                                <h3 style="margin:0 0 0.25rem 0;font-size:1rem;font-weight:600;color:#111827;">
-                                    ${title}
-                                </h3>
-                                <div style="font-size:0.8125rem;color:#6b7280;margin-bottom:0.5rem;">
-                                    <span><strong>Type:</strong> ${type}</span> · 
-                                    <span><strong>Status:</strong> ${status}</span> · 
-                                    <span><strong>Priority:</strong> ${priority}</span> · 
-                                    <span><strong>Audience:</strong> ${audience}</span> · 
-                                    <span><strong>Created:</strong> ${createdAt}</span>
+                    <div class="admin-an-item">
+                        ${imgTop}
+                        <div class="admin-an-item-body">
+                            <div class="admin-an-item-accent ${status}"></div>
+                            <div class="admin-an-item-content">
+                                <div style="display:flex;align-items:center;gap:0.45rem;margin-bottom:0.3rem;flex-wrap:wrap;">
+                                    <span class="admin-an-badge admin-an-badge-${status}">
+                                        <i class="bi bi-${isActive ? 'broadcast' : 'pause-circle-fill'}"></i> ${status}
+                                    </span>
+                                    <span style="font-size:0.7rem;color:#9ca3af;">${audEmoji} ${audLabel}</span>
+                                    ${imageUrl ? '<span class="admin-an-priority"><i class="bi bi-image-fill"></i> Image</span>' : ''}
                                 </div>
-                                <p style="margin:0;font-size:0.9rem;color:#374151;white-space:pre-wrap;word-wrap:break-word;">
-                                    ${message}
-                                </p>
-                                ${imageUrl ? `
-                                    <div style="margin-top:0.75rem;border-radius:8px;overflow:hidden;max-width:100%;">
-                                        <img src="${imageUrl}"
-                                             alt="Announcement Image"
-                                             style="width:100%;max-width:600px;height:auto;display:block;"
-                                             referrerpolicy="no-referrer"
-                                             onerror="this.style.display='none'; console.warn('Announcement image failed to load, hiding image element. Original URL:', '${announcement.image_url}');">
-                                    </div>
-                                ` : ''}
+                                <p class="admin-an-item-title">${escapeHtml(title)}</p>
+                                <p class="admin-an-item-msg">${escapeHtml(message)}</p>
+                                <div class="admin-an-item-meta">
+                                    <span><i class="bi bi-clock"></i> ${escapeHtml(createdAt)}</span>
+                                </div>
                             </div>
-                            <div class="announcement-actions">
-                                <button onclick="viewAnnouncementDetails('${announcement.id}')" class="action-btn view-btn" title="View Details">
-                                    <i class="bi bi-eye"></i>
+                            <div class="admin-an-item-actions">
+                                <button class="admin-an-icon-btn view" title="View" onclick="viewAnnouncementDetails('${announcement.id}')">
+                                    <i class="bi bi-eye-fill"></i>
                                 </button>
-                                <button onclick="editAnnouncement('${announcement.id}')" class="action-btn edit-btn" title="Edit">
-                                    <i class="bi bi-pencil"></i>
+                                <button class="admin-an-icon-btn edit" title="Edit" onclick="editAnnouncement('${announcement.id}')">
+                                    <i class="bi bi-pencil-fill"></i>
                                 </button>
-                                <button onclick="toggleAnnouncementStatus('${announcement.id}', '${status}')" 
-                                        class="action-btn toggle-btn ${status === 'inactive' ? 'inactive' : ''}" 
-                                        title="${status === 'active' ? 'Deactivate' : 'Activate'}">
-                                    <i class="bi bi-${status === 'active' ? 'pause' : 'play'}"></i>
+                                <button class="admin-an-icon-btn ${isActive ? 'toggle-on' : 'toggle-off'}"
+                                        title="${isActive ? 'Deactivate' : 'Activate'}"
+                                        onclick="toggleAnnouncementStatus('${announcement.id}', '${status}')">
+                                    <i class="bi bi-${isActive ? 'pause-fill' : 'play-fill'}"></i>
                                 </button>
-                                <button onclick="deleteAnnouncement('${announcement.id}')" class="action-btn delete-btn" title="Delete">
-                                    <i class="bi bi-trash"></i>
+                                <button class="admin-an-icon-btn del" title="Delete" onclick="deleteAnnouncement('${announcement.id}')">
+                                    <i class="bi bi-trash3-fill"></i>
                                 </button>
                             </div>
                         </div>
@@ -1301,17 +1533,21 @@
             }).join('');
         }
 
-        // Update statistics
+        // Update statistics (no-op if stat elements were removed)
         function updateStatistics() {
             const total = announcements.length;
             const active = announcements.filter(a => a.status === 'active').length;
             const weather = announcements.filter(a => a.type === 'weather').length;
             const emergency = announcements.filter(a => a.type === 'emergency').length;
 
-            document.getElementById('totalAnnouncements').textContent = total;
-            document.getElementById('activeAnnouncements').textContent = active;
-            document.getElementById('weatherAlerts').textContent = weather;
-            document.getElementById('emergencyAlerts').textContent = emergency;
+            const totalEl = document.getElementById('totalAnnouncements');
+            const activeEl = document.getElementById('activeAnnouncements');
+            const weatherEl = document.getElementById('weatherAlerts');
+            const emergencyEl = document.getElementById('emergencyAlerts');
+            if (totalEl) totalEl.textContent = total;
+            if (activeEl) activeEl.textContent = active;
+            if (weatherEl) weatherEl.textContent = weather;
+            if (emergencyEl) emergencyEl.textContent = emergency;
         }
 
         // Setup filters
@@ -2166,6 +2402,164 @@
 
         .alerts-container {
             display: none !important;
+        }
+
+        /* ── Admin announcement cards (same layout as super user, admin color palette) ── */
+        .admin-an-item {
+            background: white;
+            border-radius: 16px;
+            margin-bottom: 0.85rem;
+            transition: all 0.2s;
+            box-shadow: 0 1px 6px rgba(0, 0, 0, 0.06);
+            border: 1.5px solid #f1f5f9;
+            overflow: hidden;
+        }
+        .admin-an-item:hover {
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
+            border-color: #93c5fd;
+            transform: translateY(-1px);
+        }
+        .admin-an-item:last-child {
+            margin-bottom: 0;
+        }
+        .admin-an-item-img {
+            width: 100%;
+            max-height: 200px;
+            object-fit: cover;
+            display: block;
+        }
+        .admin-an-item-body {
+            padding: 1rem 1.1rem 1rem;
+            display: flex;
+            gap: 0.85rem;
+            align-items: flex-start;
+        }
+        .admin-an-item-accent {
+            width: 4px;
+            border-radius: 9999px;
+            flex-shrink: 0;
+            align-self: stretch;
+            min-height: 60px;
+        }
+        .admin-an-item-accent.active {
+            background: linear-gradient(180deg, #2563eb, #1d4ed8);
+        }
+        .admin-an-item-accent.inactive {
+            background: #d1d5db;
+        }
+        .admin-an-item-accent.expired {
+            background: #fcd34d;
+        }
+        .admin-an-item-content {
+            flex: 1;
+            min-width: 0;
+        }
+        .admin-an-item-title {
+            font-size: 0.92rem;
+            font-weight: 700;
+            color: #0f172a;
+            margin: 0 0 0.25rem;
+            line-height: 1.35;
+        }
+        .admin-an-item-msg {
+            font-size: 0.8rem;
+            color: #6b7280;
+            line-height: 1.55;
+            margin: 0;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            white-space: pre-wrap;
+        }
+        .admin-an-item-meta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.6rem;
+            margin-top: 0.5rem;
+            font-size: 0.72rem;
+            color: #9ca3af;
+        }
+        .admin-an-item-actions {
+            display: flex;
+            flex-direction: column;
+            gap: 0.45rem;
+            flex-shrink: 0;
+        }
+        .admin-an-icon-btn {
+            width: 38px;
+            height: 38px;
+            border-radius: 10px;
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1rem;
+            transition: all 0.18s;
+            flex-shrink: 0;
+        }
+        .admin-an-icon-btn:hover {
+            transform: scale(1.1);
+        }
+        .admin-an-icon-btn.view {
+            background: linear-gradient(135deg, #f59e0b, #d97706);
+            color: white;
+            box-shadow: 0 2px 8px rgba(245, 158, 11, 0.35);
+        }
+        .admin-an-icon-btn.edit {
+            background: linear-gradient(135deg, #1e40af, #1e3a8a);
+            color: white;
+            box-shadow: 0 2px 8px rgba(30, 64, 175, 0.35);
+        }
+        .admin-an-icon-btn.toggle-on {
+            background: linear-gradient(135deg, #2563eb, #1d4ed8);
+            color: white;
+            box-shadow: 0 2px 8px rgba(37, 99, 235, 0.35);
+        }
+        .admin-an-icon-btn.toggle-off {
+            background: linear-gradient(135deg, #6366f1, #4f46e5);
+            color: white;
+            box-shadow: 0 2px 8px rgba(99, 102, 241, 0.35);
+        }
+        .admin-an-icon-btn.del {
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+            color: white;
+            box-shadow: 0 2px 8px rgba(239, 68, 68, 0.35);
+        }
+        .admin-an-badge {
+            font-size: 0.65rem;
+            padding: 0.18rem 0.55rem;
+            border-radius: 9999px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.25rem;
+        }
+        .admin-an-badge-active {
+            background: #dbeafe;
+            color: #1e40af;
+        }
+        .admin-an-badge-inactive {
+            background: #f3f4f6;
+            color: #6b7280;
+        }
+        .admin-an-badge-expired {
+            background: #fef3c7;
+            color: #92400e;
+        }
+        .admin-an-priority {
+            font-size: 0.65rem;
+            padding: 0.18rem 0.55rem;
+            border-radius: 9999px;
+            font-weight: 700;
+            background: #eff6ff;
+            color: #2563eb;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.22rem;
         }
 
         /* Modern announcement card content styling */

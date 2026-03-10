@@ -36,15 +36,16 @@ class _ReportDetailEditScreenState extends State<ReportDetailEditScreen> {
   @override
   void initState() {
     super.initState();
+    _messageController = TextEditingController(
+      text: widget.report['message']?.toString() ?? '',
+    );
     _initializeForm();
     _loadResponders();
     _loadAssignment();
   }
 
   void _initializeForm() {
-    _messageController = TextEditingController(
-      text: widget.report['message']?.toString() ?? '',
-    );
+    _messageController.text = widget.report['message']?.toString() ?? '';
     _selectedType = widget.report['type']?.toString() ?? 'other';
     _selectedStatus = widget.report['status']?.toString() ?? 'pending';
     _selectedLifecycleStatus =
@@ -349,22 +350,36 @@ class _ReportDetailEditScreenState extends State<ReportDetailEditScreen> {
             IconButton(
               icon: const Icon(Icons.edit),
               onPressed: () {
-                setState(() {
-                  _isEditMode = true;
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                  if (!mounted) return;
+                  setState(() {
+                    _isEditMode = true;
+                  });
                 });
               },
               tooltip: 'Edit',
+              style: IconButton.styleFrom(
+                minimumSize: const Size(48, 48),
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              ),
             )
           else
             IconButton(
               icon: const Icon(Icons.close),
               onPressed: () {
-                setState(() {
-                  _isEditMode = false;
-                  _initializeForm(); // Reset form
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                  if (!mounted) return;
+                  setState(() {
+                    _isEditMode = false;
+                    _initializeForm(); // Reset form
+                  });
                 });
               },
               tooltip: 'Cancel',
+              style: IconButton.styleFrom(
+                minimumSize: const Size(48, 48),
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              ),
             ),
         ],
       ),
@@ -440,6 +455,19 @@ class _ReportDetailEditScreenState extends State<ReportDetailEditScreen> {
     );
   }
 
+  /// Human-readable identified type from AI (e.g. "Medical Emergency - Sports Injury") or type.
+  String _getReportDisplayTitle(Map<String, dynamic> report) {
+    final aiDesc = report['ai_description']?.toString()?.trim();
+    if (aiDesc != null && aiDesc.isNotEmpty && aiDesc.contains('-')) {
+      return aiDesc;
+    }
+    final type = report['type']?.toString()?.trim();
+    if (type != null && type.isNotEmpty) {
+      return '${type[0].toUpperCase()}${type.substring(1).toLowerCase()} Emergency';
+    }
+    return 'Emergency Report';
+  }
+
   Widget _buildDetailView() {
     final report = widget.report;
     final type = report['type']?.toString() ?? 'Unknown';
@@ -447,6 +475,8 @@ class _ReportDetailEditScreenState extends State<ReportDetailEditScreen> {
     final lifecycleStatus =
         report['lifecycle_status']?.toString() ?? status;
     final message = report['message']?.toString() ?? 'No description';
+    final displayTitle = _getReportDisplayTitle(report);
+    final hasAiClassification = (report['ai_description']?.toString()?.trim() ?? '').isNotEmpty;
     // Created = when the report was created
     final createdAt = report['created_at']?.toString();
     // Last Updated = when super user assigned the responder (assignment time)
@@ -502,13 +532,31 @@ class _ReportDetailEditScreenState extends State<ReportDetailEditScreen> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              type.toUpperCase(),
+                              displayTitle,
                               style: const TextStyle(
                                 fontSize: 18,
                                 fontWeight: FontWeight.bold,
                                 letterSpacing: 0.3,
                               ),
                             ),
+                            if (hasAiClassification)
+                              Padding(
+                                padding: const EdgeInsets.only(top: 4),
+                                child: Row(
+                                  children: [
+                                    Icon(Icons.auto_awesome, size: 14, color: Colors.blue.shade700),
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      'AI identified',
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        color: Colors.blue.shade700,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
                             const SizedBox(height: 10),
                             Wrap(
                               spacing: 8,
@@ -557,6 +605,10 @@ class _ReportDetailEditScreenState extends State<ReportDetailEditScreen> {
                     ),
                   ),
                   const SizedBox(height: 16),
+                  if (hasAiClassification) ...[
+                    _buildDetailRow('Identified type', displayTitle),
+                    const Divider(height: 24),
+                  ],
                   _buildDetailRow('Message', message),
                   const Divider(height: 24),
                   _buildDetailRow('Reporter', reporterName),

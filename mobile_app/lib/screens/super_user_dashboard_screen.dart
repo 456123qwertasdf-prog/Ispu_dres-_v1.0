@@ -19,28 +19,25 @@ class SuperUserDashboardScreen extends StatefulWidget {
   State<SuperUserDashboardScreen> createState() => _SuperUserDashboardScreenState();
 }
 
-class _SuperUserDashboardScreenState extends State<SuperUserDashboardScreen> {
+class _SuperUserDashboardScreenState extends State<SuperUserDashboardScreen>
+    with WidgetsBindingObserver {
   int _selectedIndex = 0;
   bool _isLoading = false;
   bool _isLoadingStats = true;
   bool _isLoadingAlerts = false;
   
-  // Stats
+  // Stats (report count is for today only, resets day by day)
   int _totalCitizens = 0;
   int _activeReports = 0;
   int _totalUsers = 0;
+  /// Date (midnight) for which we last loaded the report count; used to refresh when day changes.
+  DateTime? _lastReportCountDate;
   
   // Active alerts
   List<Map<String, dynamic>> _activeAlerts = [];
   
   // Readiness synopsis (prepare / be ready / inspect)
   String? _responderSynopsisMessage;
-  
-  // Safety Notice (citizen) — editable by admin/super_user
-  String? _safetyNoticeMessage;
-  bool _safetyNoticeEnabled = true;
-  bool _safetyNoticeSaving = false;
-  final TextEditingController _safetyNoticeController = TextEditingController();
   
   // User info
   String _userEmail = 'Super User';
@@ -52,7 +49,6 @@ class _SuperUserDashboardScreenState extends State<SuperUserDashboardScreen> {
   // Tour
   final GlobalKey _tourWelcome = GlobalKey();
   final GlobalKey _tourDashboardHeader = GlobalKey();
-  final GlobalKey _tourSafetyNotice = GlobalKey();
   final GlobalKey _tourReadiness = GlobalKey();
   final GlobalKey _tourNavDashboard = GlobalKey();
   final GlobalKey _tourNavReports = GlobalKey();
@@ -71,6 +67,7 @@ class _SuperUserDashboardScreenState extends State<SuperUserDashboardScreen> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     // Ensure this device is registered for push (new user or new phone)
     OneSignalService().retrySavePlayerIdToSupabase();
     _loadUserInfo();
@@ -92,10 +89,20 @@ class _SuperUserDashboardScreenState extends State<SuperUserDashboardScreen> {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _notificationsChannel?.unsubscribe();
     _announcementsChannel?.unsubscribe();
-    _safetyNoticeController.dispose();
     super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state != AppLifecycleState.resumed) return;
+    // When app comes back to foreground, refresh report count if the day has changed (reset day by day)
+    final today = DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day);
+    if (_lastReportCountDate != null && _lastReportCountDate!.isBefore(today)) {
+      _loadStats();
+    }
   }
 
   void _setupRealtimeSubscriptions() {
@@ -247,17 +254,25 @@ class _SuperUserDashboardScreenState extends State<SuperUserDashboardScreen> {
         });
       }
 
-      // Get active reports
+      // Get count of classified reports created today (from start of this day)
+      final now = DateTime.now();
+      final startOfToday = DateTime(now.year, now.month, now.day);
+      final endOfToday = startOfToday.add(const Duration(days: 1));
+      final startIso = startOfToday.toUtc().toIso8601String();
+      final endIso = endOfToday.toUtc().toIso8601String();
+
       final reportsResponse = await SupabaseService.client
           .from('reports')
-          .select('id, status')
-          .neq('status', 'resolved')
-          .neq('status', 'closed');
+          .select('id')
+          .eq('status', 'classified')
+          .gte('created_at', startIso)
+          .lt('created_at', endIso);
 
       if (reportsResponse != null) {
         final reports = reportsResponse as List;
         setState(() {
           _activeReports = reports.length;
+          _lastReportCountDate = startOfToday; // so we refresh when day changes
         });
       }
 
@@ -273,17 +288,6 @@ class _SuperUserDashboardScreenState extends State<SuperUserDashboardScreen> {
           setState(() => _responderSynopsisMessage = 'Keep equipment inspected and stay ready for anything.');
         }
       }
-      // Load safety notice (citizen) for editing
-      try {
-        final notice = await SupabaseService.getSafetyNotice();
-        if (mounted && notice != null) {
-          setState(() {
-            _safetyNoticeEnabled = notice['enabled'] == true;
-            _safetyNoticeMessage = notice['message']?.toString();
-            _safetyNoticeController.text = _safetyNoticeMessage ?? '';
-          });
-        }
-      } catch (_) {}
     } catch (e) {
       debugPrint('Error loading stats: $e');
     } finally {
@@ -610,7 +614,6 @@ class _SuperUserDashboardScreenState extends State<SuperUserDashboardScreen> {
     final keys = <GlobalKey>[
       _tourWelcome,
       _tourDashboardHeader,
-      _tourSafetyNotice,
       _tourReadiness,
       _tourNavDashboard,
       _tourNavReports,
@@ -723,11 +726,6 @@ class _SuperUserDashboardScreenState extends State<SuperUserDashboardScreen> {
             icon: const Icon(Icons.help_outline_rounded),
             tooltip: 'Take a tour',
             onPressed: _startTutorial,
-          ),
-          IconButton(
-            icon: const Icon(Icons.logout_rounded),
-            tooltip: 'Logout',
-            onPressed: _showLogoutDialog,
           ),
         ],
       ),
@@ -912,17 +910,6 @@ class _SuperUserDashboardScreenState extends State<SuperUserDashboardScreen> {
               ),
             const SizedBox(height: 24),
             Showcase(
-              key: _tourSafetyNotice,
-              title: 'Safety Notice (Citizen)',
-              description: 'Edit or turn off the message citizens see on the Home screen.',
-              tooltipBackgroundColor: _tourAccent,
-              textColor: Colors.white,
-              titleTextStyle: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w700),
-              descTextStyle: TextStyle(color: Colors.white.withOpacity(0.95), fontSize: 14, height: 1.4),
-              child: _buildSafetyNoticeAdminCard(),
-            ),
-            const SizedBox(height: 24),
-            Showcase(
               key: _tourReadiness,
               title: 'Readiness Notice',
               description: 'Guidance for responders based on recent reports. Shown on their dashboard.',
@@ -936,135 +923,6 @@ class _SuperUserDashboardScreenState extends State<SuperUserDashboardScreen> {
         ),
       ),
     );
-  }
-
-  Widget _buildSafetyNoticeAdminCard() {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [Color(0xFFeff6ff), Color(0xFFf0f9ff)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(16),
-        border: Border(left: BorderSide(color: const Color(0xFF3b82f6), width: 4)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(Icons.info_outline, color: const Color(0xFF3b82f6), size: 22),
-              const SizedBox(width: 8),
-              const Text(
-                'Safety Notice (Citizen)',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFF1e40af),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 4),
-          Text(
-            'Turn off, edit, or use the auto-generated message from this month. Citizens see this on Home.',
-            style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
-          ),
-          const SizedBox(height: 12),
-          Row(
-            children: [
-              const Text('Show safety notice to citizens', style: TextStyle(fontSize: 14, color: Color(0xFF374151))),
-              const Spacer(),
-              Switch(
-                value: _safetyNoticeEnabled,
-                onChanged: (v) => setState(() => _safetyNoticeEnabled = v),
-                activeColor: const Color(0xFF3b82f6),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          TextField(
-            controller: _safetyNoticeController,
-            maxLines: 3,
-            decoration: const InputDecoration(
-              hintText: 'Leave empty to use auto-generated message from recent reports.',
-              border: OutlineInputBorder(),
-              contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-            ),
-          ),
-          const SizedBox(height: 12),
-          Row(
-            children: [
-              Expanded(
-                child: FilledButton.icon(
-                  onPressed: _safetyNoticeSaving ? null : _saveSafetyNotice,
-                  icon: _safetyNoticeSaving ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)) : const Icon(Icons.save, size: 20),
-                  label: Text(_safetyNoticeSaving ? 'Saving...' : 'Save Safety Notice'),
-                ),
-              ),
-              const SizedBox(width: 8),
-              OutlinedButton.icon(
-                onPressed: _safetyNoticeSaving ? null : _useAutoGeneratedSafetyNotice,
-                icon: const Icon(Icons.refresh, size: 18),
-                label: const Text('Use auto-generated'),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Future<void> _saveSafetyNotice() async {
-    setState(() => _safetyNoticeSaving = true);
-    try {
-      final trimmed = _safetyNoticeController.text.trim();
-      await SupabaseService.updateSafetyNotice(
-        message: trimmed.isEmpty ? null : trimmed,
-        enabled: _safetyNoticeEnabled,
-        clearMessage: trimmed.isEmpty,
-      );
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Safety notice saved.'), backgroundColor: Colors.green),
-      );
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to save: $e'), backgroundColor: Colors.red),
-      );
-    } finally {
-      if (mounted) setState(() => _safetyNoticeSaving = false);
-    }
-  }
-
-  /// Clear custom message and save so citizens see the auto-generated synopsis.
-  Future<void> _useAutoGeneratedSafetyNotice() async {
-    setState(() {
-      _safetyNoticeController.clear();
-      _safetyNoticeSaving = true;
-    });
-    try {
-      await SupabaseService.updateSafetyNotice(
-        message: null,
-        enabled: _safetyNoticeEnabled,
-        clearMessage: true,
-      );
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Using auto-generated message.'), backgroundColor: Colors.green),
-      );
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed: $e'), backgroundColor: Colors.red),
-      );
-    } finally {
-      if (mounted) setState(() => _safetyNoticeSaving = false);
-    }
   }
 
   Widget _buildReadinessNoticeCard() {
@@ -1938,6 +1796,7 @@ class _SuperUserDashboardScreenState extends State<SuperUserDashboardScreen> {
                   label: 'Reports',
                   index: 1,
                   isEmergency: false,
+                  badgeCount: _activeReports > 0 ? _activeReports : null,
                 ),
               ),
               Showcase(
@@ -2001,6 +1860,7 @@ class _SuperUserDashboardScreenState extends State<SuperUserDashboardScreen> {
     required String label,
     required int index,
     required bool isEmergency,
+    int? badgeCount,
   }) {
     final isSelected = _selectedIndex == index;
     final emergencyColor = const Color(0xFFef4444);
@@ -2081,10 +1941,44 @@ class _SuperUserDashboardScreenState extends State<SuperUserDashboardScreen> {
             mainAxisSize: MainAxisSize.min,
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(
-                isSelected ? activeIcon : icon,
-                color: isSelected ? normalColor : Colors.grey.shade600,
-                size: 20,
+              Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  Icon(
+                    isSelected ? activeIcon : icon,
+                    color: isSelected ? normalColor : Colors.grey.shade600,
+                    size: 20,
+                  ),
+                  if (badgeCount != null && badgeCount > 0)
+                    Positioned(
+                      top: -6,
+                      right: -10,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+                        constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFef4444),
+                          borderRadius: BorderRadius.circular(10),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.2),
+                              blurRadius: 2,
+                              offset: const Offset(0, 1),
+                            ),
+                          ],
+                        ),
+                        alignment: Alignment.center,
+                        child: Text(
+                          badgeCount > 999 ? '999+' : '$badgeCount',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: badgeCount > 99 ? 8 : 10,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ),
+                    ),
+                ],
               ),
               const SizedBox(height: 1),
               Flexible(
