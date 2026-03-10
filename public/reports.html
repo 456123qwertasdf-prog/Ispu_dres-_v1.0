@@ -88,188 +88,60 @@
                 border-color: #EF4444 !important;
                 color: white !important;
             }
-            .logout-btn:hover i { color: white !important; }
-
-            /* Modern minimalist reports page (admin blue/slate, no super-user green) */
-            .main-content { background: #f1f5f9; min-height: 100vh; }
-            .admin-section.active { padding: 1.5rem; }
-
+            
+            .logout-btn:hover i {
+                color: white !important;
+            }
+            
+            /* Modern Header Card for Reports Page */
             .admin-section .card:first-child {
-                border-radius: 14px;
-                box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
-                border: 1px solid rgba(0, 0, 0, 0.04);
-                margin-bottom: 1rem;
+                border-radius: 16px;
+                box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 
+                            0 2px 4px -1px rgba(0, 0, 0, 0.06),
+                            0 0 0 1px rgba(0, 0, 0, 0.05);
+                border: 1px solid rgba(226, 232, 240, 0.8);
+                margin-bottom: 1.5rem;
                 overflow: hidden;
                 background: white;
             }
+            
             .admin-section .card:first-child .card-header {
-                background: linear-gradient(135deg, #0f172a 0%, #1e3a8a 100%);
-                border-bottom: none;
-                padding: 1.25rem 1.75rem;
-                border-left: 4px solid #60a5fa;
+                background: linear-gradient(135deg, #f8fafc 0%, #ffffff 100%);
+                border-bottom: 1px solid rgba(226, 232, 240, 0.8);
+                padding: 1.5rem 1.75rem;
+                position: relative;
             }
-            .admin-section .card:first-child .card-header::after { content: none; }
+            
+            .admin-section .card:first-child .card-header::after {
+                content: '';
+                position: absolute;
+                bottom: 0;
+                left: 0;
+                right: 0;
+                height: 2px;
+                background: linear-gradient(90deg, transparent, rgba(59, 130, 246, 0.3), transparent);
+            }
+            
             .admin-section .card:first-child .card-title {
-                font-size: 1.35rem;
-                font-weight: 700;
-                color: #fff;
+                font-size: 1.75rem;
+                font-weight: 800;
+                color: #1e293b;
                 margin: 0;
+                background: linear-gradient(180deg, #0f172a 0%, #1e293b 50%, #334155 100%);
+                -webkit-background-clip: text;
+                -webkit-text-fill-color: transparent;
+                background-clip: text;
                 letter-spacing: -0.02em;
-                display: flex;
-                align-items: center;
-                gap: 0.5rem;
-                background: none;
-                -webkit-background-clip: unset;
-                -webkit-text-fill-color: #fff;
-                background-clip: unset;
-                text-shadow: none;
+                text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
             }
-            .admin-section .card:first-child .card-title i { color: #93c5fd; font-size: 1.25rem; }
+            
             .admin-section .card:first-child .card-subtitle {
-                font-size: 0.8125rem;
-                color: rgba(255, 255, 255, 0.75);
-                margin: 0.35rem 0 0 0;
-                font-weight: 400;
-                line-height: 1.4;
+                font-size: 0.9375rem;
+                color: #4b5563;
+                margin: 0.5rem 0 0 0;
+                font-weight: 500;
+                line-height: 1.5;
             }
-
-            /* Filters + table card */
-            .admin-section .card:not(:first-child) {
-                border-radius: 12px;
-                box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
-                border: 1px solid #e2e8f0;
-                background: #fff;
-                overflow: hidden;
-            }
-            .admin-section .card .card-body { padding: 1.25rem; }
-            .admin-section .mb-6 { margin-bottom: 1.25rem; }
-            .admin-section .flex { display: flex; }
-            .admin-section .flex-wrap { flex-wrap: wrap; }
-            .admin-section .gap-4 { gap: 1rem; }
-            .admin-section .gap-2 { gap: 0.5rem; }
-            .admin-section .mb-4 { margin-bottom: 1rem; }
-
-            .admin-section .filter-group { display: flex; flex-direction: column; gap: 0.25rem; min-width: 140px; }
-            .admin-section .filter-label {
-                font-size: 0.7rem;
-                font-weight: 700;
-                text-transform: uppercase;
-                letter-spacing: 0.05em;
-                color: #64748b;
-            }
-            .admin-section .form-select {
-                padding: 0.5rem 0.75rem;
-                border-radius: 8px;
-                border: 1px solid #e2e8f0;
-                font-size: 0.875rem;
-                color: #334155;
-                background: #fff;
-                transition: border-color 0.2s;
-            }
-            .admin-section .form-select:focus {
-                outline: none;
-                border-color: #2563eb;
-                box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.1);
-            }
-
-            .admin-section .btn {
-                padding: 0.5rem 1rem;
-                border-radius: 8px;
-                font-size: 0.8125rem;
-                font-weight: 600;
-                display: inline-flex;
-                align-items: center;
-                gap: 0.35rem;
-                transition: box-shadow 0.2s, transform 0.2s;
-            }
-            .admin-section .btn:hover { transform: translateY(-1px); }
-            .admin-section .btn-primary {
-                background: linear-gradient(135deg, #2563eb, #1d4ed8);
-                color: #fff;
-                border: none;
-                box-shadow: 0 1px 3px rgba(37, 99, 235, 0.3);
-            }
-            .admin-section .btn-warning {
-                background: #f59e0b;
-                color: #fff;
-                border: none;
-            }
-            .admin-section .btn-success {
-                background: linear-gradient(135deg, #2563eb, #1d4ed8);
-                color: #fff;
-                border: none;
-            }
-            .admin-section .btn-info {
-                background: #64748b;
-                color: #fff;
-                border: none;
-            }
-            .admin-section .btn-secondary {
-                background: #f1f5f9;
-                color: #475569;
-                border: 1px solid #e2e8f0;
-            }
-            .admin-section .btn-outline {
-                background: #fff;
-                color: #475569;
-                border: 1px solid #e2e8f0;
-            }
-            .admin-section .btn-outline:hover:not(:disabled) { background: #f8fafc; border-color: #cbd5e1; }
-            .admin-section .btn-sm { padding: 0.4rem 0.75rem; font-size: 0.75rem; }
-
-            .admin-section .table-responsive {
-                border-radius: 8px;
-                border: 1px solid #e2e8f0;
-                overflow: hidden;
-            }
-            .admin-section .data-table {
-                border-collapse: collapse;
-                font-size: 0.8125rem;
-            }
-            .admin-section .data-table th {
-                background: #f8fafc;
-                color: #475569;
-                font-weight: 600;
-                text-align: left;
-                padding: 0.75rem 1rem;
-                border-bottom: 1px solid #e2e8f0;
-                font-size: 0.7rem;
-                text-transform: uppercase;
-                letter-spacing: 0.05em;
-            }
-            .admin-section .data-table td {
-                padding: 0.75rem 1rem;
-                border-bottom: 1px solid #f1f5f9;
-                color: #334155;
-            }
-            .admin-section .data-table tbody tr:hover { background: #f8fafc; }
-            .admin-section .data-table tbody tr:last-child td { border-bottom: none; }
-            .admin-section .text-center { text-align: center; }
-            .admin-section .py-8 { padding-top: 2rem; padding-bottom: 2rem; }
-            .admin-section .loading-spinner {
-                width: 32px;
-                height: 32px;
-                margin: 0 auto 0.5rem;
-                border: 2px solid #e2e8f0;
-                border-top-color: #2563eb;
-                border-radius: 50%;
-                animation: spin 0.8s linear infinite;
-            }
-            @keyframes spin { to { transform: rotate(360deg); } }
-            .admin-section .data-table .loading-spinner + p { color: #64748b; font-size: 0.875rem; }
-
-            .admin-section .pagination-container {
-                display: flex;
-                justify-content: space-between;
-                align-items: center;
-                flex-wrap: wrap;
-                gap: 0.75rem;
-                margin-top: 1rem;
-                padding-top: 1rem;
-                border-top: 1px solid #e2e8f0;
-            }
-            .admin-section .pagination-info { font-size: 0.8125rem; color: #64748b; }
-            .admin-section .pagination-controls { display: flex; align-items: center; gap: 0.5rem; }
         </style>
         
         <!-- Main Content -->

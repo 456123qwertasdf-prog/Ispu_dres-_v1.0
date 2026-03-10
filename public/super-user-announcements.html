@@ -7,61 +7,12 @@
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="css/su-header-shared.css">
     <link rel="stylesheet" href="css/system-status.css">
+    <link rel="stylesheet" href="css/su-sidebar.css">
     <link rel="stylesheet" href="css/su-tour.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
     <script src="https://cdn.jsdelivr.net/npm/supabase@2"></script>
     <script src="js/supabase.js"></script>
     <style>
-        /* ── Super-User Sidebar Overrides (distinct from Admin gold theme) ── */
-        .sidebar {
-            background: linear-gradient(180deg, #0f172a 0%, #064e3b 100%) !important;
-        }
-        .nav-item.active {
-            background: rgba(16, 185, 129, 0.2) !important;
-            color: #34d399 !important;
-            border-left: 3px solid #10b981 !important;
-            border-top: none !important;
-            border-right: none !important;
-            border-bottom: none !important;
-            font-weight: 600;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
-        .nav-item:hover {
-            background: rgba(16, 185, 129, 0.1) !important;
-            color: #a7f3d0 !important;
-            border-left-color: rgba(16, 185, 129, 0.4) !important;
-        }
-        .system-status {
-            padding: 10px 20px;
-            border-bottom: 1px solid rgba(16, 185, 129, 0.15);
-        }
-        .status-dot.online {
-            background: #10b981 !important;
-            box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.25) !important;
-        }
-        .user-avatar {
-            background: rgba(16, 185, 129, 0.25) !important;
-            color: #34d399 !important;
-        }
-        .sidebar-header {
-            border-bottom: 1px solid rgba(16, 185, 129, 0.15) !important;
-        }
-        .su-role-badge {
-            display: inline-flex;
-            align-items: center;
-            gap: 4px;
-            font-size: 0.65rem;
-            font-weight: 700;
-            letter-spacing: 0.08em;
-            text-transform: uppercase;
-            background: rgba(16, 185, 129, 0.2);
-            color: #34d399;
-            border: 1px solid rgba(16, 185, 129, 0.4);
-            border-radius: 9999px;
-            padding: 2px 8px;
-            margin-top: 4px;
-        }
-
         /* ── Page Content ── */
         .su-content-header {
             background: linear-gradient(135deg, #0f172a 0%, #064e3b 100%);
@@ -220,28 +171,6 @@
             display: flex;
             gap: 0.5rem;
             flex-wrap: wrap;
-        }
-
-        /* ── Logout Button in Sidebar ── */
-        .su-logout-btn {
-            width: 100%;
-            padding: 0.75rem 1rem;
-            background: rgba(239, 68, 68, 0.1);
-            border: 1px solid rgba(239, 68, 68, 0.3);
-            color: #fca5a5;
-            border-radius: 8px;
-            font-size: 0.875rem;
-            font-weight: 500;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-        .su-logout-btn:hover {
-            background: #EF4444 !important;
-            border-color: #EF4444 !important;
-            color: white !important;
         }
 
         /* ── Modal ── */
@@ -729,23 +658,16 @@
     </div>
 </div>
 
-<!-- Logout Modal -->
-<div id="logoutModal" class="modal hidden">
-    <div class="modal-content" style="background:linear-gradient(135deg,#0f172a 0%,#064e3b 100%);border:1px solid rgba(52,211,153,0.25);max-width:400px;">
-        <div class="modal-icon warning" style="background:rgba(239,68,68,0.15);border:2px solid rgba(239,68,68,0.4);">
-            <i class="bi bi-box-arrow-right" style="color:#f87171;"></i>
-        </div>
-        <h3 class="modal-title" style="color:white;">Confirm Logout</h3>
-        <p class="modal-message" style="color:rgba(255,255,255,0.65);">Are you sure you want to logout? You'll need to sign in again to access the system.</p>
-        <div class="modal-buttons">
-            <button class="modal-btn cancel" onclick="closeLogoutModal()"
-                    style="background:rgba(255,255,255,0.08);color:rgba(255,255,255,0.8);border-color:rgba(255,255,255,0.15);">
-                <i class="bi bi-x-circle"></i> Cancel
-            </button>
-            <button class="modal-btn confirm" onclick="confirmLogout()"
-                    style="background:linear-gradient(135deg,#ef4444,#dc2626);border-color:#ef4444;">
-                <i class="bi bi-box-arrow-right"></i> Logout
-            </button>
+<!-- Logout Modal (styled by su-sidebar.css) -->
+<div id="logoutModal" class="logout-modal hidden">
+    <div class="logout-modal-overlay" onclick="closeLogoutModal()"></div>
+    <div class="logout-modal-content">
+        <div class="logout-modal-icon"><i class="bi bi-box-arrow-right"></i></div>
+        <h3 class="logout-modal-title">Confirm Logout</h3>
+        <p class="logout-modal-message">Are you sure you want to log out of the system?</p>
+        <div class="logout-modal-buttons">
+            <button class="logout-modal-btn cancel" onclick="closeLogoutModal()"><i class="bi bi-x-circle"></i> Cancel</button>
+            <button class="logout-modal-btn confirm" onclick="confirmLogout()"><i class="bi bi-box-arrow-right"></i> Logout</button>
         </div>
     </div>
 </div>

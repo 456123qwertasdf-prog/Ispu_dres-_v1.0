@@ -7,6 +7,7 @@
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="css/su-header-shared.css">
     <link rel="stylesheet" href="css/system-status.css">
+    <link rel="stylesheet" href="css/su-sidebar.css">
     <link rel="stylesheet" href="css/su-tour.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
     <script src="https://cdn.jsdelivr.net/npm/supabase@2"></script>
@@ -507,17 +508,7 @@
                 transform: translateX(100%);
             }
         }
-        /* ── Super-User Sidebar Theme ── */
-        .sidebar { background: linear-gradient(180deg, #0f172a 0%, #064e3b 100%) !important; }
-        .nav-item.active { background: rgba(16,185,129,0.2) !important; color: #34d399 !important; border-left: 3px solid #10b981 !important; border-top: none !important; border-right: none !important; border-bottom: none !important; font-weight: 600; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-        .nav-item:hover { background: rgba(16,185,129,0.1) !important; color: #a7f3d0 !important; border-left-color: rgba(16,185,129,0.4) !important; }
-        .status-dot.online { background: #10b981 !important; box-shadow: 0 0 0 3px rgba(16,185,129,0.25) !important; }
-        .user-avatar { background: rgba(16,185,129,0.25) !important; color: #34d399 !important; }
-        .sidebar-header { border-bottom: 1px solid rgba(16,185,129,0.15) !important; }
-        .system-status { padding: 10px 20px; border-bottom: 1px solid rgba(16,185,129,0.15); }
-        .su-role-badge { display:inline-flex; align-items:center; gap:4px; font-size:0.65rem; font-weight:700; letter-spacing:0.08em; text-transform:uppercase; background:rgba(16,185,129,0.2); color:#34d399; border:1px solid rgba(16,185,129,0.4); border-radius:9999px; padding:2px 8px; margin-top:4px; }
-        .su-logout-btn { width:100%; padding:0.75rem 1rem; background:rgba(239,68,68,0.1); border:1px solid rgba(239,68,68,0.3); color:#fca5a5; border-radius:8px; font-size:0.875rem; font-weight:500; cursor:pointer; transition:all 0.2s ease; display:flex; align-items:center; gap:0.5rem; }
-        .su-logout-btn:hover { background:#EF4444 !important; border-color:#EF4444 !important; color:white !important; }
+        /* ── Early Warning content header (sidebar/logout from su-sidebar.css) ── */
         .su-content-header { background:linear-gradient(135deg, #0f172a 0%, #064e3b 100%); color:white; padding:1.5rem 2rem; border-radius:16px; box-shadow:0 8px 24px rgba(0,0,0,0.15); border-left:4px solid #10b981; margin-bottom:1.75rem; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:1rem; }
         .su-content-header h1 { margin:0; font-size:1.5rem; font-weight:700; display:flex; align-items:center; gap:0.75rem; }
         .su-content-header h1 i { color:#34d399; }
@@ -574,21 +565,6 @@
         .ew-forecast-item:hover { border-color:#10b981; box-shadow:0 4px 14px rgba(16,185,129,0.13); transform:translateY(-2px); }
         .ew-forecast-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(160px,1fr)); gap:0.65rem; max-height:440px; overflow-y:auto; padding-right:2px; }
 
-        /* Logout modal */
-        .ew-logout-modal { position:fixed; top:0; left:0; width:100%; height:100%; z-index:10001; display:flex; align-items:center; justify-content:center; animation:ewFadeIn 0.2s ease; }
-        .ew-logout-modal.hidden { display:none; }
-        .ew-logout-overlay { position:absolute; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); backdrop-filter:blur(4px); }
-        .ew-logout-box { position:relative; background:white; border-radius:16px; padding:2rem; max-width:420px; width:90%; box-shadow:0 20px 25px -5px rgba(0,0,0,0.3); text-align:center; animation:ewSlideUp 0.3s ease; }
-        .ew-logout-icon { width:64px; height:64px; margin:0 auto 1.25rem; background:linear-gradient(135deg,#fef2f2,#fee2e2); border-radius:50%; display:flex; align-items:center; justify-content:center; border:3px solid #fca5a5; }
-        .ew-logout-icon i { font-size:2rem; color:#ef4444; }
-        .ew-logout-btn-row { display:flex; gap:0.75rem; justify-content:center; margin-top:1.5rem; }
-        .ew-lbtn { padding:0.7rem 1.5rem; border-radius:8px; font-size:0.875rem; font-weight:700; cursor:pointer; transition:all 0.2s; display:flex; align-items:center; gap:0.45rem; border:2px solid transparent; }
-        .ew-lbtn.cancel  { background:#f3f4f6; color:#374151; border-color:#e5e7eb; }
-        .ew-lbtn.cancel:hover  { background:#e5e7eb; }
-        .ew-lbtn.confirm { background:linear-gradient(135deg,#ef4444,#dc2626); color:white; border-color:#ef4444; box-shadow:0 2px 8px rgba(239,68,68,0.3); }
-        .ew-lbtn.confirm:hover { background:linear-gradient(135deg,#dc2626,#b91c1c); }
-        @keyframes ewFadeIn  { from{opacity:0} to{opacity:1} }
-        @keyframes ewSlideUp { from{opacity:0;transform:translateY(16px) scale(0.96)} to{opacity:1;transform:translateY(0) scale(1)} }
     </style>
 </head>
 <body>
@@ -766,16 +742,16 @@
     </div><!-- end .main-content -->
 </div><!-- end .dashboard-container -->
 
-    <!-- Logout Modal -->
-    <div id="logoutModal" class="ew-logout-modal hidden">
-        <div class="ew-logout-overlay" onclick="closeLogoutModal()"></div>
-        <div class="ew-logout-box">
-            <div class="ew-logout-icon"><i class="bi bi-exclamation-triangle"></i></div>
-            <h3 style="margin:0 0 0.5rem;font-size:1.4rem;font-weight:800;color:#111827;">Confirm Logout</h3>
-            <p style="margin:0;font-size:0.9375rem;color:#6b7280;line-height:1.6;">Are you sure you want to logout? You'll need to sign in again to access the system.</p>
-            <div class="ew-logout-btn-row">
-                <button class="ew-lbtn cancel" onclick="closeLogoutModal()"><i class="bi bi-x-circle"></i> Cancel</button>
-                <button class="ew-lbtn confirm" onclick="confirmLogout()"><i class="bi bi-box-arrow-right"></i> Logout</button>
+    <!-- Logout Modal (styled by su-sidebar.css) -->
+    <div id="logoutModal" class="logout-modal hidden">
+        <div class="logout-modal-overlay" onclick="closeLogoutModal()"></div>
+        <div class="logout-modal-content">
+            <div class="logout-modal-icon"><i class="bi bi-box-arrow-right"></i></div>
+            <h3 class="logout-modal-title">Confirm Logout</h3>
+            <p class="logout-modal-message">Are you sure you want to log out of the system?</p>
+            <div class="logout-modal-buttons">
+                <button class="logout-modal-btn cancel" onclick="closeLogoutModal()"><i class="bi bi-x-circle"></i> Cancel</button>
+                <button class="logout-modal-btn confirm" onclick="confirmLogout()"><i class="bi bi-box-arrow-right"></i> Logout</button>
             </div>
         </div>
     </div>

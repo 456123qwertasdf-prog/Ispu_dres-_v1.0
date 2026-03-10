@@ -20,36 +20,28 @@
             box-sizing: border-box;
         }
 
-        /* ── Page header card ── */
+        /* ── Page header card (Early Warning Dashboard style: light gradient, rounded, soft shadow) ── */
         .sn-header-card {
-            background: white;
-            border-radius: 16px;
-            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1),
-                        0 2px 4px -1px rgba(0,0,0,0.06),
-                        0 0 0 1px rgba(0,0,0,0.05);
-            border: 1px solid rgba(226,232,240,0.8);
+            background: linear-gradient(135deg, #f1f5f9 0%, #f8fafc 50%, #f1f5f9 100%);
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+            border: 1px solid rgba(226,232,240,0.9);
             overflow: hidden;
         }
 
         .sn-header-card-inner {
-            background: linear-gradient(135deg, #f8fafc 0%, #ffffff 100%);
             padding: 1.5rem 1.75rem;
-            border-bottom: 1px solid rgba(226,232,240,0.8);
             position: relative;
         }
 
         .sn-header-card-inner::after {
-            content: '';
-            position: absolute;
-            bottom: 0; left: 0; right: 0;
-            height: 2px;
-            background: linear-gradient(90deg, transparent, rgba(59,130,246,0.3), transparent);
+            content: none;
         }
 
         .sn-header-card h1 {
-            margin: 0 0 0.4rem 0;
+            margin: 0 0 0.35rem 0;
             font-size: 1.75rem;
-            font-weight: 800;
+            font-weight: 700;
             color: #1e293b;
             letter-spacing: -0.02em;
             display: flex;
@@ -58,8 +50,8 @@
         }
 
         .sn-header-card h1 i {
-            font-size: 1.6rem;
-            color: #3b82f6;
+            font-size: 1.5rem;
+            color: #64748b;
         }
 
         .sn-header-card p {

@@ -2,8 +2,11 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL") || "https://hmolyqzbvxxliemclrld.supabase.co";
 const SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imhtb2x5cXpidnh4bGllbWNscmxkIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2MDI0Njk3MCwiZXhwIjoyMDc1ODIyOTcwfQ.496txRbAGuiOov76vxdwSDUHplBt1osOD2PyV0EE958";
+// Single weather API key (WeatherAPI.com) - use for all weather when set; works with Zyla-issued keys too
+const WEATHER_API_KEY = Deno.env.get("WEATHER_API_KEY") || "";
 const ACCUWEATHER_API_KEY = Deno.env.get("ACCUWEATHER_API_KEY") || "";
 const ACCUWEATHER_BASE = "https://dataservice.accuweather.com";
+const WEATHERAPI_BASE = "https://api.weatherapi.com/v1";
 
 const supabase = createClient(SUPABASE_URL, SERVICE_KEY, {
   auth: { persistSession: false },
@@ -138,10 +141,12 @@ Deno.serve(async (req) => {
     });
 
   } catch (error) {
-    console.error('❌ Enhanced weather alert error:', error);
-    return new Response(JSON.stringify({ 
+    const message = error instanceof Error ? error.message : String(error);
+    const stack = error instanceof Error ? error.stack : undefined;
+    console.error('❌ Enhanced weather alert error:', message, stack || '');
+    return new Response(JSON.stringify({
       error: 'Internal server error',
-      details: error.message 
+      details: message,
     }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -149,7 +154,122 @@ Deno.serve(async (req) => {
   }
 });
 
-// -------- AccuWeather API (only source; WeatherAPI removed) --------
+// -------- WeatherAPI.com (single key for all weather; preferred when WEATHER_API_KEY is set) --------
+async function getWeatherApiData(latitude: number, longitude: number): Promise<Record<string, unknown>> {
+  const q = `${latitude},${longitude}`;
+  const url = `${WEATHERAPI_BASE}/forecast.json?key=${encodeURIComponent(WEATHER_API_KEY)}&q=${encodeURIComponent(q)}&days=3`;
+  const res = await fetch(url);
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`WeatherAPI.com failed: ${res.status} ${text.slice(0, 200)}`);
+  }
+  return (await res.json()) as Record<string, unknown>;
+}
+
+function normalizeWeatherApiToEnhanced(raw: Record<string, unknown>, latitude: number, longitude: number): EnhancedWeatherData {
+  const current = (raw?.current ?? {}) as Record<string, unknown>;
+  const location = (raw?.location ?? {}) as Record<string, unknown>;
+  const forecast = (raw?.forecast ?? {}) as Record<string, unknown>;
+  const forecastday = (forecast?.forecastday ?? []) as Record<string, unknown>[];
+
+  const temp = Number(current?.temp_c ?? 0);
+  const feelsLike = Number(current?.feelslike_c ?? temp);
+  const humidity = Number(current?.humidity ?? 0);
+  const pressure = Number(current?.pressure_mb ?? 1013);
+  const windKph = Number(current?.wind_kph ?? 0);
+  const windDeg = Number(current?.wind_degree ?? 0);
+  const visibilityKm = Number(current?.vis_km ?? 10);
+  const cloudCover = Number(current?.cloud ?? 0);
+  const condition = (current?.condition ?? {}) as Record<string, unknown>;
+  const weatherText = String(condition?.text ?? "Clear");
+  const weatherCode = Number(condition?.code ?? 1000);
+
+  const precipMm = Number(current?.precip_mm ?? 0);
+  let pop = 0;
+  const hourly: Array<{ time: string; temp: number; rain_chance: number; description: string; rain_volume: number }> = [];
+  if (forecastday.length > 0) {
+    const day1 = forecastday[0];
+    const hourArr = (day1?.hour ?? []) as Record<string, unknown>[];
+    for (let i = 0; i < Math.min(24, hourArr.length); i++) {
+      const h = hourArr[i];
+      const t = Number(h?.temp_c ?? temp);
+      const chance = Number(h?.chance_of_rain ?? 0);
+      const cond = (h?.condition ?? {}) as Record<string, unknown>;
+      const desc = String(cond?.text ?? weatherText);
+      const rainMm = Number(h?.precip_mm ?? 0);
+      pop += chance;
+      hourly.push({
+        time: String(h?.time ?? "").slice(11, 16),
+        temp: t,
+        rain_chance: chance / 100,
+        description: desc,
+        rain_volume: rainMm,
+      });
+    }
+    pop = hourly.length > 0 ? pop / hourly.length / 100 : 0;
+  }
+
+  const maxRainChance = hourly.length > 0 ? Math.max(...hourly.map((x) => x.rain_chance)) : 0;
+  const temp_min = hourly.length > 0 ? Math.min(...hourly.map((x) => x.temp)) : temp;
+  const temp_max = hourly.length > 0 ? Math.max(...hourly.map((x) => x.temp)) : temp;
+
+  return {
+    main: { temp, feels_like: feelsLike, humidity, pressure, temp_min, temp_max },
+    weather: [{ main: weatherText, description: weatherText, icon: String(weatherCode) }],
+    wind: { speed: windKph / 3.6, deg: windDeg },
+    visibility: visibilityKm * 1000,
+    rain: precipMm > 0 ? { "1h": precipMm } : undefined,
+    clouds: { all: cloudCover },
+    pop,
+    alerts: [],
+    forecast_summary: hourly.length > 0 ? {
+      next_24h_max_rain_chance: maxRainChance,
+      next_24h_avg_rain_chance: maxRainChance,
+      next_24h_forecast: hourly,
+    } : null,
+  };
+}
+
+function buildCacheRowFromWeatherApi(raw: Record<string, unknown>, latitude: number, longitude: number): Record<string, unknown> {
+  const current = (raw?.current ?? {}) as Record<string, unknown>;
+  const condition = (current?.condition ?? {}) as Record<string, unknown>;
+  const forecast = (raw?.forecast ?? {}) as Record<string, unknown>;
+  const forecastday = (forecast?.forecastday ?? []) as Record<string, unknown>[];
+  const day1 = forecastday[0];
+  const hourArr = (day1?.hour ?? []) as Record<string, unknown>[];
+  const hourly = hourArr.slice(0, 24).map((h: Record<string, unknown>) => ({
+    time: String(h?.time ?? "").slice(11, 16),
+    temp: Number(h?.temp_c ?? 0),
+    rain_chance: Number(h?.chance_of_rain ?? 0),
+    description: String((h?.condition as Record<string, unknown>)?.text ?? "Clear"),
+    rain_volume: Number(h?.precip_mm ?? 0),
+  }));
+  const maxRain = hourly.length > 0 ? Math.max(...hourly.map((x: { rain_chance: number }) => x.rain_chance)) : 0;
+
+  return {
+    latitude,
+    longitude,
+    last_updated: new Date().toISOString(),
+    data_source: "weatherapi",
+    temperature: Number(current?.temp_c ?? 0),
+    feels_like: Number(current?.feelslike_c ?? current?.temp_c ?? 0),
+    humidity: Number(current?.humidity ?? 0),
+    pressure: Number(current?.pressure_mb ?? 1013),
+    weather_text: String(condition?.text ?? "Clear"),
+    weather_icon: String(condition?.code ?? 1000),
+    wind_speed: Number(current?.wind_kph ?? 0),
+    wind_direction: Number(current?.wind_degree ?? 0),
+    visibility: Number(current?.vis_km ?? 10),
+    rain_1h: Number(current?.precip_mm ?? 0),
+    cloud_cover: Number(current?.cloud ?? 0),
+    rain_probability: maxRain,
+    weather_alerts: [],
+    hourly_forecast: hourly,
+    daily_forecast: [],
+  };
+}
+
+// -------- AccuWeather API (fallback when WEATHER_API_KEY not set) --------
 async function getAccuWeatherLocationKey(lat: number, lon: number): Promise<string> {
   const q = `${lat},${lon}`;
   const url = `${ACCUWEATHER_BASE}/locations/v1/cities/geoposition/search?apikey=${ACCUWEATHER_API_KEY}&q=${encodeURIComponent(q)}`;
@@ -203,19 +323,19 @@ function normalizeAccuWeatherToEnhanced(
   const next24hForecast = (hourly as Record<string, unknown>[]).slice(0, 12).map((h) => {
     const dt = (h?.DateTime as string) || new Date().toISOString();
     const t = (h?.Temperature as { Value?: number })?.Value ?? temp;
-    const rainChance = Number(h?.PrecipitationProbability ?? 0);
+    const rainChancePct = Number(h?.PrecipitationProbability ?? 0);
     const phrase = (h?.IconPhrase as string) || weatherText;
     return {
       time: new Date(dt).toISOString().slice(11, 16),
       temp: t,
-      rain_chance: rainChance,
+      rain_chance: rainChancePct / 100,
       description: phrase,
       rain_volume: 0,
     };
   });
 
   const maxRainChance = next24hForecast.length > 0
-    ? Math.max(...next24hForecast.map((x) => x.rain_chance)) / 100
+    ? Math.max(...next24hForecast.map((x) => x.rain_chance))
     : 0;
 
   // Day high / night low from next 12h hourly (for day/night labels in app)
@@ -297,7 +417,7 @@ function buildCacheRowFromAccuWeather(
   };
 }
 
-// Get enhanced weather data from cache; when missing or stale use AccuWeather only (WeatherAPI removed)
+// Get enhanced weather data from cache; when missing or stale use WEATHER_API_KEY (WeatherAPI.com) or AccuWeather
 async function getEnhancedWeatherData(latitude: number, longitude: number): Promise<EnhancedWeatherData> {
   try {
     console.log(`🔍 Looking for weather cache at (${latitude}, ${longitude})`);
@@ -320,43 +440,64 @@ async function getEnhancedWeatherData(latitude: number, longitude: number): Prom
     const isFromAccuWeather = dataSource.toLowerCase() === 'accuweather';
     const isFromWeatherapi = dataSource.toLowerCase() === 'weatherapi';
 
-    // Only use cache from AccuWeather; reject weatherapi, hyperdevweatherapi, or any other old source
-    const useCache = cachedWeather && isFromAccuWeather && !isStale;
-
-    if (!ACCUWEATHER_API_KEY) {
-      if (!cachedWeather) {
-        throw new Error('Weather cache not available and ACCUWEATHER_API_KEY is not set. Set the secret and retry or populate weather_cache.');
-      }
-      if (isFromWeatherapi || !isFromAccuWeather) {
-        throw new Error('Weather cache is from an old source (' + dataSource + '). Set ACCUWEATHER_API_KEY and redeploy to use AccuWeather.');
-      }
-      if (isStale) {
-        throw new Error('Weather cache is stale (updated: ' + cachedWeather.last_updated + '). Set ACCUWEATHER_API_KEY to refresh, or update weather_cache.');
+    // Prefer WEATHER_API_KEY (WeatherAPI.com) for all weather when set
+    if (WEATHER_API_KEY) {
+      const useCache = cachedWeather && isFromWeatherapi && !isStale;
+      if (!useCache) {
+        const reason = !cachedWeather ? 'missing' : !isFromWeatherapi ? 'replacing source (' + dataSource + ')' : 'stale';
+        console.log(`🌤️ Fetching from WeatherAPI.com (cache ${reason})`);
+        const raw = await getWeatherApiData(latitude, longitude);
+        const normalized = normalizeWeatherApiToEnhanced(raw, latitude, longitude);
+        const cacheRow = buildCacheRowFromWeatherApi(raw, latitude, longitude);
+        try {
+          await supabase.from('weather_cache').upsert([cacheRow], {
+            onConflict: 'latitude,longitude',
+            ignoreDuplicates: false,
+          });
+        } catch (upsertErr) {
+          console.warn('⚠️ Weather cache upsert failed:', upsertErr);
+        }
+        return normalized;
       }
       console.log(`✅ Using cached weather data from ${cachedWeather.data_source} (updated: ${cachedWeather.last_updated})`);
-    } else if (!useCache) {
-      const reason = !cachedWeather ? 'missing' : !isFromAccuWeather ? 'replacing old source (' + dataSource + ')' : 'stale';
-      console.log(`🌤️ Fetching from AccuWeather (cache ${reason})`);
-      const locationKey = await getAccuWeatherLocationKey(latitude, longitude);
-      const [current, hourly] = await Promise.all([
-        getAccuWeatherCurrentConditions(locationKey),
-        getAccuWeather12HourForecast(locationKey),
-      ]);
-      const normalized = normalizeAccuWeatherToEnhanced(current, hourly, latitude, longitude);
-      const cacheRow = buildCacheRowFromAccuWeather(current, hourly, latitude, longitude);
-
-      try {
-        await supabase.from('weather_cache').upsert([cacheRow], {
-          onConflict: 'latitude,longitude',
-          ignoreDuplicates: false,
-        });
-      } catch (upsertErr) {
-        console.warn('⚠️ Weather cache upsert failed (table may not exist or lack columns):', upsertErr);
-      }
-
-      return normalized;
     } else {
-      console.log(`✅ Using cached weather data from ${cachedWeather.data_source} (updated: ${cachedWeather.last_updated})`);
+      // No WEATHER_API_KEY: use AccuWeather only; only accept AccuWeather cache
+      const useCache = cachedWeather && isFromAccuWeather && !isStale;
+      if (!ACCUWEATHER_API_KEY) {
+        if (!cachedWeather) {
+          throw new Error('Weather cache not available and no API key set. Set WEATHER_API_KEY or ACCUWEATHER_API_KEY in Supabase secrets.');
+        }
+        if (isFromWeatherapi || !isFromAccuWeather) {
+          throw new Error('Weather cache is from another source (' + dataSource + '). Set WEATHER_API_KEY for WeatherAPI.com or ACCUWEATHER_API_KEY for AccuWeather.');
+        }
+        if (isStale) {
+          throw new Error('Weather cache is stale (updated: ' + cachedWeather.last_updated + '). Set WEATHER_API_KEY or ACCUWEATHER_API_KEY to refresh.');
+        }
+        console.log(`✅ Using cached weather data from ${cachedWeather.data_source} (updated: ${cachedWeather.last_updated})`);
+      } else if (!useCache) {
+        const reason = !cachedWeather ? 'missing' : !isFromAccuWeather ? 'replacing old source (' + dataSource + ')' : 'stale';
+        console.log(`🌤️ Fetching from AccuWeather (cache ${reason})`);
+        const locationKey = await getAccuWeatherLocationKey(latitude, longitude);
+        const [current, hourly] = await Promise.all([
+          getAccuWeatherCurrentConditions(locationKey),
+          getAccuWeather12HourForecast(locationKey),
+        ]);
+        const normalized = normalizeAccuWeatherToEnhanced(current, hourly, latitude, longitude);
+        const cacheRow = buildCacheRowFromAccuWeather(current, hourly, latitude, longitude);
+
+        try {
+          await supabase.from('weather_cache').upsert([cacheRow], {
+            onConflict: 'latitude,longitude',
+            ignoreDuplicates: false,
+          });
+        } catch (upsertErr) {
+          console.warn('⚠️ Weather cache upsert failed (table may not exist or lack columns):', upsertErr);
+        }
+
+        return normalized;
+      } else {
+        console.log(`✅ Using cached weather data from ${cachedWeather.data_source} (updated: ${cachedWeather.last_updated})`);
+      }
     }
 
     // Process hourly forecast for 24h summary

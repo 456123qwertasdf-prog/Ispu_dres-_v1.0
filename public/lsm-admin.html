@@ -7,107 +7,38 @@
   <link rel="stylesheet" href="css/style.css">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
   <style>
-    /* Enhanced table styling */
-    #lsmModulesTable {
-      width: 100%;
+    /* — Minimalist Learning Modules Admin — */
+    .lsm-page { padding: 0; max-width: 960px; margin: 0 auto; }
+    /* Header card — same design as other admin pages (e.g. Announcements) */
+    .lsm-header-card {
+      border-radius: 16px;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06), 0 0 0 1px rgba(0, 0, 0, 0.05);
+      border: 1px solid rgba(226, 232, 240, 0.8);
+      margin-bottom: 1.5rem;
+      overflow: hidden;
+      background: white;
     }
-    #lsmModulesTable th, #lsmModulesTable td {
-      padding: 14px 16px;
-      vertical-align: middle;
-      border-bottom: 1px solid #e5e7eb;
-    }
-    #lsmModulesTable th {
-      background-color: #f9fafb;
-      font-weight: 600;
-      color: #374151;
-      text-align: left;
-      font-size: 0.875rem;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-      border-bottom: 2px solid #e5e7eb;
-    }
-    #lsmModulesTable tbody tr:hover {
-      background-color: #f9fafb;
-    }
-    #lsmModulesTable tbody tr:last-child td {
-      border-bottom: none;
-    }
-    /* Order column */
-    #lsmModulesTable td:first-child {
-      text-align: center;
-      font-weight: 600;
-      color: #6b7280;
-      width: 60px;
-    }
-    /* Title column */
-    #lsmModulesTable td:nth-child(2) {
-      min-width: 200px;
-    }
-    .module-title {
-      font-weight: 600;
-      color: #111827;
-      font-size: 0.9375rem;
-      margin-bottom: 4px;
-      line-height: 1.4;
-    }
-    .module-course {
-      font-size: 0.75rem;
-      color: #6b7280;
-      margin-top: 4px;
-      line-height: 1.3;
-    }
-    /* Description column */
-    #lsmModulesTable td:nth-child(3) {
-      color: #4b5563;
-      font-size: 0.875rem;
-      line-height: 1.5;
-      max-width: 400px;
-      word-wrap: break-word;
-    }
-    /* Status column */
-    #lsmModulesTable td:nth-child(4) {
-      width: 100px;
-      text-align: center;
-    }
-    .status-badge-wrapper {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
-    }
-    /* Actions column */
-    #lsmModulesTable td:last-child {
-      width: 280px;
-      min-width: 280px;
-    }
-    .actions-group {
+    .lsm-header-card .card-header {
+      background: linear-gradient(135deg, #f8fafc 0%, #ffffff 100%);
+      border-bottom: 1px solid rgba(226, 232, 240, 0.8);
+      padding: 1.5rem 1.75rem;
+      position: relative;
       display: flex;
-      align-items: center;
-      gap: 8px;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 1rem;
       flex-wrap: wrap;
     }
-    .actions-group .btn {
-      margin: 0;
-      padding: 6px 12px;
-      font-size: 0.8125rem;
-      white-space: nowrap;
+    .lsm-header-card .card-header::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, rgba(59, 130, 246, 0.3), transparent);
     }
-    .actions-group .btn i {
-      font-size: 0.875rem;
-    }
-    .pdf-badge {
-      margin-left: 4px;
-      font-size: 0.75rem;
-    }
-    /* Table container improvements */
-    .table-container {
-      border-radius: 8px;
-      overflow: hidden;
-      border: 1px solid #e5e7eb;
-    }
-    
-    /* Modern Header Card for Learning Modules Admin */
-    .main-content .card:first-child .card-title {
+    .lsm-header-card .card-title {
       font-size: 1.75rem !important;
       font-weight: 800 !important;
       color: #1e293b !important;
@@ -119,20 +50,62 @@
       background-clip: unset !important;
       text-shadow: none !important;
     }
-    
-    .main-content .card:first-child .card-subtitle {
+    .lsm-header-card .card-subtitle {
       font-size: 0.9375rem !important;
       color: #64748b !important;
       margin: 0.5rem 0 0 0 !important;
       font-weight: 400 !important;
       line-height: 1.5;
     }
+    .lsm-btn-add { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.5rem 1rem; font-size: 0.8125rem; font-weight: 500; color: #fff; background: #1e293b; border: none; border-radius: 8px; cursor: pointer; transition: opacity 0.2s, transform 0.15s; flex-shrink: 0; }
+    .lsm-btn-add:hover { opacity: 0.9; transform: translateY(-1px); }
+    .lsm-list { display: flex; flex-direction: column; gap: 0.75rem; }
+    .lsm-card { background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 1rem 1.25rem; display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; transition: border-color 0.2s, box-shadow 0.2s; }
+    .lsm-card:hover { border-color: #cbd5e1; box-shadow: 0 1px 3px rgba(0,0,0,0.04); }
+    .lsm-card-body { flex: 1; min-width: 0; }
+    .lsm-card-order { font-size: 0.75rem; font-weight: 600; color: #94a3b8; margin-bottom: 0.25rem; }
+    .lsm-card-title { font-size: 0.9375rem; font-weight: 600; color: #0f172a; margin: 0 0 0.35rem 0; line-height: 1.35; }
+    .lsm-card-course { font-size: 0.75rem; color: #64748b; margin-bottom: 0.5rem; }
+    .lsm-card-desc { font-size: 0.8125rem; color: #64748b; line-height: 1.5; margin: 0; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+    .lsm-card-meta { display: flex; align-items: center; gap: 0.75rem; margin-top: 0.75rem; flex-wrap: wrap; }
+    .lsm-status { font-size: 0.6875rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; padding: 0.2rem 0.5rem; border-radius: 4px; }
+    .lsm-status.active { background: #f0fdf4; color: #166534; }
+    .lsm-status.inactive { background: #f1f5f9; color: #475569; }
+    .lsm-pdf-tag { font-size: 0.6875rem; color: #64748b; display: inline-flex; align-items: center; gap: 0.25rem; }
+    .lsm-actions { position: relative; flex-shrink: 0; }
+    .lsm-actions-btn { width: 36px; height: 36px; border-radius: 8px; border: 1px solid #e2e8f0; background: #fff; color: #64748b; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 1rem; transition: border-color 0.2s, color 0.2s; }
+    .lsm-actions-btn:hover { border-color: #cbd5e1; color: #0f172a; }
+    .lsm-dropdown { position: absolute; right: 0; top: 100%; margin-top: 4px; min-width: 140px; background: #fff; border: 1px solid #e2e8f0; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); z-index: 50; padding: 0.25rem; display: none; }
+    .lsm-dropdown.show { display: block; }
+    .lsm-dropdown-item { display: flex; align-items: center; gap: 0.5rem; width: 100%; padding: 0.5rem 0.75rem; font-size: 0.8125rem; color: #334155; border: none; background: none; border-radius: 6px; cursor: pointer; text-align: left; transition: background 0.15s; }
+    .lsm-dropdown-item:hover { background: #f1f5f9; }
+    .lsm-dropdown-item.danger { color: #dc2626; }
+    .lsm-dropdown-item:disabled { opacity: 0.5; cursor: not-allowed; }
+    .lsm-empty { text-align: center; padding: 3rem 1.5rem; color: #64748b; font-size: 0.875rem; }
+    .lsm-empty i { font-size: 2rem; display: block; margin-bottom: 0.75rem; color: #cbd5e1; }
+    /* Modal form — minimal */
+    .lsm-modal-content { max-width: 520px; width: 90vw; max-height: 90vh; overflow-y: auto; }
+    .lsm-form { padding: 1.5rem; }
+    .lsm-form-group { margin-bottom: 1.25rem; }
+    .lsm-form-label { font-size: 0.75rem; font-weight: 600; color: #475569; display: block; margin-bottom: 0.35rem; text-transform: uppercase; letter-spacing: 0.04em; }
+    .lsm-form-input { width: 100%; padding: 0.5rem 0.75rem; font-size: 0.875rem; color: #0f172a; border: 1px solid #e2e8f0; border-radius: 8px; background: #fff; box-sizing: border-box; }
+    .lsm-form-input:focus { outline: none; border-color: #94a3b8; }
+    .lsm-form-textarea { min-height: 100px; resize: vertical; }
+    .lsm-form-hint { display: block; margin-top: 0.35rem; font-size: 0.8125rem; color: #64748b; }
+    .lsm-form-row { margin-bottom: 0; }
+    .lsm-form-check { display: inline-flex; align-items: center; gap: 0.5rem; font-size: 0.875rem; color: #334155; cursor: pointer; }
+    .lsm-form-check input { width: 1rem; height: 1rem; cursor: pointer; }
+    .lsm-form-actions { display: flex; gap: 0.75rem; justify-content: flex-end; padding-top: 1.25rem; margin-top: 1.25rem; border-top: 1px solid #e2e8f0; }
+    .lsm-form-btn { padding: 0.5rem 1rem; font-size: 0.8125rem; font-weight: 500; border-radius: 8px; cursor: pointer; border: 1px solid #e2e8f0; background: #fff; color: #334155; transition: border-color 0.2s, background 0.2s; }
+    .lsm-form-btn.primary { background: #0f172a; color: #fff; border-color: #0f172a; }
+    .lsm-form-btn.primary:hover { opacity: 0.9; }
+    .lsm-form-btn.secondary:hover { background: #f1f5f9; }
   </style>
 </head>
 <body>
   <div class="dashboard-container">
-    <!-- Sidebar -->
-    <div class="sidebar" style="display: flex; flex-direction: column;">
+    <!-- Sidebar (matches other admin pages) -->
+    <div class="sidebar">
       <div class="sidebar-header">
         <div class="sidebar-logo">
           <img src="images/logolspu.jpg" alt="LSPU Logo"
@@ -162,12 +135,12 @@
         <a href="user-management.html" class="nav-item"><i class="bi bi-people"></i> User Management</a>
         <a href="lsm-admin.html" class="nav-item active"><i class="bi bi-journal-bookmark"></i> Learning Modules</a>
       </nav>
-      <div class="sidebar-footer">
-        <div class="user-info-card">
-          <div class="user-avatar">A</div>
+      <div class="sidebar-footer" style="margin-top: auto; padding: 1rem; border-top: 1px solid rgba(255, 255, 255, 0.1);">
+        <div class="user-info-card" style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1rem; padding: 0.75rem; background: rgba(255, 255, 255, 0.1); border-radius: 8px;">
+          <div class="user-avatar" style="width: 40px; height: 40px; background: rgba(255, 255, 255, 0.2); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 1.125rem;">A</div>
           <div class="user-details">
-            <h4>Admin User</h4>
-            <p>Kapiyu Command</p>
+            <h4 style="margin: 0; font-size: 0.875rem; font-weight: 600; color: white;">Admin User</h4>
+            <p style="margin: 0; font-size: 0.75rem; color: rgba(255, 255, 255, 0.7);">Kapiyu Command</p>
           </div>
         </div>
         <button class="logout-btn" onclick="showLogoutConfirm()" style="width: 100%;padding: 0.75rem 1rem;background: rgba(239, 68, 68, 0.1);border: 1px solid rgba(239, 68, 68, 0.3);color: #fca5a5;border-radius: 8px;font-size: 0.875rem;font-weight: 500;cursor: pointer;transition: all 0.2s ease;display: flex;align-items: center;gap: 0.5rem;margin-left: 0px;">
@@ -176,92 +149,70 @@
       </div>
     </div>
     <style>
-        .logout-btn:hover {
-            background: #EF4444 !important;
-            border-color: #EF4444 !important;
-            color: white !important;
-        }
-        
-        .logout-btn:hover i {
-            color: white !important;
-        }
+      .logout-btn:hover { background: #EF4444 !important; border-color: #EF4444 !important; color: white !important; }
+      .logout-btn:hover i { color: white !important; }
     </style>
     <!-- Main Content -->
     <div class="main-content">
-      <div class="card" style="margin-bottom:2rem;">
+      <!-- Page Header (same design as Announcements / other admin pages) -->
+      <div class="card lsm-header-card">
         <div class="card-header">
-          <h2 class="card-title">Emergency Learning Modules</h2>
-          <p class="card-subtitle">Manage emergency learning modules for staff and public education</p>
-        </div>
-        <div class="card-body">
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
-            <h3 class="card-title" style="margin:0; font-size:1.15rem;color:#374151;">Module List</h3>
-            <button class="btn btn-primary" style="box-shadow: 0 2px 8px rgb(99 102 241 / 11%);" onclick="showAddLsmModule()"><i class="bi bi-plus-circle"></i> Add Module</button>
+          <div>
+            <h2 class="card-title"><i class="bi bi-journal-bookmark-fill"></i> Emergency Learning Modules</h2>
+            <p class="card-subtitle">Manage modules for staff and public education.</p>
           </div>
-          <div style="overflow-x: auto;">
-            <div class="table-container">
-              <table class="table" style="width:100%; min-width: 800px; border-collapse: collapse;">
-                <thead>
-                  <tr>
-                    <th>Order</th>
-                    <th>Title</th>
-                    <th>Description</th>
-                    <th>Status</th>
-                    <th>Actions</th>
-                  </tr>
-                </thead>
-                <tbody id="lsmModulesTable">
-                  <!-- Module rows generated by JS -->
-                </tbody>
-              </table>
-            </div>
+          <button type="button" class="lsm-btn-add" onclick="showAddLsmModule()"><i class="bi bi-plus"></i> Add module</button>
+        </div>
+      </div>
+      <div class="card lsm-page">
+        <div class="card-body" style="padding: 0;">
+          <div id="lsmModulesList" class="lsm-list">
+            <!-- Module cards generated by JS -->
           </div>
         </div>
       </div>
       <!-- Add/Edit Module Modal (hidden by default) -->
       <div id="lsmModal" class="modal hidden">
-        <div class="modal-content" style="max-width: 900px; width: 90vw; max-height: 90vh; overflow-y: auto;">
+        <div class="modal-content lsm-modal-content">
           <div class="modal-header">
-            <h2 id="lsmModalTitle">Add Module</h2>
-            <button class="modal-close" onclick="toggleLsmModal(false)"><i class="bi bi-x-lg"></i></button>
+            <h2 id="lsmModalTitle" style="font-size:1.125rem;font-weight:600;color:#0f172a;margin:0;">Add Module</h2>
+            <button class="modal-close" onclick="toggleLsmModal(false)" style="background:none;border:none;font-size:1.25rem;color:#64748b;cursor:pointer;padding:0.25rem;"><i class="bi bi-x-lg"></i></button>
           </div>
-          <form id="lsmModuleForm" style="padding: 24px;">
-            <div class="form-group" style="margin-bottom: 20px;">
-              <label class="form-label" style="font-weight: 600; margin-bottom: 8px; display: block;">Order</label>
-              <input type="number" min="1" id="lsmOrder" class="form-input" required style="padding: 10px 12px; font-size: 14px;" />
+          <form id="lsmModuleForm" class="lsm-form">
+            <div class="lsm-form-group">
+              <label class="lsm-form-label">Order</label>
+              <input type="number" min="1" id="lsmOrder" class="lsm-form-input" required />
             </div>
-            <div class="form-group" style="margin-bottom: 20px;">
-              <label class="form-label" style="font-weight: 600; margin-bottom: 8px; display: block;">Title</label>
-              <input type="text" id="lsmTitle" class="form-input" required style="padding: 10px 12px; font-size: 14px;" />
+            <div class="lsm-form-group">
+              <label class="lsm-form-label">Title</label>
+              <input type="text" id="lsmTitle" class="lsm-form-input" required />
             </div>
-            <div class="form-group" style="margin-bottom: 20px;">
-              <label class="form-label" style="font-weight: 600; margin-bottom: 8px; display: block;">Course</label>
-              <select id="lsmCourse" class="form-input" style="padding: 10px 12px; font-size: 14px;"></select>
+            <div class="lsm-form-group">
+              <label class="lsm-form-label">Course</label>
+              <select id="lsmCourse" class="lsm-form-input"></select>
             </div>
-            <div class="form-group" style="margin-bottom: 20px;">
-              <label class="form-label" style="font-weight: 600; margin-bottom: 8px; display: block;">Description</label>
-              <textarea id="lsmDescription" class="form-input" required style="min-height: 120px; padding: 10px 12px; font-size: 14px; resize: vertical;"></textarea>
+            <div class="lsm-form-group">
+              <label class="lsm-form-label">Description</label>
+              <textarea id="lsmDescription" class="lsm-form-input lsm-form-textarea" required></textarea>
             </div>
-            <div class="form-group" style="margin-bottom: 20px;">
-              <label class="form-label" style="font-weight: 600; margin-bottom: 8px; display: block;">PDF File</label>
-              <input type="file" id="lsmPDF" class="form-input" accept="application/pdf" style="padding: 8px 12px; font-size: 14px;" />
-              <span id="lsmPDFFilename" style="display: block; margin-top: 8px; color: #2563eb; font-size: 13px; font-weight: 500;"></span>
-              <small style="color: #6b7280; font-size: 0.875rem; display: block; margin-top: 6px;">Upload a PDF file for this module. This is optional.</small>
+            <div class="lsm-form-group">
+              <label class="lsm-form-label">PDF file (optional)</label>
+              <input type="file" id="lsmPDF" class="lsm-form-input" accept="application/pdf" />
+              <span id="lsmPDFFilename" class="lsm-form-hint"></span>
             </div>
-            <div class="form-group" style="margin-bottom: 20px;">
-              <label class="form-label" style="font-weight: 600; margin-bottom: 8px; display: block;">Google Form Quiz URL</label>
-              <input type="url" id="lsmQuizUrl" class="form-input" placeholder="https://docs.google.com/forms/d/e/..." style="padding: 10px 12px; font-size: 14px;" />
-              <small style="color: #6b7280; font-size: 0.875rem; display: block; margin-top: 6px;">Enter a Google Form link to use as the quiz for this module. This is optional.</small>
+            <div class="lsm-form-group">
+              <label class="lsm-form-label">Quiz URL (optional)</label>
+              <input type="url" id="lsmQuizUrl" class="lsm-form-input" placeholder="https://docs.google.com/forms/..." />
             </div>
-            <div class="form-group" style="margin-bottom: 24px;">
-              <label class="form-label" style="font-weight: 600; display: flex; align-items: center; gap: 8px; cursor: pointer;">
-                <input type="checkbox" id="lsmActive" checked style="width: 18px; height: 18px; cursor: pointer;" />
+            <div class="lsm-form-group lsm-form-row">
+              <label class="lsm-form-check">
+                <input type="checkbox" id="lsmActive" checked />
                 <span>Active</span>
               </label>
             </div>
-            <div class="form-group" style="display:flex; gap: 12px; justify-content:flex-end; padding-top: 16px; border-top: 1px solid #e5e7eb; margin-top: 24px;">
-              <button type="button" class="btn btn-secondary" onclick="toggleLsmModal(false)" style="padding: 10px 20px;">Cancel</button>
-              <button type="submit" class="btn btn-primary" style="padding: 10px 20px;">Save Module</button>
+            <div class="lsm-form-actions">
+              <button type="button" class="lsm-form-btn secondary" onclick="toggleLsmModal(false)">Cancel</button>
+              <button type="submit" class="lsm-form-btn primary">Save</button>
             </div>
           </form>
         </div>
@@ -351,38 +302,61 @@
     renderLsmModules();
   }
 
+  function closeAllLsmDropdowns() {
+    document.querySelectorAll('.lsm-dropdown.show').forEach(function(d){ d.classList.remove('show'); });
+  }
+
+  function toggleLsmDropdown(btn) {
+    closeAllLsmDropdowns();
+    var dd = btn.nextElementSibling;
+    if (dd && dd.classList.contains('lsm-dropdown')) dd.classList.toggle('show');
+  }
+
   function renderLsmModules() {
-    const tbody = document.getElementById('lsmModulesTable');
-    tbody.innerHTML = '';
-    lsmModules.sort(function(a,b){ return (a.order||0) - (b.order||0); }).forEach(function(mod){
+    const list = document.getElementById('lsmModulesList');
+    if (!list) return;
+    list.innerHTML = '';
+    var sorted = lsmModules.slice().sort(function(a,b){ return (a.order||0) - (b.order||0); });
+    if (sorted.length === 0) {
+      list.innerHTML = '<div class="lsm-empty"><i class="bi bi-journal-bookmark"></i>No modules yet. Add one to get started.</div>';
+      return;
+    }
+    sorted.forEach(function(mod){
       const course = lsmCourses.find(function(c){ return c.id === mod.course_id; });
       const title = escapeHtml((mod.title||'').trim() || 'Untitled Module');
       const courseTitle = escapeHtml(course ? course.title : 'No course');
-      const description = escapeHtml((mod.description||'').trim() || 'No description available.');
+      const desc = (mod.description||'').trim() || 'No description available.';
+      const description = escapeHtml(desc);
       const moduleId = String(mod.id).replace(/'/g, "\\'");
-      tbody.innerHTML += '<tr>'+
-        '<td>' + (mod.order||'') + '</td>'+
-        '<td>' +
-          '<div class="module-title">' + title + '</div>' +
-          '<div class="module-course">' + courseTitle + '</div>' +
-        '</td>'+
-        '<td>' + description + '</td>'+
-        '<td>' +
-          '<div class="status-badge-wrapper">' +
-            '<span class="badge ' + (mod.active?'badge-success':'badge-secondary') + '">' + (mod.active?'Active':'Inactive') + '</span>' +
+      const statusClass = mod.active ? 'active' : 'inactive';
+      const statusLabel = mod.active ? 'Active' : 'Inactive';
+      const hasPdf = !!mod._pdfPublicUrl;
+      const card = document.createElement('div');
+      card.className = 'lsm-card';
+      card.innerHTML =
+        '<div class="lsm-card-body">' +
+          '<div class="lsm-card-order">#' + (mod.order || '—') + '</div>' +
+          '<div class="lsm-card-title">' + title + '</div>' +
+          '<div class="lsm-card-course">' + courseTitle + '</div>' +
+          '<p class="lsm-card-desc">' + description + '</p>' +
+          '<div class="lsm-card-meta">' +
+            '<span class="lsm-status ' + statusClass + '">' + statusLabel + '</span>' +
+            '<span class="lsm-pdf-tag"><i class="bi bi-file-earmark-pdf"></i> ' + (hasPdf ? 'PDF' : 'No PDF') + '</span>' +
           '</div>' +
-        '</td>'+
-        '<td>' +
-          '<div class="actions-group">' +
-            '<button class="btn btn-outline btn-sm" onclick="showEditLsmModule(\'' + moduleId + '\')" title="Edit"><i class="bi bi-pencil"></i></button>' +
-            '<button class="btn btn-danger btn-sm" onclick="deleteLsmModule(\'' + moduleId + '\')" title="Delete"><i class="bi bi-trash"></i></button>' +
-            '<button class="btn btn-outline btn-sm" onclick="previewPDF(\'' + moduleId + '\')" title="Preview PDF"' + (mod._pdfPublicUrl ? '' : ' disabled') + '><i class="bi bi-file-earmark-pdf"></i> Preview</button>' +
-            '<span class="badge ' + (mod._pdfPublicUrl ? 'badge-success' : 'badge-secondary') + ' pdf-badge">' + (mod._pdfPublicUrl ? 'PDF' : 'No PDF') + '</span>' +
+        '</div>' +
+        '<div class="lsm-actions">' +
+          '<button type="button" class="lsm-actions-btn" onclick="event.stopPropagation(); toggleLsmDropdown(this);" title="Actions" aria-haspopup="true"><i class="bi bi-three-dots-vertical"></i></button>' +
+          '<div class="lsm-dropdown" onclick="event.stopPropagation();">' +
+            '<button type="button" class="lsm-dropdown-item" onclick="closeAllLsmDropdowns(); showEditLsmModule(\'' + moduleId + '\');"><i class="bi bi-pencil"></i> Edit</button>' +
+            '<button type="button" class="lsm-dropdown-item" onclick="closeAllLsmDropdowns(); previewPDF(\'' + moduleId + '\');" ' + (hasPdf ? '' : 'disabled') + '><i class="bi bi-file-earmark-pdf"></i> Preview PDF</button>' +
+            '<button type="button" class="lsm-dropdown-item danger" onclick="closeAllLsmDropdowns(); deleteLsmModule(\'' + moduleId + '\');"><i class="bi bi-trash"></i> Delete</button>' +
           '</div>' +
-        '</td>'+
-      '</tr>';
+        '</div>';
+      list.appendChild(card);
     });
   }
+
+  document.addEventListener('click', function() { closeAllLsmDropdowns(); });
   function previewPDF(id) {
     const mod = lsmModules.find(function(m){ return String(m.id)===String(id); });
     if(mod && mod._pdfPublicUrl) {

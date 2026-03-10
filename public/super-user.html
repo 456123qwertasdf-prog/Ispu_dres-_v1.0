@@ -7,6 +7,7 @@
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="css/su-header-shared.css">
     <link rel="stylesheet" href="css/system-status.css">
+    <link rel="stylesheet" href="css/su-sidebar.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -656,13 +657,15 @@
 </div><!-- end .dashboard-container -->
 
     <!-- Logout Modal -->
-    <div id="logoutModal" class="modal hidden">
-        <div class="modal-content">
-            <h2 style="margin: 0 0 1rem 0;">Confirm Logout</h2>
-            <p>Are you sure you want to logout?</p>
-            <div class="btn-group">
-                <button class="btn btn-secondary" onclick="closeLogoutModal()">Cancel</button>
-                <button class="btn btn-primary" onclick="confirmLogout()">Logout</button>
+    <div id="logoutModal" class="logout-modal hidden">
+        <div class="logout-modal-overlay" onclick="closeLogoutModal()"></div>
+        <div class="logout-modal-content">
+            <div class="logout-modal-icon"><i class="bi bi-box-arrow-right"></i></div>
+            <h3 class="logout-modal-title">Confirm Logout</h3>
+            <p class="logout-modal-message">Are you sure you want to log out of the system?</p>
+            <div class="logout-modal-buttons">
+                <button class="logout-modal-btn cancel" onclick="closeLogoutModal()"><i class="bi bi-x-circle"></i> Cancel</button>
+                <button class="logout-modal-btn confirm" onclick="confirmLogout()"><i class="bi bi-box-arrow-right"></i> Logout</button>
             </div>
         </div>
     </div>

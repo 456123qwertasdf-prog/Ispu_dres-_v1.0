@@ -12,16 +12,17 @@
             max-width: 800px;
             margin: 0 auto;
             padding: 2rem;
-            background: white;
-            border-radius: 12px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            background: #ffffff;
+            border-radius: 16px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 0 0 1px rgba(0,0,0,0.04);
         }
         
         .form-title {
             font-size: 1.5rem;
             font-weight: 600;
-            color: #374151;
+            color: #0f172a;
             margin: 0;
+            letter-spacing: -0.02em;
         }
         
         .form-grid {
@@ -38,48 +39,89 @@
         
         .form-label {
             font-weight: 500;
-            color: #374151;
+            color: #334155;
             margin-bottom: 0.5rem;
             font-size: 0.875rem;
         }
         
         .form-input {
-            padding: 0.75rem;
-            border: 1px solid #d1d5db;
-            border-radius: 6px;
+            padding: 0.625rem 0.75rem;
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
             font-size: 0.875rem;
-            transition: border-color 0.2s;
+            transition: border-color 0.2s, box-shadow 0.2s;
         }
         
         .form-input:focus {
             outline: none;
             border-color: #3b82f6;
-            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.12);
         }
         
         .form-select {
-            padding: 0.75rem;
-            border: 1px solid #d1d5db;
-            border-radius: 6px;
+            padding: 0.625rem 0.75rem;
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
             font-size: 0.875rem;
-            background-color: white;
+            background-color: #fff;
             cursor: pointer;
+            transition: border-color 0.2s, box-shadow 0.2s;
         }
         
         .form-select:focus {
             outline: none;
             border-color: #3b82f6;
-            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.12);
+        }
+        
+        /* Field-level error: show which field needs to change */
+        .form-group.has-error .form-input,
+        .form-group.has-error .form-select {
+            border-color: #e11d48;
+            background-color: #fffbfb;
+            box-shadow: 0 0 0 2px rgba(225, 29, 72, 0.12);
+        }
+        .form-group.has-error .form-input:focus,
+        .form-group.has-error .form-select:focus {
+            border-color: #e11d48;
+            box-shadow: 0 0 0 3px rgba(225, 29, 72, 0.2);
+        }
+        .form-group.has-error .form-label {
+            color: #be123c;
+        }
+        .field-error-msg {
+            display: flex;
+            align-items: center;
+            gap: 0.35rem;
+            margin-top: 0.4rem;
+            padding: 0.4rem 0.6rem;
+            font-size: 0.8125rem;
+            color: #be123c;
+            background: #fff1f2;
+            border-radius: 8px;
+            border-left: 3px solid #e11d48;
+            line-height: 1.4;
+        }
+        .field-error-msg:empty {
+            display: none;
+        }
+        .field-error-msg::before {
+            content: '';
+            width: 4px;
+            height: 4px;
+            border-radius: 50%;
+            background: #e11d48;
+            flex-shrink: 0;
         }
         
         .user-types-checkboxes {
             display: flex;
             flex-wrap: wrap;
             gap: 0.75rem 1.5rem;
-            padding: 0.75rem;
-            border: 1px solid #d1d5db;
-            border-radius: 6px;
-            background: #fafafa;
+            padding: 0.875rem 1rem;
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
+            background: #f8fafc;
         }
         .user-types-checkboxes .checkbox-label {
             display: flex;
@@ -201,11 +243,6 @@
             border: 1px solid #e2e8f0;
             box-shadow: 0 1px 3px rgba(0,0,0,0.06);
             min-width: 140px;
-        }
-        
-        .stat-card.stat-online {
-            background: linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 100%);
-            border-color: #bbf7d0;
         }
         
         .stat-icon-wrap {
@@ -1472,18 +1509,6 @@
                                 <h2 class="header-title">User Management</h2>
                                 <p class="header-subtitle">Create and manage user accounts for the emergency response system</p>
                             </div>
-                            <div class="admin-stats-row">
-                                <div class="stat-card stat-online" id="onlineNowCard" title="Users currently using the system">
-                                    <div class="stat-icon-wrap">
-                                        <span class="stat-pulse"></span>
-                                        <i class="bi bi-people-fill"></i>
-                                    </div>
-                                    <div class="stat-content">
-                                        <span class="stat-value" id="onlineNowCount">—</span>
-                                        <span class="stat-label">Online now</span>
-                                    </div>
-                                </div>
-                            </div>
                         </div>
                     </div>
                 </div>
@@ -1527,9 +1552,10 @@
                                 <small class="form-text" style="color: #6b7280; font-size: 0.75rem; margin-top: 0.25rem; display: block;">At least one type required</small>
                             </div>
                             
-                            <div class="form-group">
+                            <div class="form-group" id="formGroupStudentNumber">
                                 <label class="form-label">ID Number</label>
-                                <input type="text" id="studentNumber" class="form-input" placeholder="Enter ID number" required>
+                                <input type="text" id="studentNumber" class="form-input" placeholder="Enter ID number" required aria-describedby="studentNumberError">
+                                <span class="field-error-msg" id="studentNumberError" role="alert"></span>
                             </div>
                             
                             <div class="form-group">
@@ -1543,9 +1569,10 @@
                                 <input type="text" id="lastname" class="form-input" placeholder="Lastname" required>
                             </div>
                             
-                            <div class="form-group">
+                            <div class="form-group" id="formGroupGmail">
                                 <label class="form-label">Gmail</label>
-                                <input type="email" id="gmail" class="form-input" placeholder="Enter Gmail address" required>
+                                <input type="email" id="gmail" class="form-input" placeholder="Enter Gmail address" required aria-describedby="gmailError">
+                                <span class="field-error-msg" id="gmailError" role="alert"></span>
                             </div>
                             
                             <div class="form-group">
@@ -1554,20 +1581,22 @@
                                 <div class="form-hint" id="passwordHintText">If left empty, a secure temporary password will be generated and sent via email</div>
                             </div>
                             
-                            <div class="form-group">
+                            <div class="form-group" id="formGroupContactNumber">
                                 <label class="form-label">Contact Number</label>
-                                <input type="tel" id="contactNumber" class="form-input" placeholder="Contact Number" required>
+                                <input type="tel" id="contactNumber" class="form-input" placeholder="Contact Number" required aria-describedby="contactNumberError">
+                                <span class="field-error-msg" id="contactNumberError" role="alert"></span>
                             </div>
                             
-                            <div class="form-group">
+                            <div class="form-group" id="formGroupUserRole">
                                 <label class="form-label">Role</label>
-                                <select id="userRole" class="form-select" required>
+                                <select id="userRole" class="form-select" required aria-describedby="userRoleError">
                                     <option value="">Select Role</option>
                                     <option value="citizen">Citizen</option>
                                     <option value="responder">Responder</option>
                                     <option value="admin">Admin</option>
                                     <option value="super_user">Super User</option>
                                 </select>
+                                <span class="field-error-msg" id="userRoleError" role="alert"></span>
                             </div>
                             <div class="form-group" id="responderLeaderGroup" style="display:none;">
                                 <label class="form-label">Team name (optional)</label>
@@ -1757,71 +1786,14 @@
                 // Load users and populate table
                 await loadUsers();
                 await loadVerificationRequests();
-                
-                // Show how many users are online (Realtime presence)
-                initOnlinePresence();
-                
+
+                attachFieldErrorClearing();
                 console.log('✅ User management page initialized successfully');
             } catch (error) {
                 console.error('❌ Error initializing user management page:', error);
             }
         });
         
-        const PRESENCE_CHANNEL = 'lspu-dres-online';
-        let presenceChannel = null;
-
-        function setOnlineCount(n) {
-            const el = document.getElementById('onlineNowCount');
-            if (el) el.textContent = n;
-        }
-
-        function countPresenceState(state) {
-            const userIds = new Set();
-            Object.keys(state || {}).forEach(ref => {
-                (state[ref] || []).forEach(p => {
-                    if (p.user_id) userIds.add(p.user_id);
-                });
-            });
-            return userIds.size;
-        }
-        
-        function initOnlinePresence() {
-            // Show at least 1 (you) so we never show "—" while Realtime may be unconfigured
-            setOnlineCount(1);
-            try {
-                const supabase = window.emergencySystem?.supabase;
-                const user = window.emergencySystem?.user;
-                if (!supabase) return;
-                
-                presenceChannel = supabase.channel(PRESENCE_CHANNEL, {
-                    config: { presence: { key: user?.id || 'anon-' + Math.random().toString(36).slice(2) } }
-                });
-                
-                presenceChannel
-                    .on('presence', { event: 'sync' }, () => {
-                        const state = presenceChannel.presenceState();
-                        const n = countPresenceState(state);
-                        setOnlineCount(n > 0 ? n : 1);
-                    })
-                    .subscribe(async (status) => {
-                        if (status === 'SUBSCRIBED') {
-                            await presenceChannel.track({
-                                user_id: user?.id || null,
-                                page: 'user-management',
-                                at: new Date().toISOString()
-                            });
-                            // Update count once after we join (works even if sync never fires)
-                            const state = presenceChannel.presenceState();
-                            const n = countPresenceState(state);
-                            setOnlineCount(n > 0 ? n : 1);
-                        }
-                    });
-            } catch (e) {
-                console.warn('Online presence init failed:', e);
-                setOnlineCount(1);
-            }
-        }
-
         // User Management Functions
         let allUsers = [];
         let allUsersForEmailLookup = []; // all users (including inactive) for email lookup when fulfilling verification requests
@@ -2345,11 +2317,16 @@
         // Handle form submission: create user via Edge Function (service role)
         document.getElementById('userRegistrationForm').addEventListener('submit', async (e) => {
             e.preventDefault();
-            
+            clearFieldErrors();
             try {
                 const selectedTypes = Array.from(document.querySelectorAll('#userTypesCheckboxes input[name="userType"]:checked')).map(cb => cb.value);
                 if (!selectedTypes.length) {
                     window.emergencySystem.showError('Please select at least one User Type');
+                    return;
+                }
+                const roleValue = (document.getElementById('userRole') && document.getElementById('userRole').value) || '';
+                if (!roleValue || roleValue.trim() === '') {
+                    window.emergencySystem.showError('Please select a Role (e.g. Citizen, Responder, Admin).');
                     return;
                 }
                 const formData = {
@@ -2370,7 +2347,7 @@
                 if (editingUserId) {
                     const userTypesToUpdate = formData.userTypes.length ? formData.userTypes : (formData.studentNumber ? ['student'] : ['student']);
                     console.log('Updating user with data:', { userId: editingUserId, userTypes: userTypesToUpdate, ...formData });
-                    const { error } = await window.emergencySystem.supabase.functions.invoke('update-user', {
+                    const { data: updateData, error: updateError } = await window.emergencySystem.supabase.functions.invoke('update-user', {
                         body: {
                             userId: editingUserId,
                             email: formData.gmail,
@@ -2383,7 +2360,30 @@
                             userTypes: userTypesToUpdate
                         }
                     });
-                    if (error) throw error;
+                    if (updateError) {
+                        var errorBody = updateData && (updateData.errors || updateData.error) ? updateData : null;
+                        if (!errorBody && updateError.context) {
+                            try {
+                                if (typeof updateError.context.json === 'function') errorBody = await updateError.context.json();
+                                else if (updateError.context.body) errorBody = typeof updateError.context.body === 'string' ? JSON.parse(updateError.context.body) : updateError.context.body;
+                            } catch (e) {}
+                        }
+                        if (errorBody && Array.isArray(errorBody.errors) && errorBody.errors.length > 0) {
+                            setFieldErrors(errorBody.errors);
+                            var summary = errorBody.errors.length > 1 ? errorBody.errors.length + ' fields need your attention. Please check the highlighted fields.' : errorBody.errors[0].message;
+                            window.emergencySystem.showError(summary);
+                            return;
+                        }
+                        var err = new Error(errorBody && (errorBody.error || errorBody.details) ? (errorBody.error + (errorBody.details ? ': ' + errorBody.details : '')) : updateError.message);
+                        err.code = errorBody && errorBody.code;
+                        throw err;
+                    }
+                    if (updateData && Array.isArray(updateData.errors) && updateData.errors.length > 0) {
+                        setFieldErrors(updateData.errors);
+                        var summary = updateData.errors.length > 1 ? updateData.errors.length + ' fields need your attention. Please check the highlighted fields.' : updateData.errors[0].message;
+                        window.emergencySystem.showError(summary);
+                        return;
+                    }
                     if (formData.role === 'responder') {
                         const leaderIdVal = document.getElementById('responderLeaderId').value || null;
                         const teamNameVal = document.getElementById('responderTeamName').value || null;
@@ -2425,26 +2425,44 @@
                     }
                 });
                 
-                // Handle edge function errors more gracefully
+                // Handle edge function errors: show the real server message instead of "Edge Function returned a non 2xx status code"
                 if (error) {
                     console.error('Edge function error:', error);
-                    // Try to extract error message from response (500 body may be in context.body or context)
                     let errorMessage = error.message || 'Unknown error';
                     let errorBody = null;
-                    if (error.context && error.context.body) {
-                        try {
-                            errorBody = typeof error.context.body === 'string'
-                                ? JSON.parse(error.context.body)
-                                : error.context.body;
-                        } catch (e) { /* ignore */ }
+                    // Some clients put the parsed error body in data even on non-2xx
+                    if (data && typeof data === 'object' && (data.error || data.details)) {
+                        errorBody = data;
                     }
-                    if (error.context && !errorBody && typeof error.context === 'object') {
+                    // Supabase may put the response body in error.context (Response object) or error.context.body
+                    if (!errorBody && error.context) {
                         try {
-                            const raw = error.context.body ?? error.context;
-                            errorBody = typeof raw === 'string' ? JSON.parse(raw) : raw;
-                        } catch (e) { /* ignore */ }
+                            if (typeof error.context.json === 'function') {
+                                errorBody = await error.context.json();
+                            } else if (error.context.body != null) {
+                                const raw = error.context.body;
+                                errorBody = typeof raw === 'string' ? JSON.parse(raw) : raw;
+                            } else if (typeof error.context === 'object' && !error.context.json) {
+                                const raw = error.context.body ?? error.context;
+                                if (typeof raw === 'string') {
+                                    errorBody = JSON.parse(raw);
+                                } else if (raw && typeof raw === 'object' && (raw.error || raw.details)) {
+                                    errorBody = raw;
+                                }
+                            }
+                        } catch (e) { /* ignore parse errors */ }
                     }
-                    if (errorBody) {
+                    if (errorBody && typeof errorBody === 'object') {
+                        // New format: multiple errors at once
+                        if (Array.isArray(errorBody.errors) && errorBody.errors.length > 0) {
+                            setFieldErrors(errorBody.errors);
+                            const firstMsg = errorBody.errors[0].message;
+                            const summary = errorBody.errors.length > 1
+                                ? errorBody.errors.length + ' fields need your attention. Please check the highlighted fields.'
+                                : firstMsg;
+                            window.emergencySystem.showError(summary);
+                            return;
+                        }
                         if (errorBody.error && errorBody.details) {
                             errorMessage = errorBody.error + ': ' + errorBody.details;
                         } else if (errorBody.error) {
@@ -2455,13 +2473,30 @@
                             errorMessage = errorBody.message;
                         }
                         if (errorBody.hint) errorMessage += ' ' + errorBody.hint;
+                        const err = new Error(errorMessage);
+                        err.code = errorBody.code;
+                        err.errorBody = errorBody;
+                        throw err;
                     }
                     throw new Error(errorMessage);
                 }
                 
-                // Check if response indicates an error
-                if (data && data.error) {
-                    throw new Error(data.error + (data.details ? ': ' + data.details : ''));
+                // Check if response indicates an error (including new errors[] format)
+                if (data && typeof data === 'object') {
+                    if (Array.isArray(data.errors) && data.errors.length > 0) {
+                        setFieldErrors(data.errors);
+                        const firstMsg = data.errors[0].message;
+                        const summary = data.errors.length > 1
+                            ? data.errors.length + ' fields need your attention. Please check the highlighted fields.'
+                            : firstMsg;
+                        window.emergencySystem.showError(summary);
+                        return;
+                    }
+                    if (data.error) {
+                        const err = new Error(data.error + (data.details ? ': ' + data.details : ''));
+                        err.code = data.code;
+                        throw err;
+                    }
                 }
 
                 // Extract credentials from response
@@ -2495,23 +2530,130 @@
                 
             } catch (error) {
                 console.error('Failed to register user:', error);
-                // Extract full error message
-                let errorMessage = 'Unknown error';
-                if (error.message) {
-                    errorMessage = error.message;
-                } else if (error.error) {
-                    errorMessage = error.error;
-                } else if (typeof error === 'string') {
-                    errorMessage = error;
-                }
-                
-                // Show full error message
-                window.emergencySystem.showError('Failed to register user: ' + errorMessage);
+                // Prefer code from server so email/gmail is reliably highlighted
+                var code = error && error.code;
+                var raw = (error && error.message) || (error && error.error) || (typeof error === 'string' ? error : '');
+                var fieldId = code ? getRegistrationErrorFieldByCode(code) : getRegistrationErrorField(raw);
+                var friendly = toFriendlyRegistrationError(raw);
+                setFieldError(fieldId, friendly);
+                window.emergencySystem.showError(friendly);
             }
         });
 
+        // Map server/technical errors to user-friendly messages (modern, clear wording)
+        function toFriendlyRegistrationError(rawMessage) {
+            if (!rawMessage) return 'Something went wrong. Please try again.';
+            const s = String(rawMessage).toLowerCase();
+            if (s.includes('id_number_exists') || s.includes('id number already registered')) return 'This ID already exists. Please use a different ID number.';
+            if (s.includes('phone_exists') || s.includes('contact number already registered')) return 'This contact number is already in use. Please use a different number.';
+            if (s.includes('email_exists') || s.includes('email already registered')) return 'This email is already registered. Please use a different email or sign in.';
+            if (s.includes('missing required fields') || s.includes('email, role')) return 'Please fill in all required fields (email and role).';
+            if (s.includes('profile insert failed') || (s.includes('duplicate') && s.includes('unique'))) return 'This ID or contact number may already be in use. Please use different values.';
+            if (s.includes('invalid email') || s.includes('valid email')) return 'Please enter a valid email address.';
+            // If it already looks short and friendly, use it; otherwise one concise line
+            if (rawMessage.length < 80 && !rawMessage.startsWith('Failed to')) return rawMessage;
+            return 'We couldn\'t register this user. Please check the details and try again.';
+        }
+
+        // Which form field to highlight (by server code — most reliable, e.g. for email)
+        function getRegistrationErrorFieldByCode(code) {
+            if (!code) return null;
+            var c = String(code).toUpperCase();
+            if (c === 'ID_NUMBER_EXISTS') return 'studentNumber';
+            if (c === 'PHONE_EXISTS') return 'contactNumber';
+            if (c === 'EMAIL_EXISTS' || c === 'MISSING_EMAIL') return 'gmail';
+            if (c === 'MISSING_ROLE' || c === 'MISSING_FIELDS') return 'userRole';
+            if (c === 'PROFILE_INSERT_ERROR') return 'studentNumber';
+            return null;
+        }
+        // Which form field to highlight from raw message (fallback)
+        function getRegistrationErrorField(rawMessage) {
+            if (!rawMessage) return null;
+            var s = String(rawMessage).toLowerCase();
+            if (s.includes('id_number_exists') || s.includes('id number already registered')) return 'studentNumber';
+            if (s.includes('phone_exists') || s.includes('contact number already registered')) return 'contactNumber';
+            if (s.includes('email_exists') || s.includes('email already registered') || s.includes('invalid email') || s.includes('valid email')) return 'gmail';
+            if (s.includes('missing required fields') || s.includes('email, role')) return 'userRole';
+            if (s.includes('profile insert failed') || (s.includes('duplicate') && s.includes('unique'))) return 'studentNumber';
+            return null;
+        }
+
+        const REGISTRATION_ERROR_FIELDS = ['studentNumber', 'gmail', 'contactNumber', 'userRole'];
+        const FORM_GROUP_IDS = { studentNumber: 'formGroupStudentNumber', gmail: 'formGroupGmail', contactNumber: 'formGroupContactNumber', userRole: 'formGroupUserRole' };
+
+        function clearFieldErrors() {
+            REGISTRATION_ERROR_FIELDS.forEach(fid => {
+                const el = document.getElementById(fid + 'Error');
+                const group = document.getElementById(FORM_GROUP_IDS[fid]);
+                if (el) { el.textContent = ''; el.classList.remove('field-error-msg'); }
+                if (group) group.classList.remove('has-error');
+            });
+        }
+
+        function setFieldError(fieldId, message) {
+            clearFieldErrors();
+            if (!fieldId || !REGISTRATION_ERROR_FIELDS.includes(fieldId)) return;
+            const group = document.getElementById(FORM_GROUP_IDS[fieldId]);
+            const msgEl = document.getElementById(fieldId + 'Error');
+            const inputEl = document.getElementById(fieldId);
+            if (group) group.classList.add('has-error');
+            if (msgEl) msgEl.textContent = message;
+            if (inputEl) {
+                inputEl.focus({ preventScroll: false });
+                inputEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+        }
+
+        // Show multiple errors at once (ID, email, contact, role) so user sees every field that needs to change
+        function setFieldErrors(errors) {
+            clearFieldErrors();
+            if (!Array.isArray(errors) || errors.length === 0) return;
+            const byField = {};
+            errors.forEach(function (e) {
+                const field = e.field || e.fieldId;
+                if (field && REGISTRATION_ERROR_FIELDS.includes(field)) {
+                    byField[field] = e.message || e.error || 'Please fix this field.';
+                }
+            });
+            Object.keys(byField).forEach(function (fieldId) {
+                const group = document.getElementById(FORM_GROUP_IDS[fieldId]);
+                const msgEl = document.getElementById(fieldId + 'Error');
+                if (group) group.classList.add('has-error');
+                if (msgEl) msgEl.textContent = byField[fieldId];
+            });
+            var firstFieldId = Object.keys(byField)[0];
+            if (firstFieldId) {
+                var inputEl = document.getElementById(firstFieldId);
+                if (inputEl) {
+                    inputEl.focus({ preventScroll: false });
+                    inputEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
+            }
+        }
+
+        // Clear this field's error when user types (so they see it fix as they change)
+        function attachFieldErrorClearing() {
+            REGISTRATION_ERROR_FIELDS.forEach(fid => {
+                const input = document.getElementById(fid);
+                if (!input) return;
+                input.removeEventListener('input', clearOneFieldError);
+                input.removeEventListener('change', clearOneFieldError);
+                input.addEventListener('input', clearOneFieldError);
+                input.addEventListener('change', clearOneFieldError);
+            });
+            function clearOneFieldError(e) {
+                const id = e.target.id;
+                if (!REGISTRATION_ERROR_FIELDS.includes(id)) return;
+                const group = document.getElementById(FORM_GROUP_IDS[id]);
+                const msgEl = document.getElementById(id + 'Error');
+                if (group) group.classList.remove('has-error');
+                if (msgEl) msgEl.textContent = '';
+            }
+        }
+
         // Clear form
         function clearForm() {
+            clearFieldErrors();
             document.getElementById('userRegistrationForm').reset();
             document.getElementById('displayUsername').value = ''; // Clear username display field
             document.getElementById('responderLeaderGroup').style.display = 'none';

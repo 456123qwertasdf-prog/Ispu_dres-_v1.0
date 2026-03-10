@@ -7,23 +7,12 @@
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="css/su-header-shared.css">
     <link rel="stylesheet" href="css/system-status.css">
+    <link rel="stylesheet" href="css/su-sidebar.css">
     <link rel="stylesheet" href="css/su-tour.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
     <script src="https://cdn.jsdelivr.net/npm/supabase@2"></script>
     <script src="js/supabase.js"></script>
     <style>
-        /* ── Sidebar theme ── */
-        .sidebar { background: linear-gradient(180deg, #0f172a 0%, #064e3b 100%) !important; }
-        .nav-item.active { background: rgba(16,185,129,0.2) !important; color: #34d399 !important; border-left: 3px solid #10b981 !important; border-top:none !important; border-right:none !important; border-bottom:none !important; font-weight:600; }
-        .nav-item:hover { background: rgba(16,185,129,0.1) !important; color: #a7f3d0 !important; border-left-color: rgba(16,185,129,0.4) !important; }
-        .status-dot.online { background: #10b981 !important; box-shadow: 0 0 0 3px rgba(16,185,129,0.25) !important; }
-        .user-avatar { background: rgba(16,185,129,0.25) !important; color: #34d399 !important; }
-        .sidebar-header { border-bottom: 1px solid rgba(16,185,129,0.15) !important; }
-        .system-status { padding: 10px 20px; border-bottom: 1px solid rgba(16,185,129,0.15); }
-        .su-role-badge { display:inline-flex; align-items:center; gap:4px; font-size:0.65rem; font-weight:700; letter-spacing:0.08em; text-transform:uppercase; background:rgba(16,185,129,0.2); color:#34d399; border:1px solid rgba(16,185,129,0.4); border-radius:9999px; padding:2px 8px; margin-top:4px; }
-        .su-logout-btn { width:100%; padding:0.75rem 1rem; background:rgba(239,68,68,0.1); border:1px solid rgba(239,68,68,0.3); color:#fca5a5; border-radius:8px; font-size:0.875rem; font-weight:500; cursor:pointer; transition:all 0.2s; display:flex; align-items:center; gap:0.5rem; }
-        .su-logout-btn:hover { background:#ef4444 !important; border-color:#ef4444 !important; color:white !important; }
-
         /* Page header */
         .sos-header {
             background: linear-gradient(135deg, #0f172a 0%, #064e3b 100%);
@@ -177,15 +166,6 @@
         .sos-map-btn { display:inline-flex; align-items:center; gap:0.5rem; margin-top:1rem; padding:0.6rem 1.2rem; background:linear-gradient(135deg,#3b82f6,#1d4ed8); color:white; border-radius:10px; text-decoration:none; font-size:0.875rem; font-weight:700; transition:filter 0.2s; }
         .sos-map-btn:hover { filter:brightness(1.1); }
 
-        /* Logout modal */
-        .logout-modal { position:fixed; inset:0; z-index:9999; display:flex; align-items:center; justify-content:center; }
-        .logout-modal.hidden { display:none; }
-        .logout-overlay { position:absolute; inset:0; background:rgba(0,0,0,0.45); }
-        .logout-box { position:relative; background:white; border-radius:16px; padding:2rem; width:90%; max-width:340px; text-align:center; box-shadow:0 20px 40px rgba(0,0,0,0.2); }
-        .logout-box h3 { margin:0 0 0.5rem; font-size:1.15rem; font-weight:700; color:#111827; }
-        .logout-box p { margin:0 0 1.5rem; color:#6b7280; font-size:0.875rem; }
-        .logout-btns { display:flex; gap:0.75rem; }
-        .logout-btns button { flex:1; padding:0.6rem; border-radius:8px; border:none; font-size:0.9rem; font-weight:600; cursor:pointer; }
     </style>
 </head>
 <body>
@@ -379,16 +359,16 @@
     </div>
 </div>
 
-<!-- Logout Modal -->
+<!-- Logout Modal (styled by su-sidebar.css) -->
 <div id="logoutModal" class="logout-modal hidden">
-    <div class="logout-overlay" onclick="closeLogoutModal()"></div>
-    <div class="logout-box">
-        <i class="bi bi-box-arrow-right" style="font-size:2rem;color:#ef4444;display:block;margin-bottom:0.75rem;"></i>
-        <h3>Confirm Logout</h3>
-        <p>Are you sure you want to logout?</p>
-        <div class="logout-btns">
-            <button onclick="closeLogoutModal()" style="background:#f3f4f6;color:#374151;">Cancel</button>
-            <button onclick="confirmLogout()" style="background:#ef4444;color:white;">Logout</button>
+    <div class="logout-modal-overlay" onclick="closeLogoutModal()"></div>
+    <div class="logout-modal-content">
+        <div class="logout-modal-icon"><i class="bi bi-box-arrow-right"></i></div>
+        <h3 class="logout-modal-title">Confirm Logout</h3>
+        <p class="logout-modal-message">Are you sure you want to log out of the system?</p>
+        <div class="logout-modal-buttons">
+            <button class="logout-modal-btn cancel" onclick="closeLogoutModal()"><i class="bi bi-x-circle"></i> Cancel</button>
+            <button class="logout-modal-btn confirm" onclick="confirmLogout()"><i class="bi bi-box-arrow-right"></i> Logout</button>
         </div>
     </div>
 </div>

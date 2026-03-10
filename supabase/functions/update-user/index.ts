@@ -56,6 +56,31 @@ serve(async (req) => {
       SERVICE_ROLE
     )
 
+    // Collect all validation errors (same shape as create-user so frontend can show every field)
+    const errors: { code: string; field: string; message: string }[] = []
+    if (studentNumber !== undefined && studentNumber !== null && String(studentNumber).trim() !== '') {
+      const sn = String(studentNumber).trim()
+      const { data: existing } = await supabase.from('user_profiles').select('student_number').neq('user_id', userId).not('student_number', 'is', null)
+      const taken = (existing ?? []).some((r: any) => r.student_number && String(r.student_number).trim() === sn)
+      if (taken) {
+        errors.push({ code: 'ID_NUMBER_EXISTS', field: 'studentNumber', message: 'This ID already exists. Please use a different ID number.' })
+      }
+    }
+    if (phone !== undefined && phone !== null && String(phone).trim() !== '') {
+      const ph = String(phone).trim().replace(/\s+/g, '')
+      const { data: allPhones } = await supabase.from('user_profiles').select('phone').neq('user_id', userId).not('phone', 'is', null)
+      const taken = (allPhones ?? []).some((r: any) => r.phone && String(r.phone).trim().replace(/\s+/g, '') === ph)
+      if (taken) {
+        errors.push({ code: 'PHONE_EXISTS', field: 'contactNumber', message: 'This contact number is already in use. Please use a different number.' })
+      }
+    }
+    if (errors.length > 0) {
+      return new Response(
+        JSON.stringify({ errors }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
     // Update auth user only if fields provided (skip on pure archive/restore)
     const displayName = `${firstName ?? ''} ${lastName ?? ''}`.trim()
     const typesArr = Array.isArray(userTypes) && userTypes.length ? userTypes : (userType ? [userType] : null)
@@ -83,9 +108,14 @@ serve(async (req) => {
       const { data, error: authErr } = await supabase.auth.admin.updateUserById(userId, authUpdate)
       authRes = data
       if (authErr) {
+        const msg = authErr.message || ''
+        const isDuplicate = /already registered|already exists|duplicate/i.test(msg)
+        const errList = isDuplicate
+          ? [{ code: 'EMAIL_EXISTS', field: 'gmail', message: 'This email is already registered. Please use a different email or sign in.' }]
+          : [{ code: 'AUTH_ERROR', field: 'gmail', message: msg }]
         return new Response(
-          JSON.stringify({ error: 'Failed to update auth user', details: authErr.message }),
-          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          JSON.stringify({ errors: errList }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         )
       }
     }

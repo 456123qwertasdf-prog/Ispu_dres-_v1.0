@@ -941,26 +941,25 @@
             }
         }
         
-        /* Modern Header Card for Admin Dashboard */
-        /* ── Modern minimalist admin dashboard (no super-user green/teal) ── */
+        /* Modern Header Card for Admin Dashboard — clean white card with left accent (like Map View header) */
         .main-content { background: #f1f5f9; min-height: 100vh; }
         .admin-section.active { padding: 1.5rem; }
 
         .admin-section .card:first-child {
-            border-radius: 14px;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
-            border: 1px solid rgba(0, 0, 0, 0.04);
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
+            border: 1px solid rgba(0, 0, 0, 0.06);
             margin-bottom: 1.5rem;
             overflow: hidden;
             background: white;
         }
         
         .admin-section .card:first-child .card-header {
-            background: linear-gradient(135deg, #0f172a 0%, #1e3a8a 100%);
+            background: white;
             border-bottom: none;
-            padding: 1.25rem 1.75rem;
+            padding: 1.25rem 1.5rem 1.25rem 1.25rem;
             position: relative;
-            border-left: 4px solid #60a5fa;
+            border-left: 4px solid #475569;
         }
         
         .admin-section .card:first-child .card-header::after {
@@ -968,9 +967,9 @@
         }
         
         .admin-section .card:first-child .card-title {
-            font-size: 1.35rem;
+            font-size: 1.5rem;
             font-weight: 700;
-            color: #fff;
+            color: #1e293b;
             margin: 0;
             letter-spacing: -0.02em;
             display: flex;
@@ -979,16 +978,16 @@
         }
         
         .admin-section .card:first-child .card-title i {
-            color: #93c5fd;
+            color: #475569;
             font-size: 1.25rem;
         }
         
         .admin-section .card:first-child .card-subtitle {
-            font-size: 0.8125rem;
-            color: rgba(255, 255, 255, 0.75);
+            font-size: 0.9375rem;
+            color: #64748b;
             margin: 0.35rem 0 0 0;
             font-weight: 400;
-            line-height: 1.4;
+            line-height: 1.5;
         }
     </style>
     <!-- Leaflet CSS -->
@@ -1060,7 +1059,7 @@
                     <div class="user-avatar" style="width: 40px; height: 40px; background: rgba(255, 255, 255, 0.2); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 1.125rem;">A</div>
                     <div class="user-details">
                         <h4 style="margin: 0; font-size: 0.875rem; font-weight: 600; color: white;">Admin User</h4>
-                        <p style="margin: 0; font-size: 0.75rem; color: rgba(255, 255, 255, 0.7);">LSPU Emergency</p>
+                        <p style="margin: 0; font-size: 0.75rem; color: rgba(255, 255, 255, 0.7);">Kapiyu Command</p>
                     </div>
                 </div>
                 <button class="logout-btn" onclick="showLogoutConfirm()" style="width: 100%;padding: 0.75rem 1rem;background: rgba(239, 68, 68, 0.1);border: 1px solid rgba(239, 68, 68, 0.3);color: #fca5a5;border-radius: 8px;font-size: 0.875rem;font-weight: 500;cursor: pointer;transition: all 0.2s ease;display: flex;align-items: center;gap: 0.5rem;margin-left: 0px;">
@@ -1079,7 +1078,7 @@
                 <!-- Dashboard Header (modern minimalist, admin blue) -->
                 <div class="card">
                     <div class="card-header">
-                        <h2 class="card-title"><i class="bi bi-speedometer2"></i> Admin Dashboard</h2>
+                        <h2 class="card-title">Admin Dashboard</h2>
                         <p class="card-subtitle">Real-time monitoring and response management</p>
                     </div>
                 </div>

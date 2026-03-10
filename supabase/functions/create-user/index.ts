@@ -51,8 +51,11 @@ Deno.serve(async (req) => {
     } = body || {}
 
     if (!email || !role) {
+      const missingErrors: { code: string; field: string; message: string }[] = []
+      if (!email) missingErrors.push({ code: 'MISSING_EMAIL', field: 'gmail', message: 'Please enter an email address.' })
+      if (!role) missingErrors.push({ code: 'MISSING_ROLE', field: 'userRole', message: 'Please select a role.' })
       return new Response(
-        JSON.stringify({ error: 'Missing required fields: email, role' }),
+        JSON.stringify({ errors: missingErrors.length ? missingErrors : [{ code: 'MISSING_FIELDS', field: 'userRole', message: 'Please fill in all required fields (email and role).' }] }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
@@ -75,6 +78,31 @@ Deno.serve(async (req) => {
       SERVICE_ROLE
     )
 
+    // Collect all validation errors so frontend can show every field that needs to change (ID, phone, and email at once)
+    const errors: { code: string; field: string; message: string }[] = []
+    const sn = (studentNumber != null && String(studentNumber).trim() !== '') ? String(studentNumber).trim() : null
+    const ph = (phone != null && String(phone).trim() !== '') ? String(phone).trim().replace(/\s+/g, '') : null
+    const { data: uniqueCheck } = await supabase.rpc('check_signup_unique', { p_student_number: sn || '', p_phone: ph || '' })
+    if (uniqueCheck?.id_number_taken) {
+      errors.push({ code: 'ID_NUMBER_EXISTS', field: 'studentNumber', message: 'This ID already exists. Please use a different ID number.' })
+    }
+    if (uniqueCheck?.phone_taken) {
+      errors.push({ code: 'PHONE_EXISTS', field: 'contactNumber', message: 'This contact number is already in use. Please use a different number.' })
+    }
+    // Check email in auth.users so we can return ID + phone + email together (don't return early)
+    if (email && String(email).trim() !== '') {
+      const { data: emailTaken } = await supabase.rpc('check_signup_email_exists', { p_email: String(email).trim() })
+      if (emailTaken) {
+        errors.push({ code: 'EMAIL_EXISTS', field: 'gmail', message: 'This email is already registered. Please use a different email or sign in.' })
+      }
+    }
+    if (errors.length > 0) {
+      return new Response(
+        JSON.stringify({ errors }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
     const typesArr = Array.isArray(userTypes) && userTypes.length ? userTypes : (userType ? [userType] : ['student'])
     const displayName = `${firstName ?? ''} ${lastName ?? ''}`.trim()
     const { data: created, error: createErr } = await supabase.auth.admin.createUser({
@@ -96,13 +124,12 @@ Deno.serve(async (req) => {
     if (createErr || !created?.user) {
       const details = createErr?.message || 'Unknown'
       const isDuplicate = /already registered|already exists|duplicate/i.test(details)
+      const errList = isDuplicate
+        ? [{ code: 'EMAIL_EXISTS', field: 'gmail', message: 'This email is already registered. Please use a different email or sign in.' }]
+        : [{ code: 'AUTH_ERROR', field: 'gmail', message: details }]
       return new Response(
-        JSON.stringify({
-          error: isDuplicate ? 'Email already registered' : 'Failed to create auth user',
-          details,
-          code: isDuplicate ? 'EMAIL_EXISTS' : 'AUTH_ERROR'
-        }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        JSON.stringify({ errors: errList }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
 
@@ -124,17 +151,16 @@ Deno.serve(async (req) => {
       .single()
 
     if (profileErr) {
+      const isDuplicate = /duplicate|unique|already exists/i.test(profileErr.message)
+      const errList = isDuplicate
+        ? [
+            { code: 'ID_NUMBER_EXISTS', field: 'studentNumber', message: 'This ID or contact may already be in use. Please use different values.' },
+            { code: 'PHONE_EXISTS', field: 'contactNumber', message: 'This contact number or ID may already be in use. Please use different values.' }
+          ]
+        : [{ code: 'PROFILE_INSERT_ERROR', field: 'studentNumber', message: profileErr.message }]
       return new Response(
-        JSON.stringify({
-          error: 'User created but profile insert failed',
-          details: profileErr.message,
-          userId,
-          code: 'PROFILE_INSERT_ERROR',
-          hint: /duplicate|unique|already exists/i.test(profileErr.message)
-            ? 'ID number or email may already be in use.'
-            : undefined
-        }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        JSON.stringify({ errors: errList }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
 

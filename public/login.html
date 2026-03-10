@@ -154,6 +154,71 @@
             z-index: 10;
             width: 100%;
             max-width: 440px;
+            min-height: 340px;
+        }
+
+        /* Login page loading - modern card, smooth entrance and exit */
+        .login-page-loading {
+            position: absolute;
+            inset: 0;
+            background: rgba(255, 255, 255, 0.98);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            border-radius: var(--login-radius);
+            padding: 2.5rem 2rem;
+            box-shadow: var(--login-shadow);
+            border: 1px solid rgba(255, 255, 255, 0.6);
+            min-height: 320px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            animation: login-loading-in 0.45s cubic-bezier(0.34, 1.2, 0.64, 1) forwards;
+            transition: opacity 0.35s ease-out, visibility 0.35s ease-out;
+        }
+        .login-page-loading.hidden {
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+        }
+        .login-page-loading-inner {
+            text-align: center;
+        }
+        .login-page-loading .login-page-spinner {
+            width: 44px;
+            height: 44px;
+            margin: 0 auto 1.25rem;
+            border: 3px solid rgba(59, 130, 246, 0.2);
+            border-top-color: #3b82f6;
+            border-radius: 50%;
+            animation: login-page-spin 0.75s linear infinite;
+        }
+        @keyframes login-page-spin { to { transform: rotate(360deg); } }
+        .login-page-loading-text {
+            font-size: 1.125rem;
+            font-weight: 600;
+            color: #0f172a;
+            margin: 0 0 0.25rem 0;
+            letter-spacing: -0.02em;
+        }
+        .login-page-loading-subtext {
+            font-size: 0.875rem;
+            color: #64748b;
+            margin: 0;
+            line-height: 1.5;
+        }
+        @keyframes login-loading-in {
+            from { opacity: 0; transform: translateY(12px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        /* Smooth form reveal after loading */
+        #loginFormContainer {
+            opacity: 0;
+            transform: translateY(10px);
+            transition: opacity 0.4s ease-out, transform 0.4s cubic-bezier(0.34, 1.2, 0.64, 1);
+        }
+        #loginFormContainer.reveal {
+            opacity: 1;
+            transform: translateY(0);
         }
         
         .form-container {
@@ -1245,7 +1310,14 @@
 
         <!-- Centered Form Container -->
         <div class="form-panel">
-            <div class="form-container">
+            <div id="loginPageLoading" class="login-page-loading" aria-live="polite" aria-label="Loading">
+                <div class="login-page-loading-inner">
+                    <div class="login-page-spinner" role="status" aria-hidden="true"></div>
+                    <p class="login-page-loading-text">Preparing sign-in</p>
+                    <p class="login-page-loading-subtext">Checking your session… one moment</p>
+                </div>
+            </div>
+            <div id="loginFormContainer" class="form-container hidden">
                 <!-- Verification link error banner (expired/invalid) -->
                 <div id="verificationErrorBanner" class="verification-error-banner hidden" role="alert">
                     <div class="verification-error-icon"><i class="bi bi-exclamation-triangle-fill"></i></div>
@@ -1399,6 +1471,16 @@
                         </div>
                         
                         <div class="form-group">
+                            <div class="input-icon"><i class="bi bi-card-text"></i></div>
+                            <input type="text" id="signupIdNumber" class="form-input" placeholder="ID Number" required autocomplete="off">
+                        </div>
+                        
+                        <div class="form-group">
+                            <div class="input-icon"><i class="bi bi-telephone"></i></div>
+                            <input type="tel" id="signupContact" class="form-input" placeholder="Contact Number" required>
+                        </div>
+                        
+                        <div class="form-group">
                             <div class="input-icon"><i class="bi bi-envelope"></i></div>
                             <input type="email" id="signupEmail" class="form-input" placeholder="Email" required>
                         </div>
@@ -1471,10 +1553,10 @@
     <script>
         // Initialize login system
         document.addEventListener('DOMContentLoaded', async () => {
-            // Wait for system initialization
+            // Wait for system initialization (and checkAuth) so we only show form when ready
             await new Promise(resolve => {
                 const checkInit = () => {
-                    if (emergencySystem.isInitialized) {
+                    if (typeof emergencySystem !== 'undefined' && emergencySystem.isInitialized) {
                         resolve();
                     } else {
                         setTimeout(checkInit, 100);
@@ -1482,6 +1564,22 @@
                 };
                 checkInit();
             });
+
+            // If already logged in, redirect to dashboard (no delay)
+            if (emergencySystem.user) {
+                const userRole = emergencySystem.user?.user_metadata?.role || 'citizen';
+                redirectToDashboard(userRole);
+                return;
+            }
+
+            // System ready: smooth transition from loading to form
+            const loadingEl = document.getElementById('loginPageLoading');
+            const formContainerEl = document.getElementById('loginFormContainer');
+            if (loadingEl) loadingEl.classList.add('hidden');
+            if (formContainerEl) {
+                formContainerEl.classList.remove('hidden');
+                requestAnimationFrame(() => requestAnimationFrame(() => formContainerEl.classList.add('reveal')));
+            }
 
             // Check if this is a password reset redirect (hash tokens or PKCE code)
             const urlParams = new URLSearchParams(window.location.search);
@@ -1693,21 +1791,44 @@
                 // Sign in with Supabase
                 await emergencySystem.signIn(email, password);
                 
-                // Get user role from metadata
-                const userRole = emergencySystem.user?.user_metadata?.role || 'citizen';
+                // Wait for session to be available so dashboard load sees user (avoids race)
+                const sessionReady = await waitForSessionReady(2500);
+                if (!sessionReady) {
+                    console.warn('Session not yet in storage, redirecting anyway');
+                }
                 
-                // Redirect based on actual user role
+                const userRole = emergencySystem.user?.user_metadata?.role || 'citizen';
                 redirectToDashboard(userRole);
                 
             } catch (error) {
                 console.error('Login failed:', error);
                 emergencySystem.showError('Login failed: ' + error.message);
             } finally {
-                // Hide loading state
                 submitBtn.disabled = false;
                 submitText.classList.remove('hidden');
                 submitLoading.classList.add('hidden');
             }
+        }
+
+        function waitForSessionReady(maxMs) {
+            return new Promise((resolve) => {
+                const start = Date.now();
+                const check = async () => {
+                    try {
+                        const { data: { session } } = await emergencySystem.supabase.auth.getSession();
+                        if (session) {
+                            resolve(true);
+                            return;
+                        }
+                    } catch (_) {}
+                    if (Date.now() - start >= maxMs) {
+                        resolve(false);
+                        return;
+                    }
+                    setTimeout(check, 150);
+                };
+                check();
+            });
         }
 
         // Password validation functions
@@ -1846,10 +1967,32 @@
                 signupText.classList.add('hidden');
                 signupLoading.classList.remove('hidden');
                 
-                const name = document.getElementById('signupName').value;
-                const email = document.getElementById('signupEmail').value;
+                const name = document.getElementById('signupName').value.trim();
+                const idNumber = document.getElementById('signupIdNumber').value.trim();
+                const contactNumber = document.getElementById('signupContact').value.trim().replace(/\s+/g, '');
+                const email = document.getElementById('signupEmail').value.trim();
                 const password = document.getElementById('signupPassword').value;
                 const confirmPassword = document.getElementById('signupConfirmPassword').value;
+
+                if (!idNumber) {
+                    emergencySystem.showError('Please enter your ID number.');
+                    return;
+                }
+                if (!contactNumber) {
+                    emergencySystem.showError('Please enter your contact number.');
+                    return;
+                }
+
+                // Check uniqueness (ID number, contact number; email is enforced by Supabase on signUp)
+                const uniqueness = await emergencySystem.checkSignupUniqueness(idNumber, contactNumber);
+                if (uniqueness.id_number_taken) {
+                    emergencySystem.showError('This ID number is already registered. Please use a different ID number.');
+                    return;
+                }
+                if (uniqueness.phone_taken) {
+                    emergencySystem.showError('This contact number is already registered. Please use a different contact number.');
+                    return;
+                }
 
                 // Validate password strength
                 const passwordValidation = validatePassword(password);
@@ -1866,14 +2009,21 @@
                 // Sign up with Supabase - default role to 'citizen' like mobile app
                 await emergencySystem.signUp(email, password, {
                     full_name: name,
-                    role: 'citizen'
+                    role: 'citizen',
+                    student_number: idNumber,
+                    phone: contactNumber
                 });
                 
                 emergencySystem.showSuccess('Account created! Please check your email to verify your account.');
                 
             } catch (error) {
                 console.error('Sign up failed:', error);
-                emergencySystem.showError('Sign up failed: ' + error.message);
+                const msg = (error && error.message) ? String(error.message) : 'Sign up failed.';
+                if (/already registered|already exists|duplicate|email.*taken/i.test(msg)) {
+                    emergencySystem.showError('This email is already registered. Please sign in or use a different email.');
+                } else {
+                    emergencySystem.showError('Sign up failed: ' + msg);
+                }
             } finally {
                 // Hide loading state
                 submitBtn.disabled = false;

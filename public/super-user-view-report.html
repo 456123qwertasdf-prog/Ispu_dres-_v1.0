@@ -7,24 +7,13 @@
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="css/su-header-shared.css">
     <link rel="stylesheet" href="css/system-status.css">
+    <link rel="stylesheet" href="css/su-sidebar.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/supabase@2"></script>
     <script src="js/supabase.js"></script>
     <style>
-        /* ── Super-User Sidebar Theme ── */
-        .sidebar { background: linear-gradient(180deg, #0f172a 0%, #064e3b 100%) !important; }
-        .nav-item.active { background: rgba(16,185,129,0.2) !important; color: #34d399 !important; border-left: 3px solid #10b981 !important; border-top:none !important; border-right:none !important; border-bottom:none !important; font-weight:600; }
-        .nav-item:hover { background: rgba(16,185,129,0.1) !important; color: #a7f3d0 !important; border-left-color: rgba(16,185,129,0.4) !important; }
-        .status-dot.online { background: #10b981 !important; box-shadow: 0 0 0 3px rgba(16,185,129,0.25) !important; }
-        .user-avatar { background: rgba(16,185,129,0.25) !important; color: #34d399 !important; }
-        .sidebar-header { border-bottom: 1px solid rgba(16,185,129,0.15) !important; }
-        .system-status { padding: 10px 20px; border-bottom: 1px solid rgba(16,185,129,0.15); }
-        .su-role-badge { display:inline-flex; align-items:center; gap:4px; font-size:0.65rem; font-weight:700; letter-spacing:0.08em; text-transform:uppercase; background:rgba(16,185,129,0.2); color:#34d399; border:1px solid rgba(16,185,129,0.4); border-radius:9999px; padding:2px 8px; margin-top:4px; }
-        .su-logout-btn { width:100%; padding:0.75rem 1rem; background:rgba(239,68,68,0.1); border:1px solid rgba(239,68,68,0.3); color:#fca5a5; border-radius:8px; font-size:0.875rem; font-weight:500; cursor:pointer; transition:all 0.2s; display:flex; align-items:center; gap:0.5rem; }
-        .su-logout-btn:hover { background:#EF4444 !important; border-color:#EF4444 !important; color:white !important; }
-
         /* ── Page header ── */
         .vr-header { background:linear-gradient(135deg,#0f172a 0%,#064e3b 100%); border-radius:20px; padding:1.75rem 2rem; margin-bottom:1.75rem; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:1rem; box-shadow:0 8px 32px rgba(0,0,0,0.18); position:relative; overflow:hidden; }
         .vr-header::before { content:''; position:absolute; top:-40px; right:-40px; width:160px; height:160px; background:rgba(16,185,129,0.12); border-radius:50%; }

@@ -329,6 +329,34 @@ class EmergencyResponseSystem {
     }
   }
 
+  /**
+   * Check if ID number (student_number) or contact number (phone) is already used.
+   * Call before signUp to enforce uniqueness. Email uniqueness is enforced by Supabase Auth on signUp.
+   * @param {string} idNumber - Student/ID number
+   * @param {string} phone - Contact number (will be normalized: trim, no spaces)
+   * @returns {{ id_number_taken: boolean, phone_taken: boolean }}
+   */
+  async checkSignupUniqueness(idNumber, phone) {
+    const normalizedPhone = (phone || '').trim().replace(/\s+/g, '');
+    try {
+      const { data, error } = await this.supabase.rpc('check_signup_unique', {
+        p_student_number: (idNumber || '').trim() || null,
+        p_phone: normalizedPhone || null
+      });
+      if (error) {
+        console.warn('check_signup_unique RPC failed, assuming available:', error.message);
+        return { id_number_taken: false, phone_taken: false };
+      }
+      return {
+        id_number_taken: !!data?.id_number_taken,
+        phone_taken: !!data?.phone_taken
+      };
+    } catch (err) {
+      console.warn('checkSignupUniqueness error:', err);
+      return { id_number_taken: false, phone_taken: false };
+    }
+  }
+
   async signUp(email, password, userData = {}) {
     try {
       const { data, error } = await this.supabase.auth.signUp({
@@ -368,36 +396,115 @@ class EmergencyResponseSystem {
     }
   }
 
+  /**
+   * Modern full-page "Signing out..." overlay: blur backdrop, smooth fade, card-style content.
+   */
+  showSignOutOverlay() {
+    if (document.getElementById('es-signout-overlay')) return;
+    const overlay = document.createElement('div');
+    overlay.id = 'es-signout-overlay';
+    overlay.setAttribute('aria-live', 'polite');
+    overlay.setAttribute('aria-label', 'Signing out');
+    overlay.className = 'es-signout-overlay';
+    overlay.innerHTML = `
+      <div class="es-signout-overlay-backdrop"></div>
+      <div class="es-signout-overlay-card">
+        <div class="es-signout-overlay-spinner-wrap">
+          <div class="es-signout-overlay-spinner" role="status" aria-hidden="true"></div>
+        </div>
+        <h2 class="es-signout-overlay-title">Signing out</h2>
+        <p class="es-signout-overlay-desc">Securing your session. You can sign in with another account in a moment.</p>
+      </div>
+    `;
+    const style = document.getElementById('es-signout-overlay-style') || (() => {
+      const s = document.createElement('style');
+      s.id = 'es-signout-overlay-style';
+      s.textContent = `
+        .es-signout-overlay {
+          position: fixed; inset: 0; z-index: 999999;
+          display: flex; align-items: center; justify-content: center;
+          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Inter', sans-serif;
+          opacity: 0; animation: es-signout-fadeIn 0.35s ease-out forwards;
+        }
+        @keyframes es-signout-fadeIn { to { opacity: 1; } }
+        .es-signout-overlay-backdrop {
+          position: absolute; inset: 0;
+          background: rgba(15, 23, 42, 0.6);
+          backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+        }
+        .es-signout-overlay-card {
+          position: relative; z-index: 1;
+          background: rgba(255, 255, 255, 0.98);
+          border-radius: 20px; padding: 2rem 2.25rem;
+          box-shadow: 0 25px 50px -12px rgba(0,0,0,0.2), 0 0 0 1px rgba(0,0,0,0.06);
+          text-align: center; min-width: 280px; max-width: 90vw;
+          animation: es-signout-cardIn 0.4s cubic-bezier(0.34, 1.2, 0.64, 1) forwards;
+        }
+        @keyframes es-signout-cardIn {
+          from { opacity: 0; transform: scale(0.96) translateY(8px); }
+          to { opacity: 1; transform: scale(1) translateY(0); }
+        }
+        .es-signout-overlay-spinner-wrap { margin-bottom: 1.25rem; }
+        .es-signout-overlay-spinner {
+          width: 44px; height: 44px; margin: 0 auto;
+          border: 3px solid rgba(59, 130, 246, 0.2);
+          border-top-color: #3b82f6;
+          border-radius: 50%;
+          animation: es-signout-spin 0.75s linear infinite;
+        }
+        @keyframes es-signout-spin { to { transform: rotate(360deg); } }
+        @keyframes es-signout-fadeOut { to { opacity: 0; } }
+        .es-signout-overlay-title {
+          font-size: 1.25rem; font-weight: 600; color: #0f172a;
+          margin: 0 0 0.375rem 0; letter-spacing: -0.02em;
+        }
+        .es-signout-overlay-desc {
+          font-size: 0.875rem; color: #64748b; line-height: 1.5; margin: 0;
+        }
+      `;
+      document.head.appendChild(s);
+      return s;
+    })();
+    if (!document.getElementById('es-signout-overlay-style')) document.head.appendChild(style);
+    document.body.appendChild(overlay);
+  }
+
+  removeSignOutOverlay() {
+    const el = document.getElementById('es-signout-overlay');
+    if (el) {
+      el.style.animation = 'es-signout-fadeOut 0.25s ease-out forwards';
+      setTimeout(() => el.remove(), 260);
+    }
+  }
+
+  async waitForSessionCleared(maxMs = 3000) {
+    const start = Date.now();
+    while (Date.now() - start < maxMs) {
+      const { data: { session } } = await this.supabase.auth.getSession();
+      if (!session) return true;
+      await new Promise(r => setTimeout(r, 150));
+    }
+    return false;
+  }
+
   async signOut() {
+    this.showSignOutOverlay();
     try {
       console.log('🚪 Signing out...');
-      
       const { error } = await this.supabase.auth.signOut();
       if (error) throw error;
-
       this.user = null;
       this.updateUIForGuestUser();
-      
-      console.log('✅ Successfully signed out');
-      this.showSuccess('Successfully signed out!');
-      
-      // Redirect to login page after successful sign out
-      setTimeout(() => {
-        console.log('🔄 Redirecting to login page...');
-        window.location.href = 'login.html';
-      }, 1000); // Small delay to show success message
-      
+      await this.waitForSessionCleared(3000);
+      console.log('✅ Sign out complete, system ready for next sign-in');
     } catch (error) {
       console.error('❌ Sign out failed:', error);
       this.showError('Sign out failed: ' + error.message);
-      
-      // Even if sign out fails, redirect to login page
-      setTimeout(() => {
-        console.log('🔄 Redirecting to login page despite error...');
-        window.location.href = 'login.html';
-      }, 2000);
-      
-      throw error;
+      await this.waitForSessionCleared(2000);
+    } finally {
+      this.removeSignOutOverlay();
+      console.log('🔄 Redirecting to login page...');
+      window.location.href = 'login.html';
     }
   }
 
@@ -1129,40 +1236,42 @@ class EmergencyResponseSystem {
           z-index: 99999;
           display: flex;
           flex-direction: column;
-          gap: 0.5rem;
+          gap: 0.625rem;
           pointer-events: none;
         }
         .es-toast {
           display: flex;
           align-items: flex-start;
-          gap: 0.75rem;
-          background: #ffffff;
-          border-radius: 12px;
-          padding: 0.875rem 1rem 1.125rem 1rem;
-          box-shadow: 0 8px 32px rgba(0,0,0,0.12), 0 0 0 1px rgba(0,0,0,0.06);
+          gap: 0.875rem;
+          background: rgba(255, 255, 255, 0.95);
+          backdrop-filter: blur(12px);
+          -webkit-backdrop-filter: blur(12px);
+          border-radius: 16px;
+          padding: 1rem 1.125rem 1.25rem 1.125rem;
+          box-shadow: 0 4px 24px rgba(0,0,0,0.08), 0 0 0 1px rgba(0,0,0,0.04);
           min-width: 300px;
-          max-width: 380px;
+          max-width: 400px;
           pointer-events: all;
-          transform: translateX(calc(100% + 1.5rem));
+          transform: translateX(calc(100% + 2rem)) scale(0.96);
           opacity: 0;
-          transition: transform 0.38s cubic-bezier(0.34, 1.4, 0.64, 1), opacity 0.3s ease;
+          transition: transform 0.4s cubic-bezier(0.21, 0.47, 0.32, 1), opacity 0.35s ease;
           position: relative;
           overflow: hidden;
-          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', sans-serif;
+          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', system-ui, sans-serif;
         }
         .es-toast.es-show {
-          transform: translateX(0);
+          transform: translateX(0) scale(1);
           opacity: 1;
         }
         .es-toast.es-hide {
-          transform: translateX(calc(100% + 1.5rem));
+          transform: translateX(calc(100% + 2rem)) scale(0.96);
           opacity: 0;
           transition: transform 0.3s ease, opacity 0.25s ease;
         }
         .es-toast-icon {
-          width: 34px;
-          height: 34px;
-          border-radius: 8px;
+          width: 36px;
+          height: 36px;
+          border-radius: 10px;
           display: flex;
           align-items: center;
           justify-content: center;
@@ -1171,22 +1280,24 @@ class EmergencyResponseSystem {
           flex-shrink: 0;
           line-height: 1;
         }
-        .es-toast-success .es-toast-icon { background: #f0fdf4; color: #059669; }
-        .es-toast-error   .es-toast-icon { background: #fef2f2; color: #dc2626; }
+        .es-toast-success .es-toast-icon { background: #ecfdf5; color: #059669; }
+        .es-toast-error   .es-toast-icon { background: #fef2f2; color: #e11d48; }
         .es-toast-warning .es-toast-icon { background: #fffbeb; color: #d97706; }
         .es-toast-info    .es-toast-icon { background: #eff6ff; color: #2563eb; }
-        .es-toast-body { flex: 1; min-width: 0; padding-top: 0.1rem; }
+        .es-toast-body { flex: 1; min-width: 0; padding-top: 0.05rem; }
         .es-toast-title {
-          font-size: 0.8125rem;
-          font-weight: 700;
-          color: #0f172a;
-          margin: 0 0 0.2rem 0;
+          font-size: 0.75rem;
+          font-weight: 600;
+          letter-spacing: 0.02em;
+          text-transform: uppercase;
+          color: #64748b;
+          margin: 0 0 0.35rem 0;
           line-height: 1.3;
         }
         .es-toast-msg {
-          font-size: 0.8125rem;
-          color: #475569;
-          line-height: 1.55;
+          font-size: 0.9375rem;
+          color: #334155;
+          line-height: 1.5;
           margin: 0;
           word-break: break-word;
         }
@@ -1196,30 +1307,31 @@ class EmergencyResponseSystem {
           color: #94a3b8;
           cursor: pointer;
           padding: 0;
-          font-size: 1.125rem;
-          width: 22px;
-          height: 22px;
+          font-size: 1.25rem;
+          width: 24px;
+          height: 24px;
           display: flex;
           align-items: center;
           justify-content: center;
-          border-radius: 4px;
+          border-radius: 6px;
           flex-shrink: 0;
-          margin-top: 0.05rem;
-          transition: background 0.15s, color 0.15s;
+          margin-top: -0.1rem;
+          transition: background 0.2s, color 0.2s;
           line-height: 1;
         }
-        .es-toast-close:hover { background: #f1f5f9; color: #334155; }
+        .es-toast-close:hover { background: #f1f5f9; color: #475569; }
         .es-toast-bar {
           position: absolute;
           bottom: 0;
           left: 0;
-          height: 3px;
+          height: 2px;
+          border-radius: 0 0 0 16px;
           animation: es-countdown 5s linear forwards;
         }
-        .es-toast-success .es-toast-bar { background: #059669; }
-        .es-toast-error   .es-toast-bar { background: #dc2626; }
-        .es-toast-warning .es-toast-bar { background: #d97706; }
-        .es-toast-info    .es-toast-bar { background: #2563eb; }
+        .es-toast-success .es-toast-bar { background: linear-gradient(90deg, #059669, #10b981); }
+        .es-toast-error   .es-toast-bar { background: linear-gradient(90deg, #e11d48, #f43f5e); }
+        .es-toast-warning .es-toast-bar { background: linear-gradient(90deg, #d97706, #f59e0b); }
+        .es-toast-info    .es-toast-bar { background: linear-gradient(90deg, #2563eb, #3b82f6); }
         @keyframes es-countdown { from { width: 100%; } to { width: 0%; } }
       `;
       document.head.appendChild(style);
@@ -1234,11 +1346,11 @@ class EmergencyResponseSystem {
       document.body.appendChild(container);
     }
 
-    // Config per type
+    // Config per type — friendly titles (no harsh "Error")
     const cfg = {
       success: { icon: '✓', title: 'Success' },
-      error:   { icon: '✕', title: 'Error' },
-      warning: { icon: '!', title: 'Warning' },
+      error:   { icon: '×', title: 'Couldn\'t complete' },
+      warning: { icon: '!', title: 'Heads up' },
       info:    { icon: 'i', title: 'Info' },
     };
     const { icon, title } = cfg[type] || cfg.info;

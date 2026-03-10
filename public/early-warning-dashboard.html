@@ -1075,10 +1075,12 @@
             const description = (weatherData.weather?.[0]?.description || 'Current conditions');
             
             const forecastSummary = weatherData.forecast_summary;
-            // Use forecast data for rain chance (max chance over next 24h)
+            // Use forecast data for rain chance (max chance over next 24h). Backend sends rain_chance as 0-1.
             const maxRainChance = forecastSummary?.next_24h_forecast?.reduce((max, item) => 
-                Math.max(max, item.rain_chance || 0), 0) || 0;
-            const rainChancePercent = Math.round(maxRainChance * 100);
+                Math.max(max, item.rain_chance ?? 0), 0) ?? 0;
+            let rainChancePercent = Math.round(maxRainChance * 100);
+            if (maxRainChance > 1) rainChancePercent = Math.round(maxRainChance);
+            rainChancePercent = Math.min(100, Math.max(0, rainChancePercent));
             // Compute simplified AQI on the frontend using same logic as backend
             const pressure = Math.round(weatherData.main?.pressure || 1013);
             const aqi = calculateSimplifiedAQI(pressure, humidity);
@@ -1278,6 +1280,26 @@
             }
         }
 
+        function formatForecastTime(timeStr) {
+            if (!timeStr) return '--:--';
+            const s = timeStr.toString().trim();
+            const parts = s.match(/^(\d{1,2}):(\d{2})/);
+            if (!parts) return s;
+            const h = parseInt(parts[1], 10);
+            const m = parts[2];
+            const period = h >= 12 ? 'PM' : 'AM';
+            const h12 = h % 12 || 12;
+            return `${h12}:${m} ${period}`;
+        }
+
+        function formatRainChancePercent(rainChance) {
+            let v = Number(rainChance);
+            if (Number.isNaN(v)) return 0;
+            if (v > 1) v = Math.round(v);
+            else v = Math.round(v * 100);
+            return Math.min(100, Math.max(0, v));
+        }
+
         function updateHourlyStrip(forecastSummary) {
             const strip = document.getElementById('hourlyStrip');
             if (!strip) return;
@@ -1288,12 +1310,8 @@
 
             const hours = forecastSummary.next_24h_forecast.slice(0, 6);
             strip.innerHTML = hours.map(item => {
-                const time = new Date(item.time).toLocaleTimeString('en-US', {
-                    hour: '2-digit',
-                    minute: '2-digit',
-                    hour12: true
-                });
-                const rainChance = Math.round((item.rain_chance || 0) * 100);
+                const time = formatForecastTime(item.time);
+                const rainChance = formatRainChancePercent(item.rain_chance);
                 return `
                     <div class="hourly-item">
                         <div class="hourly-time">${time}</div>
@@ -1352,13 +1370,9 @@
             container.innerHTML = `
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-3" style="max-height: 400px; overflow-y: auto; padding-right: 4px;">
                     ${forecast.map(item => {
-                        const time = new Date(item.time).toLocaleTimeString('en-US', { 
-                            hour: '2-digit', 
-                            minute: '2-digit',
-                            hour12: true 
-                        });
-                        const rainChance = Math.round(item.rain_chance * 100);
-                        const rainVolume = item.rain_volume;
+                        const time = formatForecastTime(item.time);
+                        const rainChance = formatRainChancePercent(item.rain_chance);
+                        const rainVolume = item.rain_volume || 0;
                         
                         return `
                             <div class="forecast-card">

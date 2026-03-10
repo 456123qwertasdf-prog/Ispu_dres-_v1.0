@@ -7,6 +7,7 @@
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="css/su-header-shared.css">
     <link rel="stylesheet" href="css/system-status.css">
+    <link rel="stylesheet" href="css/su-sidebar.css">
     <link rel="stylesheet" href="css/su-tour.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
@@ -693,106 +694,24 @@
             width: 90%;
             box-shadow: 0 20px 25px rgba(0, 0, 0, 0.3);
         }
-        .logout-modal {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: 10000;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            animation: fadeIn 0.2s ease;
-        }
-        .logout-modal.hidden {
-            display: none;
-        }
-        .logout-modal-overlay {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.6);
-            backdrop-filter: blur(4px);
-        }
-        .logout-modal-content {
-            position: relative;
-            background: white;
-            border-radius: 16px;
-            padding: 2rem;
-            max-width: 420px;
-            width: 90%;
-            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3), 0 10px 10px -5px rgba(0, 0, 0, 0.2);
-            animation: slideUp 0.3s ease;
-            text-align: center;
-        }
-        .logout-modal-icon {
-            width: 64px;
-            height: 64px;
-            margin: 0 auto 1.5rem;
-            background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border: 3px solid #fca5a5;
-        }
-        .logout-modal-icon i {
-            font-size: 2rem;
-            color: #ef4444;
-        }
-        .logout-modal-title {
-            font-size: 1.5rem;
-            font-weight: 700;
-            color: #111827;
-            margin: 0 0 0.75rem 0;
-        }
-        .logout-modal-message {
-            font-size: 0.9375rem;
-            color: #6b7280;
-            line-height: 1.6;
-            margin: 0 0 1.75rem 0;
-        }
-        .logout-modal-buttons {
-            display: flex;
-            gap: 0.75rem;
-            justify-content: center;
-        }
-        .logout-modal-btn {
-            padding: 0.75rem 1.5rem;
-            border-radius: 8px;
-            font-size: 0.875rem;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            border: 2px solid transparent;
-        }
-        .logout-modal-btn.cancel {
-            background: #f3f4f6;
-            color: #374151;
-            border-color: #e5e7eb;
-        }
-        .logout-modal-btn.cancel:hover {
-            background: #e5e7eb;
-            border-color: #d1d5db;
-            transform: translateY(-1px);
-        }
-        .logout-modal-btn.confirm {
-            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
-            color: white;
-            border-color: #ef4444;
-            box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3);
-        }
-        .logout-modal-btn.confirm:hover {
-            background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
-            transform: translateY(-1px);
-            box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4);
-        }
+        /* Assign Backup Modal */
+        .assign-backup-modal-overlay { position: absolute; inset: 0; background: rgba(0,0,0,0.5); }
+        .assign-backup-modal-content { position: relative; background: white; border-radius: 16px; padding: 1.5rem; max-width: 420px; width: 90vw; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.15); }
+        .assign-backup-modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; }
+        .assign-backup-modal-title { margin: 0; font-size: 1.2rem; font-weight: 700; color: #0f172a; display: flex; align-items: center; gap: 0.5rem; }
+        .assign-backup-modal-title i { color: #10b981; }
+        .assign-backup-modal-close { background: none; border: none; font-size: 1.5rem; color: #64748b; cursor: pointer; padding: 0.25rem; line-height: 1; }
+        .assign-backup-modal-subtitle { margin: 0 0 1rem 0; font-size: 0.875rem; color: #64748b; }
+        .assign-backup-modal-label { display: block; font-size: 0.75rem; font-weight: 600; color: #475569; margin-bottom: 0.35rem; }
+        .assign-backup-modal-select { width: 100%; padding: 0.5rem 0.75rem; font-size: 0.875rem; border: 1px solid #e2e8f0; border-radius: 8px; margin-bottom: 1rem; }
+        .assign-backup-modal-ack-msg { font-size: 0.875rem; color: #64748b; margin: 0 0 1rem 0; }
+        .assign-backup-modal-buttons { display: flex; gap: 0.75rem; flex-wrap: wrap; justify-content: flex-end; margin-top: 1rem; }
+        .assign-backup-modal-btn { padding: 0.5rem 1rem; font-size: 0.875rem; font-weight: 600; border-radius: 8px; cursor: pointer; border: 1px solid #e2e8f0; background: #fff; color: #374151; display: inline-flex; align-items: center; gap: 0.4rem; }
+        .assign-backup-modal-btn.primary { background: linear-gradient(135deg, #10b981, #059669); color: white; border-color: #059669; }
+        .assign-backup-modal-btn.primary:hover { filter: brightness(1.05); transform: translateY(-1px); }
+        .assign-backup-modal-btn.ack { background: #f1f5f9; color: #475569; }
+        .assign-backup-modal-btn.ack:hover { background: #e2e8f0; }
+        .assign-backup-modal-btn.hidden { display: none !important; }
         @keyframes fadeIn {
             from { opacity: 0; }
             to { opacity: 1; }
@@ -867,6 +786,30 @@
             margin: 5px 0;
             font-size: 0.875rem;
         }
+        /* Super User: Assist / Send backup button in responder popup */
+        .map-popup-assist-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            margin-top: 0.5rem;
+            padding: 0.5rem 0.75rem;
+            font-size: 0.8125rem;
+            font-weight: 600;
+            color: #fff;
+            background: linear-gradient(135deg, #059669 0%, #047857 100%);
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            box-shadow: 0 2px 4px rgba(5, 150, 105, 0.3);
+            transition: transform 0.15s, box-shadow 0.15s;
+        }
+        .map-popup-assist-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(5, 150, 105, 0.4);
+        }
+        .map-popup-assist-btn:active {
+            transform: translateY(0);
+        }
         /* Ensure responder markers are always visible and on top */
         .responder-marker {
             z-index: 1000 !important;
@@ -875,17 +818,7 @@
         .leaflet-marker-icon.responder-marker {
             z-index: 1000 !important;
         }
-        /* ── Super-User Sidebar Theme ── */
-        .sidebar { background: linear-gradient(180deg, #0f172a 0%, #064e3b 100%) !important; }
-        .nav-item.active { background: rgba(16,185,129,0.2) !important; color: #34d399 !important; border-left: 3px solid #10b981 !important; border-top: none !important; border-right: none !important; border-bottom: none !important; font-weight: 600; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-        .nav-item:hover { background: rgba(16,185,129,0.1) !important; color: #a7f3d0 !important; border-left-color: rgba(16,185,129,0.4) !important; }
-        .status-dot.online { background: #10b981 !important; box-shadow: 0 0 0 3px rgba(16,185,129,0.25) !important; }
-        .user-avatar { background: rgba(16,185,129,0.25) !important; color: #34d399 !important; }
-        .sidebar-header { border-bottom: 1px solid rgba(16,185,129,0.15) !important; }
-        .system-status { padding: 10px 20px; border-bottom: 1px solid rgba(16,185,129,0.15); }
-        .su-role-badge { display:inline-flex; align-items:center; gap:4px; font-size:0.65rem; font-weight:700; letter-spacing:0.08em; text-transform:uppercase; background:rgba(16,185,129,0.2); color:#34d399; border:1px solid rgba(16,185,129,0.4); border-radius:9999px; padding:2px 8px; margin-top:4px; }
-        .su-logout-btn { width:100%; padding:0.75rem 1rem; background:rgba(239,68,68,0.1); border:1px solid rgba(239,68,68,0.3); color:#fca5a5; border-radius:8px; font-size:0.875rem; font-weight:500; cursor:pointer; transition:all 0.2s ease; display:flex; align-items:center; gap:0.5rem; }
-        .su-logout-btn:hover { background:#EF4444 !important; border-color:#EF4444 !important; color:white !important; }
+        /* ── Map page content header (sidebar/logout from su-sidebar.css) ── */
         .su-content-header { background:linear-gradient(135deg, #0f172a 0%, #064e3b 100%); color:white; padding:1.5rem 2rem; border-radius:16px; box-shadow:0 8px 24px rgba(0,0,0,0.15); border-left:4px solid #10b981; margin-bottom:1.75rem; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:1rem; }
         .su-content-header h1 { margin:0; font-size:1.5rem; font-weight:700; display:flex; align-items:center; gap:0.75rem; }
         .su-content-header h1 i { color:#34d399; }
@@ -1973,12 +1906,14 @@ window.SU_TOUR_STEPS = [
                     }
                     
                     // Update popup content with latest info including assignment
+                    const assistAssignmentId = activeAssignment ? activeAssignment.id : '';
+                    const assistReportId = activeAssignment && activeAssignment.report_id ? activeAssignment.report_id : '';
                     let popupContent = `
                         <div class="map-popup">
                             <h4>${responder.name}</h4>
                             <p><strong>Role:</strong> ${responder.role || 'Responder'}</p>
                             <p><strong>Status:</strong> <span style="color: ${iconColor}; font-weight: bold;">${statusText}</span></p>
-                            ${needsHelp ? '<p><strong style="color: #dc2626;">🆘 NEEDS BACKUP / ASSISTANCE</strong></p>' : ''}
+                            ${needsHelp ? `<p><strong style="color: #dc2626;">🆘 NEEDS BACKUP / ASSISTANCE</strong></p><button type="button" class="map-popup-assist-btn" onclick="openAssignBackupModal('${assistReportId}', '${responderId}', '${assistAssignmentId}')"><i class="bi bi-person-plus-fill"></i> Assign backup</button>` : ''}
                             <p><strong>Available:</strong> ${responder.is_available ? 'Yes' : 'No'}</p>
                             <p><strong>Last Update:</strong> ${responder.updated_at ? new Date(responder.updated_at).toLocaleTimeString() : 'Just now'}</p>
                     `;
@@ -2040,12 +1975,14 @@ window.SU_TOUR_STEPS = [
                     marker.responderId = responderId;
                     marker.assignmentStatus = activeAssignment?.status || 'none';
                     
+                    const assistAssignmentIdNew = activeAssignment ? activeAssignment.id : '';
+                    const assistReportIdNew = activeAssignment && activeAssignment.report_id ? activeAssignment.report_id : '';
                     let popupContent = `
                         <div class="map-popup">
                             <h4>${responder.name}</h4>
                             <p><strong>Role:</strong> ${responder.role || 'Responder'}</p>
                             <p><strong>Status:</strong> <span style="color: ${iconColor}; font-weight: bold;">${statusText}</span></p>
-                            ${needsHelp ? '<p><strong style="color: #dc2626;">🆘 NEEDS BACKUP / ASSISTANCE</strong></p>' : ''}
+                            ${needsHelp ? `<p><strong style="color: #dc2626;">🆘 NEEDS BACKUP / ASSISTANCE</strong></p><button type="button" class="map-popup-assist-btn" onclick="openAssignBackupModal('${assistReportIdNew}', '${responderId}', '${assistAssignmentIdNew}')"><i class="bi bi-person-plus-fill"></i> Assign backup</button>` : ''}
                             <p><strong>Available:</strong> ${responder.is_available ? 'Yes' : 'No'}</p>
                             <p><strong>Last Update:</strong> ${responder.updated_at ? new Date(responder.updated_at).toLocaleTimeString() : 'Just now'}</p>
                     `;
@@ -2129,6 +2066,119 @@ window.SU_TOUR_STEPS = [
                 }
             });
             console.log(`👮 Responder markers actually on map: ${markersOnMap}/${responderMarkers.length}`);
+        }
+
+        // Context for Assign Backup modal
+        let assignBackupContext = { reportId: null, responderId: null, assignmentId: null };
+
+        async function openAssignBackupModal(reportId, responderId, assignmentId) {
+            assignBackupContext = { reportId: (reportId || '').trim(), responderId: (responderId || '').trim(), assignmentId: (assignmentId || '').trim() };
+            const modal = document.getElementById('assignBackupModal');
+            const assignSection = document.getElementById('assignBackupModalAssignSection');
+            const ackOnlySection = document.getElementById('assignBackupModalAckOnlySection');
+            const assignBtn = document.getElementById('assignBackupAssignBtn');
+            const ackOnlyBtn = document.getElementById('assignBackupAckOnlyBtn');
+            const selectEl = document.getElementById('assignBackupResponderSelect');
+            const subtitleEl = document.getElementById('assignBackupModalSubtitle');
+
+            const hasReport = !!assignBackupContext.reportId;
+            if (hasReport) {
+                assignSection.classList.remove('hidden');
+                assignSection.style.display = 'block';
+                ackOnlySection.classList.add('hidden');
+                ackOnlySection.style.display = 'none';
+                assignBtn.classList.remove('hidden');
+                assignBtn.style.display = 'inline-flex';
+                ackOnlyBtn.classList.add('hidden');
+                ackOnlyBtn.style.display = 'none';
+                const responders = await window.emergencySystem.getResponders();
+                const assignedToThisReport = (assignmentsData || []).filter(a => a.report_id === assignBackupContext.reportId).map(a => a.responder_id);
+                const available = (responders || []).filter(r => r.id !== assignBackupContext.responderId && r.is_available !== false && !assignedToThisReport.includes(r.id));
+                subtitleEl.textContent = 'Choose a responder to assign as backup to this incident. They will be notified.';
+                selectEl.innerHTML = '<option value="">— Select responder —</option>' + available.map(r => '<option value="' + r.id + '">' + (r.name || 'Responder') + (r.role ? ' · ' + r.role : '') + '</option>').join('');
+            } else {
+                assignSection.classList.add('hidden');
+                assignSection.style.display = 'none';
+                ackOnlySection.classList.remove('hidden');
+                ackOnlySection.style.display = 'block';
+                assignBtn.classList.add('hidden');
+                assignBtn.style.display = 'none';
+                ackOnlyBtn.classList.remove('hidden');
+                ackOnlyBtn.style.display = 'inline-flex';
+                subtitleEl.textContent = 'This responder has no active incident. You can acknowledge the request to clear the flag.';
+            }
+            modal.classList.remove('hidden');
+            modal.style.display = 'flex';
+        }
+
+        function closeAssignBackupModal() {
+            const modal = document.getElementById('assignBackupModal');
+            modal.classList.add('hidden');
+            modal.style.display = 'none';
+        }
+
+        async function confirmAssignBackup() {
+            const { reportId, responderId, assignmentId } = assignBackupContext;
+            const selectedId = (document.getElementById('assignBackupResponderSelect') || {}).value;
+            if (!selectedId || !reportId || !window.emergencySystem?.supabase) {
+                window.emergencySystem.showError('Please select a responder.');
+                return;
+            }
+            const assignedBy = window.emergencySystem.user?.id;
+            if (!assignedBy) {
+                window.emergencySystem.showError('Not authenticated.');
+                return;
+            }
+            try {
+                const { data, error } = await window.emergencySystem.supabase.functions.invoke('assign-responder', {
+                    body: { report_id: reportId, responder_id: selectedId, assigned_by: assignedBy, as_backup: true }
+                });
+                if (error) throw error;
+                if (data && data.success === false && data.error) throw new Error(data.error);
+                await clearResponderNeedsHelp(responderId, assignmentId);
+                window.emergencySystem.showSuccess('Backup responder assigned. They have been notified.');
+                closeAssignBackupModal();
+                await loadAssignments();
+                const responders = await window.emergencySystem.getResponders();
+                updateMapWithResponders(responders || []);
+            } catch (e) {
+                console.error('confirmAssignBackup error:', e);
+                window.emergencySystem.showError(e?.message || 'Failed to assign backup');
+            }
+        }
+
+        async function ackOnlyAssignBackup() {
+            const { responderId, assignmentId } = assignBackupContext;
+            await clearResponderNeedsHelp(responderId, assignmentId);
+            window.emergencySystem.showSuccess('Request acknowledged.');
+            closeAssignBackupModal();
+            await loadAssignments();
+            const responders = await window.emergencySystem.getResponders();
+            updateMapWithResponders(responders || []);
+        }
+
+        async function clearResponderNeedsHelp(responderId, assignmentId) {
+            if (!responderId || !window.emergencySystem?.supabase) return;
+            const sb = window.emergencySystem.supabase;
+            if (assignmentId && String(assignmentId).trim()) {
+                await sb.from('assignment').update({ needs_backup: false, needs_backup_at: null }).eq('id', assignmentId);
+            }
+            await sb.from('responder').update({ needs_assistance: false, needs_assistance_at: null }).eq('id', responderId);
+        }
+
+        // Super User: assist responder (clear needs backup/assistance only — use Assign Backup modal to assign)
+        async function superUserAssistResponder(responderId, assignmentId) {
+            if (!responderId || !window.emergencySystem?.supabase) return;
+            try {
+                await clearResponderNeedsHelp(responderId, assignmentId);
+                window.emergencySystem.showSuccess('Backup assistance acknowledged. Responder status updated.');
+                await loadAssignments();
+                const responders = await window.emergencySystem.getResponders();
+                updateMapWithResponders(responders || []);
+            } catch (e) {
+                console.error('superUserAssistResponder error:', e);
+                window.emergencySystem.showError('Failed to assist responder');
+            }
         }
 
         // Update active emergencies
@@ -2318,7 +2368,7 @@ window.SU_TOUR_STEPS = [
 
         // Action functions for popup buttons
         function viewReport(reportId) {
-            window.location.href = `super-user-view-report.html?id=${reportId}`;
+            window.location.href = `super-user-reports.html?id=${encodeURIComponent(reportId)}`;
         }
 
         // Focus on a specific report on the map (called from emergency list)
@@ -2682,6 +2732,10 @@ window.SU_TOUR_STEPS = [
             if (event.target === modal) {
                 closeLogoutModal();
             }
+            const assignModal = document.getElementById('assignBackupModal');
+            if (assignModal && event.target === assignModal) {
+                closeAssignBackupModal();
+            }
         });
         
         // Close modal with Escape key
@@ -2690,6 +2744,10 @@ window.SU_TOUR_STEPS = [
                 const modal = document.getElementById('logoutModal');
                 if (!modal.classList.contains('hidden')) {
                     closeLogoutModal();
+                }
+                const assignModal = document.getElementById('assignBackupModal');
+                if (assignModal && !assignModal.classList.contains('hidden')) {
+                    closeAssignBackupModal();
                 }
             }
         });
@@ -2709,11 +2767,9 @@ window.SU_TOUR_STEPS = [
     <div id="logoutModal" class="logout-modal hidden">
         <div class="logout-modal-overlay" onclick="closeLogoutModal()"></div>
         <div class="logout-modal-content">
-            <div class="logout-modal-icon">
-                <i class="bi bi-exclamation-triangle"></i>
-            </div>
+            <div class="logout-modal-icon"><i class="bi bi-box-arrow-right"></i></div>
             <h3 class="logout-modal-title">Confirm Logout</h3>
-            <p class="logout-modal-message">Are you sure you want to logout? You'll need to sign in again to access the system.</p>
+            <p class="logout-modal-message">Are you sure you want to log out of the system?</p>
             <div class="logout-modal-buttons">
                 <button class="logout-modal-btn cancel" onclick="closeLogoutModal()">
                     <i class="bi bi-x-circle"></i> Cancel
@@ -2721,6 +2777,32 @@ window.SU_TOUR_STEPS = [
                 <button class="logout-modal-btn confirm" onclick="confirmLogout()">
                     <i class="bi bi-box-arrow-right"></i> Logout
                 </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Assign Backup Responder Modal -->
+    <div id="assignBackupModal" class="modal hidden" style="display: none;">
+        <div class="assign-backup-modal-overlay" onclick="closeAssignBackupModal()"></div>
+        <div class="assign-backup-modal-content">
+            <div class="assign-backup-modal-header">
+                <h3 class="assign-backup-modal-title"><i class="bi bi-person-plus-fill"></i> Assign backup responder</h3>
+                <button type="button" class="assign-backup-modal-close" onclick="closeAssignBackupModal()">&times;</button>
+            </div>
+            <p id="assignBackupModalSubtitle" class="assign-backup-modal-subtitle"></p>
+            <div id="assignBackupModalAssignSection">
+                <label class="assign-backup-modal-label">Select responder to assign as backup</label>
+                <select id="assignBackupResponderSelect" class="assign-backup-modal-select">
+                    <option value="">— Select responder —</option>
+                </select>
+            </div>
+            <div id="assignBackupModalAckOnlySection" class="hidden" style="display: none;">
+                <p class="assign-backup-modal-ack-msg">No active incident for this responder. You can only acknowledge the request.</p>
+            </div>
+            <div class="assign-backup-modal-buttons">
+                <button type="button" class="assign-backup-modal-btn cancel" onclick="closeAssignBackupModal()">Cancel</button>
+                <button type="button" id="assignBackupAssignBtn" class="assign-backup-modal-btn primary" onclick="confirmAssignBackup()"><i class="bi bi-person-plus-fill"></i> Assign as backup</button>
+                <button type="button" id="assignBackupAckOnlyBtn" class="assign-backup-modal-btn ack hidden" style="display: none;" onclick="ackOnlyAssignBackup()"><i class="bi bi-check-circle"></i> Acknowledge only</button>
             </div>
         </div>
     </div>

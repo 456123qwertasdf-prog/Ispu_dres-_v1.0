@@ -609,7 +609,7 @@
         .admin-an-main { padding: 1.75rem; background: #f1f5f9; min-height: 100vh; }
         .admin-an-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem; align-items: stretch; }
         .admin-an-grid > .admin-an-panel { display: flex; flex-direction: column; }
-        .admin-an-grid > .admin-an-panel .admin-an-panel-body { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+        .admin-an-grid > .admin-an-panel .admin-an-panel-body { flex: 1; min-height: 0; display: flex; flex-direction: column; overflow: hidden; }
         @media (max-width: 900px) { .admin-an-grid { grid-template-columns: 1fr; } }
 
         .admin-an-panel {
@@ -735,12 +735,12 @@
         }
         .admin-an-filter-chip:hover { background: #f3f4f6; color: #374151; }
         .admin-an-filter-chip.active { background: #dbeafe; color: #1d4ed8; border-color: #93c5fd; }
-        #announcementsList { flex: 1; overflow-y: auto; padding-right: 2px; min-height: 200px; max-height: 60vh; }
+        #announcementsList { flex: 1; overflow-y: auto; padding-right: 2px; min-height: 280px; max-height: 60vh; }
         #announcementsList::-webkit-scrollbar { width: 5px; }
         #announcementsList::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 9999px; }
         #announcementsList::-webkit-scrollbar-thumb { background: #93c5fd; border-radius: 9999px; }
-        .admin-an-empty { text-align: center; padding: 3rem 1rem; color: #9ca3af; }
-        .admin-an-empty i { font-size: 2.5rem; display: block; margin-bottom: 0.75rem; color: #d1d5db; }
+        .admin-an-empty { text-align: center; padding: 3rem 1.5rem; color: #64748b; min-height: 120px; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        .admin-an-empty i { font-size: 2.5rem; display: block; margin-bottom: 0.75rem; color: #94a3b8; }
         @keyframes spin { to { transform: rotate(360deg); } }
 
         /* Toast Notification Styles */
@@ -1268,14 +1268,14 @@
             const existingAlerts = document.querySelectorAll('.alert');
             existingAlerts.forEach(alert => alert.remove());
             
-            // Wait for system initialization
+            // Wait for system initialization (use window.emergencySystem)
             await new Promise(resolve => {
                 const checkInit = () => {
-                    if (typeof emergencySystem !== 'undefined' && emergencySystem.isInitialized) {
+                    const sys = window.emergencySystem;
+                    if (sys && sys.isInitialized) {
                         console.log('Emergency system initialized');
                         resolve();
                     } else {
-                        console.log('Waiting for emergency system...');
                         setTimeout(checkInit, 100);
                     }
                 };
@@ -1291,31 +1291,40 @@
             }
 
             // Check if user is admin
-            const userRole = emergencySystem.user?.user_metadata?.role;
-            if (!emergencySystem.user || (userRole !== 'admin' && userRole !== 'super_user')) {
+            const sys = window.emergencySystem;
+            const userRole = sys?.user?.user_metadata?.role;
+            if (!sys?.user || (userRole !== 'admin' && userRole !== 'super_user')) {
                 console.log('User not admin, redirecting to login');
                 window.location.href = 'login.html';
                 return;
             }
 
             console.log('User is admin, loading data...');
-            // Load announcements
-            await loadAnnouncements();
-            
-            // Set up form submission handler
-            document.getElementById('announcementForm').addEventListener('submit', async (e) => {
+            // Ensure list container exists (retry a few times for slow DOM), then load
+            function tryLoad() {
+                const listContainer = document.getElementById('announcementsList');
+                if (listContainer) {
+                    loadAnnouncements();
+                } else {
+                    setTimeout(tryLoad, 150);
+                }
+            }
+            tryLoad();
+
+            // Set up form submission handler (modal form)
+            const announcementForm = document.getElementById('announcementForm');
+            if (announcementForm) announcementForm.addEventListener('submit', async (e) => {
                 e.preventDefault();
                 await handleAnnouncementSubmit();
             });
             
-            // Show/hide image URL field based on type selection
-            document.getElementById('announcementType').addEventListener('change', function() {
+            // Show/hide image URL field based on type selection (modal form)
+            const typeSelect = document.getElementById('announcementType');
+            if (typeSelect) typeSelect.addEventListener('change', function() {
                 const imageUrlGroup = document.getElementById('imageUrlGroup');
-                if (this.value === 'weather') {
-                    imageUrlGroup.style.display = 'block';
-                } else {
-                    imageUrlGroup.style.display = 'none';
-                    document.getElementById('announcementImageUrl').value = '';
+                if (imageUrlGroup) {
+                    if (this.value === 'weather') imageUrlGroup.style.display = 'block';
+                    else { imageUrlGroup.style.display = 'none'; const u = document.getElementById('announcementImageUrl'); if (u) u.value = ''; }
                 }
             });
             
@@ -1334,7 +1343,11 @@
                 container.innerHTML = '<div class="admin-an-empty"><i class="bi bi-hourglass-split" style="animation: spin 1.2s linear infinite;"></i> Loading announcements…</div>';
             }
             try {
-                const { data, error } = await emergencySystem.supabase
+                const supabase = (window.emergencySystem || {}).supabase;
+                if (!supabase) {
+                    throw new Error('System not ready');
+                }
+                const { data, error } = await supabase
                     .from('announcements')
                     .select('*')
                     .order('created_at', { ascending: false });
@@ -1343,14 +1356,26 @@
 
                 await autoExpireAnnouncements(data || []);
 
-                announcements = data || [];
+                announcements = Array.isArray(data) ? data : [];
                 filteredAnnouncements = [...announcements];
+                announcementListFilter = announcementListFilter || 'all';
+                console.log('Announcements loaded:', announcements.length);
                 displayAnnouncements();
                 updateStatistics();
+                // Force list to paint (in case of timing/closure issues)
+                requestAnimationFrame(function() {
+                    const el = document.getElementById('announcementsList');
+                    if (el && announcements.length === 0 && !el.querySelector('.admin-an-empty')) {
+                        el.innerHTML = '<div class="admin-an-empty"><i class="bi bi-megaphone"></i> No announcements yet.<br><span style="font-size:0.8rem;">Create one using the form on the left.</span></div>';
+                    } else if (el && announcements.length > 0 && !el.querySelector('.admin-an-item')) {
+                        displayAnnouncements();
+                    }
+                });
             } catch (error) {
                 console.error('Failed to load announcements:', error);
-                if (container) {
-                    container.innerHTML = '<div class="admin-an-empty" style="color:#b91c1c;"><i class="bi bi-exclamation-circle"></i> Failed to load announcements.</div>';
+                const listEl = document.getElementById('announcementsList');
+                if (listEl) {
+                    listEl.innerHTML = '<div class="admin-an-empty" style="color:#b91c1c;"><i class="bi bi-exclamation-circle"></i> Failed to load announcements.<br><span style="font-size:0.8rem;">Check console or try Refresh.</span></div>';
                 }
             }
         }
@@ -1458,79 +1483,82 @@
         // Display announcements (same card layout as super user, admin colors)
         function displayAnnouncements() {
             const container = document.getElementById('announcementsList');
-            const toShow = announcementListFilter === 'active'
-                ? filteredAnnouncements.filter(a => a.status === 'active')
-                : filteredAnnouncements;
+            if (!container) return;
 
-            if (toShow.length === 0) {
-                container.innerHTML = `
-                    <div class="admin-an-empty">
-                        <i class="bi bi-megaphone"></i>
-                        ${announcementListFilter === 'active' ? 'No active announcements.' : 'No announcements yet.'}
-                        <br><span style="font-size:0.8rem;">${announcementListFilter === 'active' ? 'Switch to All to see inactive ones.' : 'Create one using the form on the left.'}</span>
-                    </div>
-                `;
+            const list = Array.isArray(filteredAnnouncements) ? filteredAnnouncements : [];
+            const toShow = announcementListFilter === 'active'
+                ? list.filter(a => a && a.status === 'active')
+                : list;
+
+            if (!toShow.length) {
+                const emptyMsg = announcementListFilter === 'active'
+                    ? 'No active announcements.'
+                    : 'No announcements yet.';
+                const hintMsg = announcementListFilter === 'active'
+                    ? 'Switch to All to see inactive ones.'
+                    : 'Create one using the form on the left.';
+                container.innerHTML = '<div class="admin-an-empty"><i class="bi bi-megaphone"></i>' + emptyMsg + '<br><span style="font-size:0.8rem;">' + hintMsg + '</span></div>';
                 return;
             }
 
             const audienceEmoji = { all:'🌐', students:'🎓', faculty:'👨‍🏫', staff:'🏢', responders:'🚨' };
+            const maxShow = 80;
+            const toRender = toShow.length > maxShow ? toShow.slice(0, maxShow) : toShow;
 
-            container.innerHTML = toShow.map(announcement => {
-                const title = announcement.title || 'Untitled announcement';
-                const message = announcement.message || 'No message provided.';
-                const type = announcement.type || 'general';
-                const status = announcement.status || 'active';
-                const isActive = status === 'active';
-                const priority = announcement.priority || 'medium';
-                const audience = announcement.target_audience || 'all';
-                const createdAt = announcement.created_at ? formatDate(announcement.created_at) : 'Unknown time';
-                const imageUrl = getSafeImageUrl(announcement.image_url);
-                const audEmoji = audienceEmoji[audience] || '🌐';
-                const audLabel = audience.charAt(0).toUpperCase() + audience.slice(1);
-
-                const imgTop = imageUrl
-                    ? `<img class="admin-an-item-img" src="${escapeHtml(imageUrl)}" alt="" onerror="this.style.display='none'">`
-                    : '';
-
-                return `
-                    <div class="admin-an-item">
-                        ${imgTop}
-                        <div class="admin-an-item-body">
-                            <div class="admin-an-item-accent ${status}"></div>
-                            <div class="admin-an-item-content">
-                                <div style="display:flex;align-items:center;gap:0.45rem;margin-bottom:0.3rem;flex-wrap:wrap;">
-                                    <span class="admin-an-badge admin-an-badge-${status}">
-                                        <i class="bi bi-${isActive ? 'broadcast' : 'pause-circle-fill'}"></i> ${status}
-                                    </span>
-                                    <span style="font-size:0.7rem;color:#9ca3af;">${audEmoji} ${audLabel}</span>
-                                    ${imageUrl ? '<span class="admin-an-priority"><i class="bi bi-image-fill"></i> Image</span>' : ''}
-                                </div>
-                                <p class="admin-an-item-title">${escapeHtml(title)}</p>
-                                <p class="admin-an-item-msg">${escapeHtml(message)}</p>
-                                <div class="admin-an-item-meta">
-                                    <span><i class="bi bi-clock"></i> ${escapeHtml(createdAt)}</span>
-                                </div>
-                            </div>
-                            <div class="admin-an-item-actions">
-                                <button class="admin-an-icon-btn view" title="View" onclick="viewAnnouncementDetails('${announcement.id}')">
-                                    <i class="bi bi-eye-fill"></i>
-                                </button>
-                                <button class="admin-an-icon-btn edit" title="Edit" onclick="editAnnouncement('${announcement.id}')">
-                                    <i class="bi bi-pencil-fill"></i>
-                                </button>
-                                <button class="admin-an-icon-btn ${isActive ? 'toggle-on' : 'toggle-off'}"
-                                        title="${isActive ? 'Deactivate' : 'Activate'}"
-                                        onclick="toggleAnnouncementStatus('${announcement.id}', '${status}')">
-                                    <i class="bi bi-${isActive ? 'pause-fill' : 'play-fill'}"></i>
-                                </button>
-                                <button class="admin-an-icon-btn del" title="Delete" onclick="deleteAnnouncement('${announcement.id}')">
-                                    <i class="bi bi-trash3-fill"></i>
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                `;
-            }).join('');
+            try {
+                const parts = [];
+                for (let i = 0; i < toRender.length; i++) {
+                    const a = toRender[i];
+                    const id = (a && a.id) ? String(a.id).replace(/'/g, "\\'") : '';
+                    const title = (a && a.title) ? String(a.title) : 'Untitled announcement';
+                    const message = (a && a.message) ? String(a.message) : 'No message provided.';
+                    const status = (a && a.status) ? a.status : 'active';
+                    const isActive = status === 'active';
+                    const audience = (a && a.target_audience) ? a.target_audience : 'all';
+                    let createdAt = 'Unknown time';
+                    try {
+                        if (a && a.created_at) createdAt = formatDate(a.created_at);
+                    } catch (_) {}
+                    const imageUrl = getSafeImageUrl(a && a.image_url);
+                    const audEmoji = audienceEmoji[audience] || '🌐';
+                    const audLabel = audience.charAt(0).toUpperCase() + audience.slice(1);
+                    const imgTop = imageUrl ? '<img class="admin-an-item-img" src="' + escapeHtml(imageUrl) + '" alt="" onerror="this.style.display=\'none\'">' : '';
+                    parts.push(
+                        '<div class="admin-an-item">' + imgTop +
+                        '<div class="admin-an-item-body">' +
+                        '<div class="admin-an-item-accent ' + status + '"></div>' +
+                        '<div class="admin-an-item-content">' +
+                        '<div style="display:flex;align-items:center;gap:0.45rem;margin-bottom:0.3rem;flex-wrap:wrap;">' +
+                        '<span class="admin-an-badge admin-an-badge-' + status + '"><i class="bi bi-' + (isActive ? 'broadcast' : 'pause-circle-fill') + '"></i> ' + status + '</span>' +
+                        '<span style="font-size:0.7rem;color:#9ca3af;">' + audEmoji + ' ' + audLabel + '</span>' +
+                        (imageUrl ? '<span class="admin-an-priority"><i class="bi bi-image-fill"></i> Image</span>' : '') +
+                        '</div>' +
+                        '<p class="admin-an-item-title">' + escapeHtml(title) + '</p>' +
+                        '<p class="admin-an-item-msg">' + escapeHtml(message.substring(0, 500)) + (message.length > 500 ? '…' : '') + '</p>' +
+                        '<div class="admin-an-item-meta"><span><i class="bi bi-clock"></i> ' + escapeHtml(createdAt) + '</span></div>' +
+                        '</div>' +
+                        '<div class="admin-an-item-actions">' +
+                        '<button class="admin-an-icon-btn view" title="View" onclick="viewAnnouncementDetails(\'' + id + '\')"><i class="bi bi-eye-fill"></i></button>' +
+                        '<button class="admin-an-icon-btn edit" title="Edit" onclick="editAnnouncement(\'' + id + '\')"><i class="bi bi-pencil-fill"></i></button>' +
+                        '<button class="admin-an-icon-btn ' + (isActive ? 'toggle-on' : 'toggle-off') + '" title="' + (isActive ? 'Deactivate' : 'Activate') + '" onclick="toggleAnnouncementStatus(\'' + id + '\', \'' + status + '\')"><i class="bi bi-' + (isActive ? 'pause-fill' : 'play-fill') + '"></i></button>' +
+                        '<button class="admin-an-icon-btn del" title="Delete" onclick="deleteAnnouncement(\'' + id + '\')"><i class="bi bi-trash3-fill"></i></button>' +
+                        '</div></div></div>'
+                    );
+                }
+                container.innerHTML = parts.join('');
+                if (toShow.length > maxShow) {
+                    const more = document.createElement('div');
+                    more.className = 'admin-an-empty';
+                    more.style.padding = '1rem';
+                    more.style.flexShrink = '0';
+                    more.innerHTML = '<span style="font-size:0.85rem;color:#64748b;">Showing first ' + maxShow + ' of ' + toShow.length + ' announcements.</span>';
+                    container.appendChild(more);
+                }
+                container.scrollTop = 0;
+            } catch (err) {
+                console.error('Display announcements error:', err);
+                container.innerHTML = '<div class="admin-an-empty" style="color:#b91c1c;"><i class="bi bi-exclamation-circle"></i> Error displaying list.<br><span style="font-size:0.8rem;">' + (err.message || '') + '</span></div>';
+            }
         }
 
         // Update statistics (no-op if stat elements were removed)
@@ -2413,6 +2441,7 @@
             box-shadow: 0 1px 6px rgba(0, 0, 0, 0.06);
             border: 1.5px solid #f1f5f9;
             overflow: hidden;
+            flex-shrink: 0; /* prevent cards collapsing in flex list */
         }
         .admin-an-item:hover {
             box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
@@ -2567,6 +2596,7 @@
             display: flex;
             flex-direction: column;
             gap: 1.5rem;
+            align-items: stretch;
         }
 
         /* Improved empty state */
