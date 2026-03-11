@@ -1573,8 +1573,8 @@
             // Count all emergency reports (active cases)
             const activeCases = emergencyReports.length;
 
-            // Count total users (excluding responders - only citizens)
-            const totalUsers = users.filter(user => user.role === 'citizen').length;
+            // Count all users (citizens, responders, admins, etc.)
+            const totalUsers = users.length;
             
             // Count completed reports (only emergencies)
             const totalCompleted = emergencyReports.filter(report => report.status === 'completed').length;

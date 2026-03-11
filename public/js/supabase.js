@@ -1583,25 +1583,24 @@ class EmergencyResponseSystem {
   async getUsers(filters = {}) {
     try {
       console.log('🔍 Fetching users with filters:', filters);
-      
-      // Try to get users from auth system first
+
+      // Try get-users Edge Function first (same as User Management; returns all auth users)
       try {
-        const users = await this.getAllUsers();
-        
-        // Transform auth users to our format
-        const transformedUsers = users.map(user => ({
-          id: user.id,
-          email: user.email,
-          name: user.user_metadata?.full_name || user.email.split('@')[0],
-          role: user.user_metadata?.role || 'citizen',
-          phone: user.user_metadata?.phone || '',
-          department: user.user_metadata?.department || '',
-          is_active: user.user_metadata?.is_active !== false, // Default to true if not set
-          created_at: user.created_at,
-          last_sign_in_at: user.last_sign_in_at
+        const { data, error } = await this.supabase.functions.invoke('get-users', { body: {} });
+        if (error) throw error;
+        const rawUsers = data?.users || [];
+        const transformedUsers = rawUsers.map(u => ({
+          id: u.user_id || u.id,
+          email: u.email || '',
+          name: u.name || u.user_metadata?.full_name || (u.email && u.email.split('@')[0]) || 'Unknown',
+          role: (u.role || u.user_metadata?.role || 'citizen').toLowerCase(),
+          phone: u.phone || u.user_metadata?.phone || '',
+          department: u.department || u.user_metadata?.department || '',
+          is_active: u.is_active !== false,
+          created_at: u.created_at,
+          last_sign_in_at: u.last_sign_in_at || null
         }));
 
-        // Apply filters
         let filteredUsers = transformedUsers;
         if (filters.role) {
           filteredUsers = transformedUsers.filter(user => user.role === filters.role);
@@ -1613,7 +1612,7 @@ class EmergencyResponseSystem {
         console.log('✅ Users loaded successfully:', filteredUsers.length);
         return filteredUsers;
       } catch (authError) {
-        console.warn('⚠️ Auth approach failed, trying fallback:', authError);
+        console.warn('⚠️ get-users Edge Function failed, trying fallback:', authError);
         return await this.getUsersFromAuth(filters);
       }
     } catch (error) {
