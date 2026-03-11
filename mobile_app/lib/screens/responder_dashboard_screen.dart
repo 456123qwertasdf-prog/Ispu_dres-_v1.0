@@ -355,6 +355,7 @@ class _ResponderDashboardScreenState extends State<ResponderDashboardScreen> {
               type,
               message,
               status,
+              lifecycle_status,
               location,
               reporter_name,
               image_path,
@@ -454,6 +455,10 @@ class _ResponderDashboardScreenState extends State<ResponderDashboardScreen> {
 
   List<ResponderAssignment> get _completedAssignments =>
       _assignments.where((assignment) => assignment.isCompleted).toList();
+
+  /// Completed section: resolved assignments + assignments whose report was closed by someone else.
+  List<ResponderAssignment> get _assignmentsForCompletedSection =>
+      _assignments.where((a) => a.isEffectivelyCompleted).toList();
 
   double? get _averageResponseMinutes {
     final completedWithDuration = _completedAssignments
@@ -1841,7 +1846,7 @@ class _ResponderDashboardScreenState extends State<ResponderDashboardScreen> {
 
   void _showAssignmentNotificationOverlay() {
     final active = _activeAssignments.length;
-    final completed = _completedAssignments.length;
+    final completed = _assignmentsForCompletedSection.length;
     showModalBottomSheet<void>(
       context: context,
       backgroundColor: Colors.transparent,
@@ -3129,7 +3134,8 @@ class _ResponderDashboardScreenState extends State<ResponderDashboardScreen> {
   }
 
   Widget _buildCompletedSection() {
-    final isEmpty = _completedAssignments.isEmpty;
+    final completedList = _assignmentsForCompletedSection;
+    final isEmpty = completedList.isEmpty;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -3201,7 +3207,7 @@ class _ResponderDashboardScreenState extends State<ResponderDashboardScreen> {
             message: 'Nothing completed yet. Finish an assignment to build your record.',
           )
         else
-          ..._completedAssignments.take(5).map(
+          ...completedList.take(5).map(
                 (assignment) => Padding(
                   padding: const EdgeInsets.only(bottom: 12),
                   child: _buildCompletedTile(assignment),

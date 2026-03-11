@@ -159,6 +159,7 @@ class AssignmentReportSummary {
     this.type,
     this.message,
     this.status,
+    this.lifecycleStatus,
     this.reporterName,
     this.createdAt,
     this.location,
@@ -169,17 +170,22 @@ class AssignmentReportSummary {
   final String? type;
   final String? message;
   final String? status;
+  /// Report lifecycle: pending, classified, assigned, accepted, enroute, on_scene, resolved, closed.
+  /// When resolved/closed, assignment should not be shown as active (e.g. no "Accept").
+  final String? lifecycleStatus;
   final String? reporterName;
   final DateTime? createdAt;
   final dynamic location;
   final String? imagePath;
 
   factory AssignmentReportSummary.fromMap(Map<String, dynamic> map) {
+    final lifecycle = map['lifecycle_status'] as String?;
     return AssignmentReportSummary(
       id: map['id']?.toString() ?? '',
       type: map['type'] as String?,
       message: map['message'] as String?,
       status: map['status'] as String?,
+      lifecycleStatus: lifecycle != null && lifecycle.isNotEmpty ? lifecycle : null,
       reporterName: map['reporter_name'] as String?,
       createdAt: map['created_at'] != null
           ? DateTime.tryParse(map['created_at'].toString())
@@ -187,6 +193,12 @@ class AssignmentReportSummary {
       location: map['location'],
       imagePath: map['image_path'] as String?,
     );
+  }
+
+  /// True if the report is still open (not resolved or closed).
+  bool get isReportOpen {
+    final s = (lifecycleStatus ?? '').toLowerCase();
+    return s != 'resolved' && s != 'closed';
   }
 
   CoordinatePoint? get coordinates => coordinateFrom(location);
@@ -246,12 +258,22 @@ class ResponderAssignment {
   bool get isCompleted =>
       status == 'resolved' || status == 'completed' || status == 'closed';
 
+  /// True when report is already resolved/closed (assignment may still be "assigned" if user never accepted).
+  bool get isReportClosed => !report.isReportOpen;
+
+  /// Show in completed section: either assignment resolved or report was closed by someone else.
+  bool get isEffectivelyCompleted => isCompleted || isReportClosed;
+
+  /// Active = assignment not yet resolved AND report still open.
+  /// When report is resolved/closed, other team members' assignments are auto-resolved
+  /// server-side; treat as inactive so we don't show "Accept" for closed reports.
   bool get isActive =>
-      status == 'assigned' ||
-      status == 'accepted' ||
-      status == 'enroute' ||
-      status == 'on_scene' ||
-      status == 'in_progress';
+      report.isReportOpen &&
+      (status == 'assigned' ||
+          status == 'accepted' ||
+          status == 'enroute' ||
+          status == 'on_scene' ||
+          status == 'in_progress');
 
   Duration? get responseDuration {
     if (assignedAt == null || completedAt == null) return null;
