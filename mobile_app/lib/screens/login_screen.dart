@@ -483,7 +483,17 @@ class _LoginScreenState extends State<LoginScreen> {
       final password = _signupPasswordController.text;
       final studentNumber = _signupStudentNumberController.text.trim();
 
-      // Sign up as citizen: Unique ID and email are required
+      // Block duplicate ID Number before calling signUp
+      final idExists = await SupabaseService.checkStudentNumberExists(studentNumber);
+      if (idExists && mounted) {
+        setState(() {
+          _signupErrorMessage = 'This ID Number is already registered. Please sign in or use a different ID number.';
+          _isSignupLoading = false;
+        });
+        return;
+      }
+
+      // Sign up as citizen: ID number and email are required
       final response = await SupabaseService.signUpAsCitizen(
         email: email,
         password: password,
@@ -499,12 +509,13 @@ class _LoginScreenState extends State<LoginScreen> {
           if (mounted) {
             setState(() {
               _signupErrorMessage = 'This email is already registered. Please sign in instead.';
+              _isSignupLoading = false;
             });
           }
           return;
         }
 
-        // Create user profile in database
+        // Create user profile in database (only when sign-up actually created a new user)
         try {
           await SupabaseService.client.from('user_profiles').insert({
             'user_id': response.user!.id,
@@ -1255,11 +1266,11 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
               const SizedBox(height: 20),
               
-              // Unique ID Number (required)
+              // ID Number (required)
               TextFormField(
                 controller: _signupStudentNumberController,
                 decoration: InputDecoration(
-                  labelText: 'Unique ID Number',
+                  labelText: 'ID Number',
                   hintText: 'Enter your ID number',
                   prefixIcon: const Icon(Icons.badge_outlined),
                   border: OutlineInputBorder(
@@ -1270,7 +1281,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
                 validator: (value) {
                   if (value == null || value.trim().isEmpty) {
-                    return 'Please enter your Unique ID number';
+                    return 'Please enter your ID number';
                   }
                   return null;
                 },

@@ -41,7 +41,21 @@ class SupabaseService {
     );
   }
 
-  // Sign up for citizens only with metadata including user type. Unique ID (student_number) and email are required.
+  /// Returns true if this ID number (student_number) is already registered. Used to block duplicate sign-up.
+  static Future<bool> checkStudentNumberExists(String studentNumber) async {
+    if (studentNumber.trim().isEmpty) return false;
+    try {
+      final res = await client.rpc(
+        'check_student_number_exists',
+        params: {'num': studentNumber.trim()},
+      );
+      return res == true;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  // Sign up for citizens only with metadata including user type. ID number (student_number) and email are required.
   static Future<AuthResponse> signUpAsCitizen({
     required String email,
     required String password,
