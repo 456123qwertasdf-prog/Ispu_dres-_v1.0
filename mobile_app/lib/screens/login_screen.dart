@@ -37,6 +37,9 @@ class _LoginScreenState extends State<LoginScreen> {
   String _passwordStrength = ''; // Password strength indicator
   final _forgotPasswordEmailController = TextEditingController();
   bool _isForgotPasswordLoading = false;
+  /// Clear, highlighted auth error messages (sign-up / login) so user knows exactly why it failed.
+  String? _signupErrorMessage;
+  String? _loginErrorMessage;
   /// Installed app version only (from PackageInfo). Shows what this APK actually is.
   /// Old builds are blocked by the update check in main.dart before this screen is shown.
   String _appVersion = '';
@@ -112,22 +115,21 @@ class _LoginScreenState extends State<LoginScreen> {
       }
     } catch (e) {
       if (mounted) {
-        String errorMessage = 'Login failed';
-        if (e.toString().contains('Invalid login credentials')) {
-          errorMessage = 'Invalid email or password';
-        } else if (e.toString().contains('Email not confirmed')) {
-          errorMessage = 'Please verify your email before signing in';
+        String msg = 'Login failed';
+        final s = e.toString();
+        if (s.contains('Invalid login credentials')) {
+          msg = 'Invalid email or password. Please try again.';
+        } else if (s.contains('Email not confirmed')) {
+          msg = 'Please verify your email before signing in.';
+        } else if (s.contains('rate limit') || s.contains('429')) {
+          msg = 'Too many attempts. Please wait a minute and try again.';
         } else {
-          errorMessage = e.toString().replaceFirst('Exception: ', '');
+          msg = s.replaceFirst('Exception: ', '').replaceFirst('AuthApiException(message: ', '').replaceAll(RegExp(r', statusCode: \d+, code: \w+\)'), '').trim();
+          if (msg.isEmpty) msg = 'Login failed. Please try again.';
         }
-        
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(errorMessage),
-            backgroundColor: Colors.red,
-            duration: const Duration(seconds: 4),
-          ),
-        );
+        setState(() {
+          _loginErrorMessage = msg;
+        });
       }
     } finally {
       if (mounted) {
@@ -249,6 +251,7 @@ class _LoginScreenState extends State<LoginScreen> {
     showDialog(
       context: context,
       builder: (BuildContext context) {
+        String? forgotPasswordError;
         return StatefulBuilder(
           builder: (context, setDialogState) {
             return Dialog(
@@ -289,6 +292,31 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                     ),
                     const SizedBox(height: 20),
+                    if (forgotPasswordError != null) ...[
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                        decoration: BoxDecoration(
+                          color: Colors.red.shade700,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: Colors.red.shade900, width: 1),
+                        ),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Icon(Icons.error_outline, color: Colors.white, size: 20),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                forgotPasswordError!,
+                                style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w500),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                    ],
                     TextField(
                       controller: _forgotPasswordEmailController,
                       keyboardType: TextInputType.emailAddress,
@@ -321,7 +349,10 @@ class _LoginScreenState extends State<LoginScreen> {
                           onPressed: _isForgotPasswordLoading
                               ? null
                               : () async {
-                                  await _handleForgotPassword(setDialogState, context);
+                                  setDialogState(() => forgotPasswordError = null);
+                                  await _handleForgotPassword(setDialogState, context, (String msg) {
+                                    setDialogState(() => forgotPasswordError = msg);
+                                  });
                                 },
                           style: ElevatedButton.styleFrom(
                             backgroundColor: Colors.blue.shade700,
@@ -355,32 +386,17 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
-  Future<void> _handleForgotPassword(StateSetter setDialogState, BuildContext dialogContext) async {
+  Future<void> _handleForgotPassword(StateSetter setDialogState, BuildContext dialogContext, void Function(String) setDialogError) async {
     final email = _forgotPasswordEmailController.text.trim();
     
     if (email.isEmpty) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Please enter your email address'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
+      setDialogError('Please enter your email address.');
       return;
     }
     
-    // Basic email validation
     final emailRegex = RegExp(r'^[^\s@]+@[^\s@]+\.[^\s@]+$');
     if (!emailRegex.hasMatch(email)) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Please enter a valid email address'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
+      setDialogError('Please enter a valid email address.');
       return;
     }
     
@@ -404,22 +420,20 @@ class _LoginScreenState extends State<LoginScreen> {
       }
     } catch (e) {
       if (mounted) {
-        String errorMessage = 'Failed to send reset email';
-        if (e.toString().contains('User not found')) {
-          errorMessage = 'No account found with this email address';
-        } else if (e.toString().contains('rate limit')) {
-          errorMessage = 'Too many requests. Please try again later.';
-        } else {
-          errorMessage = e.toString().replaceFirst('Exception: ', '');
+        String msg = 'Failed to send reset email.';
+        final s = e.toString();
+        if (s.contains('User not found')) {
+          msg = 'No account found with this email address.';
+        } else if (s.contains('over_email_send_rate_limit') || s.contains('429') || (s.contains('after ') && s.contains(' seconds'))) {
+          final match = RegExp(r'after (\d+) seconds').firstMatch(s);
+          msg = match != null
+              ? 'Too many attempts. Please wait ${match.group(1)} seconds before trying again.'
+              : 'Too many attempts. Please wait a minute and try again.';
+        } else if (s.isNotEmpty) {
+          msg = s.replaceFirst('Exception: ', '').replaceFirst('AuthApiException(message: ', '').replaceAll(RegExp(r', statusCode: \d+, code: \w+\)'), '').trim();
+          if (msg.isEmpty) msg = 'Failed to send reset email. Please try again.';
         }
-        
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(errorMessage),
-            backgroundColor: Colors.red,
-            duration: const Duration(seconds: 4),
-          ),
-        );
+        setDialogError(msg);
       }
     } finally {
       if (mounted) {
@@ -430,12 +444,36 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
+  /// Parses auth/sign-up errors into a short, user-friendly message (for highlighted banner).
+  String _parseSignUpErrorMessage(dynamic e) {
+    final s = e.toString();
+    if (s.contains('over_email_send_rate_limit') || s.contains('429') || s.contains('rate limit') || s.contains('after ') && s.contains(' seconds')) {
+      final match = RegExp(r'after (\d+) seconds').firstMatch(s);
+      final sec = match != null ? match.group(1) : null;
+      if (sec != null) {
+        return 'Too many sign-up attempts. For security, please wait $sec seconds before trying again.';
+      }
+      return 'Too many sign-up attempts. Please wait a minute and try again.';
+    }
+    if (s.contains('User already registered') || s.contains('already registered') || s.contains('already exist')) {
+      return 'This email is already registered. Please sign in instead.';
+    }
+    if (s.contains('Invalid email') || s.contains('invalid_email')) {
+      return 'Please enter a valid email address.';
+    }
+    if (s.contains('Password') || s.contains('password')) {
+      return 'Password does not meet requirements.';
+    }
+    return s.replaceFirst('Exception: ', '').replaceFirst('AuthApiException(message: ', '').replaceFirst(RegExp(r', statusCode: \d+, code: \w+\)'), '').trim();
+  }
+
   Future<void> _handleSignUp() async {
     if (!_signupFormKey.currentState!.validate()) {
       return;
     }
 
     setState(() {
+      _signupErrorMessage = null;
       _isSignupLoading = true;
     });
 
@@ -445,13 +483,13 @@ class _LoginScreenState extends State<LoginScreen> {
       final password = _signupPasswordController.text;
       final studentNumber = _signupStudentNumberController.text.trim();
 
-      // Sign up as citizen only with user type
+      // Sign up as citizen: Unique ID and email are required
       final response = await SupabaseService.signUpAsCitizen(
         email: email,
         password: password,
         fullName: name,
         userType: _selectedUserType ?? 'student',
-        studentNumber: studentNumber.isNotEmpty ? studentNumber : null,
+        studentNumber: studentNumber,
       );
 
       if (response.user != null) {
@@ -459,13 +497,9 @@ class _LoginScreenState extends State<LoginScreen> {
         final identities = response.user!.identities;
         if (identities == null || identities.isEmpty) {
           if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('This email is already registered. Please sign in instead.'),
-                backgroundColor: Colors.orange,
-                duration: Duration(seconds: 4),
-              ),
-            );
+            setState(() {
+              _signupErrorMessage = 'This email is already registered. Please sign in instead.';
+            });
           }
           return;
         }
@@ -521,22 +555,10 @@ class _LoginScreenState extends State<LoginScreen> {
       }
     } catch (e) {
       if (mounted) {
-        String errorMessage = 'Sign up failed';
-        if (e.toString().contains('User already registered')) {
-          errorMessage = 'This email is already registered. Please sign in instead.';
-        } else if (e.toString().contains('Password')) {
-          errorMessage = 'Password does not meet requirements';
-        } else {
-          errorMessage = e.toString().replaceFirst('Exception: ', '');
-        }
-        
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(errorMessage),
-            backgroundColor: Colors.red,
-            duration: const Duration(seconds: 4),
-          ),
-        );
+        setState(() {
+          _signupErrorMessage = _parseSignUpErrorMessage(e);
+          _isSignupLoading = false;
+        });
       }
     } finally {
       if (mounted) {
@@ -830,6 +852,7 @@ class _LoginScreenState extends State<LoginScreen> {
           child: ElevatedButton(
             onPressed: () {
               setState(() {
+                _loginErrorMessage = null;
                 _showLoginForm = true;
                 _showSignupForm = false;
               });
@@ -861,6 +884,7 @@ class _LoginScreenState extends State<LoginScreen> {
           child: OutlinedButton(
             onPressed: () {
               setState(() {
+                _signupErrorMessage = null;
                 _showSignupForm = true;
                 _showLoginForm = false;
               });
@@ -920,7 +944,32 @@ class _LoginScreenState extends State<LoginScreen> {
             ),
             
             const SizedBox(height: 8),
-            
+            // Highlighted login error
+            if (_loginErrorMessage != null) ...[
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                decoration: BoxDecoration(
+                  color: Colors.red.shade700,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.red.shade900, width: 1),
+                ),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Icon(Icons.error_outline, color: Colors.white, size: 22),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Text(
+                        _loginErrorMessage!,
+                        style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w500),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16),
+            ],
             // Email Field
             TextFormField(
               controller: _emailController,
@@ -1037,7 +1086,8 @@ class _LoginScreenState extends State<LoginScreen> {
               onPressed: () {
                 setState(() {
                   _showLoginForm = false;
-                  _showSignupForm = true;
+                  _signupErrorMessage = null;
+                _showSignupForm = true;
                 });
               },
               child: const Text('Don\'t have an account? Sign up'),
@@ -1093,7 +1143,32 @@ class _LoginScreenState extends State<LoginScreen> {
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 20),
-              
+              // Highlighted sign-up error so user knows exactly why it failed
+              if (_signupErrorMessage != null) ...[
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                  decoration: BoxDecoration(
+                    color: Colors.red.shade700,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: Colors.red.shade900, width: 1),
+                  ),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Icon(Icons.error_outline, color: Colors.white, size: 22),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Text(
+                          _signupErrorMessage!,
+                          style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w500),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 16),
+              ],
               // Name Field
               TextFormField(
                 controller: _signupNameController,
@@ -1180,11 +1255,11 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
               const SizedBox(height: 20),
               
-              // Student Number Field (optional)
+              // Unique ID Number (required)
               TextFormField(
                 controller: _signupStudentNumberController,
                 decoration: InputDecoration(
-                  labelText: 'ID Number (Optional)',
+                  labelText: 'Unique ID Number',
                   hintText: 'Enter your ID number',
                   prefixIcon: const Icon(Icons.badge_outlined),
                   border: OutlineInputBorder(
@@ -1193,6 +1268,12 @@ class _LoginScreenState extends State<LoginScreen> {
                   filled: true,
                   fillColor: Colors.grey.shade50,
                 ),
+                validator: (value) {
+                  if (value == null || value.trim().isEmpty) {
+                    return 'Please enter your Unique ID number';
+                  }
+                  return null;
+                },
               ),
               const SizedBox(height: 20),
               
@@ -1387,6 +1468,7 @@ class _LoginScreenState extends State<LoginScreen> {
               TextButton(
                 onPressed: () {
                   setState(() {
+                    _loginErrorMessage = null;
                     _showSignupForm = false;
                     _showLoginForm = true;
                   });

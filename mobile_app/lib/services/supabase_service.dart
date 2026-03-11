@@ -41,13 +41,13 @@ class SupabaseService {
     );
   }
 
-  // Sign up for citizens only with metadata including user type
+  // Sign up for citizens only with metadata including user type. Unique ID (student_number) and email are required.
   static Future<AuthResponse> signUpAsCitizen({
     required String email,
     required String password,
     required String fullName,
+    required String studentNumber,
     String? userType,
-    String? studentNumber,
   }) async {
     return await client.auth.signUp(
       email: email,
@@ -55,9 +55,8 @@ class SupabaseService {
       data: {
         'full_name': fullName,
         'role': 'citizen',
-        'user_type': userType ?? 'student', // Default to student if not specified
-        if (studentNumber != null && studentNumber.isNotEmpty)
-          'student_number': studentNumber,
+        'user_type': userType ?? 'student',
+        'student_number': studentNumber.trim(),
       },
     );
   }
