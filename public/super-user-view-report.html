@@ -7,6 +7,7 @@
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="css/su-header-shared.css">
     <link rel="stylesheet" href="css/system-status.css">
+    <link rel="stylesheet" href="css/logout-modal.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -14,34 +15,34 @@
     <script src="js/supabase.js"></script>
     <style>
         /* ── Super-User Sidebar Theme ── */
-        .sidebar { background: linear-gradient(180deg, #0f172a 0%, #064e3b 100%) !important; }
-        .nav-item.active { background: rgba(16,185,129,0.2) !important; color: #34d399 !important; border-left: 3px solid #10b981 !important; border-top:none !important; border-right:none !important; border-bottom:none !important; font-weight:600; }
-        .nav-item:hover { background: rgba(16,185,129,0.1) !important; color: #a7f3d0 !important; border-left-color: rgba(16,185,129,0.4) !important; }
-        .status-dot.online { background: #10b981 !important; box-shadow: 0 0 0 3px rgba(16,185,129,0.25) !important; }
-        .user-avatar { background: rgba(16,185,129,0.25) !important; color: #34d399 !important; }
-        .sidebar-header { border-bottom: 1px solid rgba(16,185,129,0.15) !important; }
-        .system-status { padding: 10px 20px; border-bottom: 1px solid rgba(16,185,129,0.15); }
-        .su-role-badge { display:inline-flex; align-items:center; gap:4px; font-size:0.65rem; font-weight:700; letter-spacing:0.08em; text-transform:uppercase; background:rgba(16,185,129,0.2); color:#34d399; border:1px solid rgba(16,185,129,0.4); border-radius:9999px; padding:2px 8px; margin-top:4px; }
+        .sidebar { background: linear-gradient(180deg, #0f172a 0%, #1e3a8a 100%) !important; }
+        .nav-item.active { background: rgba(59,130,246,0.2) !important; color: #93c5fd !important; border-left: 3px solid #2563eb !important; border-top:none !important; border-right:none !important; border-bottom:none !important; font-weight:600; }
+        .nav-item:hover { background: rgba(59,130,246,0.1) !important; color: #93c5fd !important; border-left-color: rgba(59,130,246,0.4) !important; }
+        .status-dot.online { background: #2563eb !important; box-shadow: 0 0 0 3px rgba(59,130,246,0.25) !important; }
+        .user-avatar { background: rgba(59,130,246,0.25) !important; color: #93c5fd !important; }
+        .sidebar-header { border-bottom: 1px solid rgba(59,130,246,0.15) !important; }
+        .system-status { padding: 10px 20px; border-bottom: 1px solid rgba(59,130,246,0.15); }
+        .su-role-badge { display:inline-flex; align-items:center; gap:4px; font-size:0.65rem; font-weight:700; letter-spacing:0.08em; text-transform:uppercase; background:rgba(59,130,246,0.2); color:#93c5fd; border:1px solid rgba(59,130,246,0.4); border-radius:9999px; padding:2px 8px; margin-top:4px; }
         .su-logout-btn { width:100%; padding:0.75rem 1rem; background:rgba(239,68,68,0.1); border:1px solid rgba(239,68,68,0.3); color:#fca5a5; border-radius:8px; font-size:0.875rem; font-weight:500; cursor:pointer; transition:all 0.2s; display:flex; align-items:center; gap:0.5rem; }
         .su-logout-btn:hover { background:#EF4444 !important; border-color:#EF4444 !important; color:white !important; }
 
         /* ── Page header ── */
-        .vr-header { background:linear-gradient(135deg,#0f172a 0%,#064e3b 100%); border-radius:20px; padding:1.75rem 2rem; margin-bottom:1.75rem; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:1rem; box-shadow:0 8px 32px rgba(0,0,0,0.18); position:relative; overflow:hidden; }
-        .vr-header::before { content:''; position:absolute; top:-40px; right:-40px; width:160px; height:160px; background:rgba(16,185,129,0.12); border-radius:50%; }
-        .vr-header::after  { content:''; position:absolute; bottom:-30px; right:80px; width:100px; height:100px; background:rgba(16,185,129,0.07); border-radius:50%; }
+        .vr-header { background:linear-gradient(135deg,#0f172a 0%,#1e3a8a 100%); border-radius:20px; padding:1.75rem 2rem; margin-bottom:1.75rem; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:1rem; box-shadow:0 8px 32px rgba(0,0,0,0.18); position:relative; overflow:hidden; }
+        .vr-header::before { content:''; position:absolute; top:-40px; right:-40px; width:160px; height:160px; background:rgba(59,130,246,0.12); border-radius:50%; }
+        .vr-header::after  { content:''; position:absolute; bottom:-30px; right:80px; width:100px; height:100px; background:rgba(59,130,246,0.07); border-radius:50%; }
         .vr-header h1 { margin:0; font-size:1.5rem; font-weight:800; color:white; display:flex; align-items:center; gap:0.7rem; letter-spacing:-0.02em; position:relative; z-index:1; }
-        .vr-header h1 i { color:#34d399; }
+        .vr-header h1 i { color:#93c5fd; }
         .vr-header p { margin:0.3rem 0 0; font-size:0.875rem; color:rgba(255,255,255,0.7); position:relative; z-index:1; }
-        .vr-su-badge { background:rgba(16,185,129,0.18); border:1px solid rgba(16,185,129,0.4); color:#34d399; border-radius:9999px; padding:0.3rem 0.9rem; font-size:0.72rem; font-weight:700; letter-spacing:0.06em; text-transform:uppercase; display:inline-flex; align-items:center; gap:0.35rem; position:relative; z-index:1; }
+        .vr-su-badge { background:rgba(59,130,246,0.18); border:1px solid rgba(59,130,246,0.4); color:#93c5fd; border-radius:9999px; padding:0.3rem 0.9rem; font-size:0.72rem; font-weight:700; letter-spacing:0.06em; text-transform:uppercase; display:inline-flex; align-items:center; gap:0.35rem; position:relative; z-index:1; }
 
         /* ── Page header ── */
-        .vr-header { background:linear-gradient(135deg,#0f172a 0%,#064e3b 100%); border-radius:20px; padding:1.75rem 2rem; margin-bottom:1.75rem; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:1rem; box-shadow:0 8px 32px rgba(0,0,0,0.18); position:relative; overflow:hidden; }
-        .vr-header::before { content:''; position:absolute; top:-40px; right:-40px; width:160px; height:160px; background:rgba(16,185,129,0.12); border-radius:50%; }
-        .vr-header::after  { content:''; position:absolute; bottom:-30px; right:80px; width:100px; height:100px; background:rgba(16,185,129,0.07); border-radius:50%; }
+        .vr-header { background:linear-gradient(135deg,#0f172a 0%,#1e3a8a 100%); border-radius:20px; padding:1.75rem 2rem; margin-bottom:1.75rem; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:1rem; box-shadow:0 8px 32px rgba(0,0,0,0.18); position:relative; overflow:hidden; }
+        .vr-header::before { content:''; position:absolute; top:-40px; right:-40px; width:160px; height:160px; background:rgba(59,130,246,0.12); border-radius:50%; }
+        .vr-header::after  { content:''; position:absolute; bottom:-30px; right:80px; width:100px; height:100px; background:rgba(59,130,246,0.07); border-radius:50%; }
         .vr-header h1 { margin:0; font-size:1.5rem; font-weight:800; color:white; display:flex; align-items:center; gap:0.7rem; letter-spacing:-0.02em; position:relative; z-index:1; }
-        .vr-header h1 i { color:#34d399; }
+        .vr-header h1 i { color:#93c5fd; }
         .vr-header p { margin:0.3rem 0 0; font-size:0.875rem; color:rgba(255,255,255,0.7); position:relative; z-index:1; }
-        .vr-su-badge { background:rgba(16,185,129,0.18); border:1px solid rgba(16,185,129,0.4); color:#34d399; border-radius:9999px; padding:0.3rem 0.9rem; font-size:0.72rem; font-weight:700; letter-spacing:0.06em; text-transform:uppercase; display:inline-flex; align-items:center; gap:0.35rem; position:relative; z-index:1; }
+        .vr-su-badge { background:rgba(59,130,246,0.18); border:1px solid rgba(59,130,246,0.4); color:#93c5fd; border-radius:9999px; padding:0.3rem 0.9rem; font-size:0.72rem; font-weight:700; letter-spacing:0.06em; text-transform:uppercase; display:inline-flex; align-items:center; gap:0.35rem; position:relative; z-index:1; }
 
         /* ── Page layout ── */
         .vr-main { padding:1.75rem; background:#f1f5f9; min-height:100vh; }
@@ -155,8 +156,8 @@
         .status-processing { background: #dbeafe; color: #2563eb; }
         .status-classified { background: #fed7aa; color: #ea580c; }
         .status-assigned { background: #e0e7ff; color: #7c3aed; }
-        .status-in-progress { background: #a7f3d0; color: #059669; }
-        .status-completed { background: #d1fae5; color: #047857; }
+        .status-in-progress { background: #93c5fd; color: #1d4ed8; }
+        .status-completed { background: #d1fae5; color: #1e40af; }
         .status-cancelled { background: #f3f4f6; color: #6b7280; }
         .priority-badge {
             display: inline-flex;
@@ -202,11 +203,11 @@
             box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
         }
         .btn-success {
-            background: #10b981;
+            background: #2563eb;
             color: white;
         }
         .btn-success:hover {
-            background: #059669;
+            background: #1d4ed8;
             transform: translateY(-1px);
             box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
         }
@@ -376,7 +377,7 @@
                     <p style="margin:0;font-size:0.75rem;color:rgba(255,255,255,0.55);">LSPU Command</p>
                 </div>
             </div>
-            <button class="su-logout-btn" onclick="window.location.href='login.html'">
+            <button class="su-logout-btn" onclick="showLogoutConfirm()">
                 <i class="bi bi-box-arrow-right"></i> Logout
             </button>
         </div>
@@ -943,7 +944,29 @@
                 document.querySelector('#errorState p').textContent = message;
             }
         }
+
+        function showLogoutConfirm() { document.getElementById('logoutModal').classList.remove('hidden'); }
+        function closeLogoutModal() { document.getElementById('logoutModal').classList.add('hidden'); }
+        async function confirmLogout() {
+            try { await window.emergencySystem.supabase.auth.signOut(); } catch (_) {}
+            window.location.href = 'login.html';
+        }
+        document.addEventListener('keydown', function(e) { if (e.key === 'Escape') closeLogoutModal(); });
     </script>
+
+    <!-- Logout Confirmation Modal (same design as other sidebar pages) -->
+    <div id="logoutModal" class="logout-modal hidden">
+        <div class="logout-modal-overlay" onclick="closeLogoutModal()"></div>
+        <div class="logout-modal-content">
+            <div class="logout-modal-icon"><i class="bi bi-box-arrow-right"></i></div>
+            <h3 class="logout-modal-title">Confirm Logout</h3>
+            <p class="logout-modal-message">Are you sure you want to log out of the system?</p>
+            <div class="logout-modal-buttons">
+                <button type="button" class="logout-modal-btn cancel" onclick="closeLogoutModal()"><i class="bi bi-x-circle"></i> Cancel</button>
+                <button type="button" class="logout-modal-btn confirm" onclick="confirmLogout()"><i class="bi bi-box-arrow-right"></i> Logout</button>
+            </div>
+        </div>
+    </div>
 </body>
 </html>
 

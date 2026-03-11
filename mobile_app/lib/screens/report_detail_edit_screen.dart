@@ -960,12 +960,21 @@ class _ReportDetailEditScreenState extends State<ReportDetailEditScreen> {
   }
 
   Widget _buildResponderDropdown() {
+    // Deduplicate by id so DropdownButton never sees two items with the same value
+    final seenIds = <String>{};
+    final uniqueResponders = _responders.where((r) {
+      final id = r['id']?.toString();
+      if (id == null || id.isEmpty || seenIds.contains(id)) return false;
+      seenIds.add(id);
+      return true;
+    }).toList();
+
     final responderItems = [
       const DropdownMenuItem<String>(
         value: null,
         child: Text('-- Select Responder --'),
       ),
-      ..._responders.map((responder) {
+      ...uniqueResponders.map((responder) {
         final name = responder['name']?.toString() ?? 'Unknown';
         final role = responder['role']?.toString() ?? '';
         final isAvailable = responder['is_available'] == true;
@@ -977,6 +986,10 @@ class _ReportDetailEditScreenState extends State<ReportDetailEditScreen> {
         );
       }),
     ];
+
+    // Only use _selectedResponderId if it exists in items (exactly one match)
+    final valueInItems = responderItems.any((item) => item.value == _selectedResponderId);
+    final dropdownValue = valueInItems ? _selectedResponderId : null;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -991,7 +1004,7 @@ class _ReportDetailEditScreenState extends State<ReportDetailEditScreen> {
         ),
         const SizedBox(height: 8),
         DropdownButtonFormField<String?>(
-          value: _selectedResponderId,
+          value: dropdownValue,
           decoration: const InputDecoration(
             border: OutlineInputBorder(),
             contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 16),

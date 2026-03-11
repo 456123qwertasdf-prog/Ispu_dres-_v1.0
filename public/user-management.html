@@ -6,6 +6,7 @@
     <title>User Management - LSPU Emergency Application System</title>
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="css/system-status.css">
+    <link rel="stylesheet" href="css/logout-modal.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
     <style>
         .registration-form {
@@ -939,10 +940,10 @@
                     <i class="bi bi-shield-check"></i> Evacuation Guide
                 </a>
                 <a href="archive.html" class="nav-item" style="font-weight: 700;">
-                    <i class="bi bi-folder"></i> Archived Reports
+                    <i class="bi bi-folder"></i> Archived
                 </a>
                 <a href="analytics.html" class="nav-item" style="font-weight: 700;">
-                    <i class="bi bi-graph-up"></i> Analytics Dashboard
+                    <i class="bi bi-graph-up"></i> Analytics
                 </a>
                 <a href="user-management.html" class="nav-item active">
                     <i class="bi bi-people"></i> User Management
@@ -1016,11 +1017,9 @@
         <div id="logoutModal" class="logout-modal hidden">
             <div class="logout-modal-overlay" onclick="closeLogoutModal()"></div>
             <div class="logout-modal-content">
-                <div class="logout-modal-icon">
-                    <i class="bi bi-exclamation-triangle"></i>
-                </div>
-                <h3 class="logout-modal-title">Confirm Logout</h3>
-                <p class="logout-modal-message">Are you sure you want to logout? You'll need to sign in again to access the system.</p>
+<div class="logout-modal-icon"><i class="bi bi-box-arrow-right"></i></div>
+            <h3 class="logout-modal-title">Confirm Logout</h3>
+            <p class="logout-modal-message">Are you sure you want to log out of the system?</p>
                 <div class="logout-modal-buttons">
                     <button class="logout-modal-btn cancel" onclick="closeLogoutModal()">
                         <i class="bi bi-x-circle"></i> Cancel
@@ -1464,30 +1463,20 @@
 
             <!-- User Management Section -->
             <div class="admin-section active">
-                <!-- Header Card -->
-                <div class="header-card">
-                    <div class="header-content">
-                        <div class="header-title-row">
-                            <div>
-                                <h2 class="header-title">User Management</h2>
-                                <p class="header-subtitle">Create and manage user accounts for the emergency response system</p>
-                            </div>
-                            <div class="admin-stats-row">
-                                <div class="stat-card stat-online" id="onlineNowCard" title="Users currently using the system">
-                                    <div class="stat-icon-wrap">
-                                        <span class="stat-pulse"></span>
-                                        <i class="bi bi-people-fill"></i>
-                                    </div>
-                                    <div class="stat-content">
-                                        <span class="stat-value" id="onlineNowCount">—</span>
-                                        <span class="stat-label">Online now</span>
-                                    </div>
-                                </div>
-                            </div>
+                <!-- Page header banner (same as image) -->
+                <div class="admin-page-header">
+                    <div>
+                        <h2><i class="bi bi-people"></i> User Management</h2>
+                        <p>Create and manage user accounts for the emergency response system</p>
+                    </div>
+                    <div class="admin-page-header-right">
+                        <span class="admin-page-badge"><i class="bi bi-shield-fill"></i> Admin</span>
+                        <div class="admin-header-time">
+                            <div class="time-label">Logged in as</div>
+                            <div class="time-value" id="adminHeaderUserName">Admin User</div>
                         </div>
                     </div>
                 </div>
-                
                 <div class="registration-form">
                     <div class="form-header-container">
                         <h2 class="form-title" id="formTitle">Registration Form</h2>
@@ -1745,7 +1734,10 @@
             try {
                 // Initialize the emergency system
                 await window.emergencySystem.initialize();
-                
+
+                const nameEl = document.getElementById('adminHeaderUserName');
+                if (nameEl) nameEl.textContent = window.emergencySystem.user?.user_metadata?.full_name || window.emergencySystem.user?.email?.split('@')[0] || 'Admin User';
+
                 // Check if user is admin or super_user
                 const userRole = window.emergencySystem.user?.user_metadata?.role;
                 if (!window.emergencySystem.user || (userRole !== 'admin' && userRole !== 'super_user')) {
@@ -2425,28 +2417,20 @@
                     }
                 });
                 
-                // Handle edge function errors more gracefully
+                // Handle edge function errors more gracefully – show actual reason (e.g. already exists)
                 if (error) {
                     console.error('Edge function error:', error);
-                    // Try to extract error message from response (500 body may be in context.body or context)
                     let errorMessage = error.message || 'Unknown error';
                     let errorBody = null;
-                    if (error.context && error.context.body) {
+                    // Supabase passes the Response in error.context – must use .json() to read body
+                    if (error.context && typeof error.context.json === 'function') {
                         try {
-                            errorBody = typeof error.context.body === 'string'
-                                ? JSON.parse(error.context.body)
-                                : error.context.body;
-                        } catch (e) { /* ignore */ }
-                    }
-                    if (error.context && !errorBody && typeof error.context === 'object') {
-                        try {
-                            const raw = error.context.body ?? error.context;
-                            errorBody = typeof raw === 'string' ? JSON.parse(raw) : raw;
+                            errorBody = await error.context.json();
                         } catch (e) { /* ignore */ }
                     }
                     if (errorBody) {
                         if (errorBody.error && errorBody.details) {
-                            errorMessage = errorBody.error + ': ' + errorBody.details;
+                            errorMessage = errorBody.error + (errorBody.details ? ': ' + errorBody.details : '');
                         } else if (errorBody.error) {
                             errorMessage = errorBody.error;
                         } else if (errorBody.details) {
@@ -2455,6 +2439,12 @@
                             errorMessage = errorBody.message;
                         }
                         if (errorBody.hint) errorMessage += ' ' + errorBody.hint;
+                        // Prefer short, clear message for known codes
+                        if (errorBody.code === 'EMAIL_EXISTS') {
+                            errorMessage = 'This email is already registered. Use a different email or find the user in the list.';
+                        } else if (errorBody.code === 'PROFILE_INSERT_ERROR' && errorBody.hint) {
+                            errorMessage = 'User could not be created: ' + (errorBody.hint || errorBody.details || errorBody.error);
+                        }
                     }
                     throw new Error(errorMessage);
                 }
@@ -2495,7 +2485,7 @@
                 
             } catch (error) {
                 console.error('Failed to register user:', error);
-                // Extract full error message
+                // Extract full error message (already user-friendly if we parsed Edge Function body)
                 let errorMessage = 'Unknown error';
                 if (error.message) {
                     errorMessage = error.message;
@@ -2504,9 +2494,9 @@
                 } else if (typeof error === 'string') {
                     errorMessage = error;
                 }
-                
-                // Show full error message
-                window.emergencySystem.showError('Failed to register user: ' + errorMessage);
+                // Show specific reason; only prefix if it's the generic Edge Function message
+                const isGeneric = /Edge Function returned a non 2xx|Unknown error/i.test(errorMessage);
+                window.emergencySystem.showError(isGeneric ? 'Failed to register user: ' + errorMessage : errorMessage);
             }
         });
 

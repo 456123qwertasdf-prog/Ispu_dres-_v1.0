@@ -6,6 +6,7 @@
     <title>Analytics - LSPU Emergency Response System</title>
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="css/system-status.css">
+    <link rel="stylesheet" href="css/logout-modal.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
     <script src="https://cdn.jsdelivr.net/npm/supabase@2"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -56,10 +57,10 @@
                     <i class="bi bi-shield-check"></i> Evacuation Guide
                 </a>
                 <a href="archive.html" class="nav-item" style="font-weight: 700;">
-                    <i class="bi bi-folder"></i> Archived Reports
+                    <i class="bi bi-folder"></i> Archived
                 </a>
                 <a href="analytics.html" class="nav-item active" style="font-weight: 700;">
-                    <i class="bi bi-graph-up"></i> Analytics Dashboard
+                    <i class="bi bi-graph-up"></i> Analytics
                 </a>
                 <a href="user-management.html" class="nav-item">
                     <i class="bi bi-people"></i> User Management
@@ -477,14 +478,19 @@
             <div class="admin-section active">
                
 
-                <!-- Page Header Card (matches other admin pages) -->
-                <div class="card ana-header-card">
-                    <div class="card-header">
-                        <div>
-                            <h2 class="card-title">Analytics Dashboard</h2>
-                            <p class="card-subtitle">Comprehensive emergency response analytics and insights</p>
+                <!-- Page header banner (same as image) -->
+                <div class="admin-page-header">
+                    <div>
+                        <h2><i class="bi bi-graph-up"></i> Analytics Dashboard</h2>
+                        <p>Comprehensive emergency response analytics and insights</p>
+                        <span class="ana-page-meta" id="anaPageDate" style="display:block;margin-top:0.5rem;font-size:0.8rem;opacity:0.9;">Loading...</span>
+                    </div>
+                    <div class="admin-page-header-right">
+                        <span class="admin-page-badge"><i class="bi bi-shield-fill"></i> Admin</span>
+                        <div class="admin-header-time">
+                            <div class="time-label">Logged in as</div>
+                            <div class="time-value" id="adminHeaderUserName">Admin User</div>
                         </div>
-                        <span class="ana-page-meta" id="anaPageDate">Loading...</span>
                     </div>
                 </div>
                 
@@ -700,6 +706,8 @@
             }
             try {
                 await window.emergencySystem.initialize();
+                const nameEl = document.getElementById('adminHeaderUserName');
+                if (nameEl) nameEl.textContent = window.emergencySystem.user?.user_metadata?.full_name || window.emergencySystem.user?.email?.split('@')[0] || 'Admin User';
                 initializeCharts();
                 await loadAnalyticsData();
                 // Period tabs
@@ -1583,11 +1591,9 @@
     <div id="logoutModal" class="logout-modal hidden">
         <div class="logout-modal-overlay" onclick="closeLogoutModal()"></div>
         <div class="logout-modal-content">
-            <div class="logout-modal-icon">
-                <i class="bi bi-exclamation-triangle"></i>
-            </div>
+            <div class="logout-modal-icon"><i class="bi bi-box-arrow-right"></i></div>
             <h3 class="logout-modal-title">Confirm Logout</h3>
-            <p class="logout-modal-message">Are you sure you want to logout? You'll need to sign in again to access the system.</p>
+            <p class="logout-modal-message">Are you sure you want to log out of the system?</p>
             <div class="logout-modal-buttons">
                 <button class="logout-modal-btn cancel" onclick="closeLogoutModal()">
                     <i class="bi bi-x-circle"></i> Cancel
@@ -1600,124 +1606,6 @@
     </div>
 
     <style>
-        /* Logout modal – scoped to analytics page only */
-        .page-analytics .logout-modal {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: 10000;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            animation: ana-fadeIn 0.2s ease;
-        }
-        .page-analytics .logout-modal.hidden {
-            display: none;
-        }
-        .page-analytics .logout-modal-overlay {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.6);
-            backdrop-filter: blur(4px);
-        }
-        .page-analytics .logout-modal-content {
-            position: relative;
-            background: white;
-            border-radius: 16px;
-            padding: 2rem;
-            max-width: 420px;
-            width: 90%;
-            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3), 0 10px 10px -5px rgba(0, 0, 0, 0.2);
-            animation: ana-slideUp 0.3s ease;
-            text-align: center;
-        }
-        .page-analytics .logout-modal-icon {
-            width: 64px;
-            height: 64px;
-            margin: 0 auto 1.5rem;
-            background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border: 3px solid #fca5a5;
-        }
-        .page-analytics .logout-modal-icon i {
-            font-size: 2rem;
-            color: #ef4444;
-        }
-        .page-analytics .logout-modal-title {
-            font-size: 1.5rem;
-            font-weight: 700;
-            color: #111827;
-            margin: 0 0 0.75rem 0;
-        }
-        .page-analytics .logout-modal-message {
-            font-size: 0.9375rem;
-            color: #6b7280;
-            line-height: 1.6;
-            margin: 0 0 1.75rem 0;
-        }
-        .page-analytics .logout-modal-buttons {
-            display: flex;
-            gap: 0.75rem;
-            justify-content: center;
-        }
-        .page-analytics .logout-modal-btn {
-            padding: 0.75rem 1.5rem;
-            border-radius: 8px;
-            font-size: 0.875rem;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            border: 2px solid transparent;
-        }
-        .page-analytics .logout-modal-btn.cancel {
-            background: #f3f4f6;
-            color: #374151;
-            border-color: #e5e7eb;
-        }
-        .page-analytics .logout-modal-btn.cancel:hover {
-            background: #e5e7eb;
-            border-color: #d1d5db;
-            transform: translateY(-1px);
-        }
-        .page-analytics .logout-modal-btn.confirm {
-            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
-            color: white;
-            border-color: #ef4444;
-            box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3);
-        }
-        .page-analytics .logout-modal-btn.confirm:hover {
-            background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
-            transform: translateY(-1px);
-            box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4);
-        }
-        .page-analytics .logout-modal-btn:active {
-            transform: translateY(0);
-        }
-        @keyframes ana-fadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
-        }
-        @keyframes ana-slideUp {
-            from {
-                opacity: 0;
-                transform: translateY(20px) scale(0.95);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0) scale(1);
-            }
-        }
     </style>
 </body>
 </html>

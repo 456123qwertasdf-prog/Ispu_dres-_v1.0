@@ -8,24 +8,25 @@
     <link rel="stylesheet" href="css/su-header-shared.css">
     <link rel="stylesheet" href="css/system-status.css">
     <link rel="stylesheet" href="css/su-tour.css">
+    <link rel="stylesheet" href="css/logout-modal.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
     <script src="https://cdn.jsdelivr.net/npm/supabase@2"></script>
     <script src="js/supabase.js"></script>
     <style>
         /* ── Super-User Sidebar Theme ── */
-        .sidebar { background: linear-gradient(180deg, #0f172a 0%, #064e3b 100%) !important; }
-        .nav-item.active { background: rgba(16,185,129,0.2) !important; color: #34d399 !important; border-left: 3px solid #10b981 !important; border-top: none !important; border-right: none !important; border-bottom: none !important; font-weight: 600; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-        .nav-item:hover { background: rgba(16,185,129,0.1) !important; color: #a7f3d0 !important; border-left-color: rgba(16,185,129,0.4) !important; }
-        .status-dot.online { background: #10b981 !important; box-shadow: 0 0 0 3px rgba(16,185,129,0.25) !important; }
-        .user-avatar { background: rgba(16,185,129,0.25) !important; color: #34d399 !important; }
-        .sidebar-header { border-bottom: 1px solid rgba(16,185,129,0.15) !important; }
-        .system-status { padding: 10px 20px; border-bottom: 1px solid rgba(16,185,129,0.15); }
-        .su-role-badge { display:inline-flex; align-items:center; gap:4px; font-size:0.65rem; font-weight:700; letter-spacing:0.08em; text-transform:uppercase; background:rgba(16,185,129,0.2); color:#34d399; border:1px solid rgba(16,185,129,0.4); border-radius:9999px; padding:2px 8px; margin-top:4px; }
+        .sidebar { background: linear-gradient(180deg, #0f172a 0%, #1e3a8a 100%) !important; }
+        .nav-item.active { background: rgba(37,99,235,0.2) !important; color: #93c5fd !important; border-left: 3px solid #2563eb !important; border-top: none !important; border-right: none !important; border-bottom: none !important; font-weight: 600; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .nav-item:hover { background: rgba(37,99,235,0.1) !important; color: #93c5fd !important; border-left-color: rgba(37,99,235,0.4) !important; }
+        .status-dot.online { background: #2563eb !important; box-shadow: 0 0 0 3px rgba(37,99,235,0.25) !important; }
+        .user-avatar { background: rgba(37,99,235,0.25) !important; color: #93c5fd !important; }
+        .sidebar-header { border-bottom: 1px solid rgba(37,99,235,0.15) !important; }
+        .system-status { padding: 10px 20px; border-bottom: 1px solid rgba(37,99,235,0.15); }
+        .su-role-badge { display:inline-flex; align-items:center; gap:4px; font-size:0.65rem; font-weight:700; letter-spacing:0.08em; text-transform:uppercase; background:rgba(37,99,235,0.2); color:#93c5fd; border:1px solid rgba(37,99,235,0.4); border-radius:9999px; padding:2px 8px; margin-top:4px; }
         .su-logout-btn { width:100%; padding:0.75rem 1rem; background:rgba(239,68,68,0.1); border:1px solid rgba(239,68,68,0.3); color:#fca5a5; border-radius:8px; font-size:0.875rem; font-weight:500; cursor:pointer; transition:all 0.2s ease; display:flex; align-items:center; gap:0.5rem; }
         .su-logout-btn:hover { background:#EF4444 !important; border-color:#EF4444 !important; color:white !important; }
-        .su-content-header { background:linear-gradient(135deg, #0f172a 0%, #064e3b 100%); color:white; padding:1.5rem 2rem; border-radius:16px; box-shadow:0 8px 24px rgba(0,0,0,0.15); border-left:4px solid #10b981; margin-bottom:1.75rem; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:1rem; }
+        .su-content-header { background:linear-gradient(135deg, #0f172a 0%, #1e3a8a 100%); color:white; padding:1.5rem 2rem; border-radius:16px; box-shadow:0 8px 24px rgba(0,0,0,0.15); border-left:4px solid #2563eb; margin-bottom:1.75rem; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:1rem; }
         .su-content-header h1 { margin:0; font-size:1.5rem; font-weight:700; display:flex; align-items:center; gap:0.75rem; }
-        .su-content-header h1 i { color:#34d399; }
+        .su-content-header h1 i { color:#93c5fd; }
         .su-content-header p { margin:0.4rem 0 0 0; font-size:0.875rem; opacity:0.8; }
 
         /* Modal */
@@ -41,22 +42,6 @@
         .modal-close:hover { background:#f3f4f6; color:#374151; }
 
         /* Logout Modal */
-        .logout-modal { position:fixed; top:0; left:0; width:100%; height:100%; z-index:10001; display:flex; align-items:center; justify-content:center; animation:fadeIn 0.2s ease; }
-        .logout-modal.hidden { display:none; }
-        .logout-modal-overlay { position:absolute; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); backdrop-filter:blur(4px); }
-        .logout-modal-content { position:relative; background:white; border-radius:16px; padding:2rem; max-width:420px; width:90%; box-shadow:0 20px 25px -5px rgba(0,0,0,0.3); animation:slideUp 0.3s ease; text-align:center; }
-        .logout-modal-icon { width:64px; height:64px; margin:0 auto 1.5rem; background:linear-gradient(135deg,#fef2f2,#fee2e2); border-radius:50%; display:flex; align-items:center; justify-content:center; border:3px solid #fca5a5; }
-        .logout-modal-icon i { font-size:2rem; color:#ef4444; }
-        .logout-modal-title { font-size:1.5rem; font-weight:700; color:#111827; margin:0 0 0.75rem 0; }
-        .logout-modal-message { font-size:0.9375rem; color:#6b7280; line-height:1.6; margin:0 0 1.75rem 0; }
-        .logout-modal-buttons { display:flex; gap:0.75rem; justify-content:center; }
-        .logout-modal-btn { padding:0.75rem 1.5rem; border-radius:8px; font-size:0.875rem; font-weight:600; cursor:pointer; transition:all 0.2s ease; display:flex; align-items:center; gap:0.5rem; border:2px solid transparent; }
-        .logout-modal-btn.cancel { background:#f3f4f6; color:#374151; border-color:#e5e7eb; }
-        .logout-modal-btn.cancel:hover { background:#e5e7eb; transform:translateY(-1px); }
-        .logout-modal-btn.confirm { background:linear-gradient(135deg,#ef4444,#dc2626); color:white; border-color:#ef4444; box-shadow:0 2px 8px rgba(239,68,68,0.3); }
-        .logout-modal-btn.confirm:hover { background:linear-gradient(135deg,#dc2626,#b91c1c); transform:translateY(-1px); }
-        .logout-modal-btn:active { transform:translateY(0); }
-
         @keyframes fadeIn { from{opacity:0} to{opacity:1} }
         @keyframes slideUp { from{opacity:0;transform:translateY(20px) scale(0.95)} to{opacity:1;transform:translateY(0) scale(1)} }
 
@@ -65,35 +50,35 @@
 
         /* Page header */
         .rp-header {
-            background: linear-gradient(135deg, #0f172a 0%, #064e3b 100%);
+            background: linear-gradient(135deg, #0f172a 0%, #1e3a8a 100%);
             border-radius: 20px; padding: 1.75rem 2rem; margin-bottom: 1.75rem;
             display: flex; justify-content: space-between; align-items: center;
             flex-wrap: wrap; gap: 1rem;
             box-shadow: 0 8px 32px rgba(0,0,0,0.18);
             position: relative; overflow: hidden;
         }
-        .rp-header::before { content:''; position:absolute; top:-40px; right:-40px; width:160px; height:160px; background:rgba(16,185,129,0.12); border-radius:50%; }
-        .rp-header::after  { content:''; position:absolute; bottom:-30px; right:80px; width:100px; height:100px; background:rgba(16,185,129,0.07); border-radius:50%; }
+        .rp-header::before { content:''; position:absolute; top:-40px; right:-40px; width:160px; height:160px; background:rgba(37,99,235,0.12); border-radius:50%; }
+        .rp-header::after  { content:''; position:absolute; bottom:-30px; right:80px; width:100px; height:100px; background:rgba(37,99,235,0.07); border-radius:50%; }
         .rp-header h1 { margin:0; font-size:1.6rem; font-weight:800; color:white; display:flex; align-items:center; gap:0.7rem; letter-spacing:-0.02em; }
-        .rp-header h1 i { color:#34d399; }
+        .rp-header h1 i { color:#93c5fd; }
         .rp-header p  { margin:0.3rem 0 0; font-size:0.875rem; color:rgba(255,255,255,0.7); }
-        .rp-su-badge  { background:rgba(16,185,129,0.18); border:1px solid rgba(16,185,129,0.4); color:#34d399; border-radius:9999px; padding:0.3rem 0.9rem; font-size:0.72rem; font-weight:700; letter-spacing:0.06em; text-transform:uppercase; display:inline-flex; align-items:center; gap:0.35rem; }
+        .rp-su-badge  { background:rgba(37,99,235,0.18); border:1px solid rgba(37,99,235,0.4); color:#93c5fd; border-radius:9999px; padding:0.3rem 0.9rem; font-size:0.72rem; font-weight:700; letter-spacing:0.06em; text-transform:uppercase; display:inline-flex; align-items:center; gap:0.35rem; }
 
         /* Page header */
         .rp-header {
-            background: linear-gradient(135deg, #0f172a 0%, #064e3b 100%);
+            background: linear-gradient(135deg, #0f172a 0%, #1e3a8a 100%);
             border-radius: 20px; padding: 1.75rem 2rem; margin-bottom: 1.75rem;
             display: flex; justify-content: space-between; align-items: center;
             flex-wrap: wrap; gap: 1rem;
             box-shadow: 0 8px 32px rgba(0,0,0,0.18);
             position: relative; overflow: hidden;
         }
-        .rp-header::before { content:''; position:absolute; top:-40px; right:-40px; width:160px; height:160px; background:rgba(16,185,129,0.12); border-radius:50%; }
-        .rp-header::after  { content:''; position:absolute; bottom:-30px; right:80px; width:100px; height:100px; background:rgba(16,185,129,0.07); border-radius:50%; }
+        .rp-header::before { content:''; position:absolute; top:-40px; right:-40px; width:160px; height:160px; background:rgba(37,99,235,0.12); border-radius:50%; }
+        .rp-header::after  { content:''; position:absolute; bottom:-30px; right:80px; width:100px; height:100px; background:rgba(37,99,235,0.07); border-radius:50%; }
         .rp-header h1 { margin:0; font-size:1.6rem; font-weight:800; color:white; display:flex; align-items:center; gap:0.7rem; letter-spacing:-0.02em; }
-        .rp-header h1 i { color:#34d399; }
+        .rp-header h1 i { color:#93c5fd; }
         .rp-header p  { margin:0.3rem 0 0; font-size:0.875rem; color:rgba(255,255,255,0.7); }
-        .rp-su-badge  { background:rgba(16,185,129,0.18); border:1px solid rgba(16,185,129,0.4); color:#34d399; border-radius:9999px; padding:0.3rem 0.9rem; font-size:0.72rem; font-weight:700; letter-spacing:0.06em; text-transform:uppercase; display:inline-flex; align-items:center; gap:0.35rem; }
+        .rp-su-badge  { background:rgba(37,99,235,0.18); border:1px solid rgba(37,99,235,0.4); color:#93c5fd; border-radius:9999px; padding:0.3rem 0.9rem; font-size:0.72rem; font-weight:700; letter-spacing:0.06em; text-transform:uppercase; display:inline-flex; align-items:center; gap:0.35rem; }
 
         /* ── Modern Reports Page ── */
         .rp-main { padding: 1.75rem; background: #f1f5f9; min-height: 100vh; }
@@ -102,7 +87,7 @@
         .rp-panel { background:white; border-radius:16px; box-shadow:0 2px 12px rgba(0,0,0,0.06); border:1px solid rgba(0,0,0,0.04); overflow:hidden; margin-bottom:1.25rem; }
         .rp-panel-header { padding:1rem 1.5rem; border-bottom:1px solid #f1f5f9; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:0.75rem; }
         .rp-panel-title { font-size:0.95rem; font-weight:700; color:#0f172a; display:flex; align-items:center; gap:0.5rem; }
-        .rp-panel-title i { color:#10b981; }
+        .rp-panel-title i { color:#2563eb; }
         .rp-panel-body { padding:1.25rem 1.5rem; }
 
         /* Toolbar */
@@ -113,10 +98,10 @@
             padding:0.45rem 0.85rem; border-radius:10px; border:1.5px solid #e5e7eb;
             font-size:0.83rem; color:#374151; background:white; outline:none; cursor:pointer; min-width:140px;
         }
-        .rp-select:focus { border-color:#10b981; }
+        .rp-select:focus { border-color:#2563eb; }
         .rp-btn { padding:0.45rem 1rem; border-radius:10px; border:none; font-size:0.83rem; font-weight:700; cursor:pointer; display:inline-flex; align-items:center; gap:0.35rem; transition:filter 0.15s, transform 0.15s; white-space:nowrap; }
         .rp-btn:hover { filter:brightness(1.08); transform:translateY(-1px); }
-        .rp-btn-green  { background:linear-gradient(135deg,#10b981,#059669); color:white; }
+        .rp-btn-green  { background:linear-gradient(135deg,#2563eb,#1d4ed8); color:white; }
         .rp-btn-blue   { background:linear-gradient(135deg,#3b82f6,#2563eb); color:white; }
         .rp-btn-gray   { background:#f3f4f6; color:#374151; border:1.5px solid #e5e7eb; }
         .rp-divider    { width:1px; background:#e5e7eb; height:34px; margin:0 0.25rem; }
@@ -124,10 +109,10 @@
         /* Table */
         .rp-table-wrap { overflow-x:auto; }
         .rp-table { width:100%; border-collapse:collapse; font-size:0.84rem; }
-        .rp-table thead tr { background:#f0fdf4; }
-        .rp-table th { padding:0.85rem 1rem; text-align:left; font-weight:700; color:#065f46; font-size:0.75rem; text-transform:uppercase; letter-spacing:0.04em; white-space:nowrap; }
+        .rp-table thead tr { background:#eff6ff; }
+        .rp-table th { padding:0.85rem 1rem; text-align:left; font-weight:700; color:#1e40af; font-size:0.75rem; text-transform:uppercase; letter-spacing:0.04em; white-space:nowrap; }
         .rp-table td { padding:0.85rem 1rem; border-bottom:1px solid #f8fafc; color:#374151; vertical-align:middle; }
-        .rp-table tbody tr:hover { background:#f0fdf4; }
+        .rp-table tbody tr:hover { background:#eff6ff; }
         .rp-table tbody tr:last-child td { border-bottom:none; }
 
         /* Type icon chip */
@@ -139,8 +124,8 @@
         .rp-s-processing { background:#eff6ff; color:#2563eb; }
         .rp-s-assigned   { background:#f5f3ff; color:#7c3aed; }
         .rp-s-active     { background:#fef2f2; color:#dc2626; }
-        .rp-s-completed  { background:#ecfdf5; color:#059669; }
-        .rp-s-resolved   { background:#ecfdf5; color:#059669; }
+        .rp-s-completed  { background:#eff6ff; color:#1d4ed8; }
+        .rp-s-resolved   { background:#eff6ff; color:#1d4ed8; }
         .rp-s-closed     { background:#f3f4f6; color:#6b7280; }
         .rp-s-default    { background:#f3f4f6; color:#6b7280; }
 
@@ -152,19 +137,19 @@
         .rp-act:hover { filter:brightness(1.1); }
         .rp-act-view { background:#eff6ff; color:#2563eb; }
         .rp-act-edit { background:#fefce8; color:#b45309; }
-        .rp-act-map  { background:#ecfdf5; color:#059669; }
+        .rp-act-map  { background:#eff6ff; color:#1d4ed8; }
 
         /* Pagination */
         .rp-pagination { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:0.75rem; padding:1rem 1.5rem; border-top:1px solid #f1f5f9; }
         .rp-pag-info { font-size:0.8rem; color:#6b7280; }
         .rp-pag-controls { display:flex; align-items:center; gap:0.5rem; }
         .rp-pag-btn { padding:0.35rem 0.8rem; border-radius:8px; border:1.5px solid #e5e7eb; background:white; color:#374151; font-size:0.8rem; font-weight:600; cursor:pointer; transition:all 0.15s; display:inline-flex; align-items:center; gap:0.3rem; }
-        .rp-pag-btn:hover:not(:disabled) { border-color:#10b981; color:#059669; }
+        .rp-pag-btn:hover:not(:disabled) { border-color:#2563eb; color:#1d4ed8; }
         .rp-pag-btn:disabled { opacity:0.45; cursor:not-allowed; }
         .rp-pag-num { display:inline-flex; gap:0.3rem; }
         .rp-pag-num .page-btn { width:32px; height:32px; border-radius:8px; border:1.5px solid #e5e7eb; background:white; font-size:0.8rem; font-weight:600; color:#374151; cursor:pointer; display:flex; align-items:center; justify-content:center; transition:all 0.15s; }
-        .rp-pag-num .page-btn.active { background:#10b981; border-color:#10b981; color:white; }
-        .rp-pag-num .page-btn:hover:not(.active) { border-color:#10b981; color:#059669; }
+        .rp-pag-num .page-btn.active { background:#2563eb; border-color:#2563eb; color:white; }
+        .rp-pag-num .page-btn:hover:not(.active) { border-color:#2563eb; color:#1d4ed8; }
 
         /* Empty / loading */
         .rp-empty { text-align:center; padding:3rem 1rem; color:#9ca3af; }
@@ -348,7 +333,7 @@
 <!-- View Report Modal -->
 <div id="viewReportModal" class="modal hidden" style="display:none;position:fixed;inset:0;z-index:1000;align-items:flex-start;justify-content:center;background:rgba(0,0,0,0.5);overflow-y:auto;padding:2rem 1rem;">
     <div style="background:white;border-radius:12px;width:100%;max-width:1100px;box-shadow:0 20px 60px rgba(0,0,0,0.3);overflow:hidden;margin:auto;">
-        <div style="background:linear-gradient(135deg,#059669 0%,#10b981 100%);color:white;padding:1.25rem 1.5rem;display:flex;justify-content:space-between;align-items:center;">
+        <div style="background:linear-gradient(135deg,#1d4ed8 0%,#2563eb 100%);color:white;padding:1.25rem 1.5rem;display:flex;justify-content:space-between;align-items:center;">
             <div>
                 <h2 id="vrTitle" style="margin:0;font-size:1.2rem;font-weight:700;">Report Details</h2>
                 <p style="margin:0.25rem 0 0;font-size:0.8rem;opacity:0.85;">Emergency Report — Super User View</p>
@@ -362,7 +347,7 @@
 <!-- Edit Report Modal -->
 <div id="editReportModal" style="display:none;position:fixed;inset:0;z-index:1050;background:rgba(0,0,0,0.55);align-items:flex-start;justify-content:center;overflow-y:auto;padding:2rem 1rem;">
     <div style="background:white;border-radius:12px;width:100%;max-width:860px;box-shadow:0 20px 60px rgba(0,0,0,0.3);overflow:hidden;margin:auto;">
-        <div style="background:linear-gradient(135deg,#059669 0%,#10b981 100%);color:white;padding:1.25rem 1.5rem;display:flex;justify-content:space-between;align-items:center;">
+        <div style="background:linear-gradient(135deg,#1d4ed8 0%,#2563eb 100%);color:white;padding:1.25rem 1.5rem;display:flex;justify-content:space-between;align-items:center;">
             <div>
                 <h2 id="erTitle" style="margin:0;font-size:1.2rem;font-weight:700;"><i class="bi bi-pencil-square"></i> Edit Emergency Report</h2>
                 <p style="margin:0.25rem 0 0;font-size:0.8rem;opacity:0.85;">Update and manage emergency report information</p>
@@ -372,7 +357,7 @@
         <form id="erForm" style="padding:1.5rem;" onsubmit="event.preventDefault(); saveEditReport();">
             <!-- Emergency Information -->
             <div style="background:#f9fafb;border-radius:8px;padding:1.25rem;margin-bottom:1.25rem;border:1px solid #e5e7eb;">
-                <h3 style="margin:0 0 1rem;font-size:0.95rem;font-weight:700;color:#065f46;display:flex;align-items:center;gap:0.5rem;"><i class="bi bi-exclamation-triangle"></i> Emergency Information</h3>
+                <h3 style="margin:0 0 1rem;font-size:0.95rem;font-weight:700;color:#1e40af;display:flex;align-items:center;gap:0.5rem;"><i class="bi bi-exclamation-triangle"></i> Emergency Information</h3>
                 <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
                     <div>
                         <label style="display:block;font-size:0.8rem;font-weight:600;color:#374151;margin-bottom:0.35rem;">Emergency Type</label>
@@ -421,7 +406,7 @@
             </div>
             <!-- Reporter Information -->
             <div style="background:#f9fafb;border-radius:8px;padding:1.25rem;margin-bottom:1.25rem;border:1px solid #e5e7eb;">
-                <h3 style="margin:0 0 1rem;font-size:0.95rem;font-weight:700;color:#065f46;display:flex;align-items:center;gap:0.5rem;"><i class="bi bi-person"></i> Reporter Information</h3>
+                <h3 style="margin:0 0 1rem;font-size:0.95rem;font-weight:700;color:#1e40af;display:flex;align-items:center;gap:0.5rem;"><i class="bi bi-person"></i> Reporter Information</h3>
                 <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
                     <div>
                         <label style="display:block;font-size:0.8rem;font-weight:600;color:#374151;margin-bottom:0.35rem;">Reporter Name</label>
@@ -435,7 +420,7 @@
             </div>
             <!-- Location & Description -->
             <div style="background:#f9fafb;border-radius:8px;padding:1.25rem;margin-bottom:1.25rem;border:1px solid #e5e7eb;">
-                <h3 style="margin:0 0 1rem;font-size:0.95rem;font-weight:700;color:#065f46;display:flex;align-items:center;gap:0.5rem;"><i class="bi bi-geo-alt"></i> Location & Description</h3>
+                <h3 style="margin:0 0 1rem;font-size:0.95rem;font-weight:700;color:#1e40af;display:flex;align-items:center;gap:0.5rem;"><i class="bi bi-geo-alt"></i> Location & Description</h3>
                 <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
                     <div>
                         <label style="display:block;font-size:0.8rem;font-weight:600;color:#374151;margin-bottom:0.35rem;">Location Address</label>
@@ -449,7 +434,7 @@
             </div>
             <!-- Response & Additional Info -->
             <div style="background:#f9fafb;border-radius:8px;padding:1.25rem;margin-bottom:1.25rem;border:1px solid #e5e7eb;">
-                <h3 style="margin:0 0 1rem;font-size:0.95rem;font-weight:700;color:#065f46;display:flex;align-items:center;gap:0.5rem;"><i class="bi bi-clock"></i> Response & Additional Information</h3>
+                <h3 style="margin:0 0 1rem;font-size:0.95rem;font-weight:700;color:#1e40af;display:flex;align-items:center;gap:0.5rem;"><i class="bi bi-clock"></i> Response & Additional Information</h3>
                 <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:1rem;">
                     <div>
                         <label style="display:block;font-size:0.8rem;font-weight:600;color:#374151;margin-bottom:0.35rem;">Expected Response Time</label>
@@ -483,7 +468,7 @@
 <!-- Assign Responder Modal (from View Report) -->
 <div id="assignResponderModal" style="display:none;position:fixed;inset:0;z-index:1100;background:rgba(0,0,0,0.5);align-items:center;justify-content:center;">
     <div style="background:white;border-radius:12px;width:90%;max-width:480px;box-shadow:0 20px 60px rgba(0,0,0,0.3);overflow:hidden;">
-        <div style="background:linear-gradient(135deg,#059669,#10b981);color:white;padding:1.25rem 1.5rem;display:flex;justify-content:space-between;align-items:center;">
+        <div style="background:linear-gradient(135deg,#1d4ed8,#2563eb);color:white;padding:1.25rem 1.5rem;display:flex;justify-content:space-between;align-items:center;">
             <h3 style="margin:0;font-size:1.05rem;font-weight:700;"><i class="bi bi-person-plus"></i> Assign Responder(s)</h3>
             <button onclick="closeAssignResponderModalVR()" style="background:rgba(255,255,255,0.2);border:none;color:white;width:32px;height:32px;border-radius:50%;cursor:pointer;font-size:1.1rem;display:flex;align-items:center;justify-content:center;">&times;</button>
         </div>
@@ -506,9 +491,9 @@
     <div style="background:white;border-radius:16px;width:100%;max-width:620px;box-shadow:0 24px 60px rgba(0,0,0,0.3);overflow:hidden;margin:auto;">
 
         <!-- Modal Header -->
-        <div style="background:linear-gradient(135deg,#0f172a 0%,#064e3b 100%);color:white;padding:1.35rem 1.75rem;display:flex;justify-content:space-between;align-items:center;border-left:4px solid #10b981;">
+        <div style="background:linear-gradient(135deg,#0f172a 0%,#1e3a8a 100%);color:white;padding:1.35rem 1.75rem;display:flex;justify-content:space-between;align-items:center;border-left:4px solid #2563eb;">
             <div>
-                <h2 style="margin:0;font-size:1.15rem;font-weight:800;display:flex;align-items:center;gap:0.6rem;"><i class="bi bi-pencil-square" style="color:#34d399;"></i> Correct Classification</h2>
+                <h2 style="margin:0;font-size:1.15rem;font-weight:800;display:flex;align-items:center;gap:0.6rem;"><i class="bi bi-pencil-square" style="color:#93c5fd;"></i> Correct Classification</h2>
                 <p style="margin:0.25rem 0 0;font-size:0.8rem;opacity:0.75;">Super User — AI Classification Override</p>
             </div>
             <button onclick="closeCorrectionModal()" style="background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.2);color:white;width:34px;height:34px;border-radius:50%;cursor:pointer;font-size:1.15rem;display:flex;align-items:center;justify-content:center;transition:background 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.22)'" onmouseout="this.style.background='rgba(255,255,255,0.12)'">&times;</button>
@@ -517,34 +502,34 @@
         <form onsubmit="event.preventDefault(); submitCorrection();" style="padding:1.5rem;display:flex;flex-direction:column;gap:1.1rem;">
 
             <!-- Current Classification -->
-            <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:1rem 1.25rem;">
-                <div style="font-size:0.72rem;font-weight:800;text-transform:uppercase;letter-spacing:0.06em;color:#065f46;margin-bottom:0.6rem;display:flex;align-items:center;gap:0.4rem;">
+            <div style="background:#eff6ff;border:1px solid #bbf7d0;border-radius:10px;padding:1rem 1.25rem;">
+                <div style="font-size:0.72rem;font-weight:800;text-transform:uppercase;letter-spacing:0.06em;color:#1e40af;margin-bottom:0.6rem;display:flex;align-items:center;gap:0.4rem;">
                     <i class="bi bi-robot"></i> Current AI Classification
                 </div>
                 <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:0.5rem;">
                     <div style="display:flex;align-items:center;gap:0.5rem;">
                         <span style="font-size:0.75rem;color:#6b7280;font-weight:600;">Type:</span>
-                        <span id="current-type" style="font-weight:800;font-size:0.9rem;color:#064e3b;background:#d1fae5;padding:0.2rem 0.65rem;border-radius:9999px;">-</span>
+                        <span id="current-type" style="font-weight:800;font-size:0.9rem;color:#1e3a8a;background:#d1fae5;padding:0.2rem 0.65rem;border-radius:9999px;">-</span>
                     </div>
                     <div style="display:flex;align-items:center;gap:0.5rem;">
                         <span style="font-size:0.75rem;color:#6b7280;font-weight:600;">Confidence:</span>
-                        <span id="current-confidence" style="font-weight:700;font-size:0.875rem;color:#059669;">-</span>
+                        <span id="current-confidence" style="font-weight:700;font-size:0.875rem;color:#1d4ed8;">-</span>
                     </div>
                 </div>
             </div>
 
             <!-- AI Analysis -->
             <div>
-                <label style="display:block;font-size:0.72rem;font-weight:800;text-transform:uppercase;letter-spacing:0.06em;color:#374151;margin-bottom:0.45rem;"><i class="bi bi-cpu" style="color:#10b981;"></i> AI Analysis</label>
+                <label style="display:block;font-size:0.72rem;font-weight:800;text-transform:uppercase;letter-spacing:0.06em;color:#374151;margin-bottom:0.45rem;"><i class="bi bi-cpu" style="color:#2563eb;"></i> AI Analysis</label>
                 <div id="ai-analysis-info" style="padding:0.85rem 1rem;background:#f9fafb;border:1px solid #e5e7eb;border-radius:10px;font-size:0.85rem;color:#6b7280;line-height:1.5;">Loading…</div>
             </div>
 
             <!-- Correct Emergency Type -->
             <div>
                 <label for="corrected-type" style="display:block;font-size:0.72rem;font-weight:800;text-transform:uppercase;letter-spacing:0.06em;color:#374151;margin-bottom:0.45rem;">
-                    <i class="bi bi-exclamation-triangle-fill" style="color:#10b981;"></i> Correct Emergency Type <span style="color:#ef4444;">*</span>
+                    <i class="bi bi-exclamation-triangle-fill" style="color:#2563eb;"></i> Correct Emergency Type <span style="color:#ef4444;">*</span>
                 </label>
-                <select id="corrected-type" required style="width:100%;padding:0.65rem 0.85rem;border:1.5px solid #d1d5db;border-radius:10px;font-size:0.875rem;color:#1f2937;background:white;outline:none;cursor:pointer;" onfocus="this.style.borderColor='#10b981'" onblur="this.style.borderColor='#d1d5db'">
+                <select id="corrected-type" required style="width:100%;padding:0.65rem 0.85rem;border:1.5px solid #d1d5db;border-radius:10px;font-size:0.875rem;color:#1f2937;background:white;outline:none;cursor:pointer;" onfocus="this.style.borderColor='#2563eb'" onblur="this.style.borderColor='#d1d5db'">
                     <option value="">Select correct type…</option>
                     <option value="flood">🌊 Flood</option>
                     <option value="accident">🚗 Accident</option>
@@ -560,23 +545,23 @@
             <!-- Issue Categories -->
             <div>
                 <label style="display:block;font-size:0.72rem;font-weight:800;text-transform:uppercase;letter-spacing:0.06em;color:#374151;margin-bottom:0.55rem;">
-                    <i class="bi bi-list-check" style="color:#10b981;"></i> Issue Categories <span style="font-weight:400;text-transform:none;letter-spacing:0;color:#9ca3af;">(Optional)</span>
+                    <i class="bi bi-list-check" style="color:#2563eb;"></i> Issue Categories <span style="font-weight:400;text-transform:none;letter-spacing:0;color:#9ca3af;">(Optional)</span>
                 </label>
                 <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.4rem 1rem;">
                     <label style="display:flex;align-items:center;gap:0.5rem;font-size:0.84rem;color:#374151;cursor:pointer;padding:0.35rem 0;">
-                        <input type="checkbox" name="issue-category" value="wrong-context" style="accent-color:#10b981;width:15px;height:15px;cursor:pointer;"> Wrong context detected
+                        <input type="checkbox" name="issue-category" value="wrong-context" style="accent-color:#2563eb;width:15px;height:15px;cursor:pointer;"> Wrong context detected
                     </label>
                     <label style="display:flex;align-items:center;gap:0.5rem;font-size:0.84rem;color:#374151;cursor:pointer;padding:0.35rem 0;">
-                        <input type="checkbox" name="issue-category" value="missing-keywords" style="accent-color:#10b981;width:15px;height:15px;cursor:pointer;"> Missing keywords / visual indicators
+                        <input type="checkbox" name="issue-category" value="missing-keywords" style="accent-color:#2563eb;width:15px;height:15px;cursor:pointer;"> Missing keywords / visual indicators
                     </label>
                     <label style="display:flex;align-items:center;gap:0.5rem;font-size:0.84rem;color:#374151;cursor:pointer;padding:0.35rem 0;">
-                        <input type="checkbox" name="issue-category" value="visual-misclassification" style="accent-color:#10b981;width:15px;height:15px;cursor:pointer;"> Visual misclassification
+                        <input type="checkbox" name="issue-category" value="visual-misclassification" style="accent-color:#2563eb;width:15px;height:15px;cursor:pointer;"> Visual misclassification
                     </label>
                     <label style="display:flex;align-items:center;gap:0.5rem;font-size:0.84rem;color:#374151;cursor:pointer;padding:0.35rem 0;">
-                        <input type="checkbox" name="issue-category" value="confusing-similarity" style="accent-color:#10b981;width:15px;height:15px;cursor:pointer;"> Confusing similarity to another type
+                        <input type="checkbox" name="issue-category" value="confusing-similarity" style="accent-color:#2563eb;width:15px;height:15px;cursor:pointer;"> Confusing similarity to another type
                     </label>
                     <label style="display:flex;align-items:center;gap:0.5rem;font-size:0.84rem;color:#374151;cursor:pointer;padding:0.35rem 0;">
-                        <input type="checkbox" name="issue-category" value="low-confidence" style="accent-color:#10b981;width:15px;height:15px;cursor:pointer;"> Low confidence classification error
+                        <input type="checkbox" name="issue-category" value="low-confidence" style="accent-color:#2563eb;width:15px;height:15px;cursor:pointer;"> Low confidence classification error
                     </label>
                 </div>
             </div>
@@ -584,18 +569,18 @@
             <!-- Corrected Description -->
             <div>
                 <label for="corrected-description" style="display:block;font-size:0.72rem;font-weight:800;text-transform:uppercase;letter-spacing:0.06em;color:#374151;margin-bottom:0.45rem;">
-                    <i class="bi bi-card-text" style="color:#10b981;"></i> Corrected Description <span style="font-weight:400;text-transform:none;letter-spacing:0;color:#9ca3af;">(Optional)</span>
+                    <i class="bi bi-card-text" style="color:#2563eb;"></i> Corrected Description <span style="font-weight:400;text-transform:none;letter-spacing:0;color:#9ca3af;">(Optional)</span>
                 </label>
-                <input type="text" id="corrected-description" placeholder="e.g., Fallen Tree, Fallen Branch, Pathway Blocked" style="width:100%;padding:0.65rem 0.85rem;border:1.5px solid #d1d5db;border-radius:10px;font-size:0.875rem;box-sizing:border-box;outline:none;" onfocus="this.style.borderColor='#10b981'" onblur="this.style.borderColor='#d1d5db'" />
+                <input type="text" id="corrected-description" placeholder="e.g., Fallen Tree, Fallen Branch, Pathway Blocked" style="width:100%;padding:0.65rem 0.85rem;border:1.5px solid #d1d5db;border-radius:10px;font-size:0.875rem;box-sizing:border-box;outline:none;" onfocus="this.style.borderColor='#2563eb'" onblur="this.style.borderColor='#d1d5db'" />
             </div>
 
             <!-- Detailed Correction Reason -->
             <div>
                 <label for="correction-reason" style="display:block;font-size:0.72rem;font-weight:800;text-transform:uppercase;letter-spacing:0.06em;color:#374151;margin-bottom:0.45rem;">
-                    <i class="bi bi-chat-text-fill" style="color:#10b981;"></i> Detailed Correction Reason <span style="color:#ef4444;">*</span>
+                    <i class="bi bi-chat-text-fill" style="color:#2563eb;"></i> Detailed Correction Reason <span style="color:#ef4444;">*</span>
                     <span style="font-weight:400;text-transform:none;letter-spacing:0;color:#9ca3af;"> (Min. 20 characters)</span>
                 </label>
-                <textarea id="correction-reason" rows="4" required minlength="20" placeholder="Explain why the AI classification is incorrect and what the correct classification should be…" style="width:100%;padding:0.65rem 0.85rem;border:1.5px solid #d1d5db;border-radius:10px;font-size:0.875rem;font-family:inherit;resize:vertical;box-sizing:border-box;outline:none;" onfocus="this.style.borderColor='#10b981'" onblur="this.style.borderColor='#d1d5db'"></textarea>
+                <textarea id="correction-reason" rows="4" required minlength="20" placeholder="Explain why the AI classification is incorrect and what the correct classification should be…" style="width:100%;padding:0.65rem 0.85rem;border:1.5px solid #d1d5db;border-radius:10px;font-size:0.875rem;font-family:inherit;resize:vertical;box-sizing:border-box;outline:none;" onfocus="this.style.borderColor='#2563eb'" onblur="this.style.borderColor='#d1d5db'"></textarea>
             </div>
 
             <!-- Action Buttons -->
@@ -603,7 +588,7 @@
                 <button type="button" onclick="closeCorrectionModal()" style="padding:0.65rem 1.35rem;background:#f3f4f6;color:#374151;border:1.5px solid #e5e7eb;border-radius:10px;font-size:0.875rem;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:0.4rem;transition:all 0.15s;" onmouseover="this.style.background='#e5e7eb'" onmouseout="this.style.background='#f3f4f6'">
                     <i class="bi bi-x-lg"></i> Cancel
                 </button>
-                <button type="submit" style="padding:0.65rem 1.5rem;background:linear-gradient(135deg,#059669,#10b981);color:white;border:none;border-radius:10px;font-size:0.875rem;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:0.4rem;box-shadow:0 2px 8px rgba(16,185,129,0.35);transition:filter 0.15s;" onmouseover="this.style.filter='brightness(1.08)'" onmouseout="this.style.filter='none'">
+                <button type="submit" style="padding:0.65rem 1.5rem;background:linear-gradient(135deg,#1d4ed8,#2563eb);color:white;border:none;border-radius:10px;font-size:0.875rem;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:0.4rem;box-shadow:0 2px 8px rgba(37,99,235,0.35);transition:filter 0.15s;" onmouseover="this.style.filter='brightness(1.08)'" onmouseout="this.style.filter='none'">
                     <i class="bi bi-check2-circle"></i> Submit Correction
                 </button>
             </div>
@@ -615,9 +600,9 @@
 <div id="logoutModal" class="logout-modal hidden">
     <div class="logout-modal-overlay" onclick="closeLogoutModal()"></div>
     <div class="logout-modal-content">
-        <div class="logout-modal-icon"><i class="bi bi-exclamation-triangle"></i></div>
+        <div class="logout-modal-icon"><i class="bi bi-box-arrow-right"></i></div>
         <h3 class="logout-modal-title">Confirm Logout</h3>
-        <p class="logout-modal-message">Are you sure you want to logout? You'll need to sign in again to access the system.</p>
+        <p class="logout-modal-message">Are you sure you want to log out of the system?</p>
         <div class="logout-modal-buttons">
             <button class="logout-modal-btn cancel" onclick="closeLogoutModal()"><i class="bi bi-x-circle"></i> Cancel</button>
             <button class="logout-modal-btn confirm" onclick="confirmLogout()"><i class="bi bi-box-arrow-right"></i> Logout</button>
@@ -644,7 +629,7 @@ window.SU_TOUR_STEPS = [
     function showToast(message, type = 'info') {
         document.querySelectorAll('.toast-notification').forEach(t => t.remove());
         const icons = { success:'<i class="bi bi-check-circle-fill"></i>', error:'<i class="bi bi-x-circle-fill"></i>', info:'<i class="bi bi-info-circle-fill"></i>', warning:'<i class="bi bi-exclamation-triangle-fill"></i>' };
-        const colors = { success:'linear-gradient(135deg,#10b981,#059669)', error:'linear-gradient(135deg,#ef4444,#dc2626)', info:'linear-gradient(135deg,#3b82f6,#2563eb)', warning:'linear-gradient(135deg,#f59e0b,#d97706)' };
+        const colors = { success:'linear-gradient(135deg,#2563eb,#1d4ed8)', error:'linear-gradient(135deg,#ef4444,#dc2626)', info:'linear-gradient(135deg,#3b82f6,#2563eb)', warning:'linear-gradient(135deg,#f59e0b,#d97706)' };
         const toast = document.createElement('div');
         toast.className = 'toast-notification';
         toast.style.cssText = `position:fixed;top:20px;right:20px;min-width:280px;max-width:450px;padding:1rem 1.25rem;border-radius:10px;box-shadow:0 10px 25px rgba(0,0,0,0.25);z-index:99999;display:flex;align-items:center;gap:0.75rem;background:${colors[type]||colors.info};color:white;font-weight:500;font-size:0.9rem;animation:slideInRight 0.3s ease;`;
@@ -784,7 +769,7 @@ window.SU_TOUR_STEPS = [
     }
     function getTypeStyle(type) {
         const map = { fire:'background:#fef2f2;color:#b91c1c', flood:'background:#eff6ff;color:#1d4ed8',
-                      accident:'background:#fefce8;color:#b45309', medical:'background:#f0fdf4;color:#166534',
+                      accident:'background:#fefce8;color:#b45309', medical:'background:#eff6ff;color:#166534',
                       earthquake:'background:#fff7ed;color:#c2410c', storm:'background:#f5f3ff;color:#6d28d9',
                       false_alarm:'background:#f3f4f6;color:#6b7280', other:'background:#fff7ed;color:#92400e' };
         return map[type] || 'background:#f3f4f6;color:#6b7280';
@@ -828,7 +813,7 @@ window.SU_TOUR_STEPS = [
                 <td style="font-weight:500;">${report.reporter_name || 'Anonymous'}</td>
                 <td style="max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
                     <a href="super-user-map.html?reportId=${report.id}" style="color:#2563eb;text-decoration:none;display:flex;align-items:center;gap:0.25rem;font-size:0.83rem;" title="View on Map">
-                        <i class="bi bi-geo-alt-fill" style="color:#10b981;flex-shrink:0;"></i>${address}
+                        <i class="bi bi-geo-alt-fill" style="color:#2563eb;flex-shrink:0;"></i>${address}
                     </a>
                 </td>
                 <td><span class="rp-status ${getStatusClass(report.status)}">${statusLabel}</span></td>
@@ -885,7 +870,7 @@ window.SU_TOUR_STEPS = [
         const modal = document.getElementById('viewReportModal');
         modal.classList.remove('hidden');
         modal.style.display = 'flex';
-        document.getElementById('vrBody').innerHTML = `<div style="text-align:center;padding:3rem;color:#6b7280;"><div class="spinner" style="width:2rem;height:2rem;border:3px solid #e5e7eb;border-top-color:#10b981;border-radius:50%;animation:spin 1s linear infinite;margin:0 auto 1rem;"></div>Loading report details...</div>`;
+        document.getElementById('vrBody').innerHTML = `<div style="text-align:center;padding:3rem;color:#6b7280;"><div class="spinner" style="width:2rem;height:2rem;border:3px solid #e5e7eb;border-top-color:#2563eb;border-radius:50%;animation:spin 1s linear infinite;margin:0 auto 1rem;"></div>Loading report details...</div>`;
         try {
             const report = await window.emergencySystem.getReportById(reportId);
             if (!report) { document.getElementById('vrBody').innerHTML = '<p style="color:#ef4444;padding:2rem;">Report not found.</p>'; return; }
@@ -969,8 +954,8 @@ window.SU_TOUR_STEPS = [
         const typeIcons = {fire:'🔥',flood:'🌊',accident:'🚗',medical:'🏥',earthquake:'🌍',storm:'⛈️',false_alarm:'🚫',other:'⚠️'};
         const typeLabels = {false_alarm:'False Alarm',non_emergency:'Non-Emergency'};
         const t = report.type || 'other';
-        const typeBadge = `<span style="display:inline-flex;align-items:center;gap:0.4rem;padding:0.3rem 0.75rem;border-radius:8px;font-weight:600;font-size:0.85rem;background:#f0fdf4;color:#059669;">${typeIcons[t]||'⚠️'} ${(typeLabels[t]||(t.toUpperCase().replace('_',' ')))}</span>`;
-        const statusColors = {pending:'#fef3c7|#d97706',processing:'#dbeafe|#2563eb',classified:'#fed7aa|#ea580c',assigned:'#e0e7ff|#7c3aed','in-progress':'#a7f3d0|#059669','in_progress':'#a7f3d0|#059669',completed:'#d1fae5|#047857',cancelled:'#f3f4f6|#6b7280'};
+        const typeBadge = `<span style="display:inline-flex;align-items:center;gap:0.4rem;padding:0.3rem 0.75rem;border-radius:8px;font-weight:600;font-size:0.85rem;background:#eff6ff;color:#1d4ed8;">${typeIcons[t]||'⚠️'} ${(typeLabels[t]||(t.toUpperCase().replace('_',' ')))}</span>`;
+        const statusColors = {pending:'#fef3c7|#d97706',processing:'#dbeafe|#2563eb',classified:'#fed7aa|#ea580c',assigned:'#e0e7ff|#7c3aed','in-progress':'#93c5fd|#1d4ed8','in_progress':'#93c5fd|#1d4ed8',completed:'#d1fae5|#047857',cancelled:'#f3f4f6|#6b7280'};
         const sc = (statusColors[report.status]||'#f3f4f6|#6b7280').split('|');
         const statusBadge = `<span style="padding:0.25rem 0.75rem;border-radius:20px;font-size:0.78rem;font-weight:600;text-transform:uppercase;background:${sc[0]};color:${sc[1]};">${(report.status||'unknown').toUpperCase()}</span>`;
         const pColors = {'1':'#fee2e2|#dc2626','2':'#fef3c7|#d97706','3':'#dbeafe|#2563eb','4':'#f3f4f6|#6b7280'};
@@ -982,7 +967,7 @@ window.SU_TOUR_STEPS = [
         document.getElementById('vrBody').innerHTML = `
         <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;margin-bottom:1rem;">
             <div style="border:1px solid #e5e7eb;border-radius:0.5rem;overflow:hidden;">
-                <div style="background:#f9fafb;padding:0.75rem 1rem;border-bottom:1px solid #e5e7eb;display:flex;align-items:center;gap:0.5rem;"><i class="bi bi-exclamation-triangle" style="color:#059669;"></i><strong style="font-size:0.9rem;">Emergency Information</strong></div>
+                <div style="background:#f9fafb;padding:0.75rem 1rem;border-bottom:1px solid #e5e7eb;display:flex;align-items:center;gap:0.5rem;"><i class="bi bi-exclamation-triangle" style="color:#1d4ed8;"></i><strong style="font-size:0.9rem;">Emergency Information</strong></div>
                 <div style="padding:1rem;display:grid;gap:0.6rem;">
                     <div style="display:flex;justify-content:space-between;align-items:center;padding:0.4rem 0;border-bottom:1px solid #f3f4f6;"><span style="font-weight:600;font-size:0.85rem;color:#374151;">Type</span><div>${typeBadge}</div></div>
                     <div style="display:flex;justify-content:space-between;align-items:center;padding:0.4rem 0;border-bottom:1px solid #f3f4f6;"><span style="font-weight:600;font-size:0.85rem;color:#374151;">Classification</span><div style="text-align:right;font-size:0.85rem;max-width:55%;">${escapeHtml(classification)}</div></div>
@@ -992,7 +977,7 @@ window.SU_TOUR_STEPS = [
                 </div>
             </div>
             <div style="border:1px solid #e5e7eb;border-radius:0.5rem;overflow:hidden;">
-                <div style="background:#f9fafb;padding:0.75rem 1rem;border-bottom:1px solid #e5e7eb;display:flex;align-items:center;gap:0.5rem;"><i class="bi bi-person" style="color:#059669;"></i><strong style="font-size:0.9rem;">Reporter Information</strong></div>
+                <div style="background:#f9fafb;padding:0.75rem 1rem;border-bottom:1px solid #e5e7eb;display:flex;align-items:center;gap:0.5rem;"><i class="bi bi-person" style="color:#1d4ed8;"></i><strong style="font-size:0.9rem;">Reporter Information</strong></div>
                 <div style="padding:1rem;display:grid;gap:0.6rem;">
                     <div style="display:flex;justify-content:space-between;padding:0.4rem 0;border-bottom:1px solid #f3f4f6;"><span style="font-weight:600;font-size:0.85rem;color:#374151;">Name</span><span style="font-size:0.85rem;">${escapeHtml(rName)}</span></div>
                     <div style="display:flex;justify-content:space-between;padding:0.4rem 0;border-bottom:1px solid #f3f4f6;"><span style="font-weight:600;font-size:0.85rem;color:#374151;">Email</span><span style="font-size:0.85rem;word-break:break-all;max-width:60%;text-align:right;">${escapeHtml(rEmail)}</span></div>
@@ -1001,7 +986,7 @@ window.SU_TOUR_STEPS = [
                 </div>
             </div>
             <div style="border:1px solid #e5e7eb;border-radius:0.5rem;overflow:hidden;">
-                <div style="background:#f9fafb;padding:0.75rem 1rem;border-bottom:1px solid #e5e7eb;display:flex;align-items:center;gap:0.5rem;"><i class="bi bi-geo-alt" style="color:#059669;"></i><strong style="font-size:0.9rem;">Location & Description</strong></div>
+                <div style="background:#f9fafb;padding:0.75rem 1rem;border-bottom:1px solid #e5e7eb;display:flex;align-items:center;gap:0.5rem;"><i class="bi bi-geo-alt" style="color:#1d4ed8;"></i><strong style="font-size:0.9rem;">Location & Description</strong></div>
                 <div style="padding:1rem;display:grid;gap:0.6rem;">
                     <div style="display:flex;justify-content:space-between;padding:0.4rem 0;border-bottom:1px solid #f3f4f6;"><span style="font-weight:600;font-size:0.85rem;color:#374151;">Location</span><span style="font-size:0.85rem;text-align:right;max-width:60%;">${escapeHtml(locationText)}</span></div>
                     <div style="padding:0.4rem 0;border-bottom:1px solid #f3f4f6;"><div style="font-weight:600;font-size:0.85rem;color:#374151;margin-bottom:0.3rem;">Description</div><div style="font-size:0.85rem;color:#374151;">${escapeHtml(report.message||'No description provided')}</div></div>
@@ -1011,15 +996,15 @@ window.SU_TOUR_STEPS = [
         </div>
         <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;margin-bottom:1.5rem;">
             <div style="border:1px solid #e5e7eb;border-radius:0.5rem;overflow:hidden;">
-                <div style="background:#f9fafb;padding:0.75rem 1rem;border-bottom:1px solid #e5e7eb;display:flex;align-items:center;gap:0.5rem;"><i class="bi bi-person-badge" style="color:#059669;"></i><strong style="font-size:0.9rem;">Assignment Information</strong></div>
+                <div style="background:#f9fafb;padding:0.75rem 1rem;border-bottom:1px solid #e5e7eb;display:flex;align-items:center;gap:0.5rem;"><i class="bi bi-person-badge" style="color:#1d4ed8;"></i><strong style="font-size:0.9rem;">Assignment Information</strong></div>
                 <div style="padding:1rem;display:grid;gap:0.6rem;">
-                    <div style="display:flex;justify-content:space-between;padding:0.4rem 0;border-bottom:1px solid #f3f4f6;"><span style="font-weight:600;font-size:0.85rem;color:#374151;">Assigned Responder</span><span style="font-size:0.85rem;color:${assignedText!=='Not assigned'?'#059669':'#6b7280'};text-align:right;max-width:55%;">${escapeHtml(assignedText)}</span></div>
+                    <div style="display:flex;justify-content:space-between;padding:0.4rem 0;border-bottom:1px solid #f3f4f6;"><span style="font-weight:600;font-size:0.85rem;color:#374151;">Assigned Responder</span><span style="font-size:0.85rem;color:${assignedText!=='Not assigned'?'#1d4ed8':'#6b7280'};text-align:right;max-width:55%;">${escapeHtml(assignedText)}</span></div>
                     <div style="display:flex;justify-content:space-between;padding:0.4rem 0;border-bottom:1px solid #f3f4f6;"><span style="font-weight:600;font-size:0.85rem;color:#374151;">Assignment ID</span><span style="font-size:0.85rem;">${escapeHtml(String(report.assignment_id||'Not assigned'))}</span></div>
                     <div style="display:flex;justify-content:space-between;padding:0.4rem 0;"><span style="font-weight:600;font-size:0.85rem;color:#374151;">Response Time</span><span style="font-size:0.85rem;">${escapeHtml(String(report.response_time||'Not specified'))}</span></div>
                 </div>
             </div>
             <div style="border:1px solid #e5e7eb;border-radius:0.5rem;overflow:hidden;">
-                <div style="background:#f9fafb;padding:0.75rem 1rem;border-bottom:1px solid #e5e7eb;display:flex;align-items:center;gap:0.5rem;"><i class="bi bi-clock-history" style="color:#059669;"></i><strong style="font-size:0.9rem;">Timestamps</strong></div>
+                <div style="background:#f9fafb;padding:0.75rem 1rem;border-bottom:1px solid #e5e7eb;display:flex;align-items:center;gap:0.5rem;"><i class="bi bi-clock-history" style="color:#1d4ed8;"></i><strong style="font-size:0.9rem;">Timestamps</strong></div>
                 <div style="padding:1rem;display:grid;gap:0.6rem;">
                     <div style="display:flex;justify-content:space-between;padding:0.4rem 0;border-bottom:1px solid #f3f4f6;"><span style="font-weight:600;font-size:0.85rem;color:#374151;">Created At</span><span style="font-size:0.85rem;">${createdAt}</span></div>
                     <div style="display:flex;justify-content:space-between;padding:0.4rem 0;"><span style="font-weight:600;font-size:0.85rem;color:#374151;">Last Updated</span><span style="font-size:0.85rem;">${updatedAt}</span></div>
@@ -1027,7 +1012,7 @@ window.SU_TOUR_STEPS = [
             </div>
             ${report.ai_analysis ? `
             <div style="border:1px solid #e5e7eb;border-radius:0.5rem;overflow:hidden;">
-                <div style="background:#f9fafb;padding:0.75rem 1rem;border-bottom:1px solid #e5e7eb;display:flex;align-items:center;gap:0.5rem;"><i class="bi bi-robot" style="color:#059669;"></i><strong style="font-size:0.9rem;">AI Analysis</strong></div>
+                <div style="background:#f9fafb;padding:0.75rem 1rem;border-bottom:1px solid #e5e7eb;display:flex;align-items:center;gap:0.5rem;"><i class="bi bi-robot" style="color:#1d4ed8;"></i><strong style="font-size:0.9rem;">AI Analysis</strong></div>
                 <div style="padding:1rem;display:grid;gap:0.6rem;">
                     <div style="display:flex;justify-content:space-between;padding:0.4rem 0;border-bottom:1px solid #f3f4f6;"><span style="font-weight:600;font-size:0.85rem;color:#374151;">Analysis</span><span style="font-size:0.85rem;">${escapeHtml(report.ai_analysis)}</span></div>
                     <div style="display:flex;justify-content:space-between;padding:0.4rem 0;border-bottom:1px solid #f3f4f6;"><span style="font-weight:600;font-size:0.85rem;color:#374151;">Confidence</span><span style="font-size:0.85rem;">${Math.round((report.ai_confidence||0)*100)}%</span></div>
@@ -1151,14 +1136,14 @@ window.SU_TOUR_STEPS = [
 
             function addRow(r, isAssigned, isBusy, isMember) {
                 const row = document.createElement('div');
-                row.style.cssText = `display:flex;align-items:center;gap:0.75rem;padding:0.65rem ${isMember ? '1.5rem' : '0.65rem'} 0.65rem;border-bottom:1px solid #f3f4f6;cursor:pointer;${isAssigned?'background:#f0fdf4;border-left:3px solid #10b981;':''}${isBusy?'background:#fffbeb;border-left:3px solid #f59e0b;':''}`;
+                row.style.cssText = `display:flex;align-items:center;gap:0.75rem;padding:0.65rem ${isMember ? '1.5rem' : '0.65rem'} 0.65rem;border-bottom:1px solid #f3f4f6;cursor:pointer;${isAssigned?'background:#eff6ff;border-left:3px solid #2563eb;':''}${isBusy?'background:#fffbeb;border-left:3px solid #f59e0b;':''}`;
                 const cb = document.createElement('input');
                 cb.type = 'checkbox'; cb.value = r.id; cb.checked = isAssigned; cb.disabled = isAssigned || isBusy;
                 cb.id = 'vr-resp-' + r.id;
-                cb.style.cssText = 'width:18px;height:18px;accent-color:#059669;';
+                cb.style.cssText = 'width:18px;height:18px;accent-color:#1d4ed8;';
                 const busyLabel = isBusy ? ' <span style="font-size:0.75rem;color:#b45309;font-weight:600;">Has active assignment (finish first)</span>' : '';
                 const info = document.createElement('div');
-                info.innerHTML = `<div style="font-weight:500;font-size:0.875rem;color:${isAssigned?'#059669':isBusy?'#92400e':'#1f2937'};">${escapeHtml(r.name)}${isAssigned?' <span style="font-size:0.75rem;color:#059669;font-weight:600;">✓ Assigned</span>':''}${busyLabel}</div><div style="font-size:0.75rem;color:#6b7280;">${escapeHtml((r.role||'responder') + (isMember ? ' (member)' : ' (leader)'))}</div>`;
+                info.innerHTML = `<div style="font-weight:500;font-size:0.875rem;color:${isAssigned?'#1d4ed8':isBusy?'#92400e':'#1f2937'};">${escapeHtml(r.name)}${isAssigned?' <span style="font-size:0.75rem;color:#1d4ed8;font-weight:600;">✓ Assigned</span>':''}${busyLabel}</div><div style="font-size:0.75rem;color:#6b7280;">${escapeHtml((r.role||'responder') + (isMember ? ' (member)' : ' (leader)'))}</div>`;
                 row.addEventListener('click', e => { if (e.target.type !== 'checkbox' && !cb.disabled) cb.checked = !cb.checked; });
                 row.appendChild(cb); row.appendChild(info);
                 return { row, cb };
@@ -1174,7 +1159,7 @@ window.SU_TOUR_STEPS = [
                 teamCb.type = 'checkbox';
                 teamCb.checked = allAssigned;
                 teamCb.disabled = allAssigned || anyBusy;
-                teamCb.style.cssText = 'width:18px;height:18px;accent-color:#059669;';
+                teamCb.style.cssText = 'width:18px;height:18px;accent-color:#1d4ed8;';
                 const teamLbl = document.createElement('span');
                 teamLbl.style.cssText = 'font-weight:600;font-size:0.9rem;color:#374151;cursor:pointer;';
                 teamLbl.textContent = team.name + ' (' + allIds.length + ') – Assign whole team';

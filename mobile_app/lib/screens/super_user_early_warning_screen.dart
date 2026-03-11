@@ -3,6 +3,7 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:intl/intl.dart';
 import '../services/supabase_service.dart';
+import '../utils/super_user_theme.dart';
 
 class SuperUserEarlyWarningScreen extends StatefulWidget {
   const SuperUserEarlyWarningScreen({super.key});
@@ -122,7 +123,7 @@ class _SuperUserEarlyWarningScreenState
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFf1f5f9),
+      backgroundColor: SuTheme.bg,
       appBar: AppBar(
         title: const Text(
           'Early Warning',
@@ -138,11 +139,7 @@ class _SuperUserEarlyWarningScreenState
         scrolledUnderElevation: 0,
         flexibleSpace: Container(
           decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [Color(0xFF2563eb), Color(0xFF1d4ed8)],
-            ),
+            gradient: SuTheme.appBarGradient,
           ),
         ),
         actions: [
@@ -163,14 +160,14 @@ class _SuperUserEarlyWarningScreenState
                     height: 44,
                     child: CircularProgressIndicator(
                       strokeWidth: 2.5,
-                      color: Color(0xFF3b82f6),
+                      color: SuTheme.primary,
                     ),
                   ),
                   const SizedBox(height: 16),
                   Text(
                     'Loading weather...',
                     style: TextStyle(
-                      color: Colors.grey.shade600,
+                      color: SuTheme.textMuted,
                       fontSize: 14,
                     ),
                   ),
@@ -212,7 +209,7 @@ class _SuperUserEarlyWarningScreenState
                           icon: const Icon(Icons.refresh_rounded, size: 20),
                           label: const Text('Retry'),
                           style: FilledButton.styleFrom(
-                            backgroundColor: const Color(0xFF3b82f6),
+                            backgroundColor: SuTheme.primary,
                             padding: const EdgeInsets.symmetric(
                               horizontal: 24,
                               vertical: 14,
@@ -233,22 +230,15 @@ class _SuperUserEarlyWarningScreenState
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // Weather Overview Card
+                        // Weather Overview Card — Super User header gradient
                         Container(
                           padding: const EdgeInsets.all(24),
                           decoration: BoxDecoration(
-                            gradient: const LinearGradient(
-                              colors: [
-                                Color(0xFF1e293b),
-                                Color(0xFF0f172a),
-                              ],
-                              begin: Alignment.topLeft,
-                              end: Alignment.bottomRight,
-                            ),
+                            gradient: SuTheme.headerCardGradient,
                             borderRadius: BorderRadius.circular(24),
                             boxShadow: [
                               BoxShadow(
-                                color: const Color(0xFF3b82f6).withOpacity(0.3),
+                                color: SuTheme.primary.withOpacity(0.3),
                                 blurRadius: 20,
                                 offset: const Offset(0, 10),
                               ),
@@ -323,17 +313,7 @@ class _SuperUserEarlyWarningScreenState
                         // Risk Assessment Card
                         Container(
                           padding: const EdgeInsets.all(20),
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(20),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withOpacity(0.06),
-                                blurRadius: 14,
-                                offset: const Offset(0, 4),
-                              ),
-                            ],
-                          ),
+                          decoration: SuTheme.cardDecoration(),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
@@ -375,17 +355,7 @@ class _SuperUserEarlyWarningScreenState
                         // Alert History
                         Container(
                           padding: const EdgeInsets.all(20),
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(20),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withOpacity(0.06),
-                                blurRadius: 14,
-                                offset: const Offset(0, 4),
-                              ),
-                            ],
-                          ),
+                          decoration: SuTheme.cardDecoration(),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
@@ -393,7 +363,7 @@ class _SuperUserEarlyWarningScreenState
                                 children: [
                                   Icon(
                                     Icons.history_rounded,
-                                    color: Colors.blue.shade700,
+                                    color: SuTheme.primary,
                                     size: 22,
                                   ),
                                   const SizedBox(width: 10),

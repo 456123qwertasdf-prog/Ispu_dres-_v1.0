@@ -7,6 +7,7 @@
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="css/su-header-shared.css">
     <link rel="stylesheet" href="css/system-status.css">
+    <link rel="stylesheet" href="css/logout-modal.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -22,10 +23,10 @@
             --su-radius-lg: 20px;
             --su-shadow: 0 1px 3px rgba(0,0,0,0.05);
             --su-shadow-hover: 0 12px 40px -12px rgba(0,0,0,0.12);
-            --su-primary: #0d9488;
-            --su-primary-hover: #0f766e;
-            --su-sidebar: linear-gradient(180deg, #0f172a 0%, #134e4a 100%);
-            --su-header: linear-gradient(135deg, #0f172a 0%, #134e4a 100%);
+            --su-primary: #2563eb;
+            --su-primary-hover: #1d4ed8;
+            --su-sidebar: linear-gradient(180deg, #0f172a 0%, #1e3a8a 100%);
+            --su-header: linear-gradient(135deg, #0f172a 0%, #1e3a8a 100%);
             --su-text: #0f172a;
             --su-muted: #64748b;
         }
@@ -482,11 +483,11 @@
         <!-- Stat Cards -->
         <div class="su-stats-grid">
             <div class="su-stat-card">
-                <div class="su-stat-icon" style="background:#ecfdf5;color:#10b981;"><i class="bi bi-people-fill"></i></div>
+                <div class="su-stat-icon" style="background:#eff6ff;color:#2563eb;"><i class="bi bi-people-fill"></i></div>
                 <div class="su-stat-info">
                     <div class="su-stat-number" id="totalCitizens">0</div>
                     <div class="su-stat-label">Total Citizens</div>
-                    <div class="su-stat-trend" style="color:#10b981;"><i class="bi bi-arrow-up-short"></i> Registered</div>
+                    <div class="su-stat-trend" style="color:#2563eb;"><i class="bi bi-arrow-up-short"></i> Registered</div>
                 </div>
             </div>
             <div class="su-stat-card">
@@ -506,11 +507,11 @@
                 </div>
             </div>
             <div class="su-stat-card">
-                <div class="su-stat-icon" style="background:#ecfdf5;color:#10b981;"><i class="bi bi-check-circle-fill"></i></div>
+                <div class="su-stat-icon" style="background:#eff6ff;color:#2563eb;"><i class="bi bi-check-circle-fill"></i></div>
                 <div class="su-stat-info">
                     <div class="su-stat-number" id="completedReports">0</div>
                     <div class="su-stat-label">Total Completed Reports</div>
-                    <div class="su-stat-trend" style="color:#10b981;"><i class="bi bi-shield-check"></i> Resolved</div>
+                    <div class="su-stat-trend" style="color:#2563eb;"><i class="bi bi-shield-check"></i> Resolved</div>
                 </div>
             </div>
             <div class="su-stat-card">
@@ -527,7 +528,7 @@
         <div class="su-panel" style="margin-bottom:1.25rem;">
             <div class="su-panel-header">
                 <div class="su-panel-title"><i class="bi bi-grid-fill"></i> Quick Access</div>
-                <span class="su-panel-badge" style="background:#ecfdf5;color:#059669;">Navigation</span>
+                <span class="su-panel-badge" style="background:#eff6ff;color:#1d4ed8;">Navigation</span>
             </div>
             <div class="su-panel-body">
                 <div class="su-nav-grid">
@@ -547,8 +548,8 @@
                         <i class="bi bi-megaphone-fill" style="color:#d97706;"></i>
                         Announcements
                     </a>
-                    <a href="readiness-safety-notice.html" class="su-nav-card" style="color:#059669;border-color:#a7f3d0;background:#ecfdf5;">
-                        <i class="bi bi-shield-check" style="color:#059669;"></i>
+                    <a href="readiness-safety-notice.html" class="su-nav-card" style="color:#1d4ed8;border-color:#93c5fd;background:#eff6ff;">
+                        <i class="bi bi-shield-check" style="color:#1d4ed8;"></i>
                         Readiness &amp; Safety
                     </a>
                     <a href="super-user-sos-alerts.html" class="su-nav-card" style="color:#9333ea;border-color:#e9d5ff;background:#faf5ff;">
@@ -590,7 +591,7 @@
                 </div>
                 <div class="su-panel-body" id="activeAlertsContainer" style="max-height:260px;overflow-y:auto;">
                     <div class="su-empty-state">
-                        <i class="bi bi-shield-check" style="color:#10b981;"></i>
+                        <i class="bi bi-shield-check" style="color:#2563eb;"></i>
                         No active critical alerts
                     </div>
                 </div>
@@ -618,7 +619,7 @@
                     </div>
                     <div class="su-bar-row">
                         <div class="su-bar-label">Medical</div>
-                        <div class="su-bar-track"><div class="su-bar-fill" id="bar-medical" style="width:0%;background:linear-gradient(90deg,#10b981,#059669);"></div></div>
+                        <div class="su-bar-track"><div class="su-bar-fill" id="bar-medical" style="width:0%;background:linear-gradient(90deg,#2563eb,#1d4ed8);"></div></div>
                         <div class="su-bar-pct" id="pct-medical">0%</div>
                     </div>
                     <div class="su-bar-row">
@@ -656,13 +657,15 @@
 </div><!-- end .dashboard-container -->
 
     <!-- Logout Modal -->
-    <div id="logoutModal" class="modal hidden">
-        <div class="modal-content">
-            <h2 style="margin: 0 0 1rem 0;">Confirm Logout</h2>
-            <p>Are you sure you want to logout?</p>
-            <div class="btn-group">
-                <button class="btn btn-secondary" onclick="closeLogoutModal()">Cancel</button>
-                <button class="btn btn-primary" onclick="confirmLogout()">Logout</button>
+    <div id="logoutModal" class="logout-modal hidden">
+        <div class="logout-modal-overlay" onclick="closeLogoutModal()"></div>
+        <div class="logout-modal-content">
+            <div class="logout-modal-icon"><i class="bi bi-box-arrow-right"></i></div>
+            <h3 class="logout-modal-title">Confirm Logout</h3>
+            <p class="logout-modal-message">Are you sure you want to log out of the system?</p>
+            <div class="logout-modal-buttons">
+                <button type="button" class="logout-modal-btn cancel" onclick="closeLogoutModal()"><i class="bi bi-x-circle"></i> Cancel</button>
+                <button type="button" class="logout-modal-btn confirm" onclick="confirmLogout()"><i class="bi bi-box-arrow-right"></i> Logout</button>
             </div>
         </div>
     </div>
@@ -860,12 +863,12 @@
                                 const status = r.status || 'pending';
                                 const isResolved = status === 'resolved' || status === 'closed';
                                 const isActive   = status === 'active';
-                                const iconBg   = isResolved ? '#ecfdf5' : isActive ? '#fef2f2' : '#fefce8';
-                                const iconColor = isResolved ? '#10b981' : isActive ? '#ef4444' : '#f59e0b';
+                                const iconBg   = isResolved ? '#eff6ff' : isActive ? '#fef2f2' : '#fefce8';
+                                const iconColor = isResolved ? '#2563eb' : isActive ? '#ef4444' : '#f59e0b';
                                 const icon      = isResolved ? 'bi-check-circle-fill'
                                     : isActive ? 'bi-exclamation-circle-fill' : 'bi-hourglass-split';
-                                const badgeBg   = isResolved ? '#ecfdf5' : isActive ? '#fef2f2' : '#fefce8';
-                                const badgeColor = isResolved ? '#059669' : isActive ? '#dc2626' : '#b45309';
+                                const badgeBg   = isResolved ? '#eff6ff' : isActive ? '#fef2f2' : '#fefce8';
+                                const badgeColor = isResolved ? '#1d4ed8' : isActive ? '#dc2626' : '#b45309';
                                 const typeIcon  = type.toLowerCase().includes('fire') ? 'bi-fire'
                                     : type.toLowerCase().includes('flood') ? 'bi-droplet-fill'
                                     : type.toLowerCase().includes('medical') ? 'bi-heart-pulse-fill'
@@ -1062,8 +1065,8 @@
 
                 const badge = document.getElementById('activeAlertsBadge');
                 if (!critical.length) {
-                    container.innerHTML = '<div class="su-empty-state"><i class="bi bi-shield-check" style="color:#10b981;"></i>No active critical alerts</div>';
-                    if (badge) { badge.textContent = 'Clear'; badge.style.background = '#ecfdf5'; badge.style.color = '#059669'; }
+                    container.innerHTML = '<div class="su-empty-state"><i class="bi bi-shield-check" style="color:#2563eb;"></i>No active critical alerts</div>';
+                    if (badge) { badge.textContent = 'Clear'; badge.style.background = '#eff6ff'; badge.style.color = '#1d4ed8'; }
                     return;
                 }
                 if (badge) { badge.textContent = critical.length + ' active'; badge.style.background = '#fef2f2'; badge.style.color = '#dc2626'; }

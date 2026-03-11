@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../services/supabase_service.dart';
 import '../utils/report_date_helper.dart';
+import '../utils/super_user_theme.dart';
 import 'report_detail_edit_screen.dart';
 
 class SuperUserReportsScreen extends StatefulWidget {
@@ -106,7 +107,7 @@ class _SuperUserReportsScreenState extends State<SuperUserReportsScreen> {
       case 'active':
         return 'red';
       default:
-        return 'blue';
+        return 'primary';
     }
   }
 
@@ -142,7 +143,7 @@ class _SuperUserReportsScreenState extends State<SuperUserReportsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFf1f5f9),
+      backgroundColor: SuTheme.bg,
       appBar: AppBar(
         title: const Text(
           'Recent Reports',
@@ -158,11 +159,7 @@ class _SuperUserReportsScreenState extends State<SuperUserReportsScreen> {
         scrolledUnderElevation: 0,
         flexibleSpace: Container(
           decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [Color(0xFF2563eb), Color(0xFF1d4ed8)],
-            ),
+            gradient: SuTheme.appBarGradient,
           ),
         ),
         actions: [
@@ -175,19 +172,10 @@ class _SuperUserReportsScreenState extends State<SuperUserReportsScreen> {
       ),
       body: Column(
         children: [
-          // Filter Chips
+          // Filter Chips — modern bar
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.04),
-                  blurRadius: 12,
-                  offset: const Offset(0, 2),
-                ),
-              ],
-            ),
+            decoration: SuTheme.filterBarDecoration,
             child: SingleChildScrollView(
               scrollDirection: Axis.horizontal,
               child: Row(
@@ -217,14 +205,14 @@ class _SuperUserReportsScreenState extends State<SuperUserReportsScreen> {
                           height: 40,
                           child: CircularProgressIndicator(
                             strokeWidth: 2.5,
-                            color: Color(0xFF3b82f6),
+                            color: SuTheme.primary,
                           ),
                         ),
                         const SizedBox(height: 16),
                         Text(
                           'Loading reports...',
                           style: TextStyle(
-                            color: Colors.grey.shade600,
+                            color: SuTheme.textMuted,
                             fontSize: 14,
                           ),
                         ),
@@ -266,7 +254,7 @@ class _SuperUserReportsScreenState extends State<SuperUserReportsScreen> {
                                 icon: const Icon(Icons.refresh_rounded, size: 20),
                                 label: const Text('Retry'),
                                 style: FilledButton.styleFrom(
-                                  backgroundColor: const Color(0xFF3b82f6),
+                                  backgroundColor: SuTheme.primary,
                                   padding: const EdgeInsets.symmetric(
                                     horizontal: 24,
                                     vertical: 14,
@@ -288,13 +276,13 @@ class _SuperUserReportsScreenState extends State<SuperUserReportsScreen> {
                                 Container(
                                   padding: const EdgeInsets.all(24),
                                   decoration: BoxDecoration(
-                                    color: const Color(0xFFeff6ff),
+                                    color: SuTheme.primary.withOpacity(0.08),
                                     shape: BoxShape.circle,
                                   ),
                                   child: Icon(
                                     Icons.assignment_outlined,
                                     size: 56,
-                                    color: Colors.blue.shade300,
+                                    color: SuTheme.primary.withOpacity(0.7),
                                   ),
                                 ),
                                 const SizedBox(height: 20),
@@ -311,9 +299,9 @@ class _SuperUserReportsScreenState extends State<SuperUserReportsScreen> {
                           )
                         : RefreshIndicator(
                             onRefresh: _loadReports,
-                            color: const Color(0xFF3b82f6),
+                            color: SuTheme.primary,
                             child: ListView.builder(
-                              padding: const EdgeInsets.all(16),
+                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
                               itemCount: _filteredReports.length,
                               itemBuilder: (context, index) {
                                 final report = _filteredReports[index];
@@ -337,25 +325,13 @@ class _SuperUserReportsScreenState extends State<SuperUserReportsScreen> {
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 200),
           padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
-          decoration: BoxDecoration(
-            color: isSelected
-                ? const Color(0xFF3b82f6)
-                : Colors.grey.shade100,
-            borderRadius: BorderRadius.circular(20),
-            boxShadow: isSelected
-                ? [
-                    BoxShadow(
-                      color: const Color(0xFF3b82f6).withOpacity(0.3),
-                      blurRadius: 8,
-                      offset: const Offset(0, 2),
-                    ),
-                  ]
-                : null,
-          ),
+          decoration: isSelected
+              ? SuTheme.filterChipSelected
+              : SuTheme.filterChipUnselected(null),
           child: Text(
             label,
             style: TextStyle(
-              color: isSelected ? Colors.white : Colors.grey.shade700,
+              color: isSelected ? Colors.white : SuTheme.textMuted,
               fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
               fontSize: 14,
             ),
@@ -393,22 +369,13 @@ class _SuperUserReportsScreenState extends State<SuperUserReportsScreen> {
       borderRadius: BorderRadius.circular(20),
       child: Container(
         margin: const EdgeInsets.only(bottom: 14),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(20),
+        decoration: SuTheme.cardDecoration(
           border: Border(
             left: BorderSide(
               color: _getStatusColorValue(statusColor),
               width: 4,
             ),
           ),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.06),
-              blurRadius: 14,
-              offset: const Offset(0, 4),
-            ),
-          ],
         ),
         child: Padding(
           padding: const EdgeInsets.all(18),
@@ -517,8 +484,10 @@ class _SuperUserReportsScreenState extends State<SuperUserReportsScreen> {
         return const Color(0xFFf97316);
       case 'red':
         return const Color(0xFFef4444);
+      case 'primary':
+        return SuTheme.primary;
       default:
-        return const Color(0xFF3b82f6);
+        return SuTheme.primaryLight;
     }
   }
 
@@ -530,7 +499,7 @@ class _SuperUserReportsScreenState extends State<SuperUserReportsScreen> {
     if (assignmentStatus == 'enroute') {
       label = 'EN ROUTE';
       icon = Icons.local_shipping;
-      color = const Color(0xFF3b82f6);
+      color = SuTheme.primaryLight;
     } else if (assignmentStatus == 'on_scene') {
       label = 'ON SCENE';
       icon = Icons.location_on;

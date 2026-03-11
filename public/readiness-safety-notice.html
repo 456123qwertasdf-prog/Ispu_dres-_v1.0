@@ -6,6 +6,7 @@
     <title>Readiness & Safety Notice - LSPU Emergency Response System</title>
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="css/su-header-shared.css">
+    <link rel="stylesheet" href="css/logout-modal.css">
     <link rel="stylesheet" href="css/system-status.css">
     <link rel="stylesheet" href="css/su-tour.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
@@ -13,34 +14,34 @@
     <script src="js/supabase.js"></script>
     <style>
         /* ── Super-User Sidebar Theme ── */
-        .sidebar { background: linear-gradient(180deg, #0f172a 0%, #064e3b 100%) !important; }
-        .nav-item.active { background: rgba(16,185,129,0.2) !important; color: #34d399 !important; border-left: 3px solid #10b981 !important; border-top:none !important; border-right:none !important; border-bottom:none !important; font-weight:600; }
-        .nav-item:hover { background: rgba(16,185,129,0.1) !important; color: #a7f3d0 !important; border-left-color: rgba(16,185,129,0.4) !important; }
-        .status-dot.online { background: #10b981 !important; box-shadow: 0 0 0 3px rgba(16,185,129,0.25) !important; }
-        .user-avatar { background: rgba(16,185,129,0.25) !important; color: #34d399 !important; }
-        .sidebar-header { border-bottom: 1px solid rgba(16,185,129,0.15) !important; }
-        .system-status { padding:10px 20px; border-bottom:1px solid rgba(16,185,129,0.15); }
-        .su-role-badge { display:inline-flex; align-items:center; gap:4px; font-size:0.65rem; font-weight:700; letter-spacing:0.08em; text-transform:uppercase; background:rgba(16,185,129,0.2); color:#34d399; border:1px solid rgba(16,185,129,0.4); border-radius:9999px; padding:2px 8px; margin-top:4px; }
+        .sidebar { background: linear-gradient(180deg, #0f172a 0%, #1e3a8a 100%) !important; }
+        .nav-item.active { background: rgba(37,99,235,0.2) !important; color: #93c5fd !important; border-left: 3px solid #2563eb !important; border-top:none !important; border-right:none !important; border-bottom:none !important; font-weight:600; }
+        .nav-item:hover { background: rgba(37,99,235,0.1) !important; color: #93c5fd !important; border-left-color: rgba(37,99,235,0.4) !important; }
+        .status-dot.online { background: #2563eb !important; box-shadow: 0 0 0 3px rgba(37,99,235,0.25) !important; }
+        .user-avatar { background: rgba(37,99,235,0.25) !important; color: #93c5fd !important; }
+        .sidebar-header { border-bottom: 1px solid rgba(37,99,235,0.15) !important; }
+        .system-status { padding:10px 20px; border-bottom:1px solid rgba(37,99,235,0.15); }
+        .su-role-badge { display:inline-flex; align-items:center; gap:4px; font-size:0.65rem; font-weight:700; letter-spacing:0.08em; text-transform:uppercase; background:rgba(37,99,235,0.2); color:#93c5fd; border:1px solid rgba(37,99,235,0.4); border-radius:9999px; padding:2px 8px; margin-top:4px; }
         .su-logout-btn { width:100%; padding:0.75rem 1rem; background:rgba(239,68,68,0.1); border:1px solid rgba(239,68,68,0.3); color:#fca5a5; border-radius:8px; font-size:0.875rem; font-weight:500; cursor:pointer; transition:all 0.2s; display:flex; align-items:center; gap:0.5rem; }
         .su-logout-btn:hover { background:#EF4444 !important; border-color:#EF4444 !important; color:white !important; }
 
         /* ── Page Layout ── */
-        .rsn-header { background:linear-gradient(135deg,#0f172a 0%,#064e3b 100%); border-radius:20px; padding:1.75rem 2rem; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:1rem; box-shadow:0 8px 32px rgba(0,0,0,0.18); position:relative; overflow:hidden; }
-        .rsn-header::before { content:''; position:absolute; top:-40px; right:-40px; width:160px; height:160px; background:rgba(16,185,129,0.1); border-radius:50%; }
-        .rsn-header::after  { content:''; position:absolute; bottom:-30px; right:80px; width:100px; height:100px; background:rgba(16,185,129,0.06); border-radius:50%; }
+        .rsn-header { background:linear-gradient(135deg,#0f172a 0%,#1e3a8a 100%); border-radius:20px; padding:1.75rem 2rem; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:1rem; box-shadow:0 8px 32px rgba(0,0,0,0.18); position:relative; overflow:hidden; }
+        .rsn-header::before { content:''; position:absolute; top:-40px; right:-40px; width:160px; height:160px; background:rgba(37,99,235,0.1); border-radius:50%; }
+        .rsn-header::after  { content:''; position:absolute; bottom:-30px; right:80px; width:100px; height:100px; background:rgba(37,99,235,0.06); border-radius:50%; }
         .rsn-header h1 { margin:0; font-size:1.6rem; font-weight:800; color:white; display:flex; align-items:center; gap:0.7rem; letter-spacing:-0.02em; position:relative; z-index:1; }
-        .rsn-header h1 i { color:#34d399; }
+        .rsn-header h1 i { color:#93c5fd; }
         .rsn-header p  { margin:0.3rem 0 0; font-size:0.875rem; color:rgba(255,255,255,0.7); position:relative; z-index:1; }
-        .rsn-header { background:linear-gradient(135deg,#0f172a 0%,#064e3b 100%); border-radius:20px; padding:1.75rem 2rem; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:1rem; box-shadow:0 8px 32px rgba(0,0,0,0.18); position:relative; overflow:hidden; }
-        .rsn-header::before { content:''; position:absolute; top:-40px; right:-40px; width:160px; height:160px; background:rgba(16,185,129,0.1); border-radius:50%; }
-        .rsn-header::after  { content:''; position:absolute; bottom:-30px; right:80px; width:100px; height:100px; background:rgba(16,185,129,0.06); border-radius:50%; }
+        .rsn-header { background:linear-gradient(135deg,#0f172a 0%,#1e3a8a 100%); border-radius:20px; padding:1.75rem 2rem; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:1rem; box-shadow:0 8px 32px rgba(0,0,0,0.18); position:relative; overflow:hidden; }
+        .rsn-header::before { content:''; position:absolute; top:-40px; right:-40px; width:160px; height:160px; background:rgba(37,99,235,0.1); border-radius:50%; }
+        .rsn-header::after  { content:''; position:absolute; bottom:-30px; right:80px; width:100px; height:100px; background:rgba(37,99,235,0.06); border-radius:50%; }
         .rsn-header h1 { margin:0; font-size:1.6rem; font-weight:800; color:white; display:flex; align-items:center; gap:0.7rem; letter-spacing:-0.02em; position:relative; z-index:1; }
-        .rsn-header h1 i { color:#34d399; }
+        .rsn-header h1 i { color:#93c5fd; }
         .rsn-header p  { margin:0.3rem 0 0; font-size:0.875rem; color:rgba(255,255,255,0.7); position:relative; z-index:1; }
         .rsn-main { padding:1.75rem; background:#f1f5f9; min-height:100vh; display:flex; flex-direction:column; gap:1.25rem; }
 
         /* ── Page Header ── */
-        .rsn-su-badge  { background:rgba(16,185,129,0.18); border:1px solid rgba(16,185,129,0.4); color:#34d399; border-radius:9999px; padding:0.3rem 0.9rem; font-size:0.72rem; font-weight:700; letter-spacing:0.06em; text-transform:uppercase; display:inline-flex; align-items:center; gap:0.35rem; position:relative; z-index:1; }
+        .rsn-su-badge  { background:rgba(37,99,235,0.18); border:1px solid rgba(37,99,235,0.4); color:#93c5fd; border-radius:9999px; padding:0.3rem 0.9rem; font-size:0.72rem; font-weight:700; letter-spacing:0.06em; text-transform:uppercase; display:inline-flex; align-items:center; gap:0.35rem; position:relative; z-index:1; }
 
         /* ── Stats Row ── */
         .rsn-stats { display:grid; grid-template-columns:repeat(4,1fr); gap:1rem; }
@@ -61,35 +62,35 @@
         .rsn-panel { background:white; border-radius:16px; box-shadow:0 2px 12px rgba(0,0,0,0.06); border:1px solid rgba(0,0,0,0.04); overflow:hidden; display:flex; flex-direction:column; }
         .rsn-panel-header { padding:1rem 1.5rem; border-bottom:1px solid #f1f5f9; display:flex; align-items:center; justify-content:space-between; gap:0.6rem; flex-wrap:wrap; flex-shrink:0; }
         .rsn-panel-title { font-size:0.95rem; font-weight:700; color:#0f172a; display:flex; align-items:center; gap:0.5rem; }
-        .rsn-panel-title i { color:#10b981; }
+        .rsn-panel-title i { color:#2563eb; }
         .rsn-panel-body { padding:1.5rem; flex:1; overflow-y:auto; }
         .rsn-panel-body::-webkit-scrollbar { width:5px; }
         .rsn-panel-body::-webkit-scrollbar-track { background:#f1f5f9; border-radius:9999px; }
-        .rsn-panel-body::-webkit-scrollbar-thumb { background:#a7f3d0; border-radius:9999px; }
+        .rsn-panel-body::-webkit-scrollbar-thumb { background:#93c5fd; border-radius:9999px; }
 
         /* ── Buttons ── */
         .rsn-btn { border-radius:10px; padding:0.5rem 1.1rem; border:none; font-size:0.83rem; font-weight:700; cursor:pointer; display:inline-flex; align-items:center; gap:0.4rem; transition:filter 0.15s,transform 0.15s; }
         .rsn-btn:hover { filter:brightness(1.08); transform:translateY(-1px); }
-        .rsn-btn-green { background:linear-gradient(135deg,#10b981,#059669); color:white; box-shadow:0 2px 8px rgba(16,185,129,0.3); }
+        .rsn-btn-green { background:linear-gradient(135deg,#2563eb,#1d4ed8); color:white; box-shadow:0 2px 8px rgba(37,99,235,0.3); }
         .rsn-btn-gray  { background:#f3f4f6; color:#374151; border:1.5px solid #e5e7eb; }
         .rsn-btn-blue  { background:linear-gradient(135deg,#3b82f6,#2563eb); color:white; box-shadow:0 2px 8px rgba(59,130,246,0.3); }
         .rsn-btn-sm    { padding:0.3rem 0.75rem; font-size:0.75rem; }
 
         /* ── Readiness readout ── */
-        .rsn-readout { font-size:0.9rem; color:#374151; line-height:1.75; padding:1rem 1.25rem; background:#f0fdf4; border-radius:12px; border:1.5px solid #bbf7d0; margin-bottom:1rem; min-height:80px; }
+        .rsn-readout { font-size:0.9rem; color:#374151; line-height:1.75; padding:1rem 1.25rem; background:#eff6ff; border-radius:12px; border:1.5px solid #bfdbfe; margin-bottom:1rem; min-height:80px; }
         .rsn-readout-empty { color:#9ca3af; font-style:italic; }
 
         /* Checklist */
         .rsn-checklist { display:flex; flex-direction:column; gap:0.5rem; }
         .rsn-check-item { display:flex; align-items:center; gap:0.6rem; padding:0.55rem 0.75rem; border-radius:9px; border:1.5px solid #e5e7eb; cursor:pointer; font-size:0.82rem; color:#374151; transition:all 0.15s; user-select:none; }
-        .rsn-check-item:hover { border-color:#a7f3d0; background:#f0fdf4; }
-        .rsn-check-item.checked { border-color:#10b981; background:#f0fdf4; color:#065f46; font-weight:600; }
-        .rsn-check-item i { font-size:1rem; color:#10b981; }
+        .rsn-check-item:hover { border-color:#93c5fd; background:#eff6ff; }
+        .rsn-check-item.checked { border-color:#2563eb; background:#eff6ff; color:#1e40af; font-weight:600; }
+        .rsn-check-item i { font-size:1rem; color:#2563eb; }
         .rsn-check-item .ci-box { width:18px; height:18px; border-radius:5px; border:2px solid #d1d5db; display:flex; align-items:center; justify-content:center; flex-shrink:0; transition:all 0.15s; }
-        .rsn-check-item.checked .ci-box { background:#10b981; border-color:#10b981; }
+        .rsn-check-item.checked .ci-box { background:#2563eb; border-color:#2563eb; }
         .rsn-check-item.checked .ci-box::after { content:'✓'; color:white; font-size:0.65rem; font-weight:900; }
         .rsn-checklist-progress { height:5px; background:#e5e7eb; border-radius:9999px; margin-bottom:0.75rem; overflow:hidden; }
-        .rsn-checklist-bar { height:100%; background:linear-gradient(90deg,#10b981,#059669); border-radius:9999px; transition:width 0.4s ease; }
+        .rsn-checklist-bar { height:100%; background:linear-gradient(90deg,#2563eb,#1d4ed8); border-radius:9999px; transition:width 0.4s ease; }
         .rsn-checklist-label { font-size:0.72rem; font-weight:700; color:#6b7280; text-transform:uppercase; letter-spacing:0.06em; margin-bottom:0.5rem; display:flex; justify-content:space-between; }
 
         /* ── Toggle Switch ── */
@@ -98,7 +99,7 @@
         .rsn-toggle input { opacity:0; width:0; height:0; }
         .rsn-slider { position:absolute; inset:0; background:#d1d5db; border-radius:9999px; cursor:pointer; transition:background 0.2s; }
         .rsn-slider::before { content:''; position:absolute; height:18px; width:18px; left:3px; bottom:3px; background:white; border-radius:50%; transition:transform 0.2s; box-shadow:0 1px 4px rgba(0,0,0,0.2); }
-        .rsn-toggle input:checked + .rsn-slider { background:linear-gradient(135deg,#10b981,#059669); }
+        .rsn-toggle input:checked + .rsn-slider { background:linear-gradient(135deg,#2563eb,#1d4ed8); }
         .rsn-toggle input:checked + .rsn-slider::before { transform:translateX(20px); }
         .rsn-toggle-label { font-size:0.875rem; font-weight:600; color:#374151; }
         .rsn-toggle-sub { font-size:0.72rem; color:#9ca3af; }
@@ -107,7 +108,7 @@
         /* ── Textarea + char counter ── */
         .rsn-textarea-wrap { position:relative; }
         .rsn-textarea { width:100%; padding:0.75rem 0.9rem; border:1.5px solid #e5e7eb; border-radius:10px; font-size:0.875rem; resize:vertical; box-sizing:border-box; font-family:inherit; line-height:1.6; min-height:110px; transition:border-color 0.2s,box-shadow 0.2s; outline:none; background:#fafafa; color:#111827; }
-        .rsn-textarea:focus { border-color:#10b981; box-shadow:0 0 0 3px rgba(16,185,129,0.12); background:white; }
+        .rsn-textarea:focus { border-color:#2563eb; box-shadow:0 0 0 3px rgba(37,99,235,0.12); background:white; }
         .rsn-char-count { font-size:0.7rem; color:#9ca3af; text-align:right; margin-top:0.3rem; }
         .rsn-char-count.warn { color:#f59e0b; font-weight:600; }
         .rsn-char-count.over { color:#ef4444; font-weight:700; }
@@ -116,35 +117,19 @@
         .rsn-tpl-label { font-size:0.7rem; font-weight:800; text-transform:uppercase; letter-spacing:0.07em; color:#6b7280; margin-bottom:0.45rem; display:flex; align-items:center; gap:0.35rem; }
         .rsn-tpl-chips { display:flex; flex-wrap:wrap; gap:0.4rem; margin-bottom:1rem; }
         .rsn-tpl-chip { padding:0.25rem 0.7rem; border-radius:9999px; font-size:0.73rem; font-weight:700; cursor:pointer; border:1.5px solid #d1d5db; color:#374151; background:white; transition:all 0.15s; }
-        .rsn-tpl-chip:hover { border-color:#10b981; color:#065f46; background:#f0fdf4; }
+        .rsn-tpl-chip:hover { border-color:#2563eb; color:#1e40af; background:#eff6ff; }
 
         /* ── Citizen Preview ── */
-        .rsn-preview { border:1.5px dashed #a7f3d0; border-radius:12px; background:#f0fdf4; padding:1rem 1.25rem; margin-top:1rem; }
-        .rsn-preview-label { font-size:0.68rem; font-weight:800; text-transform:uppercase; letter-spacing:0.07em; color:#10b981; margin-bottom:0.5rem; display:flex; align-items:center; gap:0.35rem; }
+        .rsn-preview { border:1.5px dashed #93c5fd; border-radius:12px; background:#eff6ff; padding:1rem 1.25rem; margin-top:1rem; }
+        .rsn-preview-label { font-size:0.68rem; font-weight:800; text-transform:uppercase; letter-spacing:0.07em; color:#2563eb; margin-bottom:0.5rem; display:flex; align-items:center; gap:0.35rem; }
         .rsn-preview-msg { font-size:0.82rem; color:#374151; line-height:1.6; white-space:pre-wrap; }
         .rsn-preview-off { font-size:0.82rem; color:#9ca3af; font-style:italic; }
 
         /* ── Last saved ── */
         .rsn-saved-ts { font-size:0.72rem; color:#9ca3af; display:flex; align-items:center; gap:0.3rem; }
-        .rsn-saved-ts i { color:#10b981; }
+        .rsn-saved-ts i { color:#2563eb; }
 
-        /* ── Logout Modal ── */
-        .logout-modal { position:fixed; inset:0; z-index:9999; display:flex; align-items:center; justify-content:center; }
-        .logout-modal.hidden { display:none; }
-        .logout-modal-overlay { position:absolute; inset:0; background:rgba(0,0,0,0.55); backdrop-filter:blur(4px); }
-        .logout-modal-content { position:relative; background:linear-gradient(135deg,#0f172a,#064e3b); border:1px solid rgba(52,211,153,0.25); border-radius:18px; padding:2rem; width:90%; max-width:360px; text-align:center; box-shadow:0 24px 60px rgba(0,0,0,0.35); animation:rsnSlide 0.25s ease; }
-        @keyframes rsnSlide { from{opacity:0;transform:translateY(16px) scale(0.97)} to{opacity:1;transform:translateY(0) scale(1)} }
-        .logout-modal-icon { font-size:2rem; color:#f87171; margin-bottom:0.75rem; background:rgba(239,68,68,0.15); width:56px; height:56px; display:flex; align-items:center; justify-content:center; border-radius:50%; margin:0 auto 1rem; border:2px solid rgba(239,68,68,0.35); }
-        .logout-modal-title { margin:0 0 0.5rem; font-size:1.2rem; font-weight:800; color:white; }
-        .logout-modal-message { margin:0 0 1.5rem; color:rgba(255,255,255,0.65); font-size:0.875rem; }
-        .logout-modal-buttons { display:flex; gap:0.75rem; justify-content:center; }
-        .logout-modal-btn { padding:0.6rem 1.4rem; border-radius:10px; font-size:0.875rem; font-weight:700; cursor:pointer; border:none; display:flex; align-items:center; gap:0.4rem; transition:all 0.2s; }
-        .logout-modal-btn.cancel  { background:rgba(255,255,255,0.1); color:rgba(255,255,255,0.85); border:1.5px solid rgba(255,255,255,0.15); }
-        .logout-modal-btn.cancel:hover  { background:rgba(255,255,255,0.18); }
-        .logout-modal-btn.confirm { background:linear-gradient(135deg,#ef4444,#dc2626); color:white; }
-        .logout-modal-btn.confirm:hover { filter:brightness(1.1); }
-
-        @keyframes spin { to{transform:rotate(360deg)} }
+@keyframes spin { to{transform:rotate(360deg)} }
     </style>
 </head>
 <body>
@@ -155,7 +140,7 @@
         <div class="sidebar-header">
             <div class="sidebar-logo">
                 <img src="images/logolspu.jpg" alt="LSPU Logo"
-                     style="width:50px;height:50px;object-fit:contain;border-radius:50%;border:2px solid rgba(52,211,153,0.6);display:block;">
+                     style="width:50px;height:50px;object-fit:contain;border-radius:50%;border:2px solid rgba(147,197,253,0.6);display:block;">
                 <div class="logo-text">
                     <h3 style="margin:0;font-size:15px;font-weight:700;color:white;">Super User</h3>
                     <p style="margin:2px 0 0 0;font-size:11px;color:rgba(255,255,255,0.6);">Emergency Response</p>
@@ -216,7 +201,7 @@
             <div class="rsn-stats">
                 <div class="rsn-stat">
                     <div class="rsn-stat-icon" style="background:#d1fae5;">
-                        <i class="bi bi-shield-fill-check" style="color:#059669;"></i>
+                        <i class="bi bi-shield-fill-check" style="color:#1d4ed8;"></i>
                     </div>
                     <div>
                         <div class="rsn-stat-label">Readiness</div>
@@ -270,13 +255,13 @@
                         </div>
                         <div class="rsn-panel-body">
                             <p style="font-size:0.72rem;color:#9ca3af;margin:0 0 0.75rem;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;">
-                                <i class="bi bi-robot" style="color:#10b981;"></i> Auto-generated · Shown to responders &amp; super users
+                                <i class="bi bi-robot" style="color:#2563eb;"></i> Auto-generated · Shown to responders &amp; super users
                             </p>
                             <div class="rsn-readout" id="readinessSynopsis">
                                 <span class="rsn-readout-empty"><i class="bi bi-hourglass-split" style="animation:spin 1.2s linear infinite;margin-right:0.35rem;"></i>Loading readiness information…</span>
                             </div>
                             <div style="display:flex;gap:0.5rem;flex-wrap:wrap;">
-                                <span id="rsnStatusBadge" style="font-size:0.7rem;padding:0.2rem 0.65rem;border-radius:9999px;font-weight:800;background:#d1fae5;color:#065f46;">● READY</span>
+                                <span id="rsnStatusBadge" style="font-size:0.7rem;padding:0.2rem 0.65rem;border-radius:9999px;font-weight:800;background:#d1fae5;color:#1e40af;">● READY</span>
                                 <span style="font-size:0.7rem;padding:0.2rem 0.65rem;border-radius:9999px;background:#eff6ff;color:#2563eb;font-weight:700;">
                                     <i class="bi bi-people-fill"></i> Responders &amp; Super Users
                                 </span>
@@ -322,7 +307,7 @@
                     </div>
                     <div class="rsn-panel-body">
                         <p style="font-size:0.72rem;color:#9ca3af;margin:0 0 0.5rem;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;">
-                            <i class="bi bi-eye" style="color:#10b981;"></i> Shown on citizen home page
+                            <i class="bi bi-eye" style="color:#2563eb;"></i> Shown on citizen home page
                         </p>
                         <p class="rsn-notice-ctrl-desc">You can turn the notice off, edit the message, or switch back to the auto-generated message from this month’s reports.</p>
 
@@ -339,7 +324,7 @@
                         </div>
 
                         <!-- Quick Templates -->
-                        <div class="rsn-tpl-label"><i class="bi bi-lightning-charge-fill" style="color:#10b981;"></i> Quick Messages</div>
+                        <div class="rsn-tpl-label"><i class="bi bi-lightning-charge-fill" style="color:#2563eb;"></i> Quick Messages</div>
                         <div class="rsn-tpl-chips">
                             <button class="rsn-tpl-chip" onclick="applyNoticeTemplate('general')">🛡️ General Safety</button>
                             <button class="rsn-tpl-chip" onclick="applyNoticeTemplate('weather')">⛅ Weather</button>
@@ -354,7 +339,7 @@
                         <!-- Textarea -->
                         <div class="form-group" style="margin-bottom:0.25rem;">
                             <label style="display:block;font-size:0.72rem;font-weight:800;text-transform:uppercase;letter-spacing:0.05em;color:#374151;margin-bottom:0.4rem;">
-                                <i class="bi bi-chat-text-fill" style="color:#10b981;"></i> Message
+                                <i class="bi bi-chat-text-fill" style="color:#2563eb;"></i> Message
                             </label>
                             <div class="rsn-textarea-wrap">
                                 <textarea id="safetyNoticeMessage" class="rsn-textarea" rows="5"
@@ -445,7 +430,7 @@ window.SU_TOUR_STEPS = [
             <div class="rsn-check-item ${checkedItems.has(item.id) ? 'checked' : ''}"
                  onclick="toggleCheck('${item.id}')">
                 <div class="ci-box"></div>
-                <i class="bi ${item.icon}" style="color:#10b981;font-size:0.95rem;flex-shrink:0;"></i>
+                <i class="bi ${item.icon}" style="color:#2563eb;font-size:0.95rem;flex-shrink:0;"></i>
                 <span>${item.label}</span>
             </div>
         `).join('');
@@ -541,7 +526,7 @@ window.SU_TOUR_STEPS = [
         try {
             await window.emergencySystem.updateSafetyNotice({ message: null, enabled: document.getElementById('safetyNoticeEnabled').checked });
             if (statusEl) {
-                statusEl.style.color = '#059669';
+                statusEl.style.color = '#1d4ed8';
                 statusEl.innerHTML = '<i class="bi bi-check2"></i> Now using auto-generated message.';
                 setTimeout(() => { statusEl.textContent = ''; }, 3000);
             }
@@ -561,7 +546,7 @@ window.SU_TOUR_STEPS = [
     function updateStats() {
         const enabled = document.getElementById('safetyNoticeEnabled').checked;
         document.getElementById('statNotice').textContent = enabled ? 'Visible' : 'Hidden';
-        document.getElementById('statNotice').style.color = enabled ? '#059669' : '#9ca3af';
+        document.getElementById('statNotice').style.color = enabled ? '#1d4ed8' : '#9ca3af';
     }
 
     // ── Refresh readiness ──
@@ -575,7 +560,7 @@ window.SU_TOUR_STEPS = [
                 || 'Prepare and be ready: Check first aid kits and AED availability. Be ready for medical calls. Inspect fire equipment and evacuation routes. Prepare extinguishers and muster points. Review general response kits and communication channels.';
             el.textContent = txt;
             document.getElementById('statReadiness').textContent = 'Ready';
-            document.getElementById('statReadiness').style.color = '#059669';
+            document.getElementById('statReadiness').style.color = '#1d4ed8';
         } catch {
             el.textContent = 'Prepare and be ready: Check first aid kits and AED availability. Be ready for medical calls. Inspect fire equipment and evacuation routes. Prepare extinguishers and muster points.';
             document.getElementById('statReadiness').textContent = 'Ready';
@@ -596,10 +581,10 @@ window.SU_TOUR_STEPS = [
         try {
             await window.emergencySystem.updateSafetyNotice({ message: message || null, enabled });
             const now = new Date().toLocaleString('en-PH',{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'});
-            document.getElementById('savedTimestamp').innerHTML = `<i class="bi bi-check-circle-fill" style="color:#10b981;"></i> Saved ${now}`;
+            document.getElementById('savedTimestamp').innerHTML = `<i class="bi bi-check-circle-fill" style="color:#2563eb;"></i> Saved ${now}`;
             document.getElementById('statLastSaved').textContent = now;
             document.getElementById('statNotice').textContent = enabled ? 'Visible' : 'Hidden';
-            statusEl.style.color = '#059669';
+            statusEl.style.color = '#1d4ed8';
             statusEl.innerHTML = '<i class="bi bi-check2"></i> Saved successfully!';
             setTimeout(() => { statusEl.textContent = ''; }, 3000);
         } catch (e) {
@@ -639,14 +624,14 @@ window.SU_TOUR_STEPS = [
                 document.getElementById('safetyNoticeMessage').value   = notice?.message || '';
                 if (notice?.updated_at) {
                     const ts = new Date(notice.updated_at).toLocaleString('en-PH',{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'});
-                    document.getElementById('savedTimestamp').innerHTML = `<i class="bi bi-clock" style="color:#10b981;"></i> Last saved ${ts}`;
+                    document.getElementById('savedTimestamp').innerHTML = `<i class="bi bi-clock" style="color:#2563eb;"></i> Last saved ${ts}`;
                     document.getElementById('statLastSaved').textContent = ts;
                 }
                 updateCharCount();
                 updatePreview();
                 const enabled = notice ? notice.enabled !== false : true;
                 document.getElementById('statNotice').textContent = enabled ? 'Visible' : 'Hidden';
-                document.getElementById('statNotice').style.color = enabled ? '#059669' : '#9ca3af';
+                document.getElementById('statNotice').style.color = enabled ? '#1d4ed8' : '#9ca3af';
             } catch (_) {
                 updatePreview();
             }

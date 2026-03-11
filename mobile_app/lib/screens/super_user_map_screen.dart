@@ -7,6 +7,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../services/supabase_service.dart';
 import '../models/responder_models.dart';
 import '../utils/report_date_helper.dart';
+import '../utils/super_user_theme.dart';
 import 'report_detail_loader_screen.dart';
 
 class SuperUserMapScreen extends StatefulWidget {
@@ -1352,7 +1353,7 @@ class _SuperUserMapScreenState extends State<SuperUserMapScreen> {
                       icon: const Icon(Icons.description_outlined),
                       label: const Text('View Report Details'),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF3b82f6),
+                        backgroundColor: SuTheme.primary,
                         foregroundColor: Colors.white,
                         padding: const EdgeInsets.symmetric(
                           horizontal: 24,
@@ -1420,6 +1421,7 @@ class _SuperUserMapScreenState extends State<SuperUserMapScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: SuTheme.bg,
       appBar: AppBar(
         title: const Text(
           'Super User Map',
@@ -1435,11 +1437,7 @@ class _SuperUserMapScreenState extends State<SuperUserMapScreen> {
         scrolledUnderElevation: 0,
         flexibleSpace: Container(
           decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [Color(0xFF2563eb), Color(0xFF1d4ed8)],
-            ),
+            gradient: SuTheme.appBarGradient,
           ),
         ),
         actions: [
@@ -1481,26 +1479,16 @@ class _SuperUserMapScreenState extends State<SuperUserMapScreen> {
           ),
           if (_isLoading)
             const Center(
-              child: CircularProgressIndicator(),
+              child: CircularProgressIndicator(color: SuTheme.primary),
             ),
-          // Filter Buttons
+          // Filter Buttons — modern card
           Positioned(
             top: 16,
             left: 16,
             right: 16,
             child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(16),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.08),
-                    blurRadius: 16,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
-              ),
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+              decoration: SuTheme.cardDecoration(),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
@@ -1517,17 +1505,7 @@ class _SuperUserMapScreenState extends State<SuperUserMapScreen> {
             right: 16,
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(16),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.08),
-                    blurRadius: 16,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
-              ),
+              decoration: SuTheme.cardDecoration(),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisSize: MainAxisSize.min,
@@ -1663,13 +1641,13 @@ class _SuperUserMapScreenState extends State<SuperUserMapScreen> {
               padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
               decoration: BoxDecoration(
                 color: isActive
-                    ? const Color(0xFF3b82f6)
+                    ? SuTheme.primary
                     : Colors.grey.shade100,
                 borderRadius: BorderRadius.circular(12),
                 boxShadow: isActive
                     ? [
                         BoxShadow(
-                          color: const Color(0xFF3b82f6).withOpacity(0.3),
+                          color: SuTheme.primary.withOpacity(0.3),
                           blurRadius: 8,
                           offset: const Offset(0, 2),
                         ),
@@ -1683,7 +1661,7 @@ class _SuperUserMapScreenState extends State<SuperUserMapScreen> {
                   Icon(
                     icon,
                     size: 18,
-                    color: isActive ? Colors.white : Colors.grey.shade700,
+                    color: isActive ? Colors.white : SuTheme.textMuted,
                   ),
                   const SizedBox(width: 6),
                   Flexible(

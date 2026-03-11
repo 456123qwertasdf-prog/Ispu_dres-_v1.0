@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../services/supabase_service.dart';
+import '../utils/super_user_theme.dart';
 
 class SuperUserSOSAlertsScreen extends StatefulWidget {
   const SuperUserSOSAlertsScreen({super.key});
@@ -315,7 +316,7 @@ class _SuperUserSOSAlertsScreenState extends State<SuperUserSOSAlertsScreen> {
                         icon: const Icon(Icons.map),
                         label: const Text('View on Map'),
                         style: FilledButton.styleFrom(
-                          backgroundColor: const Color(0xFF3b82f6),
+                          backgroundColor: SuTheme.primary,
                           padding: const EdgeInsets.symmetric(vertical: 16),
                         ),
                       ),
@@ -385,7 +386,7 @@ class _SuperUserSOSAlertsScreenState extends State<SuperUserSOSAlertsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFf1f5f9),
+      backgroundColor: SuTheme.bg,
       appBar: AppBar(
         title: const Text(
           'SOS Emergency Alerts',
@@ -401,11 +402,7 @@ class _SuperUserSOSAlertsScreenState extends State<SuperUserSOSAlertsScreen> {
         scrolledUnderElevation: 0,
         flexibleSpace: Container(
           decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [Color(0xFFdc2626), Color(0xFFb91c1c)],
-            ),
+            gradient: SuTheme.appBarGradient,
           ),
         ),
         actions: [
@@ -418,20 +415,16 @@ class _SuperUserSOSAlertsScreenState extends State<SuperUserSOSAlertsScreen> {
       ),
       body: Column(
         children: [
-          // Stats Cards
+          // Stats Cards — Super User theme with red accent for SOS
           Container(
             margin: const EdgeInsets.fromLTRB(16, 16, 16, 0),
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [Color(0xFFdc2626), Color(0xFFb91c1c)],
-              ),
+              gradient: SuTheme.headerCardGradient,
               borderRadius: BorderRadius.circular(20),
               boxShadow: [
                 BoxShadow(
-                  color: const Color(0xFFef4444).withOpacity(0.35),
+                  color: SuTheme.primary.withOpacity(0.35),
                   blurRadius: 16,
                   offset: const Offset(0, 6),
                 ),
@@ -461,16 +454,7 @@ class _SuperUserSOSAlertsScreenState extends State<SuperUserSOSAlertsScreen> {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
             margin: const EdgeInsets.only(top: 16),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.04),
-                  blurRadius: 12,
-                  offset: const Offset(0, 2),
-                ),
-              ],
-            ),
+            decoration: SuTheme.filterBarDecoration,
             child: SingleChildScrollView(
               scrollDirection: Axis.horizontal,
               child: Row(
@@ -498,14 +482,14 @@ class _SuperUserSOSAlertsScreenState extends State<SuperUserSOSAlertsScreen> {
                           height: 40,
                           child: CircularProgressIndicator(
                             strokeWidth: 2.5,
-                            color: Color(0xFFef4444),
+                            color: SuTheme.primary,
                           ),
                         ),
                         const SizedBox(height: 16),
                         Text(
                           'Loading SOS alerts...',
                           style: TextStyle(
-                            color: Colors.grey.shade600,
+                            color: SuTheme.textMuted,
                             fontSize: 14,
                           ),
                         ),
@@ -547,7 +531,7 @@ class _SuperUserSOSAlertsScreenState extends State<SuperUserSOSAlertsScreen> {
                                 icon: const Icon(Icons.refresh_rounded, size: 20),
                                 label: const Text('Retry'),
                                 style: FilledButton.styleFrom(
-                                  backgroundColor: const Color(0xFFef4444),
+                                  backgroundColor: SuTheme.primary,
                                   padding: const EdgeInsets.symmetric(
                                     horizontal: 24,
                                     vertical: 14,
@@ -592,9 +576,9 @@ class _SuperUserSOSAlertsScreenState extends State<SuperUserSOSAlertsScreen> {
                           )
                         : RefreshIndicator(
                             onRefresh: _loadSOSAlerts,
-                            color: const Color(0xFFef4444),
+                            color: SuTheme.primary,
                             child: ListView.builder(
-                              padding: const EdgeInsets.all(16),
+                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
                               itemCount: _filteredAlerts.length,
                               itemBuilder: (context, index) {
                                 final alert = _filteredAlerts[index];
@@ -655,25 +639,13 @@ class _SuperUserSOSAlertsScreenState extends State<SuperUserSOSAlertsScreen> {
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 200),
           padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
-          decoration: BoxDecoration(
-            color: isSelected
-                ? const Color(0xFFef4444)
-                : Colors.grey.shade100,
-            borderRadius: BorderRadius.circular(20),
-            boxShadow: isSelected
-                ? [
-                    BoxShadow(
-                      color: const Color(0xFFef4444).withOpacity(0.3),
-                      blurRadius: 8,
-                      offset: const Offset(0, 2),
-                    ),
-                  ]
-                : null,
-          ),
+          decoration: isSelected
+              ? SuTheme.filterChipSelected
+              : SuTheme.filterChipUnselected(null),
           child: Text(
             label,
             style: TextStyle(
-              color: isSelected ? Colors.white : Colors.grey.shade700,
+              color: isSelected ? Colors.white : SuTheme.textMuted,
               fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
               fontSize: 14,
             ),
@@ -695,22 +667,13 @@ class _SuperUserSOSAlertsScreenState extends State<SuperUserSOSAlertsScreen> {
 
     return Container(
       margin: const EdgeInsets.only(bottom: 14),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
+      decoration: SuTheme.cardDecoration(
         border: Border(
           left: BorderSide(
             color: statusColor,
             width: 4,
           ),
         ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.06),
-            blurRadius: 14,
-            offset: const Offset(0, 4),
-          ),
-        ],
       ),
       child: Material(
         color: Colors.transparent,

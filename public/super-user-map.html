@@ -8,6 +8,7 @@
     <link rel="stylesheet" href="css/su-header-shared.css">
     <link rel="stylesheet" href="css/system-status.css">
     <link rel="stylesheet" href="css/su-tour.css">
+    <link rel="stylesheet" href="css/logout-modal.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.css" />
@@ -203,7 +204,7 @@
             background: linear-gradient(135deg, #3b82f6 0%, #2563eb 50%, #1d4ed8 100%);
         }
         .summary-card:nth-child(4) .summary-icon {
-            background: linear-gradient(135deg, #10b981 0%, #059669 50%, #047857 100%);
+            background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 50%, #1e40af 100%);
         }
         @media (max-width: 768px) {
             .summary-cards {
@@ -693,107 +694,7 @@
             width: 90%;
             box-shadow: 0 20px 25px rgba(0, 0, 0, 0.3);
         }
-        .logout-modal {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: 10000;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            animation: fadeIn 0.2s ease;
-        }
-        .logout-modal.hidden {
-            display: none;
-        }
-        .logout-modal-overlay {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.6);
-            backdrop-filter: blur(4px);
-        }
-        .logout-modal-content {
-            position: relative;
-            background: white;
-            border-radius: 16px;
-            padding: 2rem;
-            max-width: 420px;
-            width: 90%;
-            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3), 0 10px 10px -5px rgba(0, 0, 0, 0.2);
-            animation: slideUp 0.3s ease;
-            text-align: center;
-        }
-        .logout-modal-icon {
-            width: 64px;
-            height: 64px;
-            margin: 0 auto 1.5rem;
-            background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border: 3px solid #fca5a5;
-        }
-        .logout-modal-icon i {
-            font-size: 2rem;
-            color: #ef4444;
-        }
-        .logout-modal-title {
-            font-size: 1.5rem;
-            font-weight: 700;
-            color: #111827;
-            margin: 0 0 0.75rem 0;
-        }
-        .logout-modal-message {
-            font-size: 0.9375rem;
-            color: #6b7280;
-            line-height: 1.6;
-            margin: 0 0 1.75rem 0;
-        }
-        .logout-modal-buttons {
-            display: flex;
-            gap: 0.75rem;
-            justify-content: center;
-        }
-        .logout-modal-btn {
-            padding: 0.75rem 1.5rem;
-            border-radius: 8px;
-            font-size: 0.875rem;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            border: 2px solid transparent;
-        }
-        .logout-modal-btn.cancel {
-            background: #f3f4f6;
-            color: #374151;
-            border-color: #e5e7eb;
-        }
-        .logout-modal-btn.cancel:hover {
-            background: #e5e7eb;
-            border-color: #d1d5db;
-            transform: translateY(-1px);
-        }
-        .logout-modal-btn.confirm {
-            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
-            color: white;
-            border-color: #ef4444;
-            box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3);
-        }
-        .logout-modal-btn.confirm:hover {
-            background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
-            transform: translateY(-1px);
-            box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4);
-        }
-        @keyframes fadeIn {
+@keyframes fadeIn {
             from { opacity: 0; }
             to { opacity: 1; }
         }
@@ -876,63 +777,63 @@
             z-index: 1000 !important;
         }
         /* ── Super-User Sidebar Theme ── */
-        .sidebar { background: linear-gradient(180deg, #0f172a 0%, #064e3b 100%) !important; }
-        .nav-item.active { background: rgba(16,185,129,0.2) !important; color: #34d399 !important; border-left: 3px solid #10b981 !important; border-top: none !important; border-right: none !important; border-bottom: none !important; font-weight: 600; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-        .nav-item:hover { background: rgba(16,185,129,0.1) !important; color: #a7f3d0 !important; border-left-color: rgba(16,185,129,0.4) !important; }
-        .status-dot.online { background: #10b981 !important; box-shadow: 0 0 0 3px rgba(16,185,129,0.25) !important; }
-        .user-avatar { background: rgba(16,185,129,0.25) !important; color: #34d399 !important; }
-        .sidebar-header { border-bottom: 1px solid rgba(16,185,129,0.15) !important; }
-        .system-status { padding: 10px 20px; border-bottom: 1px solid rgba(16,185,129,0.15); }
-        .su-role-badge { display:inline-flex; align-items:center; gap:4px; font-size:0.65rem; font-weight:700; letter-spacing:0.08em; text-transform:uppercase; background:rgba(16,185,129,0.2); color:#34d399; border:1px solid rgba(16,185,129,0.4); border-radius:9999px; padding:2px 8px; margin-top:4px; }
+        .sidebar { background: linear-gradient(180deg, #0f172a 0%, #1e3a8a 100%) !important; }
+        .nav-item.active { background: rgba(59,130,246,0.2) !important; color: #93c5fd !important; border-left: 3px solid #2563eb !important; border-top: none !important; border-right: none !important; border-bottom: none !important; font-weight: 600; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .nav-item:hover { background: rgba(59,130,246,0.1) !important; color: #a7f3d0 !important; border-left-color: rgba(59,130,246,0.4) !important; }
+        .status-dot.online { background: #2563eb !important; box-shadow: 0 0 0 3px rgba(59,130,246,0.25) !important; }
+        .user-avatar { background: rgba(59,130,246,0.25) !important; color: #93c5fd !important; }
+        .sidebar-header { border-bottom: 1px solid rgba(59,130,246,0.15) !important; }
+        .system-status { padding: 10px 20px; border-bottom: 1px solid rgba(59,130,246,0.15); }
+        .su-role-badge { display:inline-flex; align-items:center; gap:4px; font-size:0.65rem; font-weight:700; letter-spacing:0.08em; text-transform:uppercase; background:rgba(59,130,246,0.2); color:#93c5fd; border:1px solid rgba(59,130,246,0.4); border-radius:9999px; padding:2px 8px; margin-top:4px; }
         .su-logout-btn { width:100%; padding:0.75rem 1rem; background:rgba(239,68,68,0.1); border:1px solid rgba(239,68,68,0.3); color:#fca5a5; border-radius:8px; font-size:0.875rem; font-weight:500; cursor:pointer; transition:all 0.2s ease; display:flex; align-items:center; gap:0.5rem; }
         .su-logout-btn:hover { background:#EF4444 !important; border-color:#EF4444 !important; color:white !important; }
-        .su-content-header { background:linear-gradient(135deg, #0f172a 0%, #064e3b 100%); color:white; padding:1.5rem 2rem; border-radius:16px; box-shadow:0 8px 24px rgba(0,0,0,0.15); border-left:4px solid #10b981; margin-bottom:1.75rem; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:1rem; }
+        .su-content-header { background:linear-gradient(135deg, #0f172a 0%, #1e3a8a 100%); color:white; padding:1.5rem 2rem; border-radius:16px; box-shadow:0 8px 24px rgba(0,0,0,0.15); border-left:4px solid #2563eb; margin-bottom:1.75rem; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:1rem; }
         .su-content-header h1 { margin:0; font-size:1.5rem; font-weight:700; display:flex; align-items:center; gap:0.75rem; }
-        .su-content-header h1 i { color:#34d399; }
+        .su-content-header h1 i { color:#93c5fd; }
         .su-content-header p { margin:0.4rem 0 0 0; font-size:0.875rem; opacity:0.8; }
 
         /* ── Map Page Modern Layout ── */
-        .mv-header { background:linear-gradient(135deg,#0f172a 0%,#064e3b 100%); border-radius:20px; padding:1.75rem 2rem; margin-bottom:1.75rem; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:1rem; box-shadow:0 8px 32px rgba(0,0,0,0.18); position:relative; overflow:hidden; }
-        .mv-header::before { content:''; position:absolute; top:-40px; right:-40px; width:160px; height:160px; background:rgba(16,185,129,0.12); border-radius:50%; }
-        .mv-header::after  { content:''; position:absolute; bottom:-30px; right:80px; width:100px; height:100px; background:rgba(16,185,129,0.07); border-radius:50%; }
+        .mv-header { background:linear-gradient(135deg,#0f172a 0%,#1e3a8a 100%); border-radius:20px; padding:1.75rem 2rem; margin-bottom:1.75rem; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:1rem; box-shadow:0 8px 32px rgba(0,0,0,0.18); position:relative; overflow:hidden; }
+        .mv-header::before { content:''; position:absolute; top:-40px; right:-40px; width:160px; height:160px; background:rgba(59,130,246,0.12); border-radius:50%; }
+        .mv-header::after  { content:''; position:absolute; bottom:-30px; right:80px; width:100px; height:100px; background:rgba(59,130,246,0.07); border-radius:50%; }
         .mv-header h1 { margin:0; font-size:1.6rem; font-weight:800; color:white; display:flex; align-items:center; gap:0.7rem; letter-spacing:-0.02em; }
-        .mv-header h1 i { color:#34d399; }
+        .mv-header h1 i { color:#93c5fd; }
         .mv-header p  { margin:0.3rem 0 0; font-size:0.875rem; color:rgba(255,255,255,0.7); }
-        .mv-header { background:linear-gradient(135deg,#0f172a 0%,#064e3b 100%); border-radius:20px; padding:1.75rem 2rem; margin-bottom:1.75rem; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:1rem; box-shadow:0 8px 32px rgba(0,0,0,0.18); position:relative; overflow:hidden; }
-        .mv-header::before { content:''; position:absolute; top:-40px; right:-40px; width:160px; height:160px; background:rgba(16,185,129,0.12); border-radius:50%; }
-        .mv-header::after  { content:''; position:absolute; bottom:-30px; right:80px; width:100px; height:100px; background:rgba(16,185,129,0.07); border-radius:50%; }
+        .mv-header { background:linear-gradient(135deg,#0f172a 0%,#1e3a8a 100%); border-radius:20px; padding:1.75rem 2rem; margin-bottom:1.75rem; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:1rem; box-shadow:0 8px 32px rgba(0,0,0,0.18); position:relative; overflow:hidden; }
+        .mv-header::before { content:''; position:absolute; top:-40px; right:-40px; width:160px; height:160px; background:rgba(59,130,246,0.12); border-radius:50%; }
+        .mv-header::after  { content:''; position:absolute; bottom:-30px; right:80px; width:100px; height:100px; background:rgba(59,130,246,0.07); border-radius:50%; }
         .mv-header h1 { margin:0; font-size:1.6rem; font-weight:800; color:white; display:flex; align-items:center; gap:0.7rem; letter-spacing:-0.02em; }
-        .mv-header h1 i { color:#34d399; }
+        .mv-header h1 i { color:#93c5fd; }
         .mv-header p  { margin:0.3rem 0 0; font-size:0.875rem; color:rgba(255,255,255,0.7); }
         .mv-main { padding:1.75rem; background:#f1f5f9; min-height:100vh; }
 
         /* Page header */
-        .mv-su-badge { background:rgba(16,185,129,0.18); border:1px solid rgba(16,185,129,0.4); color:#34d399; border-radius:9999px; padding:0.3rem 0.9rem; font-size:0.72rem; font-weight:700; letter-spacing:0.06em; text-transform:uppercase; display:inline-flex; align-items:center; gap:0.35rem; }
+        .mv-su-badge { background:rgba(59,130,246,0.18); border:1px solid rgba(59,130,246,0.4); color:#93c5fd; border-radius:9999px; padding:0.3rem 0.9rem; font-size:0.72rem; font-weight:700; letter-spacing:0.06em; text-transform:uppercase; display:inline-flex; align-items:center; gap:0.35rem; }
         .mv-live-badge { background:rgba(239,68,68,0.18); border:1px solid rgba(239,68,68,0.4); color:#fca5a5; border-radius:9999px; padding:0.3rem 0.9rem; font-size:0.72rem; font-weight:700; display:inline-flex; align-items:center; gap:0.4rem; }
         .mv-live-dot { width:7px; height:7px; border-radius:50%; background:#ef4444; animation:mvLivePulse 1.5s infinite; }
         @keyframes mvLivePulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.5;transform:scale(1.4)} }
         .mv-btn { padding:0.45rem 1.05rem; border-radius:10px; border:none; font-size:0.83rem; font-weight:700; cursor:pointer; display:inline-flex; align-items:center; gap:0.35rem; transition:filter 0.15s,transform 0.15s; white-space:nowrap; }
         .mv-btn:hover { filter:brightness(1.08); transform:translateY(-1px); }
-        .mv-btn-green   { background:linear-gradient(135deg,#10b981,#059669); color:white; box-shadow:0 2px 8px rgba(16,185,129,0.3); }
+        .mv-btn-green   { background:linear-gradient(135deg,#2563eb,#1d4ed8); color:white; box-shadow:0 2px 8px rgba(59,130,246,0.3); }
         .mv-btn-outline { background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.25)!important; color:rgba(255,255,255,0.9); }
         .mv-btn-sm { padding:0.32rem 0.7rem; font-size:0.78rem; }
 
         /* Stat cards - override with green hover */
-        .summary-card:hover { border-color:rgba(16,185,129,0.2)!important; box-shadow:0 20px 25px -5px rgba(0,0,0,0.1), 0 0 0 1px rgba(16,185,129,0.1)!important; }
+        .summary-card:hover { border-color:rgba(59,130,246,0.2)!important; box-shadow:0 20px 25px -5px rgba(0,0,0,0.1), 0 0 0 1px rgba(59,130,246,0.1)!important; }
 
         /* Panel */
         .mv-panel { background:white; border-radius:16px; box-shadow:0 2px 12px rgba(0,0,0,0.06); border:1px solid rgba(0,0,0,0.04); overflow:hidden; margin-bottom:1.25rem; }
         .mv-panel-header { padding:1rem 1.5rem; border-bottom:1px solid #f1f5f9; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:0.6rem; }
         .mv-panel-title { font-size:0.95rem; font-weight:700; color:#0f172a; display:flex; align-items:center; gap:0.5rem; }
-        .mv-panel-title i { color:#10b981; }
+        .mv-panel-title i { color:#2563eb; }
         .mv-panel-body { padding:0; }
 
         /* Map itself */
         #map { height:520px; width:100%; border-radius:0 0 16px 16px; background:#e5e7eb; }
 
         /* Filter buttons — green active */
-        .filter-btn.active { background:linear-gradient(135deg,#10b981,#059669)!important; color:white!important; border-color:#059669!important; box-shadow:0 2px 8px rgba(16,185,129,0.35)!important; }
-        .filter-btn.active:hover { background:linear-gradient(135deg,#059669,#047857)!important; }
+        .filter-btn.active { background:linear-gradient(135deg,#2563eb,#1d4ed8)!important; color:white!important; border-color:#1d4ed8!important; box-shadow:0 2px 8px rgba(59,130,246,0.35)!important; }
+        .filter-btn.active:hover { background:linear-gradient(135deg,#1d4ed8,#1e40af)!important; }
         .filter-btn { border-radius:10px!important; font-size:0.8rem!important; }
 
         /* Map controls */
@@ -1416,7 +1317,7 @@ window.SU_TOUR_STEPS = [
                     'assigned': { color: '#f59e0b', dashArray: '10, 5', opacity: 0.6 },    // Amber - dashed
                     'accepted': { color: '#3b82f6', dashArray: '15, 5', opacity: 0.7 },     // Blue - dashed
                     'enroute': { color: '#06b6d4', dashArray: '20, 5', opacity: 0.8 },      // Cyan - dashed (moving)
-                    'on_scene': { color: '#10b981', dashArray: null, opacity: 0.9 }          // Green - solid
+                    'on_scene': { color: '#2563eb', dashArray: null, opacity: 0.9 }          // Green - solid
                 };
                 
                 const config = statusConfig[assignment.status] || { color: '#6b7280', dashArray: '5, 5', opacity: 0.5 };
@@ -1906,7 +1807,7 @@ window.SU_TOUR_STEPS = [
                 );
                 
                 // Determine icon based on assignment status
-                let iconColor = '#10b981'; // Green for available
+                let iconColor = '#2563eb'; // Green for available
                 let iconEmoji = '👮';
                 let statusText = 'Available';
                 
@@ -1915,7 +1816,7 @@ window.SU_TOUR_STEPS = [
                         'assigned': { color: '#f59e0b', emoji: '📋', text: 'Assigned' },
                         'accepted': { color: '#3b82f6', emoji: '✅', text: 'Accepted' },
                         'enroute': { color: '#06b6d4', emoji: '🚑', text: 'En Route' },
-                        'on_scene': { color: '#10b981', emoji: '🚨', text: 'On Scene' }
+                        'on_scene': { color: '#2563eb', emoji: '🚨', text: 'On Scene' }
                     };
                     
                     const config = statusConfig[activeAssignment.status] || { color: '#6b7280', emoji: '👮', text: 'Active' };
@@ -2310,7 +2211,7 @@ window.SU_TOUR_STEPS = [
                 'classified': { className: 'status-classified', color: '#f97316' },
                 'assigned': { className: 'status-assigned', color: '#8b5cf6' },
                 'in-progress': { className: 'status-in-progress', color: '#06b6d4' },
-                'completed': { className: 'status-completed', color: '#10b981' },
+                'completed': { className: 'status-completed', color: '#2563eb' },
                 'cancelled': { className: 'status-cancelled', color: '#6b7280' }
             };
             return statusMap[status] || { className: 'status-pending', color: '#f59e0b' };
@@ -2709,11 +2610,9 @@ window.SU_TOUR_STEPS = [
     <div id="logoutModal" class="logout-modal hidden">
         <div class="logout-modal-overlay" onclick="closeLogoutModal()"></div>
         <div class="logout-modal-content">
-            <div class="logout-modal-icon">
-                <i class="bi bi-exclamation-triangle"></i>
-            </div>
+            <div class="logout-modal-icon"><i class="bi bi-box-arrow-right"></i></div>
             <h3 class="logout-modal-title">Confirm Logout</h3>
-            <p class="logout-modal-message">Are you sure you want to logout? You'll need to sign in again to access the system.</p>
+            <p class="logout-modal-message">Are you sure you want to log out of the system?</p>
             <div class="logout-modal-buttons">
                 <button class="logout-modal-btn cancel" onclick="closeLogoutModal()">
                     <i class="bi bi-x-circle"></i> Cancel

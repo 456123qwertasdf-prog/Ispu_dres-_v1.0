@@ -5,106 +5,216 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Emergency Learning Modules - Admin</title>
   <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/logout-modal.css">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
   <style>
-    /* Enhanced table styling */
+    /* ── Module list: modernized ── */
+    .lsm-list-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 1rem;
+      margin-bottom: 1.25rem;
+      padding-bottom: 1rem;
+      border-bottom: 1px solid #e2e8f0;
+    }
+    .lsm-list-title {
+      margin: 0;
+      font-size: 1.125rem;
+      font-weight: 700;
+      color: #0f172a;
+      letter-spacing: -0.01em;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .lsm-list-title i {
+      color: #2563eb;
+      font-size: 1.25rem;
+    }
+    .lsm-add-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.5rem 1rem;
+      font-size: 0.875rem;
+      font-weight: 600;
+      color: #fff;
+      background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      box-shadow: 0 2px 8px rgba(37, 99, 235, 0.25);
+      transition: transform 0.15s ease, box-shadow 0.2s ease;
+    }
+    .lsm-add-btn:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(37, 99, 235, 0.35);
+    }
+    .lsm-table-wrap {
+      border-radius: 12px;
+      overflow: hidden;
+      border: 1px solid #e2e8f0;
+      background: #fff;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+    }
     #lsmModulesTable {
       width: 100%;
+      border-collapse: collapse;
     }
-    #lsmModulesTable th, #lsmModulesTable td {
-      padding: 14px 16px;
+    #lsmModulesTable th,
+    #lsmModulesTable td {
+      padding: 1rem 1.25rem;
       vertical-align: middle;
-      border-bottom: 1px solid #e5e7eb;
+      border-bottom: 1px solid #f1f5f9;
+    }
+    #lsmModulesTable thead tr {
+      background: linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%);
     }
     #lsmModulesTable th {
-      background-color: #f9fafb;
       font-weight: 600;
-      color: #374151;
+      color: #475569;
       text-align: left;
-      font-size: 0.875rem;
+      font-size: 0.75rem;
       text-transform: uppercase;
-      letter-spacing: 0.5px;
-      border-bottom: 2px solid #e5e7eb;
+      letter-spacing: 0.06em;
+    }
+    #lsmModulesTable tbody tr {
+      transition: background-color 0.15s ease;
     }
     #lsmModulesTable tbody tr:hover {
-      background-color: #f9fafb;
+      background-color: #f8fafc;
     }
     #lsmModulesTable tbody tr:last-child td {
       border-bottom: none;
     }
-    /* Order column */
     #lsmModulesTable td:first-child {
       text-align: center;
-      font-weight: 600;
-      color: #6b7280;
-      width: 60px;
+      font-weight: 700;
+      color: #64748b;
+      width: 64px;
+      font-size: 0.875rem;
     }
-    /* Title column */
     #lsmModulesTable td:nth-child(2) {
       min-width: 200px;
     }
     .module-title {
       font-weight: 600;
-      color: #111827;
+      color: #0f172a;
       font-size: 0.9375rem;
-      margin-bottom: 4px;
+      margin-bottom: 2px;
       line-height: 1.4;
     }
     .module-course {
       font-size: 0.75rem;
-      color: #6b7280;
-      margin-top: 4px;
+      color: #64748b;
+      margin-top: 2px;
       line-height: 1.3;
     }
-    /* Description column */
     #lsmModulesTable td:nth-child(3) {
-      color: #4b5563;
+      color: #475569;
       font-size: 0.875rem;
       line-height: 1.5;
-      max-width: 400px;
+      max-width: 380px;
       word-wrap: break-word;
     }
-    /* Status column */
     #lsmModulesTable td:nth-child(4) {
-      width: 100px;
-      text-align: center;
+      width: 110px;
+      text-align: left;
     }
-    .status-badge-wrapper {
+    .lsm-status-pill {
+      display: inline-flex;
+      align-items: center;
+      padding: 0.25rem 0.625rem;
+      font-size: 0.6875rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      border-radius: 999px;
+    }
+    .lsm-status-pill.lsm-status-active {
+      background: #dbeafe;
+      color: #1d4ed8;
+    }
+    .lsm-status-pill.lsm-status-inactive {
+      background: #f1f5f9;
+      color: #64748b;
+    }
+    #lsmModulesTable td:last-child {
+      width: 200px;
+      min-width: 200px;
+    }
+    .lsm-actions {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+    }
+    .lsm-action-btn {
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      gap: 8px;
-    }
-    /* Actions column */
-    #lsmModulesTable td:last-child {
-      width: 280px;
-      min-width: 280px;
-    }
-    .actions-group {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      flex-wrap: wrap;
-    }
-    .actions-group .btn {
-      margin: 0;
-      padding: 6px 12px;
-      font-size: 0.8125rem;
-      white-space: nowrap;
-    }
-    .actions-group .btn i {
-      font-size: 0.875rem;
-    }
-    .pdf-badge {
-      margin-left: 4px;
-      font-size: 0.75rem;
-    }
-    /* Table container improvements */
-    .table-container {
+      width: 36px;
+      height: 36px;
+      padding: 0;
+      border: 1px solid #e2e8f0;
       border-radius: 8px;
-      overflow: hidden;
-      border: 1px solid #e5e7eb;
+      background: #fff;
+      color: #475569;
+      cursor: pointer;
+      transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
     }
+    .lsm-action-btn:hover {
+      background: #f1f5f9;
+      color: #2563eb;
+      border-color: #cbd5e1;
+    }
+    .lsm-action-btn.danger:hover {
+      background: #fef2f2;
+      color: #dc2626;
+      border-color: #fecaca;
+    }
+    .lsm-action-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+    .lsm-action-btn i {
+      font-size: 1rem;
+    }
+    .lsm-pdf-chip {
+      display: inline-flex;
+      align-items: center;
+      padding: 0.2rem 0.5rem;
+      font-size: 0.6875rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      border-radius: 6px;
+      margin-left: 2px;
+    }
+    .lsm-pdf-chip.has-pdf {
+      background: #dbeafe;
+      color: #1d4ed8;
+    }
+    .lsm-pdf-chip.no-pdf {
+      background: #f1f5f9;
+      color: #94a3b8;
+    }
+    .lsm-empty-state {
+      text-align: center;
+      padding: 3rem 1.5rem;
+      color: #64748b;
+      font-size: 0.9375rem;
+    }
+    .lsm-empty-state i {
+      font-size: 2.5rem;
+      color: #cbd5e1;
+      margin-bottom: 0.75rem;
+      display: block;
+    }
+    .lsm-empty-state p { margin: 0 0 0.5rem 0; }
+    .lsm-empty-state .lsm-add-btn { margin-top: 0.5rem; }
     
     /* Modern Header Card for Learning Modules Admin */
     .main-content .card:first-child .card-title {
@@ -189,18 +299,28 @@
     <!-- Main Content -->
     <div class="main-content">
       <div class="card" style="margin-bottom:2rem;">
-        <div class="card-header">
-          <h2 class="card-title">Emergency Learning Modules</h2>
-          <p class="card-subtitle">Manage emergency learning modules for staff and public education</p>
+        <!-- Page header banner (same as image) -->
+        <div class="admin-page-header" style="margin: 0; border-radius: 16px 16px 0 0;">
+          <div>
+            <h2><i class="bi bi-journal-bookmark"></i> Emergency Learning Modules</h2>
+            <p>Manage emergency learning modules for staff and public education</p>
+          </div>
+          <div class="admin-page-header-right">
+            <span class="admin-page-badge"><i class="bi bi-shield-fill"></i> Admin</span>
+            <div class="admin-header-time">
+              <div class="time-label">Logged in as</div>
+              <div class="time-value" id="adminHeaderUserName">Admin User</div>
+            </div>
+          </div>
         </div>
         <div class="card-body">
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
-            <h3 class="card-title" style="margin:0; font-size:1.15rem;color:#374151;">Module List</h3>
-            <button class="btn btn-primary" style="box-shadow: 0 2px 8px rgb(99 102 241 / 11%);" onclick="showAddLsmModule()"><i class="bi bi-plus-circle"></i> Add Module</button>
+          <div class="lsm-list-header">
+            <h3 class="lsm-list-title"><i class="bi bi-list-ul"></i> Module List</h3>
+            <button type="button" class="lsm-add-btn" onclick="showAddLsmModule()"><i class="bi bi-plus-lg"></i> Add Module</button>
           </div>
           <div style="overflow-x: auto;">
-            <div class="table-container">
-              <table class="table" style="width:100%; min-width: 800px; border-collapse: collapse;">
+            <div class="lsm-table-wrap">
+              <table class="table" style="width:100%; min-width: 800px;">
                 <thead>
                   <tr>
                     <th>Order</th>
@@ -334,6 +454,8 @@
 
   async function loadCoursesAndModules() {
     await ensureInitialized();
+    const nameEl = document.getElementById('adminHeaderUserName');
+    if (nameEl) nameEl.textContent = window.emergencySystem.user?.user_metadata?.full_name || window.emergencySystem.user?.email?.split('@')[0] || 'Admin User';
     const sb = window.emergencySystem.supabase;
     const [{ data: courses }, { data: modules, error: mErr }] = await Promise.all([
       sb.from('lms_courses').select('*').order('created_at', { ascending: true }),
@@ -354,12 +476,26 @@
   function renderLsmModules() {
     const tbody = document.getElementById('lsmModulesTable');
     tbody.innerHTML = '';
-    lsmModules.sort(function(a,b){ return (a.order||0) - (b.order||0); }).forEach(function(mod){
+    var list = lsmModules.slice().sort(function(a,b){ return (a.order||0) - (b.order||0); });
+    if (list.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="5"><div class="lsm-empty-state">' +
+        '<i class="bi bi-journal-bookmark"></i>' +
+        '<p>No modules yet</p>' +
+        '<span style="font-size:0.875rem;">Add your first learning module to get started.</span>' +
+        '<br><button type="button" class="lsm-add-btn" onclick="showAddLsmModule()"><i class="bi bi-plus-lg"></i> Add Module</button></div></td></tr>';
+      return;
+    }
+    list.forEach(function(mod){
       const course = lsmCourses.find(function(c){ return c.id === mod.course_id; });
       const title = escapeHtml((mod.title||'').trim() || 'Untitled Module');
       const courseTitle = escapeHtml(course ? course.title : 'No course');
       const description = escapeHtml((mod.description||'').trim() || 'No description available.');
       const moduleId = String(mod.id).replace(/'/g, "\\'");
+      const statusClass = mod.active ? 'lsm-status-active' : 'lsm-status-inactive';
+      const statusText = mod.active ? 'Active' : 'Inactive';
+      const pdfClass = mod._pdfPublicUrl ? 'has-pdf' : 'no-pdf';
+      const pdfLabel = mod._pdfPublicUrl ? 'PDF' : 'No PDF';
+      const previewDisabled = mod._pdfPublicUrl ? '' : ' disabled';
       tbody.innerHTML += '<tr>'+
         '<td>' + (mod.order||'') + '</td>'+
         '<td>' +
@@ -367,17 +503,13 @@
           '<div class="module-course">' + courseTitle + '</div>' +
         '</td>'+
         '<td>' + description + '</td>'+
+        '<td><span class="lsm-status-pill ' + statusClass + '">' + statusText + '</span></td>'+
         '<td>' +
-          '<div class="status-badge-wrapper">' +
-            '<span class="badge ' + (mod.active?'badge-success':'badge-secondary') + '">' + (mod.active?'Active':'Inactive') + '</span>' +
-          '</div>' +
-        '</td>'+
-        '<td>' +
-          '<div class="actions-group">' +
-            '<button class="btn btn-outline btn-sm" onclick="showEditLsmModule(\'' + moduleId + '\')" title="Edit"><i class="bi bi-pencil"></i></button>' +
-            '<button class="btn btn-danger btn-sm" onclick="deleteLsmModule(\'' + moduleId + '\')" title="Delete"><i class="bi bi-trash"></i></button>' +
-            '<button class="btn btn-outline btn-sm" onclick="previewPDF(\'' + moduleId + '\')" title="Preview PDF"' + (mod._pdfPublicUrl ? '' : ' disabled') + '><i class="bi bi-file-earmark-pdf"></i> Preview</button>' +
-            '<span class="badge ' + (mod._pdfPublicUrl ? 'badge-success' : 'badge-secondary') + ' pdf-badge">' + (mod._pdfPublicUrl ? 'PDF' : 'No PDF') + '</span>' +
+          '<div class="lsm-actions">' +
+            '<button type="button" class="lsm-action-btn" onclick="showEditLsmModule(\'' + moduleId + '\')" title="Edit"><i class="bi bi-pencil"></i></button>' +
+            '<button type="button" class="lsm-action-btn danger" onclick="deleteLsmModule(\'' + moduleId + '\')" title="Delete"><i class="bi bi-trash"></i></button>' +
+            '<button type="button" class="lsm-action-btn" onclick="previewPDF(\'' + moduleId + '\')" title="Preview PDF"' + previewDisabled + '><i class="bi bi-file-earmark-pdf"></i></button>' +
+            '<span class="lsm-pdf-chip ' + pdfClass + '">' + pdfLabel + '</span>' +
           '</div>' +
         '</td>'+
       '</tr>';
@@ -645,11 +777,9 @@
   <div id="logoutModal" class="logout-modal hidden">
     <div class="logout-modal-overlay" onclick="closeLogoutModal()"></div>
     <div class="logout-modal-content">
-      <div class="logout-modal-icon">
-        <i class="bi bi-exclamation-triangle"></i>
-      </div>
+      <div class="logout-modal-icon"><i class="bi bi-box-arrow-right"></i></div>
       <h3 class="logout-modal-title">Confirm Logout</h3>
-      <p class="logout-modal-message">Are you sure you want to logout? You'll need to sign in again to access the system.</p>
+      <p class="logout-modal-message">Are you sure you want to log out of the system?</p>
       <div class="logout-modal-buttons">
         <button class="logout-modal-btn cancel" onclick="closeLogoutModal()">
           <i class="bi bi-x-circle"></i> Cancel
@@ -662,126 +792,7 @@
   </div>
 
   <style>
-    /* Logout Confirmation Modal */
-    .logout-modal {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      z-index: 10000;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      animation: fadeIn 0.2s ease;
-    }
-    
-    .logout-modal.hidden {
-      display: none;
-    }
-    
-    .logout-modal-overlay {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: rgba(0, 0, 0, 0.6);
-      backdrop-filter: blur(4px);
-    }
-    
-    .logout-modal-content {
-      position: relative;
-      background: white;
-      border-radius: 16px;
-      padding: 2rem;
-      max-width: 420px;
-      width: 90%;
-      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3), 0 10px 10px -5px rgba(0, 0, 0, 0.2);
-      animation: slideUp 0.3s ease;
-      text-align: center;
-    }
-    
-    .logout-modal-icon {
-      width: 64px;
-      height: 64px;
-      margin: 0 auto 1.5rem;
-      background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      border: 3px solid #fca5a5;
-    }
-    
-    .logout-modal-icon i {
-      font-size: 2rem;
-      color: #ef4444;
-    }
-    
-    .logout-modal-title {
-      font-size: 1.5rem;
-      font-weight: 700;
-      color: #111827;
-      margin: 0 0 0.75rem 0;
-    }
-    
-    .logout-modal-message {
-      font-size: 0.9375rem;
-      color: #6b7280;
-      line-height: 1.6;
-      margin: 0 0 1.75rem 0;
-    }
-    
-    .logout-modal-buttons {
-      display: flex;
-      gap: 0.75rem;
-      justify-content: center;
-    }
-    
-    .logout-modal-btn {
-      padding: 0.75rem 1.5rem;
-      border-radius: 8px;
-      font-size: 0.875rem;
-      font-weight: 600;
-      cursor: pointer;
-      transition: all 0.2s ease;
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      border: 2px solid transparent;
-    }
-    
-    .logout-modal-btn.cancel {
-      background: #f3f4f6;
-      color: #374151;
-      border-color: #e5e7eb;
-    }
-    
-    .logout-modal-btn.cancel:hover {
-      background: #e5e7eb;
-      border-color: #d1d5db;
-      transform: translateY(-1px);
-    }
-    
-    .logout-modal-btn.confirm {
-      background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
-      color: white;
-      border-color: #ef4444;
-      box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3);
-    }
-    
-    .logout-modal-btn.confirm:hover {
-      background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
-      transform: translateY(-1px);
-      box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4);
-    }
-    
-    .logout-modal-btn:active {
-      transform: translateY(0);
-    }
-    
-    @keyframes fadeIn {
+@keyframes fadeIn {
       from { opacity: 0; }
       to { opacity: 1; }
     }

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../services/supabase_service.dart';
+import '../utils/super_user_theme.dart';
 
 class SuperUserAnnouncementsScreen extends StatefulWidget {
   const SuperUserAnnouncementsScreen({super.key});
@@ -116,7 +117,7 @@ class _SuperUserAnnouncementsScreenState
       case 'medium':
         return const Color(0xFFf59e0b);
       default:
-        return const Color(0xFF3b82f6);
+        return SuTheme.primary;
     }
   }
 
@@ -133,7 +134,7 @@ class _SuperUserAnnouncementsScreenState
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFf1f5f9),
+      backgroundColor: SuTheme.bg,
       appBar: AppBar(
         title: const Text(
           'Announcements',
@@ -149,11 +150,7 @@ class _SuperUserAnnouncementsScreenState
         scrolledUnderElevation: 0,
         flexibleSpace: Container(
           decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [Color(0xFF2563eb), Color(0xFF1d4ed8)],
-            ),
+            gradient: SuTheme.appBarGradient,
           ),
         ),
         actions: [
@@ -169,16 +166,7 @@ class _SuperUserAnnouncementsScreenState
           // Filter Chips
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.04),
-                  blurRadius: 12,
-                  offset: const Offset(0, 2),
-                ),
-              ],
-            ),
+            decoration: SuTheme.filterBarDecoration,
             child: SingleChildScrollView(
               scrollDirection: Axis.horizontal,
               child: Row(
@@ -208,14 +196,14 @@ class _SuperUserAnnouncementsScreenState
                           height: 40,
                           child: CircularProgressIndicator(
                             strokeWidth: 2.5,
-                            color: Color(0xFF3b82f6),
+                            color: SuTheme.primary,
                           ),
                         ),
                         const SizedBox(height: 16),
                         Text(
                           'Loading...',
                           style: TextStyle(
-                            color: Colors.grey.shade600,
+                            color: SuTheme.textMuted,
                             fontSize: 14,
                           ),
                         ),
@@ -257,7 +245,7 @@ class _SuperUserAnnouncementsScreenState
                                 icon: const Icon(Icons.refresh_rounded, size: 20),
                                 label: const Text('Retry'),
                                 style: FilledButton.styleFrom(
-                                  backgroundColor: const Color(0xFF3b82f6),
+                                  backgroundColor: SuTheme.primary,
                                   padding: const EdgeInsets.symmetric(
                                     horizontal: 24,
                                     vertical: 14,
@@ -279,13 +267,13 @@ class _SuperUserAnnouncementsScreenState
                                 Container(
                                   padding: const EdgeInsets.all(24),
                                   decoration: BoxDecoration(
-                                    color: const Color(0xFFeff6ff),
+                                    color: SuTheme.primary.withOpacity(0.08),
                                     shape: BoxShape.circle,
                                   ),
                                   child: Icon(
                                     Icons.campaign_outlined,
                                     size: 56,
-                                    color: Colors.blue.shade300,
+                                    color: SuTheme.primary.withOpacity(0.7),
                                   ),
                                 ),
                                 const SizedBox(height: 20),
@@ -302,9 +290,9 @@ class _SuperUserAnnouncementsScreenState
                           )
                         : RefreshIndicator(
                             onRefresh: _loadAnnouncements,
-                            color: const Color(0xFF3b82f6),
+                            color: SuTheme.primary,
                             child: ListView.builder(
-                              padding: const EdgeInsets.all(16),
+                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
                               itemCount: _filteredAnnouncements.length,
                               itemBuilder: (context, index) {
                                 final announcement =
@@ -329,25 +317,13 @@ class _SuperUserAnnouncementsScreenState
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 200),
           padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
-          decoration: BoxDecoration(
-            color: isSelected
-                ? const Color(0xFF3b82f6)
-                : Colors.grey.shade100,
-            borderRadius: BorderRadius.circular(20),
-            boxShadow: isSelected
-                ? [
-                    BoxShadow(
-                      color: const Color(0xFF3b82f6).withOpacity(0.3),
-                      blurRadius: 8,
-                      offset: const Offset(0, 2),
-                    ),
-                  ]
-                : null,
-          ),
+          decoration: isSelected
+              ? SuTheme.filterChipSelected
+              : SuTheme.filterChipUnselected(null),
           child: Text(
             label,
             style: TextStyle(
-              color: isSelected ? Colors.white : Colors.grey.shade700,
+              color: isSelected ? Colors.white : SuTheme.textMuted,
               fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
               fontSize: 14,
             ),
@@ -371,22 +347,13 @@ class _SuperUserAnnouncementsScreenState
 
     return Container(
       margin: const EdgeInsets.only(bottom: 14),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
+      decoration: SuTheme.cardDecoration(
         border: Border(
           left: BorderSide(
             color: isActive ? priorityColor : Colors.grey.shade300,
             width: 4,
           ),
         ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.06),
-            blurRadius: 14,
-            offset: const Offset(0, 4),
-          ),
-        ],
       ),
       child: Padding(
         padding: const EdgeInsets.all(18),
@@ -490,7 +457,7 @@ class _SuperUserAnnouncementsScreenState
                   style: FilledButton.styleFrom(
                     backgroundColor: isActive
                         ? const Color(0xFFf97316)
-                        : const Color(0xFF10b981),
+                        : SuTheme.primary,
                     padding: const EdgeInsets.symmetric(
                         horizontal: 16, vertical: 10),
                     shape: RoundedRectangleBorder(

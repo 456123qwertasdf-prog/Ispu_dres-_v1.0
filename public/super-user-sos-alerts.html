@@ -8,25 +8,26 @@
     <link rel="stylesheet" href="css/su-header-shared.css">
     <link rel="stylesheet" href="css/system-status.css">
     <link rel="stylesheet" href="css/su-tour.css">
+    <link rel="stylesheet" href="css/logout-modal.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
     <script src="https://cdn.jsdelivr.net/npm/supabase@2"></script>
     <script src="js/supabase.js"></script>
     <style>
         /* ── Sidebar theme ── */
-        .sidebar { background: linear-gradient(180deg, #0f172a 0%, #064e3b 100%) !important; }
-        .nav-item.active { background: rgba(16,185,129,0.2) !important; color: #34d399 !important; border-left: 3px solid #10b981 !important; border-top:none !important; border-right:none !important; border-bottom:none !important; font-weight:600; }
-        .nav-item:hover { background: rgba(16,185,129,0.1) !important; color: #a7f3d0 !important; border-left-color: rgba(16,185,129,0.4) !important; }
-        .status-dot.online { background: #10b981 !important; box-shadow: 0 0 0 3px rgba(16,185,129,0.25) !important; }
-        .user-avatar { background: rgba(16,185,129,0.25) !important; color: #34d399 !important; }
-        .sidebar-header { border-bottom: 1px solid rgba(16,185,129,0.15) !important; }
-        .system-status { padding: 10px 20px; border-bottom: 1px solid rgba(16,185,129,0.15); }
-        .su-role-badge { display:inline-flex; align-items:center; gap:4px; font-size:0.65rem; font-weight:700; letter-spacing:0.08em; text-transform:uppercase; background:rgba(16,185,129,0.2); color:#34d399; border:1px solid rgba(16,185,129,0.4); border-radius:9999px; padding:2px 8px; margin-top:4px; }
+        .sidebar { background: linear-gradient(180deg, #0f172a 0%, #1e3a8a 100%) !important; }
+        .nav-item.active { background: rgba(59,130,246,0.2) !important; color: #34d399 !important; border-left: 3px solid #2563eb !important; border-top:none !important; border-right:none !important; border-bottom:none !important; font-weight:600; }
+        .nav-item:hover { background: rgba(59,130,246,0.1) !important; color: #93c5fd !important; border-left-color: rgba(59,130,246,0.4) !important; }
+        .status-dot.online { background: #2563eb !important; box-shadow: 0 0 0 3px rgba(59,130,246,0.25) !important; }
+        .user-avatar { background: rgba(59,130,246,0.25) !important; color: #34d399 !important; }
+        .sidebar-header { border-bottom: 1px solid rgba(59,130,246,0.15) !important; }
+        .system-status { padding: 10px 20px; border-bottom: 1px solid rgba(59,130,246,0.15); }
+        .su-role-badge { display:inline-flex; align-items:center; gap:4px; font-size:0.65rem; font-weight:700; letter-spacing:0.08em; text-transform:uppercase; background:rgba(59,130,246,0.2); color:#34d399; border:1px solid rgba(59,130,246,0.4); border-radius:9999px; padding:2px 8px; margin-top:4px; }
         .su-logout-btn { width:100%; padding:0.75rem 1rem; background:rgba(239,68,68,0.1); border:1px solid rgba(239,68,68,0.3); color:#fca5a5; border-radius:8px; font-size:0.875rem; font-weight:500; cursor:pointer; transition:all 0.2s; display:flex; align-items:center; gap:0.5rem; }
         .su-logout-btn:hover { background:#ef4444 !important; border-color:#ef4444 !important; color:white !important; }
 
         /* Page header */
         .sos-header {
-            background: linear-gradient(135deg, #0f172a 0%, #064e3b 100%);
+            background: linear-gradient(135deg, #0f172a 0%, #1e3a8a 100%);
             border-radius: 20px;
             padding: 1.75rem 2rem;
             margin-bottom: 1.75rem;
@@ -42,12 +43,12 @@
         .sos-header::before {
             content:''; position:absolute; top:-40px; right:-40px;
             width:160px; height:160px;
-            background:rgba(16,185,129,0.12); border-radius:50%;
+            background:rgba(59,130,246,0.12); border-radius:50%;
         }
         .sos-header::after {
             content:''; position:absolute; bottom:-30px; right:80px;
             width:100px; height:100px;
-            background:rgba(16,185,129,0.07); border-radius:50%;
+            background:rgba(59,130,246,0.07); border-radius:50%;
         }
         .sos-header h1 { margin:0; font-size:1.6rem; font-weight:800; color:white; display:flex; align-items:center; gap:0.7rem; letter-spacing:-0.02em; }
         .sos-header h1 i { color:#34d399; font-size:1.5rem; }
@@ -55,7 +56,7 @@
 
         /* Page header */
         .sos-header {
-            background: linear-gradient(135deg, #0f172a 0%, #064e3b 100%);
+            background: linear-gradient(135deg, #0f172a 0%, #1e3a8a 100%);
             border-radius: 20px;
             padding: 1.75rem 2rem;
             margin-bottom: 1.75rem;
@@ -71,12 +72,12 @@
         .sos-header::before {
             content:''; position:absolute; top:-40px; right:-40px;
             width:160px; height:160px;
-            background:rgba(16,185,129,0.12); border-radius:50%;
+            background:rgba(59,130,246,0.12); border-radius:50%;
         }
         .sos-header::after {
             content:''; position:absolute; bottom:-30px; right:80px;
             width:100px; height:100px;
-            background:rgba(16,185,129,0.07); border-radius:50%;
+            background:rgba(59,130,246,0.07); border-radius:50%;
         }
         .sos-header h1 { margin:0; font-size:1.6rem; font-weight:800; color:white; display:flex; align-items:center; gap:0.7rem; letter-spacing:-0.02em; }
         .sos-header h1 i { color:#34d399; font-size:1.5rem; }
@@ -277,9 +278,9 @@
                 </div>
             </div>
             <div class="sos-stat">
-                <div class="sos-stat-icon" style="background:#ecfdf5;color:#10b981;"><i class="bi bi-check-circle-fill"></i></div>
+                <div class="sos-stat-icon" style="background:#ecfdf5;color:#2563eb;"><i class="bi bi-check-circle-fill"></i></div>
                 <div>
-                    <div class="sos-stat-number" style="color:#10b981;" id="resolvedAlerts">0</div>
+                    <div class="sos-stat-number" style="color:#2563eb;" id="resolvedAlerts">0</div>
                     <div class="sos-stat-label">Resolved</div>
                 </div>
             </div>
@@ -381,14 +382,14 @@
 
 <!-- Logout Modal -->
 <div id="logoutModal" class="logout-modal hidden">
-    <div class="logout-overlay" onclick="closeLogoutModal()"></div>
-    <div class="logout-box">
-        <i class="bi bi-box-arrow-right" style="font-size:2rem;color:#ef4444;display:block;margin-bottom:0.75rem;"></i>
-        <h3>Confirm Logout</h3>
-        <p>Are you sure you want to logout?</p>
-        <div class="logout-btns">
-            <button onclick="closeLogoutModal()" style="background:#f3f4f6;color:#374151;">Cancel</button>
-            <button onclick="confirmLogout()" style="background:#ef4444;color:white;">Logout</button>
+    <div class="logout-modal-overlay" onclick="closeLogoutModal()"></div>
+    <div class="logout-modal-content">
+        <div class="logout-modal-icon"><i class="bi bi-box-arrow-right"></i></div>
+        <h3 class="logout-modal-title">Confirm Logout</h3>
+        <p class="logout-modal-message">Are you sure you want to log out of the system?</p>
+        <div class="logout-modal-buttons">
+            <button type="button" class="logout-modal-btn cancel" onclick="closeLogoutModal()"><i class="bi bi-x-circle"></i> Cancel</button>
+            <button type="button" class="logout-modal-btn confirm" onclick="confirmLogout()"><i class="bi bi-box-arrow-right"></i> Logout</button>
         </div>
     </div>
 </div>

@@ -8,6 +8,7 @@
     <link rel="stylesheet" href="css/su-header-shared.css">
     <link rel="stylesheet" href="css/system-status.css">
     <link rel="stylesheet" href="css/su-tour.css">
+    <link rel="stylesheet" href="css/logout-modal.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
     <script src="https://cdn.jsdelivr.net/npm/supabase@2"></script>
     <script src="js/supabase.js"></script>
@@ -107,8 +108,8 @@
             background: linear-gradient(135deg, #eff6ff 0%, #ffffff 100%);
         }
         .warning-low {
-            border-left-color: #10b981;
-            background: linear-gradient(135deg, #f0fdf4 0%, #ffffff 100%);
+            border-left-color: #2563eb;
+            background: linear-gradient(135deg, #eff6ff 0%, #ffffff 100%);
         }
         .metric-card {
             background: linear-gradient(145deg, #ffffff 0%, #f8fafc 100%);
@@ -166,7 +167,7 @@
         }
         .status-safe { 
             background-color: rgba(16, 185, 129, 0.1);
-            color: #10b981;
+            color: #2563eb;
             box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.2);
         }
         .status-caution { 
@@ -476,7 +477,7 @@
             font-size: 0.9375rem;
         }
         .toast-notification.success {
-            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
             color: white;
         }
         .toast-notification.error {
@@ -508,41 +509,41 @@
             }
         }
         /* ── Super-User Sidebar Theme ── */
-        .sidebar { background: linear-gradient(180deg, #0f172a 0%, #064e3b 100%) !important; }
-        .nav-item.active { background: rgba(16,185,129,0.2) !important; color: #34d399 !important; border-left: 3px solid #10b981 !important; border-top: none !important; border-right: none !important; border-bottom: none !important; font-weight: 600; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-        .nav-item:hover { background: rgba(16,185,129,0.1) !important; color: #a7f3d0 !important; border-left-color: rgba(16,185,129,0.4) !important; }
-        .status-dot.online { background: #10b981 !important; box-shadow: 0 0 0 3px rgba(16,185,129,0.25) !important; }
-        .user-avatar { background: rgba(16,185,129,0.25) !important; color: #34d399 !important; }
-        .sidebar-header { border-bottom: 1px solid rgba(16,185,129,0.15) !important; }
-        .system-status { padding: 10px 20px; border-bottom: 1px solid rgba(16,185,129,0.15); }
-        .su-role-badge { display:inline-flex; align-items:center; gap:4px; font-size:0.65rem; font-weight:700; letter-spacing:0.08em; text-transform:uppercase; background:rgba(16,185,129,0.2); color:#34d399; border:1px solid rgba(16,185,129,0.4); border-radius:9999px; padding:2px 8px; margin-top:4px; }
+        .sidebar { background: linear-gradient(180deg, #0f172a 0%, #1e3a8a 100%) !important; }
+        .nav-item.active { background: rgba(59,130,246,0.2) !important; color: #93c5fd !important; border-left: 3px solid #2563eb !important; border-top: none !important; border-right: none !important; border-bottom: none !important; font-weight: 600; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .nav-item:hover { background: rgba(59,130,246,0.1) !important; color: #93c5fd !important; border-left-color: rgba(59,130,246,0.4) !important; }
+        .status-dot.online { background: #2563eb !important; box-shadow: 0 0 0 3px rgba(59,130,246,0.25) !important; }
+        .user-avatar { background: rgba(59,130,246,0.25) !important; color: #93c5fd !important; }
+        .sidebar-header { border-bottom: 1px solid rgba(59,130,246,0.15) !important; }
+        .system-status { padding: 10px 20px; border-bottom: 1px solid rgba(59,130,246,0.15); }
+        .su-role-badge { display:inline-flex; align-items:center; gap:4px; font-size:0.65rem; font-weight:700; letter-spacing:0.08em; text-transform:uppercase; background:rgba(59,130,246,0.2); color:#93c5fd; border:1px solid rgba(59,130,246,0.4); border-radius:9999px; padding:2px 8px; margin-top:4px; }
         .su-logout-btn { width:100%; padding:0.75rem 1rem; background:rgba(239,68,68,0.1); border:1px solid rgba(239,68,68,0.3); color:#fca5a5; border-radius:8px; font-size:0.875rem; font-weight:500; cursor:pointer; transition:all 0.2s ease; display:flex; align-items:center; gap:0.5rem; }
         .su-logout-btn:hover { background:#EF4444 !important; border-color:#EF4444 !important; color:white !important; }
-        .su-content-header { background:linear-gradient(135deg, #0f172a 0%, #064e3b 100%); color:white; padding:1.5rem 2rem; border-radius:16px; box-shadow:0 8px 24px rgba(0,0,0,0.15); border-left:4px solid #10b981; margin-bottom:1.75rem; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:1rem; }
+        .su-content-header { background:linear-gradient(135deg, #0f172a 0%, #1e3a8a 100%); color:white; padding:1.5rem 2rem; border-radius:16px; box-shadow:0 8px 24px rgba(0,0,0,0.15); border-left:4px solid #2563eb; margin-bottom:1.75rem; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:1rem; }
         .su-content-header h1 { margin:0; font-size:1.5rem; font-weight:700; display:flex; align-items:center; gap:0.75rem; }
-        .su-content-header h1 i { color:#34d399; }
+        .su-content-header h1 i { color:#93c5fd; }
         .su-content-header p { margin:0.4rem 0 0 0; font-size:0.875rem; opacity:0.8; }
 
         /* ── Early Warning Modern Layout ── */
-        .ew-header { background:linear-gradient(135deg,#0f172a 0%,#064e3b 100%); border-radius:20px; padding:1.75rem 2rem; margin-bottom:1.75rem; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:1rem; box-shadow:0 8px 32px rgba(0,0,0,0.18); position:relative; overflow:hidden; }
-        .ew-header::before { content:''; position:absolute; top:-40px; right:-40px; width:160px; height:160px; background:rgba(16,185,129,0.12); border-radius:50%; }
-        .ew-header::after  { content:''; position:absolute; bottom:-30px; right:80px; width:100px; height:100px; background:rgba(16,185,129,0.07); border-radius:50%; }
+        .ew-header { background:linear-gradient(135deg,#0f172a 0%,#1e3a8a 100%); border-radius:20px; padding:1.75rem 2rem; margin-bottom:1.75rem; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:1rem; box-shadow:0 8px 32px rgba(0,0,0,0.18); position:relative; overflow:hidden; }
+        .ew-header::before { content:''; position:absolute; top:-40px; right:-40px; width:160px; height:160px; background:rgba(59,130,246,0.12); border-radius:50%; }
+        .ew-header::after  { content:''; position:absolute; bottom:-30px; right:80px; width:100px; height:100px; background:rgba(59,130,246,0.07); border-radius:50%; }
         .ew-header h1 { margin:0; font-size:1.6rem; font-weight:800; color:white; display:flex; align-items:center; gap:0.7rem; letter-spacing:-0.02em; }
-        .ew-header h1 i { color:#34d399; }
+        .ew-header h1 i { color:#93c5fd; }
         .ew-header p  { margin:0.3rem 0 0; font-size:0.875rem; color:rgba(255,255,255,0.7); }
-        .ew-header { background:linear-gradient(135deg,#0f172a 0%,#064e3b 100%); border-radius:20px; padding:1.75rem 2rem; margin-bottom:1.75rem; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:1rem; box-shadow:0 8px 32px rgba(0,0,0,0.18); position:relative; overflow:hidden; }
-        .ew-header::before { content:''; position:absolute; top:-40px; right:-40px; width:160px; height:160px; background:rgba(16,185,129,0.12); border-radius:50%; }
-        .ew-header::after  { content:''; position:absolute; bottom:-30px; right:80px; width:100px; height:100px; background:rgba(16,185,129,0.07); border-radius:50%; }
+        .ew-header { background:linear-gradient(135deg,#0f172a 0%,#1e3a8a 100%); border-radius:20px; padding:1.75rem 2rem; margin-bottom:1.75rem; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:1rem; box-shadow:0 8px 32px rgba(0,0,0,0.18); position:relative; overflow:hidden; }
+        .ew-header::before { content:''; position:absolute; top:-40px; right:-40px; width:160px; height:160px; background:rgba(59,130,246,0.12); border-radius:50%; }
+        .ew-header::after  { content:''; position:absolute; bottom:-30px; right:80px; width:100px; height:100px; background:rgba(59,130,246,0.07); border-radius:50%; }
         .ew-header h1 { margin:0; font-size:1.6rem; font-weight:800; color:white; display:flex; align-items:center; gap:0.7rem; letter-spacing:-0.02em; }
-        .ew-header h1 i { color:#34d399; }
+        .ew-header h1 i { color:#93c5fd; }
         .ew-header p  { margin:0.3rem 0 0; font-size:0.875rem; color:rgba(255,255,255,0.7); }
         .ew-main { padding:1.75rem; background:#f1f5f9; min-height:100vh; }
 
         /* Modern page header */
-        .ew-su-badge  { background:rgba(16,185,129,0.18); border:1px solid rgba(16,185,129,0.4); color:#34d399; border-radius:9999px; padding:0.3rem 0.9rem; font-size:0.72rem; font-weight:700; letter-spacing:0.06em; text-transform:uppercase; display:inline-flex; align-items:center; gap:0.35rem; }
+        .ew-su-badge  { background:rgba(59,130,246,0.18); border:1px solid rgba(59,130,246,0.4); color:#93c5fd; border-radius:9999px; padding:0.3rem 0.9rem; font-size:0.72rem; font-weight:700; letter-spacing:0.06em; text-transform:uppercase; display:inline-flex; align-items:center; gap:0.35rem; }
         .ew-btn { padding:0.5rem 1.1rem; border-radius:10px; font-size:0.83rem; font-weight:700; cursor:pointer; display:inline-flex; align-items:center; gap:0.4rem; transition:filter 0.15s, transform 0.15s; white-space:nowrap; border:none; }
         .ew-btn:hover { filter:brightness(1.08); transform:translateY(-1px); }
-        .ew-btn-green   { background:linear-gradient(135deg,#10b981,#059669); color:white; box-shadow:0 2px 8px rgba(16,185,129,0.3); }
+        .ew-btn-green   { background:linear-gradient(135deg,#2563eb,#1d4ed8); color:white; box-shadow:0 2px 8px rgba(59,130,246,0.3); }
         .ew-btn-outline { background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.25)!important; color:rgba(255,255,255,0.9); }
         .ew-btn-outline:hover { background:rgba(255,255,255,0.18); }
         .ew-btn-sm { padding:0.32rem 0.75rem; font-size:0.78rem; }
@@ -555,7 +556,7 @@
         .ew-panel { background:white; border-radius:16px; box-shadow:0 2px 12px rgba(0,0,0,0.06); border:1px solid rgba(0,0,0,0.04); overflow:hidden; }
         .ew-panel-header { padding:1rem 1.5rem; border-bottom:1px solid #f1f5f9; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:0.6rem; }
         .ew-panel-title { font-size:0.95rem; font-weight:700; color:#0f172a; display:flex; align-items:center; gap:0.5rem; }
-        .ew-panel-title i { color:#10b981; }
+        .ew-panel-title i { color:#2563eb; }
         .ew-panel-body { padding:1.25rem 1.5rem; }
 
         /* Live status row */
@@ -563,15 +564,15 @@
         .ew-live-dot { width:8px; height:8px; border-radius:50%; background:#9ca3af; flex-shrink:0; transition:background 0.3s; }
 
         /* Weather meta - green tint */
-        .weather-meta-item { background:linear-gradient(135deg,#f0fdf4,#f9fafb) !important; border:1px solid rgba(16,185,129,0.18) !important; }
+        .weather-meta-item { background:linear-gradient(135deg,#eff6ff,#f9fafb) !important; border:1px solid rgba(59,130,246,0.18) !important; }
 
         /* Hourly items - green tint */
-        .hourly-item { background:linear-gradient(145deg,#f0fdf4,#ecfdf5) !important; border:1px solid rgba(16,185,129,0.18) !important; }
-        .hourly-rain { color:#10b981 !important; }
+        .hourly-item { background:linear-gradient(145deg,#eff6ff,#ecfdf5) !important; border:1px solid rgba(59,130,246,0.18) !important; }
+        .hourly-rain { color:#2563eb !important; }
 
         /* Forecast cards */
         .ew-forecast-item { background:white; border:1.5px solid #f1f5f9; border-radius:12px; padding:0.9rem 1rem; transition:all 0.2s; cursor:default; }
-        .ew-forecast-item:hover { border-color:#10b981; box-shadow:0 4px 14px rgba(16,185,129,0.13); transform:translateY(-2px); }
+        .ew-forecast-item:hover { border-color:#2563eb; box-shadow:0 4px 14px rgba(59,130,246,0.13); transform:translateY(-2px); }
         .ew-forecast-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(160px,1fr)); gap:0.65rem; max-height:440px; overflow-y:auto; padding-right:2px; }
 
         /* Logout modal */
@@ -767,15 +768,15 @@
 </div><!-- end .dashboard-container -->
 
     <!-- Logout Modal -->
-    <div id="logoutModal" class="ew-logout-modal hidden">
-        <div class="ew-logout-overlay" onclick="closeLogoutModal()"></div>
-        <div class="ew-logout-box">
-            <div class="ew-logout-icon"><i class="bi bi-exclamation-triangle"></i></div>
-            <h3 style="margin:0 0 0.5rem;font-size:1.4rem;font-weight:800;color:#111827;">Confirm Logout</h3>
-            <p style="margin:0;font-size:0.9375rem;color:#6b7280;line-height:1.6;">Are you sure you want to logout? You'll need to sign in again to access the system.</p>
-            <div class="ew-logout-btn-row">
-                <button class="ew-lbtn cancel" onclick="closeLogoutModal()"><i class="bi bi-x-circle"></i> Cancel</button>
-                <button class="ew-lbtn confirm" onclick="confirmLogout()"><i class="bi bi-box-arrow-right"></i> Logout</button>
+    <div id="logoutModal" class="logout-modal hidden">
+        <div class="logout-modal-overlay" onclick="closeLogoutModal()"></div>
+        <div class="logout-modal-content">
+            <div class="logout-modal-icon"><i class="bi bi-box-arrow-right"></i></div>
+            <h3 class="logout-modal-title">Confirm Logout</h3>
+            <p class="logout-modal-message">Are you sure you want to log out of the system?</p>
+            <div class="logout-modal-buttons">
+                <button type="button" class="logout-modal-btn cancel" onclick="closeLogoutModal()"><i class="bi bi-x-circle"></i> Cancel</button>
+                <button type="button" class="logout-modal-btn confirm" onclick="confirmLogout()"><i class="bi bi-box-arrow-right"></i> Logout</button>
             </div>
         </div>
     </div>
@@ -951,7 +952,7 @@ window.SU_TOUR_STEPS = [
             } else {
                 element.className = 'status-indicator status-safe';
                 warning.textContent = 'CALM';
-                warning.style.color = '#10b981';
+                warning.style.color = '#2563eb';
             }
         }
 
@@ -962,7 +963,7 @@ window.SU_TOUR_STEPS = [
             if (rainChance === 0) {
                 element.className = 'status-indicator status-safe';
                 description.textContent = 'No rain expected';
-                description.style.color = '#10b981';
+                description.style.color = '#2563eb';
             } else if (rainChance < 30) {
                 element.className = 'status-indicator status-caution';
                 description.textContent = 'Low chance';
@@ -1123,14 +1124,14 @@ window.SU_TOUR_STEPS = [
                         const time = formatForecastTime(item.time, i);
                         const rainChance = Math.min(100, Math.round((item.rain_chance || 0) * 100));
                         const rainVolume = item.rain_volume;
-                        const rainColor = rainChance >= 60 ? '#dc2626' : rainChance >= 30 ? '#f97316' : '#10b981';
+                        const rainColor = rainChance >= 60 ? '#dc2626' : rainChance >= 30 ? '#f97316' : '#2563eb';
 
                         return `
                             <div class="ew-forecast-item">
                                 <div style="font-size:0.7rem;font-weight:800;text-transform:uppercase;letter-spacing:0.05em;color:#6b7280;margin-bottom:0.3rem;">${time}</div>
                                 <div style="font-size:1.55rem;font-weight:800;color:#0f172a;line-height:1;margin-bottom:0.3rem;">${Math.round(item.temp)}°C</div>
                                 <div style="font-size:0.72rem;color:#6b7280;text-transform:capitalize;margin-bottom:0.55rem;">${item.description}</div>
-                                <div style="display:flex;align-items:center;gap:0.4rem;padding:0.3rem 0.6rem;background:linear-gradient(135deg,rgba(16,185,129,0.08),rgba(16,185,129,0.03));border-radius:7px;border:1px solid rgba(16,185,129,0.15);">
+                                <div style="display:flex;align-items:center;gap:0.4rem;padding:0.3rem 0.6rem;background:linear-gradient(135deg,rgba(59,130,246,0.08),rgba(59,130,246,0.03));border-radius:7px;border:1px solid rgba(59,130,246,0.15);">
                                     <i class="bi bi-droplet-fill" style="font-size:0.78rem;color:${rainColor};"></i>
                                     <span style="font-size:0.7rem;color:#374151;font-weight:700;">${rainChance}%${rainVolume > 0 ? ` <span style="color:#9ca3af;">(${rainVolume}mm)</span>` : ''}</span>
                                 </div>
@@ -1158,7 +1159,7 @@ window.SU_TOUR_STEPS = [
                     statusText.textContent = 'Loading...';
                     break;
                 case 'SUCCESS':
-                    statusDot.style.background = '#10b981';
+                    statusDot.style.background = '#2563eb';
                     statusText.textContent = 'Live';
                     break;
                 case 'ERROR':
