@@ -7,16 +7,21 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:geocoding/geocoding.dart';
+import 'package:showcaseview/showcaseview.dart';
 import '../services/supabase_service.dart';
 import '../services/emergency_sound_service.dart';
 import '../services/onesignal_service.dart';
+import '../services/connectivity_service.dart';
 import '../utils/synopsis_helper.dart';
+import '../widgets/offline_info_banner.dart';
 import 'learning_modules_screen.dart';
 import 'notifications_screen.dart';
 
 
 class HomeScreen extends StatefulWidget {
-  const HomeScreen({super.key});
+  final bool forceOfflineMode;
+
+  const HomeScreen({super.key, this.forceOfflineMode = false});
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
@@ -50,7 +55,27 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   String? _citizenSynopsisMessage;
   bool _synopsisLoaded = false;
   bool _safetyNoticeEnabled = true;
-  
+  bool _isOnline = true;
+  StreamSubscription<bool>? _connectivitySubscription;
+  final ConnectivityService _connectivityService = ConnectivityService();
+
+  // Tutorial walkthrough keys (order matches tour steps)
+  final GlobalKey _tourWelcome = GlobalKey();
+  final GlobalKey _tourSafetyNotice = GlobalKey();
+  final GlobalKey _tourWeather = GlobalKey();
+  final GlobalKey _tourQuickActions = GlobalKey();
+  final GlobalKey _tourReportEmergency = GlobalKey();
+  final GlobalKey _tourMyReports = GlobalKey();
+  final GlobalKey _tourLearningModules = GlobalKey();
+  final GlobalKey _tourSafetyTips = GlobalKey();
+  final GlobalKey _tourResponderDashboard = GlobalKey();
+  final GlobalKey _tourBottomNav = GlobalKey();
+  final GlobalKey _tourNavModule = GlobalKey();
+  final GlobalKey _tourNavNotif = GlobalKey();
+  final GlobalKey _tourNavProfile = GlobalKey();
+  final GlobalKey<ShowCaseWidgetState> _showCaseWidgetKey = GlobalKey<ShowCaseWidgetState>();
+  static const Color _tourAccent = Color(0xFF0d9488); // teal
+
   // Use centralized Supabase service
   String get _supabaseUrl => SupabaseService.supabaseUrl;
   String get _supabaseKey => SupabaseService.supabaseAnonKey;
@@ -58,28 +83,35 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   bool get _isResponder => _userRole == 'responder' || _userRole == 'admin';
 
   @override
+  static const String _keyTourAutoShow = 'tour_auto_show';
+  bool _tourAutoShow = true;
+
+  @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    _isOnline = !widget.forceOfflineMode;
     // Retry saving OneSignal player ID if user is already authenticated
     _retrySaveOneSignalPlayerId();
-    
-    _loadWeatherData();
-    _loadUserProfile();
-    _loadActiveEmergencyAlert();
-    _subscribeToEmergencyAlerts();
-    _startEmergencyPolling();
-    _loadCitizenSynopsis();
+    _initConnectivity();
+
+    // Auto-show tour on open if setting is on
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      final prefs = await SharedPreferences.getInstance();
+      final showTour = prefs.getBool(_keyTourAutoShow) ?? true;
+      if (mounted) setState(() => _tourAutoShow = showTour);
+      if (mounted && showTour) {
+        await Future.delayed(const Duration(milliseconds: 700));
+        if (mounted) _startTutorial();
+      }
+    });
   }
 
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
-    _emergencyPollTimer?.cancel();
-    _announcementChannel?.unsubscribe();
-    if (_announcementChannel != null) {
-      SupabaseService.client.removeChannel(_announcementChannel!);
-    }
+    _connectivitySubscription?.cancel();
+    _stopEmergencyListeners();
     _soundService.stopSound();
     super.dispose();
   }
@@ -91,10 +123,90 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       OneSignalService().retrySavePlayerIdToSupabase();
       // Refresh safety notice when app comes back (e.g. after admin turned it off on web)
       _loadCitizenSynopsis();
+      if (_isOnline) {
+        _loadWeatherData();
+        _loadActiveEmergencyAlert();
+      }
+    }
+  }
+
+  Future<void> _initConnectivity() async {
+    final initialStatus = widget.forceOfflineMode
+        ? false
+        : await _connectivityService.checkConnectivity();
+
+    if (!mounted) return;
+
+    setState(() {
+      _isOnline = initialStatus;
+      if (!_isOnline) {
+        _weatherStatus = 'Offline';
+      }
+    });
+
+    await _refreshCitizenDataForConnectivity(initialStatus);
+
+    _connectivitySubscription =
+        _connectivityService.onConnectivityChanged.listen((isConnected) {
+      _handleConnectivityChanged(isConnected);
+    });
+  }
+
+  Future<void> _handleConnectivityChanged(bool isConnected) async {
+    if (!mounted || _isOnline == isConnected) return;
+
+    setState(() {
+      _isOnline = isConnected;
+      if (!isConnected) {
+        _weatherStatus = 'Offline';
+      }
+    });
+
+    await _refreshCitizenDataForConnectivity(isConnected);
+  }
+
+  Future<void> _refreshCitizenDataForConnectivity(bool isConnected) async {
+    await _loadUserProfile();
+    await _loadCitizenSynopsis();
+
+    if (!isConnected) {
+      _stopEmergencyListeners();
+      if (mounted) {
+        setState(() {
+          _activeEmergency = null;
+        });
+      }
+      return;
+    }
+
+    _loadWeatherData();
+    _loadActiveEmergencyAlert();
+    _subscribeToEmergencyAlerts();
+    _startEmergencyPolling();
+  }
+
+  void _stopEmergencyListeners() {
+    _emergencyPollTimer?.cancel();
+    _announcementChannel?.unsubscribe();
+    if (_announcementChannel != null) {
+      SupabaseService.client.removeChannel(_announcementChannel!);
+      _announcementChannel = null;
     }
   }
 
   Future<void> _loadCitizenSynopsis() async {
+    if (!_isOnline) {
+      if (mounted) {
+        setState(() {
+          _safetyNoticeEnabled = true;
+          _citizenSynopsisMessage =
+              'Offline mode is active. You can still submit an emergency report, and it will sync automatically when internet is restored.';
+          _synopsisLoaded = true;
+        });
+      }
+      return;
+    }
+
     try {
       // Don't show safety notice to admin/super_user (they manage it from their dashboard)
       final role = SupabaseService.currentUser?.userMetadata?['role']?.toString() ?? _userRole;
@@ -179,6 +291,16 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   }
 
   Future<void> _loadWeatherData() async {
+    if (!_isOnline) {
+      if (mounted) {
+        setState(() {
+          _isLoadingWeather = false;
+          _weatherStatus = 'Offline';
+        });
+      }
+      return;
+    }
+
     setState(() {
       _isLoadingWeather = true;
       _weatherStatus = 'Loading...';
@@ -214,7 +336,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
         _weatherStatus = 'Error';
         _isLoadingWeather = false;
       });
-      if (mounted) {
+      if (mounted && _isOnline) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Failed to load weather data: $e')),
         );
@@ -228,11 +350,22 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     });
 
     try {
+      final prefs = await SharedPreferences.getInstance();
       // Try to get user ID from Supabase auth or SharedPreferences
-      final userId = SupabaseService.currentUserId ?? 
-          (await SharedPreferences.getInstance()).getString('user_id');
-      final userEmail = SupabaseService.currentUserEmail ?? 
-          (await SharedPreferences.getInstance()).getString('user_email');
+      final userId = SupabaseService.currentUserId ?? prefs.getString('user_id');
+      final userEmail =
+          SupabaseService.currentUserEmail ?? prefs.getString('user_email');
+      final storedRole = prefs.getString('user_role')?.toLowerCase();
+
+      if (!_isOnline) {
+        setState(() {
+          _userEmail = userEmail ?? _userEmail;
+          _username = userEmail?.split('@')[0] ?? _username;
+          _userRole = storedRole ?? 'citizen';
+          _isLoadingProfile = false;
+        });
+        return;
+      }
 
       if (userId != null && userId.isNotEmpty) {
         // Fetch user profile from Supabase using the client
@@ -243,10 +376,13 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
             .maybeSingle();
 
         if (response != null) {
+          final resolvedRole =
+              (response['role'] as String?)?.toLowerCase() ?? _userRole;
+          await prefs.setString('user_role', resolvedRole);
           setState(() {
             _username = response['name'] ?? 'Kapiyu';
             _userEmail = userEmail ?? response['email'] ?? 'user@lspu.edu.ph';
-            _userRole = (response['role'] as String?)?.toLowerCase() ?? _userRole;
+            _userRole = resolvedRole;
             _isLoadingProfile = false;
           });
           return;
@@ -255,15 +391,18 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
 
       // Fallback: Use stored email or default values
       if (userEmail != null && userEmail.isNotEmpty) {
+        if (storedRole != null && storedRole.isNotEmpty) {
+          await prefs.setString('user_role', storedRole);
+        }
         setState(() {
           _userEmail = userEmail;
           _username = userEmail.split('@')[0];
-          _userRole = 'citizen';
+          _userRole = storedRole ?? 'citizen';
           _isLoadingProfile = false;
         });
       } else {
         setState(() {
-          _userRole = 'citizen';
+          _userRole = storedRole ?? 'citizen';
           _isLoadingProfile = false;
         });
       }
@@ -330,6 +469,8 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   }
 
   Future<void> _loadActiveEmergencyAlert() async {
+    if (!_isOnline) return;
+
     try {
       final alert = await SupabaseService.client
           .from('announcements')
@@ -354,6 +495,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   }
 
   void _startEmergencyPolling() {
+    if (!_isOnline) return;
     _emergencyPollTimer?.cancel();
     // Fallback in case Realtime connection is lost or unavailable.
     _emergencyPollTimer = Timer.periodic(
@@ -363,6 +505,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   }
 
   void _subscribeToEmergencyAlerts() {
+    if (!_isOnline || _announcementChannel != null) return;
     _announcementChannel =
         SupabaseService.client.channel('mobile-admin-announcements-home');
 
@@ -521,145 +664,390 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     });
   }
 
+  void _startTutorial() {
+    if (!mounted) return;
+    setState(() => _selectedIndex = 0); // Ensure Home tab is visible
+    final keys = <GlobalKey>[];
+    keys.add(_tourWelcome);
+    if (_safetyNoticeEnabled) keys.add(_tourSafetyNotice);
+    keys.add(_tourWeather);
+    keys.add(_tourQuickActions);
+    keys.add(_tourReportEmergency);
+    keys.add(_tourMyReports);
+    keys.add(_tourLearningModules);
+    keys.add(_tourSafetyTips);
+    if (_isResponder) keys.add(_tourResponderDashboard);
+    keys.add(_tourBottomNav);
+    keys.add(_tourNavModule);
+    keys.add(_tourNavNotif);
+    keys.add(_tourNavProfile);
+    // Wait for Home tab to lay out, then start showcase via GlobalKey (context has no ShowCaseWidget ancestor)
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      Future.delayed(const Duration(milliseconds: 350), () {
+        if (!mounted) return;
+        try {
+          _showCaseWidgetKey.currentState?.startShowCase(keys);
+        } catch (e, st) {
+          debugPrint('Tour start error: $e\n$st');
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('Could not start tour: ${e.toString()}'),
+                backgroundColor: Colors.red,
+              ),
+            );
+          }
+        }
+      });
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            ClipOval(
-              child: Image.asset(
-                'assets/images/udrrmo-logo.jpg',
-                height: 40,
-                width: 40,
-                fit: BoxFit.cover,
-              ),
+    return ShowCaseWidget(
+      key: _showCaseWidgetKey,
+      enableAutoScroll: true,
+      onComplete: (int? index, GlobalKey<State<StatefulWidget>>? key) {},
+      onFinish: () {},
+      globalTooltipActionConfig: const TooltipActionConfig(
+        position: TooltipActionPosition.inside,
+        alignment: MainAxisAlignment.spaceBetween,
+        actionGap: 12,
+        gapBetweenContentAndAction: 16,
+      ),
+      globalTooltipActions: [
+        TooltipActionButton(
+          type: TooltipDefaultActionType.previous,
+          name: 'Back',
+          backgroundColor: _tourAccent.withOpacity(0.2),
+          textStyle: const TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.w600,
+            fontSize: 14,
+          ),
+        ),
+        TooltipActionButton(
+          type: TooltipDefaultActionType.next,
+          name: 'Next',
+          backgroundColor: _tourAccent,
+          textStyle: const TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.w600,
+            fontSize: 14,
+          ),
+        ),
+        TooltipActionButton(
+          type: TooltipDefaultActionType.skip,
+          name: 'Skip',
+          backgroundColor: Colors.white24,
+          textStyle: const TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.w600,
+            fontSize: 14,
+          ),
+        ),
+      ],
+      builder: (context) => Scaffold(
+        appBar: AppBar(
+          title: Showcase(
+            key: _tourWelcome,
+            title: 'Welcome to Kapiyu',
+            description: 'Kapiyu helps you report emergencies, get campus alerts, and learn about disaster preparedness. This short tour will show you the main features.',
+            tooltipBackgroundColor: _tourAccent,
+            textColor: Colors.white,
+            titleTextStyle: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w700),
+            descTextStyle: TextStyle(color: Colors.white.withOpacity(0.95), fontSize: 14, height: 1.4),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                ClipOval(
+                  child: Image.asset(
+                    'assets/images/udrrmo-logo.jpg',
+                    height: 40,
+                    width: 40,
+                    fit: BoxFit.cover,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                const Text(
+                  'Kapiyu',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 1,
+                  ),
+                ),
+              ],
             ),
-            const SizedBox(width: 12),
-            const Text(
-              'Kapiyu',
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                letterSpacing: 1,
-              ),
+          ),
+          centerTitle: true,
+          backgroundColor: _selectedIndex == 2
+              ? const Color(0xFFef4444)
+              : const Color(0xFF3b82f6),
+          foregroundColor: Colors.white,
+          elevation: 0,
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.help_outline_rounded),
+              tooltip: 'Take a tour',
+              onPressed: _startTutorial,
             ),
           ],
         ),
-        centerTitle: true,
-        backgroundColor: _selectedIndex == 2 
-            ? const Color(0xFFef4444) 
-            : const Color(0xFF3b82f6),
-        foregroundColor: Colors.white,
-        elevation: 0,
+        body: IndexedStack(
+          index: _selectedIndex,
+          children: [
+            _buildHomeTab(),
+            _buildModuleTab(),
+            _buildCallTab(),
+            _buildNotificationTab(),
+            _buildProfileTab(),
+          ],
+        ),
+        bottomNavigationBar: _buildBottomNavWithShowcase(),
       ),
-      body: IndexedStack(
-        index: _selectedIndex,
-        children: [
-          _buildHomeTab(),
-          _buildModuleTab(),
-          _buildCallTab(),
-          _buildNotificationTab(),
-          _buildProfileTab(),
-        ],
-      ),
-      bottomNavigationBar: _buildCustomBottomNav(),
     );
   }
 
   Widget _buildHomeTab() {
+    final quickActionCount = _isResponder ? 5 : 4;
     final quickActions = <Widget>[
-      _buildActionCard(
-        icon: Icons.emergency,
-        title: 'Report Emergency',
-        color: Colors.red,
-        onTap: () {
-          Navigator.pushNamed(context, '/emergency-report');
-        },
+      Showcase(
+        key: _tourReportEmergency,
+        title: 'How to report an emergency',
+        description: 'Tap here, add a photo and your location, then send. Help will be notified right away.',
+        tooltipBackgroundColor: _tourAccent,
+        textColor: Colors.white,
+        titleTextStyle: const TextStyle(
+          color: Colors.white,
+          fontSize: 18,
+          fontWeight: FontWeight.w700,
+        ),
+        descTextStyle: TextStyle(
+          color: Colors.white.withOpacity(0.95),
+          fontSize: 14,
+          height: 1.4,
+        ),
+        child: _buildActionCard(
+          icon: Icons.emergency,
+          title: 'Report Emergency',
+          color: Colors.red,
+          onTap: () {
+            Navigator.pushNamed(context, '/emergency-report');
+          },
+        ),
       ),
-      _buildActionCard(
-        icon: Icons.assignment,
+      Showcase(
+        key: _tourMyReports,
         title: 'My Reports',
-        color: Colors.blue,
-        onTap: () {
-          Navigator.pushNamed(context, '/my-reports');
-        },
+        description: 'View and track your submitted emergency reports and their status.',
+        tooltipBackgroundColor: _tourAccent,
+        textColor: Colors.white,
+        titleTextStyle: const TextStyle(
+          color: Colors.white,
+          fontSize: 18,
+          fontWeight: FontWeight.w700,
+        ),
+        descTextStyle: TextStyle(
+          color: Colors.white.withOpacity(0.95),
+          fontSize: 14,
+          height: 1.4,
+        ),
+        child: _buildActionCard(
+          icon: Icons.assignment,
+          title: 'My Reports',
+          color: Colors.blue,
+          onTap: () {
+            Navigator.pushNamed(context, '/my-reports');
+          },
+        ),
       ),
-      _buildActionCard(
-        icon: Icons.menu_book,
+      Showcase(
+        key: _tourLearningModules,
         title: 'Learning Modules',
-        color: Colors.purple,
-        onTap: () {
-          setState(() {
-            _selectedIndex = 1; // Navigate to Module tab
-          });
-        },
+        description: 'Learn about disaster preparedness and response through guided modules.',
+        tooltipBackgroundColor: _tourAccent,
+        textColor: Colors.white,
+        titleTextStyle: const TextStyle(
+          color: Colors.white,
+          fontSize: 18,
+          fontWeight: FontWeight.w700,
+        ),
+        descTextStyle: TextStyle(
+          color: Colors.white.withOpacity(0.95),
+          fontSize: 14,
+          height: 1.4,
+        ),
+        child: _buildActionCard(
+          icon: Icons.menu_book,
+          title: 'Learning Modules',
+          color: Colors.purple,
+          onTap: () {
+            setState(() {
+              _selectedIndex = 1; // Navigate to Module tab
+            });
+          },
+        ),
       ),
-      _buildSafetyTipsCard(),
+      Showcase(
+        key: _tourSafetyTips,
+        title: 'Safety Tips',
+        description: 'Quick tips and guides to stay safe during emergencies.',
+        tooltipBackgroundColor: _tourAccent,
+        textColor: Colors.white,
+        titleTextStyle: const TextStyle(
+          color: Colors.white,
+          fontSize: 18,
+          fontWeight: FontWeight.w700,
+        ),
+        descTextStyle: TextStyle(
+          color: Colors.white.withOpacity(0.95),
+          fontSize: 14,
+          height: 1.4,
+        ),
+        child: _buildSafetyTipsCard(),
+      ),
     ];
 
     if (_isResponder) {
-      quickActions.add(_buildResponderDashboardCard());
+      quickActions.add(
+        Showcase(
+          key: _tourResponderDashboard,
+          title: 'Responder Dashboard',
+          description: 'Access your responder tools and view assigned alerts.',
+          tooltipBackgroundColor: _tourAccent,
+          textColor: Colors.white,
+          titleTextStyle: const TextStyle(
+            color: Colors.white,
+            fontSize: 18,
+            fontWeight: FontWeight.w700,
+          ),
+          descTextStyle: TextStyle(
+            color: Colors.white.withOpacity(0.95),
+            fontSize: 14,
+            height: 1.4,
+          ),
+          child: _buildResponderDashboardCard(),
+        ),
+      );
     }
-
-    final quickActionCount = quickActions.length;
 
     return SingleChildScrollView(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          if (!_isOnline) ...[
+            const OfflineInfoBanner(
+              message:
+                  'No internet connection. You can still submit an emergency report while offline. It will send automatically when connection is restored.',
+            ),
+            const SizedBox(height: 20),
+          ],
           if (_activeEmergency != null) ...[
             _buildEmergencyBanner(),
             const SizedBox(height: 20),
           ],
-          // Safety Notice (citizen synopsis) — only when enabled by admin
           if (_safetyNoticeEnabled) ...[
-            _buildSafetyNoticeCard(),
+            Showcase(
+              key: _tourSafetyNotice,
+              title: 'Safety Notice',
+              description: 'Current alerts and advice for your area. Check this when you open the app.',
+tooltipBackgroundColor: _tourAccent,
+      textColor: Colors.white,
+      titleTextStyle: const TextStyle(
+        color: Colors.white,
+        fontSize: 18,
+        fontWeight: FontWeight.w700,
+      ),
+      descTextStyle: TextStyle(
+        color: Colors.white.withOpacity(0.95),
+        fontSize: 14,
+        height: 1.4,
+      ),
+      child: _buildSafetyNoticeCard(),
+            ),
             const SizedBox(height: 20),
           ],
-          // Daily Weather Outlook
-          _buildWeatherDashboard(),
-          const SizedBox(height: 24),
-          
-          // Quick Actions - Modernized
-          Row(
-            children: [
-              const Text(
-                'Quick Actions',
-                style: TextStyle(
-                  fontSize: 22,
-                  fontWeight: FontWeight.bold,
-                  letterSpacing: -0.5,
-                ),
-              ),
-              const Spacer(),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF3b82f6).withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Text(
-                  '$quickActionCount',
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.bold,
-                    color: const Color(0xFF3b82f6),
-                  ),
-                ),
-              ),
-            ],
+          Showcase(
+            key: _tourWeather,
+            title: 'Weather',
+            description: 'Daily weather for campus. Check conditions before heading out.',
+            tooltipBackgroundColor: _tourAccent,
+            textColor: Colors.white,
+            titleTextStyle: const TextStyle(
+              color: Colors.white,
+              fontSize: 18,
+              fontWeight: FontWeight.w700,
+            ),
+            descTextStyle: TextStyle(
+              color: Colors.white.withOpacity(0.95),
+              fontSize: 14,
+              height: 1.4,
+            ),
+            child: _buildWeatherDashboard(),
           ),
-          const SizedBox(height: 20),
-          GridView.count(
-            crossAxisCount: 2,
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            crossAxisSpacing: 16,
-            mainAxisSpacing: 16,
-            childAspectRatio: 0.95,
-            children: quickActions,
+          const SizedBox(height: 24),
+          Showcase(
+            key: _tourQuickActions,
+            title: 'Quick Actions',
+            description: 'Shortcuts: Report Emergency, My Reports, Learning Modules, and Safety Tips.',
+            tooltipBackgroundColor: _tourAccent,
+            textColor: Colors.white,
+            titleTextStyle: const TextStyle(
+              color: Colors.white,
+              fontSize: 18,
+              fontWeight: FontWeight.w700,
+            ),
+            descTextStyle: TextStyle(
+              color: Colors.white.withOpacity(0.95),
+              fontSize: 14,
+              height: 1.4,
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    const Text(
+                      'Quick Actions',
+                      style: TextStyle(
+                        fontSize: 22,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: -0.5,
+                      ),
+                    ),
+                    const Spacer(),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF3b82f6).withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Text(
+                        '$quickActionCount',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                          color: const Color(0xFF3b82f6),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 20),
+                GridView.count(
+                  crossAxisCount: 2,
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  crossAxisSpacing: 16,
+                  mainAxisSpacing: 16,
+                  childAspectRatio: 0.95,
+                  children: quickActions,
+                ),
+              ],
+            ),
           ),
         ],
       ),
@@ -1014,7 +1402,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                             borderRadius: BorderRadius.circular(10),
                           ),
                           child: IconButton(
-                            onPressed: _loadWeatherData,
+                            onPressed: _isOnline ? _loadWeatherData : null,
                             icon: const Icon(Icons.refresh_rounded, color: Color(0xFF3b82f6), size: 20),
                             padding: const EdgeInsets.all(8),
                             constraints: const BoxConstraints(),
@@ -1051,7 +1439,9 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
               padding: const EdgeInsets.all(40.0),
               child: Center(
                 child: Text(
-                  'Weather data unavailable',
+                  _isOnline
+                      ? 'Weather data unavailable'
+                      : 'No internet connection. Weather updates are unavailable offline.',
                   style: TextStyle(color: Colors.grey.shade600),
                 ),
               ),
@@ -1702,6 +2092,27 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     });
   }
 
+  Widget _buildBottomNavWithShowcase() {
+    return Showcase(
+      key: _tourBottomNav,
+      title: 'Navigation',
+      description: 'Switch between Home, Modules, Emergency, Notifications, and Profile here.',
+      tooltipBackgroundColor: _tourAccent,
+      textColor: Colors.white,
+      titleTextStyle: const TextStyle(
+        color: Colors.white,
+        fontSize: 18,
+        fontWeight: FontWeight.w700,
+      ),
+      descTextStyle: TextStyle(
+        color: Colors.white.withOpacity(0.95),
+        fontSize: 14,
+        height: 1.4,
+      ),
+      child: _buildCustomBottomNav(),
+    );
+  }
+
   Widget _buildCustomBottomNav() {
     return Container(
       decoration: BoxDecoration(
@@ -1727,25 +2138,76 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                 label: 'Home',
                 index: 0,
               ),
-              _buildNavItem(
-                icon: Icons.menu_book_outlined,
-                activeIcon: Icons.menu_book,
-                label: 'Module',
-                index: 1,
-                isHighlighted: true,
+              Showcase(
+                key: _tourNavModule,
+                title: 'Modules',
+                description: 'Browse learning modules on disaster preparedness and response.',
+                tooltipBackgroundColor: _tourAccent,
+                textColor: Colors.white,
+                titleTextStyle: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 18,
+                  fontWeight: FontWeight.w700,
+                ),
+                descTextStyle: TextStyle(
+                  color: Colors.white.withOpacity(0.95),
+                  fontSize: 14,
+                  height: 1.4,
+                ),
+                child: _buildNavItem(
+                  icon: Icons.menu_book_outlined,
+                  activeIcon: Icons.menu_book,
+                  label: 'Module',
+                  index: 1,
+                  isHighlighted: true,
+                ),
               ),
               _buildCallNavButton(),
-              _buildNavItem(
-                icon: Icons.notifications_outlined,
-                activeIcon: Icons.notifications,
-                label: 'Notification',
-                index: 3,
+              Showcase(
+                key: _tourNavNotif,
+                title: 'Notifications',
+                description: 'View alerts and updates from the university and DRRMO.',
+                tooltipBackgroundColor: _tourAccent,
+                textColor: Colors.white,
+                titleTextStyle: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 18,
+                  fontWeight: FontWeight.w700,
+                ),
+                descTextStyle: TextStyle(
+                  color: Colors.white.withOpacity(0.95),
+                  fontSize: 14,
+                  height: 1.4,
+                ),
+                child: _buildNavItem(
+                  icon: Icons.notifications_outlined,
+                  activeIcon: Icons.notifications,
+                  label: 'Notification',
+                  index: 3,
+                ),
               ),
-              _buildNavItem(
-                icon: Icons.person_outline,
-                activeIcon: Icons.person,
-                label: 'Profile',
-                index: 4,
+              Showcase(
+                key: _tourNavProfile,
+                title: 'Profile',
+                description: 'Your account, settings, and sign out.\n\nTo see this tour again, tap the help (?) icon in the app bar. To turn off the automatic tour, open Profile and switch off "Show tour when I open the app".',
+                tooltipBackgroundColor: _tourAccent,
+                textColor: Colors.white,
+                titleTextStyle: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 18,
+                  fontWeight: FontWeight.w700,
+                ),
+                descTextStyle: TextStyle(
+                  color: Colors.white.withOpacity(0.95),
+                  fontSize: 14,
+                  height: 1.4,
+                ),
+                child: _buildNavItem(
+                  icon: Icons.person_outline,
+                  activeIcon: Icons.person,
+                  label: 'Profile',
+                  index: 4,
+                ),
               ),
             ],
           ),
@@ -2292,6 +2754,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
             const SizedBox(height: 24),
 
             // Menu Items
+            _buildTourAutoShowTile(),
             _buildMenuItem(
               icon: Icons.edit,
               title: 'Edit Profile',
@@ -2336,6 +2799,54 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
               title: 'Logout',
               color: const Color(0xFFef4444),
               onTap: _showLogoutDialog,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTourAutoShowTile() {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 10),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: const Color(0xFF0d9488).withOpacity(0.1),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: const Icon(Icons.help_outline_rounded, color: Color(0xFF0d9488), size: 22),
+            ),
+            const SizedBox(width: 16),
+            const Expanded(
+              child: Text(
+                'Show tour when I open the app',
+                style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: Color(0xFF374151)),
+              ),
+            ),
+            Switch.adaptive(
+              value: _tourAutoShow,
+              onChanged: (bool value) async {
+                final prefs = await SharedPreferences.getInstance();
+                await prefs.setBool(_keyTourAutoShow, value);
+                if (mounted) setState(() => _tourAutoShow = value);
+              },
+              activeColor: const Color(0xFF0d9488),
             ),
           ],
         ),

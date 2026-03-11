@@ -1,9 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'dart:async';
+import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/notification_model.dart';
+import '../services/connectivity_service.dart';
 import '../services/supabase_service.dart';
+import '../widgets/offline_info_banner.dart';
 import 'notification_details_screen.dart';
 import 'report_detail_loader_screen.dart';
 import 'my_reports_screen.dart';
@@ -20,9 +24,12 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   List<NotificationModel> _notifications = [];
   List<NotificationModel> _allNotifications = [];
   bool _isLoading = true;
+  bool _isOnline = true;
   // Use centralized Supabase service
   String get _supabaseUrl => SupabaseService.supabaseUrl;
   String get _supabaseKey => SupabaseService.supabaseAnonKey;
+  final ConnectivityService _connectivityService = ConnectivityService();
+  StreamSubscription<bool>? _connectivitySubscription;
 
   // Filter states
   String _readFilter = 'All'; // All, Read, Unread
@@ -30,7 +37,35 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   @override
   void initState() {
     super.initState();
-    _loadNotifications();
+    _initConnectivity();
+  }
+
+  @override
+  void dispose() {
+    _connectivitySubscription?.cancel();
+    super.dispose();
+  }
+
+  Future<void> _initConnectivity() async {
+    final isConnected = await _connectivityService.checkConnectivity();
+    if (!mounted) return;
+
+    setState(() {
+      _isOnline = isConnected;
+    });
+
+    await _loadNotifications();
+
+    _connectivitySubscription =
+        _connectivityService.onConnectivityChanged.listen((isConnected) {
+      if (!mounted) return;
+
+      setState(() {
+        _isOnline = isConnected;
+      });
+
+      _loadNotifications();
+    });
   }
 
   void _applyFilters() {
@@ -51,13 +86,15 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     });
 
     try {
-      // First sync announcements from Supabase
-      await _syncAnnouncements();
-      
+      if (_isOnline) {
+        // First sync announcements from Supabase
+        await _syncAnnouncements();
+      }
+
       // Then load notifications from local storage
       await _loadNotificationsFromStorage();
     } catch (e) {
-      if (mounted) {
+      if (mounted && _isOnline) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Failed to load notifications: $e')),
         );
@@ -70,6 +107,8 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   }
 
   Future<void> _syncAnnouncements() async {
+    if (!_isOnline) return;
+
     try {
       // For anonymous access, use only apikey header (not Authorization)
       // Supabase REST API expects apikey for anon role
@@ -327,6 +366,17 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   }
 
   Future<void> _clearAndResync() async {
+    if (!_isOnline) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Offline mode: reconnect to clear and resync notifications.'),
+          ),
+        );
+      }
+      return;
+    }
+
     try {
       // Clear all stored notifications
       final prefs = await SharedPreferences.getInstance();
@@ -518,11 +568,12 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   }
 
   String _formatTimestamp(DateTime timestamp) {
+    final local = timestamp.toLocal();
     final now = DateTime.now();
-    final difference = now.difference(timestamp);
+    final difference = now.difference(local);
 
     if (difference.inDays > 7) {
-      return '${timestamp.month}/${timestamp.day}/${timestamp.year}, ${timestamp.hour}:${timestamp.minute.toString().padLeft(2, '0')}:${timestamp.second.toString().padLeft(2, '0')} ${timestamp.hour >= 12 ? 'PM' : 'AM'}';
+      return DateFormat('MMM d, yyyy • h:mm a').format(local);
     } else if (difference.inDays > 0) {
       return '${difference.inDays} day${difference.inDays > 1 ? 's' : ''} ago';
     } else if (difference.inHours > 0) {
@@ -612,6 +663,13 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
+                        if (!_isOnline) ...[
+                          const OfflineInfoBanner(
+                            message:
+                                'No internet connection. Showing saved notifications only.',
+                          ),
+                          const SizedBox(height: 24),
+                        ],
                         Container(
                           padding: const EdgeInsets.all(32),
                           decoration: BoxDecoration(
@@ -646,9 +704,11 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                         ),
                         const SizedBox(height: 32),
                         ElevatedButton.icon(
-                          onPressed: _loadNotifications,
+                          onPressed: _isOnline ? _loadNotifications : null,
                           icon: const Icon(Icons.sync_rounded, size: 20),
-                          label: const Text('Sync Announcements'),
+                          label: Text(
+                            _isOnline ? 'Sync Announcements' : 'Offline Mode',
+                          ),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: const Color(0xFF3b82f6),
                             foregroundColor: Colors.white,
@@ -664,7 +724,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                         ),
                         const SizedBox(height: 12),
                         TextButton.icon(
-                          onPressed: _clearAndResync,
+                          onPressed: _isOnline ? _clearAndResync : null,
                           icon: const Icon(Icons.refresh_rounded, size: 18),
                           label: const Text('Clear All & Resync'),
                           style: TextButton.styleFrom(
@@ -684,6 +744,16 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                   color: const Color(0xFF3b82f6),
                   child: CustomScrollView(
                     slivers: [
+                      if (!_isOnline)
+                        const SliverToBoxAdapter(
+                          child: Padding(
+                            padding: EdgeInsets.fromLTRB(20, 16, 20, 8),
+                            child: OfflineInfoBanner(
+                              message:
+                                  'No internet connection. Showing saved notifications only.',
+                            ),
+                          ),
+                        ),
                       // Read status filter row
                       SliverToBoxAdapter(
                         child: Container(

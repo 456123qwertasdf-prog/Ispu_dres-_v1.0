@@ -72,6 +72,28 @@
             box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
         }
         
+        .user-types-checkboxes {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.75rem 1.5rem;
+            padding: 0.75rem;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            background: #fafafa;
+        }
+        .user-types-checkboxes .checkbox-label {
+            display: flex;
+            align-items: center;
+            gap: 0.35rem;
+            cursor: pointer;
+            font-size: 0.9rem;
+            color: #374151;
+        }
+        .user-types-checkboxes input[type="checkbox"] {
+            margin: 0;
+            cursor: pointer;
+        }
+        
         .form-hint {
             font-size: 0.75rem;
             color: #6b7280;
@@ -154,6 +176,86 @@
             line-height: 1.5;
         }
         
+        .header-title-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 1.5rem;
+            flex-wrap: wrap;
+        }
+        
+        .admin-stats-row {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            flex-shrink: 0;
+        }
+        
+        .stat-card {
+            display: flex;
+            align-items: center;
+            gap: 0.875rem;
+            padding: 0.875rem 1.25rem;
+            background: white;
+            border-radius: 12px;
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+            min-width: 140px;
+        }
+        
+        .stat-card.stat-online {
+            background: linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 100%);
+            border-color: #bbf7d0;
+        }
+        
+        .stat-icon-wrap {
+            position: relative;
+            width: 44px;
+            height: 44px;
+            border-radius: 10px;
+            background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.25rem;
+        }
+        
+        .stat-pulse {
+            position: absolute;
+            inset: -2px;
+            border-radius: 12px;
+            background: rgba(34, 197, 94, 0.4);
+            animation: stat-pulse 2s ease-out infinite;
+            pointer-events: none;
+        }
+        
+        @keyframes stat-pulse {
+            0% { transform: scale(1); opacity: 0.6; }
+            100% { transform: scale(1.15); opacity: 0; }
+        }
+        
+        .stat-content {
+            display: flex;
+            flex-direction: column;
+            gap: 0.125rem;
+        }
+        
+        .stat-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #166534;
+            line-height: 1.2;
+        }
+        
+        .stat-label {
+            font-size: 0.75rem;
+            font-weight: 500;
+            color: #15803d;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+        }
+        
         /* Users Section Styles */
         .users-section {
             margin-top: 2rem;
@@ -202,7 +304,10 @@
             border-radius: 12px;
             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
             overflow: hidden;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
         }
+        .users-table { min-width: 880px; }
         
         .users-table {
             width: 100%;
@@ -238,6 +343,81 @@
             color: #6c757d;
             font-style: italic;
             padding: 2rem;
+        }
+
+        /* Pagination */
+        .pagination-wrapper {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0.875rem 1.25rem;
+            background: #f8f9fa;
+            border-top: 1px solid #dee2e6;
+            border-radius: 0 0 12px 12px;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+
+        .pagination-info {
+            font-size: 0.8125rem;
+            color: #6b7280;
+            font-weight: 500;
+        }
+
+        .pagination-controls {
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+        }
+
+        .pagination-btn {
+            min-width: 34px;
+            height: 34px;
+            padding: 0 0.5rem;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            background: white;
+            color: #374151;
+            font-size: 0.8125rem;
+            font-weight: 500;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.15s ease;
+        }
+
+        .pagination-btn:hover:not(:disabled):not(.active) {
+            background: #f3f4f6;
+            border-color: #9ca3af;
+            color: #111827;
+        }
+
+        .pagination-btn.active {
+            background: linear-gradient(135deg, #1e3a8a, #3b82f6);
+            border-color: #1e3a8a;
+            color: white;
+            font-weight: 700;
+            cursor: default;
+        }
+
+        .pagination-btn:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+
+        .pagination-btn.pagination-nav {
+            color: #6b7280;
+        }
+
+        .pagination-btn.pagination-nav:hover:not(:disabled) {
+            color: #1e3a8a;
+        }
+
+        .pagination-ellipsis {
+            font-size: 0.875rem;
+            color: #9ca3af;
+            padding: 0 0.25rem;
         }
         
         .role-badge {
@@ -337,6 +517,91 @@
         .btn-archive:hover {
             background-color: #d97706;
         }
+        
+        .verified-badge {
+            display: inline-block;
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+        .verified-badge.verified {
+            background-color: #d1fae5;
+            color: #065f46;
+        }
+        .verified-badge.unverified {
+            background-color: #fef3c7;
+            color: #92400e;
+        }
+        .btn-resend-verify {
+            margin-left: 0.35rem;
+            background-color: #3b82f6;
+            color: white;
+            border: none;
+            padding: 0.3rem 0.6rem;
+            border-radius: 4px;
+            font-size: 0.7rem;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        .btn-resend-verify:hover {
+            background-color: #2563eb;
+        }
+        
+        .verification-requests-section { margin-top: 1.5rem; }
+        .verification-requests-count {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 1.5rem;
+            height: 1.5rem;
+            padding: 0 0.4rem;
+            background: #f59e0b;
+            color: white;
+            border-radius: 999px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+        .verification-requests-count.zero { background: #9ca3af; }
+        .verification-requests-list {
+            background: #f9fafb;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 1rem;
+        }
+        .verification-request-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 0.75rem;
+            padding: 0.75rem 0;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        .verification-request-item:last-child { border-bottom: none; }
+        .verification-request-item .email { font-weight: 500; color: #374151; }
+        .verification-request-item .date { font-size: 0.8125rem; color: #6b7280; }
+        .verification-request-item .actions { display: flex; gap: 0.5rem; }
+        .verification-request-item .btn-send-verify {
+            background: #3b82f6;
+            color: white;
+            border: none;
+            padding: 0.35rem 0.65rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            cursor: pointer;
+        }
+        .verification-request-item .btn-send-verify:hover { background: #2563eb; }
+        .verification-request-item .btn-dismiss-request {
+            background: #6b7280;
+            color: white;
+            border: none;
+            padding: 0.35rem 0.65rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            cursor: pointer;
+        }
+        .verification-request-item .btn-dismiss-request:hover { background: #4b5563; }
         
         /* Form Minimize/Maximize Styles */
         .form-header-container {
@@ -475,14 +740,164 @@
             color: #6b7280;
         }
 
+        /* Mobile: top bar and sidebar */
+        .mobile-top-bar {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 56px;
+            background: linear-gradient(180deg, var(--primary-navy) 0%, var(--primary-blue) 100%);
+            color: white;
+            align-items: center;
+            gap: 12px;
+            padding: 0 16px;
+            z-index: 1001;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+            border-bottom: 2px solid var(--accent-yellow);
+        }
+        .mobile-menu-btn {
+            background: rgba(255,255,255,0.15);
+            border: none;
+            color: white;
+            width: 44px;
+            height: 44px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 1.5rem;
+            transition: background 0.2s;
+        }
+        .mobile-menu-btn:hover { background: rgba(255,255,255,0.25); }
+        .mobile-top-bar-title { font-size: 1.125rem; font-weight: 700; }
+        .sidebar-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 999;
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+        .sidebar-overlay.visible { opacity: 1; }
+
+        /* User cards for mobile (replaces table on small screens) */
+        .users-cards { display: none; }
+        .user-card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.08);
+            padding: 1rem;
+            margin-bottom: 0.75rem;
+            border: 1px solid #eee;
+        }
+        .user-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 0.5rem;
+            margin-bottom: 0.75rem;
+        }
+        .user-card-name { font-weight: 600; color: #1e293b; font-size: 1rem; }
+        .user-card-role { flex-shrink: 0; }
+        .user-card-row { font-size: 0.8125rem; color: #64748b; margin-bottom: 0.25rem; }
+        .user-card-row strong { color: #374151; margin-right: 0.35rem; }
+        .user-card-actions {
+            display: flex;
+            gap: 0.5rem;
+            margin-top: 0.75rem;
+            padding-top: 0.75rem;
+            border-top: 1px solid #f1f3f4;
+        }
+        .user-card-actions .btn-edit, .user-card-actions .btn-archive, .user-card-actions .btn-delete {
+            flex: 1;
+            padding: 0.5rem 0.5rem;
+            font-size: 0.75rem;
+        }
+        /* Touch-friendly action buttons in cards (min 44px for tap targets) */
+        .user-card-actions .btn-edit, .user-card-actions .btn-archive, .user-card-actions .btn-delete {
+            min-height: 44px;
+            cursor: pointer;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        /* From 992px down: show card view so Edit/Archive/Delete are always visible */
+        @media (max-width: 992px) {
+            .table-container { display: none !important; }
+            .users-cards { display: block !important; }
+            .section-header-top {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 0.75rem;
+            }
+            .search-container {
+                max-width: none;
+                margin-left: 0;
+                flex-direction: column;
+            }
+            .filter-dropdown { min-width: 100%; }
+            .pagination-wrapper { flex-direction: column; align-items: center; gap: 0.5rem; text-align: center; }
+            .pagination-controls { flex-wrap: wrap; justify-content: center; }
+            .pagination-btn { min-width: 44px; height: 44px; }
+        }
+
+        @media (max-width: 768px) {
+            .mobile-top-bar { display: flex; }
+            .sidebar-overlay.visible { display: block; }
+            .sidebar {
+                top: 56px;
+                left: -250px;
+                height: calc(100vh - 56px);
+                transition: left 0.25s ease;
+                z-index: 1000;
+            }
+            .sidebar.open { left: 0; }
+            .main-content {
+                margin-left: 0;
+                padding: 72px 12px 24px;
+                width: 100%;
+            }
+            .header-content { padding: 1rem; }
+            .header-title-row { flex-direction: column; align-items: stretch; }
+            .admin-stats-row { justify-content: flex-start; }
+            .stat-card { min-width: 120px; }
+            .form-grid { grid-template-columns: 1fr; gap: 1rem; }
+            .registration-form { padding: 1rem; margin: 0; }
+            .table-container { display: none !important; }
+            .users-cards { display: block !important; }
+            .users-table th, .users-table td { padding: 0.5rem 0.35rem; font-size: 0.8125rem; }
+            .action-buttons { flex-wrap: wrap; gap: 0.35rem; }
+            .button-group { flex-wrap: wrap; }
+        }
+        @media (max-width: 480px) {
+            .main-content { padding: 72px 10px 20px; }
+            .user-card-actions { flex-direction: column; gap: 0.5rem; }
+            .user-card-actions .btn-edit, .user-card-actions .btn-archive, .user-card-actions .btn-delete { flex: none; width: 100%; min-height: 44px; }
+        }
+
     </style>
     <script src="https://cdn.jsdelivr.net/npm/supabase@2"></script>
     <script src="js/supabase.js"></script>
 </head>
 <body>
+    <!-- Mobile top bar (visible only on small screens) -->
+    <header class="mobile-top-bar" id="mobileTopBar" aria-hidden="true">
+        <button type="button" class="mobile-menu-btn" id="mobileMenuBtn" onclick="toggleSidebar()" aria-label="Open menu">
+            <i class="bi bi-list"></i>
+        </button>
+        <span class="mobile-top-bar-title">User Management</span>
+    </header>
+    <!-- Overlay when sidebar is open on mobile -->
+    <div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()" aria-hidden="true"></div>
     <div class="dashboard-container">
         <!-- Sidebar -->
-        <div class="sidebar">
+        <div class="sidebar" id="sidebar">
             <div class="sidebar-header">
                 <div class="sidebar-logo">
                     <img src="images/logolspu.jpg" alt="LSPU Logo" 
@@ -508,6 +923,9 @@
                 <a href="reports.html" class="nav-item">
                     <i class="bi bi-file-text"></i> Reports
                 </a>
+                <a href="synopsis-notice.html" class="nav-item">
+                    <i class="bi bi-chat-quote"></i> Synopsis & Notice
+                </a>
                 <a href="announcements.html" class="nav-item">
                     <i class="bi bi-megaphone"></i> Announcements
                 </a>
@@ -520,11 +938,11 @@
                 <a href="evacuation-guide.html" class="nav-item">
                     <i class="bi bi-shield-check"></i> Evacuation Guide
                 </a>
-                <a href="archive.html" class="nav-item">
-                    <i class="bi bi-folder"></i> Archived
+                <a href="archive.html" class="nav-item" style="font-weight: 700;">
+                    <i class="bi bi-folder"></i> Archived Reports
                 </a>
-                <a href="analytics.html" class="nav-item">
-                    <i class="bi bi-graph-up"></i> Analytics
+                <a href="analytics.html" class="nav-item" style="font-weight: 700;">
+                    <i class="bi bi-graph-up"></i> Analytics Dashboard
                 </a>
                 <a href="user-management.html" class="nav-item active">
                     <i class="bi bi-people"></i> User Management
@@ -1049,8 +1467,24 @@
                 <!-- Header Card -->
                 <div class="header-card">
                     <div class="header-content">
-                        <h2 class="header-title">User Management</h2>
-                        <p class="header-subtitle">Create and manage user accounts for the emergency response system</p>
+                        <div class="header-title-row">
+                            <div>
+                                <h2 class="header-title">User Management</h2>
+                                <p class="header-subtitle">Create and manage user accounts for the emergency response system</p>
+                            </div>
+                            <div class="admin-stats-row">
+                                <div class="stat-card stat-online" id="onlineNowCard" title="Users currently using the system">
+                                    <div class="stat-icon-wrap">
+                                        <span class="stat-pulse"></span>
+                                        <i class="bi bi-people-fill"></i>
+                                    </div>
+                                    <div class="stat-content">
+                                        <span class="stat-value" id="onlineNowCount">—</span>
+                                        <span class="stat-label">Online now</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
                 
@@ -1078,18 +1512,19 @@
                             </div>
                             
                             <div class="form-group">
-                                <label class="form-label">Change User Type</label>
-                                <select id="username" class="form-select" required>
-                                    <option value="">Select Type</option>
-                                    <option value="student">Student</option>
-                                    <option value="instructor">Instructor</option>
-                                    <option value="faculty_staff">Faculty Staff</option>
-                                    <option value="security_guard">Security Guard</option>
-                                    <option value="first_aider">First Aider</option>
-                                    <option value="responder">Responder</option>
-                                    <option value="first_aider_leader">First Aider Leader</option>
-                                    <option value="responder_leader">Responder Leader</option>
-                                </select>
+                                <label class="form-label">User Types (select all that apply)</label>
+                                <div id="userTypesCheckboxes" class="user-types-checkboxes">
+                                    <label class="checkbox-label"><input type="checkbox" name="userType" value="student"> Student</label>
+                                    <label class="checkbox-label"><input type="checkbox" name="userType" value="instructor"> Instructor</label>
+                                    <label class="checkbox-label"><input type="checkbox" name="userType" value="faculty_staff"> Faculty Staff</label>
+                                    <label class="checkbox-label"><input type="checkbox" name="userType" value="security_guard"> Security Guard</label>
+                                    <label class="checkbox-label"><input type="checkbox" name="userType" value="first_aider"> First Aider</label>
+                                    <label class="checkbox-label"><input type="checkbox" name="userType" value="responder"> Responder</label>
+                                    <label class="checkbox-label"><input type="checkbox" name="userType" value="first_aider_leader"> First Aider Leader</label>
+                                    <label class="checkbox-label"><input type="checkbox" name="userType" value="responder_leader"> Responder Leader</label>
+                                    <label class="checkbox-label"><input type="checkbox" name="userType" value="fire_volunteer"> Fire Volunteer</label>
+                                </div>
+                                <small class="form-text" style="color: #6b7280; font-size: 0.75rem; margin-top: 0.25rem; display: block;">At least one type required</small>
                             </div>
                             
                             <div class="form-group">
@@ -1159,12 +1594,31 @@
                     </div>
                 </div>
                 
+                <!-- Verification link requests (users who asked for a new link) -->
+                <div class="users-section verification-requests-section">
+                    <div class="section-header">
+                        <div class="section-header-top">
+                            <div style="display: flex; align-items: center; gap: 0.75rem;">
+                                <h3>Verification link requests</h3>
+                                <span id="verificationRequestsCount" class="verification-requests-count">0</span>
+                            </div>
+                        </div>
+                        <p>Users who requested a new verification email (e.g. link expired). Send them a new link or dismiss.</p>
+                    </div>
+                    <div id="verificationRequestsList" class="verification-requests-list">
+                        <div class="no-data">Loading...</div>
+                    </div>
+                </div>
+                
                 <!-- Users List Section -->
                 <div class="users-section">
                     <div class="section-header">
                         <div class="section-header-top">
-                            <div>
+                            <div style="display: flex; align-items: center; gap: 0.75rem;">
                                 <h3>Registered Users</h3>
+                                <button id="registeredUsersToggleBtn" onclick="toggleRegisteredUsers()" title="Expand / Collapse" style="background: #f3f4f6; border: 1px solid #d1d5db; border-radius: 8px; color: #374151; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 0.9rem; transition: all 0.2s ease; flex-shrink: 0;">
+                                    <i class="bi bi-chevron-up" style="transition: transform 0.3s ease;"></i>
+                                </button>
                             </div>
                             <!-- Filter and Search Bar -->
                             <div class="search-container">
@@ -1196,6 +1650,7 @@
                         <div class="search-results-info" id="searchResultsInfo"></div>
                     </div>
                     
+                    <div id="registeredUsersBody" style="transition: max-height 0.4s ease, opacity 0.3s ease; overflow: hidden; max-height: 4000px; opacity: 1;">
                     <div class="table-container">
                         <table class="users-table">
                             <thead>
@@ -1208,15 +1663,19 @@
                                     <th>Role</th>
                                     <th>Contact</th>
                                     <th>Created</th>
+                                    <th>Verified</th>
                                     <th>Actions</th>
                                 </tr>
                             </thead>
                             <tbody id="usersTableBody">
                                 <tr>
-                                    <td colspan="9" class="no-data">No users registered yet</td>
+                                    <td colspan="10" class="no-data">No users registered yet</td>
                                 </tr>
                             </tbody>
                         </table>
+                    </div>
+                    <div id="usersCardsContainer" class="users-cards"></div>
+                    <div id="paginationContainer" class="pagination-wrapper"></div>
                     </div>
                 </div>
             </div>
@@ -1224,6 +1683,63 @@
     </div>
 
     <script>
+        // Mobile sidebar toggle
+        function toggleSidebar() {
+            var sidebar = document.getElementById('sidebar');
+            var overlay = document.getElementById('sidebarOverlay');
+            var btn = document.getElementById('mobileMenuBtn');
+            if (sidebar && overlay && btn) {
+                sidebar.classList.toggle('open');
+                overlay.classList.toggle('visible');
+                var icon = btn.querySelector('i');
+                if (icon) {
+                    icon.className = sidebar.classList.contains('open') ? 'bi bi-x-lg' : 'bi bi-list';
+                }
+                btn.setAttribute('aria-label', sidebar.classList.contains('open') ? 'Close menu' : 'Open menu');
+            }
+        }
+        function closeSidebar() {
+            var sidebar = document.getElementById('sidebar');
+            var overlay = document.getElementById('sidebarOverlay');
+            var btn = document.getElementById('mobileMenuBtn');
+            if (sidebar && overlay && btn) {
+                sidebar.classList.remove('open');
+                overlay.classList.remove('visible');
+                var icon = btn.querySelector('i');
+                if (icon) icon.className = 'bi bi-list';
+                btn.setAttribute('aria-label', 'Open menu');
+            }
+        }
+
+        // Toggle registered users section
+        function toggleRegisteredUsers() {
+            const body = document.getElementById('registeredUsersBody');
+            const btn = document.getElementById('registeredUsersToggleBtn');
+            if (!body) return;
+            const isCollapsed = body.style.maxHeight === '0px';
+            if (isCollapsed) {
+                body.style.maxHeight = '4000px';
+                body.style.opacity = '1';
+                if (btn) btn.querySelector('i').style.transform = 'rotate(0deg)';
+                localStorage.setItem('registeredUsersCollapsed', 'false');
+            } else {
+                body.style.maxHeight = '0px';
+                body.style.opacity = '0';
+                if (btn) btn.querySelector('i').style.transform = 'rotate(180deg)';
+                localStorage.setItem('registeredUsersCollapsed', 'true');
+            }
+        }
+
+        // Restore state on load
+        (function restoreRegisteredUsersState() {
+            if (localStorage.getItem('registeredUsersCollapsed') === 'true') {
+                const body = document.getElementById('registeredUsersBody');
+                const btn = document.getElementById('registeredUsersToggleBtn');
+                if (body) { body.style.maxHeight = '0px'; body.style.opacity = '0'; }
+                if (btn) btn.querySelector('i').style.transform = 'rotate(180deg)';
+            }
+        })();
+
         // Initialize the system when the page loads
         document.addEventListener('DOMContentLoaded', async function() {
             try {
@@ -1240,15 +1756,78 @@
 
                 // Load users and populate table
                 await loadUsers();
+                await loadVerificationRequests();
+                
+                // Show how many users are online (Realtime presence)
+                initOnlinePresence();
                 
                 console.log('✅ User management page initialized successfully');
             } catch (error) {
                 console.error('❌ Error initializing user management page:', error);
             }
         });
+        
+        const PRESENCE_CHANNEL = 'lspu-dres-online';
+        let presenceChannel = null;
+
+        function setOnlineCount(n) {
+            const el = document.getElementById('onlineNowCount');
+            if (el) el.textContent = n;
+        }
+
+        function countPresenceState(state) {
+            const userIds = new Set();
+            Object.keys(state || {}).forEach(ref => {
+                (state[ref] || []).forEach(p => {
+                    if (p.user_id) userIds.add(p.user_id);
+                });
+            });
+            return userIds.size;
+        }
+        
+        function initOnlinePresence() {
+            // Show at least 1 (you) so we never show "—" while Realtime may be unconfigured
+            setOnlineCount(1);
+            try {
+                const supabase = window.emergencySystem?.supabase;
+                const user = window.emergencySystem?.user;
+                if (!supabase) return;
+                
+                presenceChannel = supabase.channel(PRESENCE_CHANNEL, {
+                    config: { presence: { key: user?.id || 'anon-' + Math.random().toString(36).slice(2) } }
+                });
+                
+                presenceChannel
+                    .on('presence', { event: 'sync' }, () => {
+                        const state = presenceChannel.presenceState();
+                        const n = countPresenceState(state);
+                        setOnlineCount(n > 0 ? n : 1);
+                    })
+                    .subscribe(async (status) => {
+                        if (status === 'SUBSCRIBED') {
+                            await presenceChannel.track({
+                                user_id: user?.id || null,
+                                page: 'user-management',
+                                at: new Date().toISOString()
+                            });
+                            // Update count once after we join (works even if sync never fires)
+                            const state = presenceChannel.presenceState();
+                            const n = countPresenceState(state);
+                            setOnlineCount(n > 0 ? n : 1);
+                        }
+                    });
+            } catch (e) {
+                console.warn('Online presence init failed:', e);
+                setOnlineCount(1);
+            }
+        }
 
         // User Management Functions
         let allUsers = [];
+        let allUsersForEmailLookup = []; // all users (including inactive) for email lookup when fulfilling verification requests
+        let currentPage = 1;
+        const USERS_PER_PAGE = 10;
+        let currentFilteredUsers = [];
 
         // Load users and populate table via Edge Function
         async function loadUsers() {
@@ -1260,73 +1839,47 @@
                 if (error) throw error;
                 const users = data?.users || [];
 
-                allUsers = users.map(u => {
-                    // Get user type from multiple possible locations
-                    let userType = null;
-                    
-                    // Try direct property first (from get-users edge function)
-                    if (u.user_type && u.user_type !== 'null' && u.user_type !== '') {
-                        userType = u.user_type;
+                const mapped = users.map(u => {
+                    // Prefer user_types array; fallback to single user_type then infer
+                    let userTypes = (u.user_types && Array.isArray(u.user_types) && u.user_types.length) ? u.user_types
+                        : (u.user_metadata?.user_types && Array.isArray(u.user_metadata.user_types) && u.user_metadata.user_types.length) ? u.user_metadata.user_types
+                        : null;
+                    if (!userTypes && u.user_type && u.user_type !== 'null' && u.user_type !== '') {
+                        userTypes = [u.user_type];
                     }
-                    // Try from user_metadata object (nested)
-                    else if (u.user_metadata?.user_type && u.user_metadata.user_type !== 'null' && u.user_metadata.user_type !== '') {
-                        userType = u.user_metadata.user_type;
+                    if (!userTypes && u.user_metadata?.user_type && u.user_metadata.user_type !== 'null' && u.user_metadata.user_type !== '') {
+                        userTypes = [u.user_metadata.user_type];
                     }
-                    // Try from raw_user_meta_data if available
-                    else if (u.raw_user_meta_data?.user_type && u.raw_user_meta_data.user_type !== 'null' && u.raw_user_meta_data.user_type !== '') {
-                        userType = u.raw_user_meta_data.user_type;
+                    if (!userTypes && u.raw_user_meta_data?.user_type && u.raw_user_meta_data.user_type !== 'null' && u.raw_user_meta_data.user_type !== '') {
+                        userTypes = [u.raw_user_meta_data.user_type];
                     }
-                    // Fallback: try to infer from email or other fields
-                    else {
+                    if (!userTypes || userTypes.length === 0) {
                         const email = (u.email || '').toLowerCase();
-                        if (email.includes('student') || email.includes('stud')) {
-                            userType = 'student';
-                        } else if (email.includes('instructor') || email.includes('instruct')) {
-                            userType = 'instructor';
-                        } else if (email.includes('faculty') || email.includes('staff')) {
-                            userType = 'faculty_staff';
-                        } else if (email.includes('teacher') || email.includes('teach')) {
-                            userType = 'instructor'; // Legacy support for teacher emails
-                        } else if (email.includes('guard') || email.includes('security')) {
-                            userType = 'security_guard';
-                        } else {
-                            // Default to student if has student_number, otherwise infer from role
-                            if (u.student_number) {
-                                userType = 'student';
-                            } else if (u.role === 'admin') {
-                                userType = 'admin'; // Admins should show as Admin
-                            } else if (u.role === 'super_user') {
-                                userType = 'admin'; // Super users should show as Admin
-                            } else {
-                                userType = 'student'; // Default to student for citizens/responders
-                            }
-                        }
+                        if (email.includes('student') || email.includes('stud')) userTypes = ['student'];
+                        else if (email.includes('instructor') || email.includes('instruct')) userTypes = ['instructor'];
+                        else if (email.includes('faculty') || email.includes('staff')) userTypes = ['faculty_staff'];
+                        else if (email.includes('teacher') || email.includes('teach')) userTypes = ['instructor'];
+                        else if (email.includes('guard') || email.includes('security')) userTypes = ['security_guard'];
+                        else if (u.student_number) userTypes = ['student'];
+                        else if (u.role === 'admin' || u.role === 'super_user') userTypes = ['admin'];
+                        else userTypes = ['student'];
                     }
-                    
-                    // Ensure userType is a string and handle null/undefined
-                    userType = (userType && userType !== 'null' && userType !== '') ? userType : 'student'; // Default to student instead of Unknown
-                    
-                    // Format user type for display (capitalize first letter, replace underscores with spaces)
-                    // Special handling for admin and super_user roles - always show as "Admin" or "Super User" regardless of user_type
+                    userTypes = userTypes.filter(t => t && t !== 'null' && String(t).trim() !== '');
+                    if (userTypes.length === 0) userTypes = ['student'];
+
+                    function formatTypeLabel(type) {
+                        return String(type).split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+                    }
                     let formattedUserType;
-                    if (u.role === 'admin') {
-                        formattedUserType = 'Admin';
-                    } else if (u.role === 'super_user') {
-                        formattedUserType = 'Super User';
-                    } else {
-                        formattedUserType = userType
-                            .split('_')
-                            .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-                            .join(' ');
-                    }
-                    
-                    // Store formatted user type for display in table
-                    // The username field will now show user type instead
-                    
+                    if (u.role === 'admin') formattedUserType = 'Admin';
+                    else if (u.role === 'super_user') formattedUserType = 'Super User';
+                    else formattedUserType = userTypes.map(formatTypeLabel).join(', ');
+
                     return {
                         id: u.user_id || u.id,
-                        username: formattedUserType, // Display user type in username column
-                        userType: userType, // Store raw type for form editing
+                        username: formattedUserType,
+                        userType: userTypes[0],
+                        userTypes: userTypes,
                         displayName: u.name || u.user_metadata?.full_name || u.email?.split('@')[0] || 'Unknown', // Store actual name separately
                         firstname: (u.name || '').split(' ')[0] || '',
                         lastname: (u.name || '').split(' ').slice(1).join(' ') || '',
@@ -1335,11 +1888,12 @@
                         role: (u.role || 'citizen').toLowerCase(),
                         contactNumber: u.phone || '',
                         status: u.is_active === false ? 'inactive' : 'active',
-                        created: u.created_at || new Date().toISOString()
+                        created: u.created_at || new Date().toISOString(),
+                        verifiedAt: u.email_confirmed_at || null
                     };
-                })
-                // only show active users in this table
-                .filter(u => u.status === 'active');
+                });
+                allUsersForEmailLookup = mapped;
+                allUsers = mapped.filter(u => u.status === 'active');
 
                 displayUsersTable();
                 console.log('Users loaded successfully:', allUsers.length);
@@ -1349,17 +1903,40 @@
             }
         }
 
-        // Display users in table
+        // Display users in table (with pagination)
         function displayUsersTable(usersToDisplay = null) {
+            currentFilteredUsers = usersToDisplay !== null ? usersToDisplay : allUsers;
+            currentPage = 1;
+            renderUsersPage();
+        }
+
+        function renderUsersPage() {
             const tbody = document.getElementById('usersTableBody');
-            const users = usersToDisplay || allUsers;
-            
+            const users = currentFilteredUsers;
+
             if (users.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="9" class="no-data">No users found</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="10" class="no-data">No users found</td></tr>';
+                var cardsEl = document.getElementById('usersCardsContainer');
+                if (cardsEl) cardsEl.innerHTML = '<div class="no-data" style="padding: 2rem; text-align: center;">No users found</div>';
+                renderPaginationControls(0, 0);
                 return;
             }
 
-            tbody.innerHTML = users.map(user => `
+            const totalPages = Math.ceil(users.length / USERS_PER_PAGE);
+            if (currentPage > totalPages) currentPage = totalPages;
+            if (currentPage < 1) currentPage = 1;
+
+            const start = (currentPage - 1) * USERS_PER_PAGE;
+            const end = Math.min(start + USERS_PER_PAGE, users.length);
+            const pageUsers = users.slice(start, end);
+
+            tbody.innerHTML = pageUsers.map(user => {
+                const verified = !!user.verifiedAt;
+                const verifiedHtml = verified
+                    ? '<span class="verified-badge verified">Yes</span>'
+                    : '<span class="verified-badge unverified">No</span>';
+                const resendBtn = verified ? '' : `<button type="button" class="btn-resend-verify" onclick="resendVerification('${user.id}')" title="Send verification email again">Resend</button>`;
+                return `
                 <tr>
                     <td>${user.id.substring(0, 8)}...</td>
                     <td>${user.username || 'N/A'}</td>
@@ -1369,6 +1946,7 @@
                     <td><span class="role-badge role-${user.role}">${user.role.toUpperCase()}</span></td>
                     <td>${user.contactNumber || 'N/A'}</td>
                     <td>${formatDate(user.created)}</td>
+                    <td>${verifiedHtml} ${resendBtn}</td>
                     <td>
                         <div class="action-buttons">
                             <button class="btn-edit" onclick="editUser('${user.id}')">Edit</button>
@@ -1377,15 +1955,109 @@
                         </div>
                     </td>
                 </tr>
-            `).join('');
+            `;
+            }).join('');
+
+            var cardsEl = document.getElementById('usersCardsContainer');
+            if (cardsEl) {
+                cardsEl.innerHTML = pageUsers.map(user => {
+                    const verified = !!user.verifiedAt;
+                    const verifiedLabel = verified ? '<span class="verified-badge verified">Verified</span>' : '<span class="verified-badge unverified">Not verified</span>';
+                    const resendBtn = verified ? '' : `<button type="button" class="btn-resend-verify" onclick="resendVerification('${user.id}')">Resend verification</button>`;
+                    return `
+                    <div class="user-card">
+                        <div class="user-card-header">
+                            <span class="user-card-name">${user.firstname} ${user.lastname}</span>
+                            <span class="role-badge role-${user.role} user-card-role">${user.role.toUpperCase()}</span>
+                        </div>
+                        <div class="user-card-row"><strong>Type:</strong> ${user.username || 'N/A'}</div>
+                        <div class="user-card-row"><strong>Gmail:</strong> ${user.gmail || 'N/A'}</div>
+                        <div class="user-card-row"><strong>ID:</strong> ${user.studentNumber || 'N/A'}</div>
+                        <div class="user-card-row"><strong>Contact:</strong> ${user.contactNumber || 'N/A'}</div>
+                        <div class="user-card-row"><strong>Created:</strong> ${formatDate(user.created)}</div>
+                        <div class="user-card-row"><strong>Verified:</strong> ${verifiedLabel} ${resendBtn}</div>
+                        <div class="user-card-actions">
+                            <button type="button" class="btn-edit" onclick="editUser('${user.id}')">Edit</button>
+                            <button type="button" class="btn-archive" onclick="archiveUser('${user.id}')">Archive</button>
+                            <button type="button" class="btn-delete" onclick="deleteUser('${user.id}')">Delete</button>
+                        </div>
+                    </div>
+                `;
+                }).join('');
+            }
+
+            renderPaginationControls(totalPages, users.length, start + 1, end);
         }
 
-        // Format date helper
+        function renderPaginationControls(totalPages, totalUsers, rangeStart, rangeEnd) {
+            const container = document.getElementById('paginationContainer');
+            if (!container) return;
+
+            if (totalPages <= 1) {
+                container.innerHTML = totalUsers > 0
+                    ? `<span class="pagination-info">Showing all ${totalUsers} user${totalUsers !== 1 ? 's' : ''}</span>`
+                    : '';
+                return;
+            }
+
+            const maxVisible = 5;
+            let startPage = Math.max(1, currentPage - Math.floor(maxVisible / 2));
+            let endPage = Math.min(totalPages, startPage + maxVisible - 1);
+            if (endPage - startPage + 1 < maxVisible) {
+                startPage = Math.max(1, endPage - maxVisible + 1);
+            }
+
+            let pageButtons = '';
+            for (let i = startPage; i <= endPage; i++) {
+                pageButtons += `<button class="pagination-btn${i === currentPage ? ' active' : ''}" onclick="goToPage(${i})">${i}</button>`;
+            }
+
+            container.innerHTML = `
+                <div class="pagination-info">Showing ${rangeStart}–${rangeEnd} of ${totalUsers} users</div>
+                <div class="pagination-controls">
+                    <button class="pagination-btn pagination-nav" onclick="goToPage(1)" ${currentPage === 1 ? 'disabled' : ''} title="First page">
+                        <i class="bi bi-chevron-double-left"></i>
+                    </button>
+                    <button class="pagination-btn pagination-nav" onclick="goToPage(${currentPage - 1})" ${currentPage === 1 ? 'disabled' : ''} title="Previous page">
+                        <i class="bi bi-chevron-left"></i>
+                    </button>
+                    ${startPage > 1 ? '<span class="pagination-ellipsis">…</span>' : ''}
+                    ${pageButtons}
+                    ${endPage < totalPages ? '<span class="pagination-ellipsis">…</span>' : ''}
+                    <button class="pagination-btn pagination-nav" onclick="goToPage(${currentPage + 1})" ${currentPage === totalPages ? 'disabled' : ''} title="Next page">
+                        <i class="bi bi-chevron-right"></i>
+                    </button>
+                    <button class="pagination-btn pagination-nav" onclick="goToPage(${totalPages})" ${currentPage === totalPages ? 'disabled' : ''} title="Last page">
+                        <i class="bi bi-chevron-double-right"></i>
+                    </button>
+                </div>
+            `;
+        }
+
+        function goToPage(page) {
+            const totalPages = Math.ceil(currentFilteredUsers.length / USERS_PER_PAGE);
+            if (page < 1 || page > totalPages) return;
+            currentPage = page;
+            renderUsersPage();
+            document.getElementById('registeredUsersBody')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+
+        // Format date helper (local time, en-PH)
         function formatDate(dateString) {
-            return new Date(dateString).toLocaleDateString();
+            if (dateString == null || dateString === '') return '—';
+            const date = new Date(dateString);
+            if (isNaN(date.getTime())) return 'Invalid date';
+            return date.toLocaleString('en-PH', {
+                month: 'short',
+                day: 'numeric',
+                year: 'numeric',
+                hour: 'numeric',
+                minute: '2-digit',
+                hour12: true
+            });
         }
 
-        // Populate Team Leader dropdown (responders who can be leaders)
+        // Populate Team Leader dropdown (only responders who are leaders: no leader_id)
         async function loadResponderLeadersDropdown() {
             const sel = document.getElementById('responderLeaderId');
             const firstOpt = sel.options[0];
@@ -1393,7 +2065,8 @@
             sel.appendChild(firstOpt);
             try {
                 const responders = await window.emergencySystem.getResponders();
-                (responders || []).forEach(r => {
+                const leadersOnly = (responders || []).filter(r => r.leader_id == null);
+                leadersOnly.forEach(r => {
                     const opt = document.createElement('option');
                     opt.value = r.id;
                     opt.textContent = r.name + (r.role ? ' (' + r.role + ')' : '');
@@ -1436,39 +2109,12 @@
             }
 
             // Fill form with user data
-            // Get userType from stored userType field (which is the raw value)
-            let userTypeValue = user.userType;
-            if (!userTypeValue && user.username && user.username !== 'Unknown') {
-                // Convert formatted display back to form value (e.g., "Student" -> "student", "Security Guard" -> "security_guard")
-                userTypeValue = user.username.toLowerCase().replace(/\s+/g, '_');
-            }
-            // Handle legacy 'teacher' value - convert to 'instructor'
-            if (userTypeValue === 'teacher') {
-                userTypeValue = 'instructor';
-            }
-            // If still no value, default to student if they have student number
-            if (!userTypeValue || userTypeValue === 'Unknown') {
-                userTypeValue = user.studentNumber ? 'student' : '';
-            }
-            
-            // Display formatted user type from database
-            // The username field now contains the formatted user type
-            let displayUserType = user.username || '';
-            if (!displayUserType && user.userType) {
-                // Format user type for display if username not available
-                if (user.role === 'admin') {
-                    displayUserType = 'Admin';
-                } else if (user.role === 'super_user') {
-                    displayUserType = 'Super User';
-                } else {
-                    displayUserType = user.userType
-                        .split('_')
-                        .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-                        .join(' ');
-                }
-            }
-            document.getElementById('displayUsername').value = displayUserType || 'N/A';
-            document.getElementById('username').value = userTypeValue; // Set user type for editing
+            const userTypesArr = user.userTypes && Array.isArray(user.userTypes) ? user.userTypes : (user.userType ? [user.userType] : ['student']);
+            document.getElementById('displayUsername').value = user.username || 'N/A';
+            // Set user type checkboxes
+            document.querySelectorAll('#userTypesCheckboxes input[name="userType"]').forEach(cb => {
+                cb.checked = userTypesArr.includes(cb.value);
+            });
             document.getElementById('firstname').value = user.firstname;
             document.getElementById('lastname').value = user.lastname;
             document.getElementById('gmail').value = user.gmail || '';
@@ -1556,11 +2202,8 @@
             passwordHint.textContent = '(Optional - will generate secure password if not provided)';
             passwordHintText.textContent = 'If left empty, a secure temporary password will be generated and sent via email';
             
-            // Clear username display field
-            const displayUsernameField = document.getElementById('displayUsername');
-            if (displayUsernameField) {
-                displayUsernameField.value = '';
-            }
+            document.getElementById('displayUsername').value = '';
+            document.querySelectorAll('#userTypesCheckboxes input[name="userType"]').forEach(cb => { cb.checked = false; });
         }
 
         // Archive user (server-side)
@@ -1596,22 +2239,122 @@
             }
         }
 
+        async function resendVerification(userId) {
+            try {
+                const { data, error } = await window.emergencySystem.supabase.functions.invoke('resend-verification', {
+                    body: { user_id: userId }
+                });
+                if (error) throw error;
+                if (data?.already_verified) {
+                    window.emergencySystem.showSuccess('User is already verified.');
+                } else {
+                    window.emergencySystem.showSuccess(data?.message || 'Verification email sent.');
+                }
+                await loadUsers();
+            } catch (error) {
+                console.error('Resend verification failed:', error);
+                const msg = error?.message || (typeof error === 'string' ? error : 'Unknown error');
+                window.emergencySystem.showError('Failed to resend verification: ' + msg);
+            }
+        }
+
+        async function loadVerificationRequests() {
+            const listEl = document.getElementById('verificationRequestsList');
+            const countEl = document.getElementById('verificationRequestsCount');
+            try {
+                const { data, error } = await window.emergencySystem.supabase.functions.invoke('get-verification-requests', {});
+                if (error) throw error;
+                const requests = data?.requests || [];
+                if (countEl) {
+                    countEl.textContent = requests.length;
+                    countEl.classList.toggle('zero', requests.length === 0);
+                }
+                if (listEl) {
+                    if (requests.length === 0) {
+                        listEl.innerHTML = '<div class="no-data">No verification link requests.</div>';
+                    } else {
+                        listEl.innerHTML = requests.map(r => {
+                            const reqDate = r.requested_at ? formatDate(r.requested_at) : '—';
+                            return `
+                            <div class="verification-request-item" data-request-id="${r.id}" data-email="${(r.email || '').replace(/"/g, '&quot;')}">
+                                <div>
+                                    <span class="email">${escapeHtml(r.email || '')}</span>
+                                    <span class="date">Requested ${reqDate}</span>
+                                </div>
+                                <div class="actions">
+                                    <button type="button" class="btn-send-verify" onclick="handleSendVerificationForRequest('${r.id}', '${(r.email || '').replace(/'/g, "\\'")}')">Send verification</button>
+                                    <button type="button" class="btn-dismiss-request" onclick="handleDismissVerificationRequest('${r.id}')">Dismiss</button>
+                                </div>
+                            </div>`;
+                        }).join('');
+                    }
+                }
+            } catch (e) {
+                console.error('Load verification requests failed:', e);
+                if (listEl) listEl.innerHTML = '<div class="no-data">Could not load requests.</div>';
+                if (countEl) { countEl.textContent = '0'; countEl.classList.add('zero'); }
+            }
+        }
+
+        async function markVerificationRequestFulfilled(requestId) {
+            try {
+                const { error } = await window.emergencySystem.supabase.functions.invoke('mark-verification-request-fulfilled', {
+                    body: { request_id: requestId }
+                });
+                if (error) throw error;
+                await loadVerificationRequests();
+            } catch (e) {
+                console.error('Mark fulfilled failed:', e);
+                window.emergencySystem.showError('Failed to update request.');
+            }
+        }
+
+        async function handleSendVerificationForRequest(requestId, requestEmail) {
+            const email = (requestEmail || '').trim().toLowerCase();
+            if (!email) return;
+            const user = allUsersForEmailLookup.find(u => (u.gmail || '').toLowerCase() === email);
+            if (!user) {
+                window.emergencySystem.showError('No user found with email ' + email + '. You can dismiss the request or ensure the user exists.');
+                return;
+            }
+            try {
+                const { data, error } = await window.emergencySystem.supabase.functions.invoke('resend-verification', {
+                    body: { user_id: user.id }
+                });
+                if (error) throw error;
+                window.emergencySystem.showSuccess(data?.message || 'Verification email sent.');
+                await markVerificationRequestFulfilled(requestId);
+            } catch (e) {
+                console.error('Send verification for request failed:', e);
+                window.emergencySystem.showError('Failed to send verification: ' + (e?.message || 'Unknown error'));
+            }
+        }
+
+        async function handleDismissVerificationRequest(requestId) {
+            await markVerificationRequestFulfilled(requestId);
+            window.emergencySystem.showSuccess('Request dismissed.');
+        }
+
+        function escapeHtml(text) {
+            if (!text) return '';
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
         // Handle form submission: create user via Edge Function (service role)
         document.getElementById('userRegistrationForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             
             try {
-                // Get user type from dropdown
-                let userType = document.getElementById('username').value;
-                
-                // Validate user type is selected
-                if (!userType || userType.trim() === '') {
-                    window.emergencySystem.showError('Please select a User Type');
+                const selectedTypes = Array.from(document.querySelectorAll('#userTypesCheckboxes input[name="userType"]:checked')).map(cb => cb.value);
+                if (!selectedTypes.length) {
+                    window.emergencySystem.showError('Please select at least one User Type');
                     return;
                 }
-                
                 const formData = {
-                    userType: userType,
+                    userTypes: selectedTypes,
+                    userType: selectedTypes[0],
                     password: document.getElementById('password').value,
                     firstname: document.getElementById('firstname').value,
                     lastname: document.getElementById('lastname').value,
@@ -1625,20 +2368,8 @@
 
                 const editingUserId = document.getElementById('userRegistrationForm').dataset.editUserId;
                 if (editingUserId) {
-                    // Ensure userType is provided - if empty, try to infer from student number
-                    let userTypeToUpdate = formData.userType;
-                    if (!userTypeToUpdate || userTypeToUpdate.trim() === '') {
-                        // If user type is empty, infer from student number
-                        userTypeToUpdate = formData.studentNumber ? 'student' : 'student'; // Default to student if has student number
-                    }
-                    
-                    console.log('Updating user with data:', {
-                        userId: editingUserId,
-                        userType: userTypeToUpdate,
-                        ...formData
-                    });
-                    
-                    // Update existing user via Edge Function
+                    const userTypesToUpdate = formData.userTypes.length ? formData.userTypes : (formData.studentNumber ? ['student'] : ['student']);
+                    console.log('Updating user with data:', { userId: editingUserId, userTypes: userTypesToUpdate, ...formData });
                     const { error } = await window.emergencySystem.supabase.functions.invoke('update-user', {
                         body: {
                             userId: editingUserId,
@@ -1649,7 +2380,7 @@
                             phone: formData.contactNumber,
                             studentNumber: formData.studentNumber,
                             password: formData.password || undefined,
-                            userType: userTypeToUpdate // Include user type in update (always set a value)
+                            userTypes: userTypesToUpdate
                         }
                     });
                     if (error) throw error;
@@ -1682,13 +2413,13 @@
                 const { data, error } = await window.emergencySystem.supabase.functions.invoke('create-user', {
                     body: {
                         email: formData.gmail,
-                        password: formData.password || undefined, // Pass undefined if empty to trigger auto-generation
+                        password: formData.password || undefined,
                         firstName: formData.firstname,
                         lastName: formData.lastname,
                         role: formData.role,
                         phone: formData.contactNumber,
                         studentNumber: formData.studentNumber,
-                        userType: formData.userType || 'student',
+                        userTypes: formData.userTypes,
                         leaderId: formData.leaderId || undefined,
                         teamName: formData.teamName || undefined
                     }
@@ -1852,7 +2583,8 @@
                 });
             }
             
-            // Display filtered users
+            // Display filtered users (resets to page 1)
+            currentPage = 1;
             displayUsersTable(filteredUsers);
             
             // Update results info

@@ -464,6 +464,9 @@
                 <a href="reports.html" class="nav-item active">
                     <i class="bi bi-file-text"></i> Reports
                 </a>
+                <a href="synopsis-notice.html" class="nav-item">
+                    <i class="bi bi-chat-quote"></i> Synopsis & Notice
+                </a>
                 <a href="announcements.html" class="nav-item">
                     <i class="bi bi-megaphone"></i> Announcements
                 </a>
@@ -873,9 +876,14 @@
                 }
             }
 
-            // Format timestamps
-            const createdAt = new Date(report.created_at).toLocaleString();
-            const updatedAt = report.last_update ? new Date(report.last_update).toLocaleString() : 'Never updated';
+            // Format timestamps (en-PH, local time)
+            const formatDt = (d) => {
+                if (!d) return null;
+                const x = new Date(d);
+                return isNaN(x.getTime()) ? null : x.toLocaleString('en-PH', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit', hour12: true });
+            };
+            const createdAt = formatDt(report.created_at) || '—';
+            const updatedAt = report.last_update ? (formatDt(report.last_update) || 'Never updated') : 'Never updated';
 
             // Header badges removed per design update
 
@@ -891,12 +899,21 @@
                     classification = parts.slice(1).join('-').trim();
                 }
             }
-            // If no classification, try to get from message or description
+            // If no classification, only use message when it's not the generic "from mobile app" text
             if (!classification || classification === '') {
-                classification = report.message || 'Not specified';
-                // Limit message length if used as classification
-                if (classification.length > 50) {
-                    classification = classification.substring(0, 50) + '...';
+                const msg = (report.message || '').trim();
+                const isGenericSource = /emergency\s+reported\s+from\s+mobile\s+app/i.test(msg);
+                const alreadyClassified = (report.status || '').toLowerCase() === 'classified' && (report.type || '').length > 0;
+                if (isGenericSource) {
+                    const t = report.type || '';
+                    if (alreadyClassified && t) {
+                        classification = t.charAt(0).toUpperCase() + t.slice(1).replace(/_/g, ' ') + ' Emergency';
+                    } else {
+                        classification = t ? (t.charAt(0).toUpperCase() + t.slice(1).replace(/_/g, ' ') + ' (pending)') : 'Pending classification';
+                    }
+                } else {
+                    classification = msg || 'Not specified';
+                    if (classification.length > 50) classification = classification.substring(0, 50) + '...';
                 }
             }
             document.getElementById('emergencyClassification').textContent = classification || 'Not specified';

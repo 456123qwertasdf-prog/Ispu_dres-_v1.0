@@ -383,3 +383,21 @@ enabled = true
 verify_jwt = true
 import_map = "./functions/get-users/deno.json"
 entrypoint = "./functions/get-users/index.ts"
+
+[functions.request-verification-link]
+enabled = true
+verify_jwt = false
+import_map = "./functions/request-verification-link/deno.json"
+entrypoint = "./functions/request-verification-link/index.ts"
+
+[functions.get-verification-requests]
+enabled = true
+verify_jwt = true
+import_map = "./functions/get-verification-requests/deno.json"
+entrypoint = "./functions/get-verification-requests/index.ts"
+
+[functions.mark-verification-request-fulfilled]
+enabled = true
+verify_jwt = true
+import_map = "./functions/mark-verification-request-fulfilled/deno.json"
+entrypoint = "./functions/mark-verification-request-fulfilled/index.ts"

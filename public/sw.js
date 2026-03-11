@@ -1,12 +1,19 @@
 // LSPU Emergency Response System - Service Worker
 // Provides offline capabilities and push notifications
 
-const CACHE_NAME = 'lspu-dres-v1';
+const CACHE_NAME = 'lspu-dres-v2';
 const urlsToCache = [
   '/',
   '/index.html',
+  '/login.html',
+  '/user.html',
+  '/my-reports.html',
   '/responder.html',
   '/admin.html',
+  '/view-report.html',
+  '/safety-tips.html',
+  '/notifications.html',
+  '/map-citizen.html',
   '/css/style.css',
   '/js/supabase.js',
   '/manifest.json'

@@ -8,8 +8,18 @@
     <link rel="manifest" href="manifest.json">
     <link rel="icon" type="image/x-icon" href="images/favicon.ico">
     <script>
-        // Automatically redirect to login page
-        window.location.href = 'login.html';
+        // If this is a password reset callback (Supabase sent user to root with token/code), send to reset page
+        var hash = window.location.hash || '';
+        var search = window.location.search || '';
+        var params = new URLSearchParams(search);
+        var hashParams = new URLSearchParams(hash.substring(1));
+        var hasCode = params.get('code');
+        var hasRecoveryHash = hashParams.get('access_token') || hashParams.get('type') === 'recovery';
+        if (hasCode || hasRecoveryHash) {
+            window.location.replace('reset-password.html' + search + hash);
+            throw new Error('redirect');
+        }
+        window.location.replace('login.html');
     </script>
 </head>
 <body>

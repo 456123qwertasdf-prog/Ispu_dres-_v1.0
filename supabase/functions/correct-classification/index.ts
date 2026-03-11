@@ -181,19 +181,25 @@ Deno.serve(async (req) => {
     
     const correctedTypeName = emergencyTypeNames[corrected_type] || corrected_type.charAt(0).toUpperCase() + corrected_type.slice(1);
     
-    // Update ai_description to reflect corrected type and optional description
+    // Update ai_description so Classification in UI doesn't keep showing wrong text (e.g. "Building Fire")
     let updatedAiDescription = `${correctedTypeName} Emergency`;
     
     if (corrected_description && corrected_description.trim()) {
-      // If admin provided a corrected description, use it
       updatedAiDescription = `${correctedTypeName} Emergency - ${corrected_description.trim()}`;
+    } else if (corrected_type === 'other' || corrected_type === 'false_alarm') {
+      // Don't reuse old AI description (e.g. "Building Fire") when user corrects to Other/False Alarm
+      updatedAiDescription = corrected_type === 'false_alarm'
+        ? 'False Alarm - No emergency'
+        : 'Other - User corrected';
     } else if (report.ai_description && report.ai_description.includes('-')) {
-      // If no custom description provided, try to preserve description part from original
       const parts = report.ai_description.split('-');
       if (parts.length > 1) {
         updatedAiDescription = `${correctedTypeName} Emergency - ${parts.slice(1).join('-').trim()}`;
       }
     }
+
+    // Update ai_analysis so UI doesn't keep showing old wrong text (e.g. "Building fire detected")
+    const updatedAiAnalysis = `Classification corrected to ${correctedTypeName} by user. Reason: ${correction_reason}`;
 
     // Delete any existing correction record first (from trigger or previous correction)
     await supabase
@@ -211,10 +217,9 @@ Deno.serve(async (req) => {
         correction_reason: correction_reason,
         correction_details: correctionDetails,
         ai_features: aiFeatures, // Store AI features for learning
-        // Update type to corrected type for display
         type: corrected_type,
-        // Update ai_description so title updates in my-reports.html
         ai_description: updatedAiDescription,
+        ai_analysis: updatedAiAnalysis,
       })
       .eq("id", report_id)
       .select()

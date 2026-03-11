@@ -15,7 +15,9 @@ import '../models/responder_models.dart';
 import '../services/supabase_service.dart';
 import '../services/onesignal_service.dart';
 import 'report_detail_loader_screen.dart';
+import '../utils/report_date_helper.dart';
 import '../utils/synopsis_helper.dart';
+import 'package:showcaseview/showcaseview.dart';
 
 class ResponderDashboardScreen extends StatefulWidget {
   /// When set (e.g. from notification tap), switch to My Assignments and scroll to this report after load.
@@ -27,10 +29,38 @@ class ResponderDashboardScreen extends StatefulWidget {
   State<ResponderDashboardScreen> createState() => _ResponderDashboardScreenState();
 }
 
+class _ResolveNoteSection {
+  const _ResolveNoteSection({
+    required this.title,
+    required this.icon,
+    required this.notes,
+  });
+
+  final String title;
+  final IconData icon;
+  final List<String> notes;
+}
+
 class _ResponderDashboardScreenState extends State<ResponderDashboardScreen> {
   final MapController _mapController = MapController();
   final DateFormat _dateFormat = DateFormat('MMM d, yyyy • h:mm a');
   final GlobalKey _initialAssignmentCardKey = GlobalKey();
+
+  // Tour
+  final GlobalKey _tourWelcome = GlobalKey();
+  final GlobalKey _tourReadiness = GlobalKey();
+  final GlobalKey _tourAvailability = GlobalKey();
+  final GlobalKey _tourAssignmentsBtn = GlobalKey();
+  final GlobalKey _tourBottomNav = GlobalKey();
+  final GlobalKey _tourNavDashboard = GlobalKey();
+  final GlobalKey _tourNavAssignments = GlobalKey();
+  final GlobalKey _tourNavOngoing = GlobalKey();
+  final GlobalKey _tourNavMap = GlobalKey();
+  final GlobalKey _tourNavProfile = GlobalKey();
+  final GlobalKey<ShowCaseWidgetState> _showCaseWidgetKey = GlobalKey<ShowCaseWidgetState>();
+  static const Color _tourAccent = Color(0xFF0d9488);
+  static const String _keyTourAutoShow = 'tour_auto_show';
+  bool _tourAutoShow = true;
 
   // Open Field coordinates (walkable area)
   static const latlong.LatLng _openFieldCenter = latlong.LatLng(14.262689, 121.398464);
@@ -49,6 +79,7 @@ class _ResponderDashboardScreenState extends State<ResponderDashboardScreen> {
   CoordinatePoint? _deviceLocation;
   CoordinatePoint? _pendingMapTarget;
   String? _pendingMapLabel;
+  String? _pendingEnrouteAssignmentId;
   List<latlong.LatLng> _routePolyline = [];
   bool _isFetchingRoute = false;
   String? _routeError;
@@ -62,6 +93,7 @@ class _ResponderDashboardScreenState extends State<ResponderDashboardScreen> {
   DateTime? _lastSupabaseLocationUpdate;
 
   String? _responderSynopsisMessage;
+  bool _readinessNoticeExpanded = true;
 
   bool _isSecurityGuard = false;
   List<Map<String, dynamic>> _ongoingReports = [];
@@ -76,6 +108,10 @@ class _ResponderDashboardScreenState extends State<ResponderDashboardScreen> {
   void initState() {
     super.initState();
     _loadPage();
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      final prefs = await SharedPreferences.getInstance();
+      if (mounted) setState(() => _tourAutoShow = prefs.getBool(_keyTourAutoShow) ?? true);
+    });
   }
 
   @override
@@ -290,11 +326,16 @@ class _ResponderDashboardScreenState extends State<ResponderDashboardScreen> {
       try {
         final profileRow = await SupabaseService.client
             .from('user_profiles')
-            .select('user_type')
+            .select('user_type, user_types')
             .eq('user_id', userId)
             .maybeSingle();
-        final userType = profileRow?['user_type'] as String?;
-        isSecurityGuard = (userType ?? '').toLowerCase() == 'security_guard';
+        final userTypes = profileRow?['user_types'] as List<dynamic>?;
+        if (userTypes != null && userTypes.isNotEmpty) {
+          isSecurityGuard = userTypes.any((t) => (t?.toString() ?? '').toLowerCase() == 'security_guard');
+        } else {
+          final userType = profileRow?['user_type'] as String?;
+          isSecurityGuard = (userType ?? '').toLowerCase() == 'security_guard';
+        }
       } catch (_) {}
 
       final assignmentsResponse = await SupabaseService.client
@@ -305,6 +346,7 @@ class _ResponderDashboardScreenState extends State<ResponderDashboardScreen> {
             assigned_at,
             accepted_at,
             completed_at,
+            updated_at,
             notes,
             needs_backup,
             responder_id,
@@ -345,6 +387,14 @@ class _ResponderDashboardScreenState extends State<ResponderDashboardScreen> {
       if (widget.initialReportId != null &&
           _assignments.any((a) => a.report.id == widget.initialReportId)) {
         WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToInitialAssignment());
+      }
+
+      // Auto-show tour on open if setting is on
+      final prefs = await SharedPreferences.getInstance();
+      if (prefs.getBool(_keyTourAutoShow) ?? true) {
+        Future.delayed(const Duration(milliseconds: 600), () {
+          if (mounted) _startTutorial();
+        });
       }
 
       // Load readiness synopsis (prepare / be ready / inspect)
@@ -452,6 +502,10 @@ class _ResponderDashboardScreenState extends State<ResponderDashboardScreen> {
   Future<void> _requestAssistance() async {
     final responder = _profile;
     if (responder == null || _updatingAssistance) return;
+    if (_activeAssignments.isEmpty) {
+      _showSnack('You need an active assignment to request assistance.', isError: true);
+      return;
+    }
     setState(() => _updatingAssistance = true);
     try {
       await SupabaseService.client
@@ -593,6 +647,14 @@ class _ResponderDashboardScreenState extends State<ResponderDashboardScreen> {
     String newStatus, {
     String? notes,
   }) async {
+    if (newStatus == 'resolved' && (notes == null || notes.trim().isEmpty)) {
+      _showSnack(
+        'Please enter what happened before marking this assignment as resolved.',
+        isError: true,
+      );
+      return;
+    }
+
     if (_updatingAssignmentId != null) return;
     setState(() => _updatingAssignmentId = assignment.id);
 
@@ -678,6 +740,9 @@ class _ResponderDashboardScreenState extends State<ResponderDashboardScreen> {
       }
 
       await _loadPage(showLoader: false);
+      if (mounted && _pendingEnrouteAssignmentId == assignment.id && newStatus == 'enroute') {
+        setState(() => _pendingEnrouteAssignmentId = null);
+      }
       _showSnack('Assignment marked as ${newStatus.toUpperCase()}');
     } catch (e) {
       debugPrint('❌ Error updating assignment status: $e');
@@ -691,60 +756,336 @@ class _ResponderDashboardScreenState extends State<ResponderDashboardScreen> {
 
   Future<void> _showResolveNoteDialog(ResponderAssignment assignment) async {
     final controller = TextEditingController();
-    await showDialog(
+    final noteSections = _resolveNoteSectionsFor(assignment);
+    final notes = await showDialog<String>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Mark as Resolved'),
-        content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setDialogState) {
+          final trimmedNotes = controller.text.trim();
+          final canSubmit = trimmedNotes.isNotEmpty;
+
+          return AlertDialog(
+            insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+            titlePadding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
+            content: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        width: 44,
+                        height: 44,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF10B981).withValues(alpha: 0.12),
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                        child: const Icon(
+                          Icons.assignment_turned_in_rounded,
+                          color: Color(0xFF059669),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      const Expanded(
+                        child: Text(
+                          'Mark as Resolved',
+                          style: TextStyle(
+                            fontSize: 26,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 14),
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF8FAFC),
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: const Color(0xFFE2E8F0)),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Choose a university-appropriate resolution note or edit one before submitting.',
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: Colors.grey.shade700,
+                            height: 1.4,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          'Suggested for ${_resolveTypeLabel(assignment.report.type)} incidents.',
+                          style: const TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: Color(0xFF475569),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  ...noteSections.map((section) {
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 14),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Icon(section.icon, size: 18, color: const Color(0xFF2563EB)),
+                              const SizedBox(width: 8),
+                              Text(
+                                section.title,
+                                style: const TextStyle(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w700,
+                                  color: Color(0xFF0F172A),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 8),
+                          ...section.notes.map((template) {
+                            return Padding(
+                              padding: const EdgeInsets.only(bottom: 8),
+                              child: _buildResolveNoteOption(
+                                note: template,
+                                isSelected: trimmedNotes == template,
+                                onTap: () {
+                                  controller.text = template;
+                                  controller.selection = TextSelection.fromPosition(
+                                    TextPosition(offset: controller.text.length),
+                                  );
+                                  setDialogState(() {});
+                                },
+                              ),
+                            );
+                          }),
+                        ],
+                      ),
+                    );
+                  }),
+                  TextField(
+                    controller: controller,
+                    maxLines: 4,
+                    maxLength: 1000,
+                    onChanged: (_) => setDialogState(() {}),
+                    decoration: const InputDecoration(
+                      hintText: 'e.g. First aid was provided and the student was endorsed to the campus clinic.',
+                      helperText: 'Resolution note is required.',
+                      border: OutlineInputBorder(),
+                      alignLabelWithHint: true,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text('Cancel'),
+              ),
+              ElevatedButton(
+                onPressed: canSubmit
+                    ? () => Navigator.of(context).pop(trimmedNotes)
+                    : null,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF10B981),
+                  foregroundColor: Colors.white,
+                ),
+                child: const Text('Mark Resolved'),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+    controller.dispose();
+    if (notes != null && mounted) {
+      _updateAssignmentStatus(
+        assignment,
+        'resolved',
+        notes: notes,
+      );
+    }
+  }
+
+  List<_ResolveNoteSection> _resolveNoteSectionsFor(ResponderAssignment assignment) {
+    final type = (assignment.report.type ?? '').toLowerCase();
+
+    final sections = <_ResolveNoteSection>[
+      const _ResolveNoteSection(
+        title: 'General notes',
+        icon: Icons.notes_rounded,
+        notes: [
+          'Responder arrived on scene, assessed the incident, and completed the response.',
+          'The situation was stabilized and the affected area was secured.',
+          'Campus authorities were informed and the incident was resolved on site.',
+        ],
+      ),
+      _ResolveNoteSection(
+        title: '${_resolveTypeLabel(assignment.report.type)} notes',
+        icon: _resolveTypeIcon(type),
+        notes: _resolveTypeSpecificNotes(type),
+      ),
+      const _ResolveNoteSection(
+        title: 'Turnover and outcome',
+        icon: Icons.how_to_reg_rounded,
+        notes: [
+          'The patient was assisted and endorsed to the campus clinic for further care.',
+          'The incident was endorsed to campus security for follow-up action.',
+          'The concern was endorsed to campus maintenance for corrective action.',
+          'The report was verified on scene and no active threat remained.',
+        ],
+      ),
+    ];
+
+    return sections.where((section) => section.notes.isNotEmpty).toList();
+  }
+
+  List<String> _resolveTypeSpecificNotes(String type) {
+    switch (type) {
+      case 'medical':
+        return const [
+          'First aid was provided and the patient was stabilized on scene.',
+          'The student was assisted and endorsed to the campus clinic for evaluation.',
+          'The medical concern was addressed and no further transport was needed.',
+        ];
+      case 'fire':
+        return const [
+          'The fire hazard was contained and the area was secured.',
+          'Occupants were guided to evacuate safely and the scene was cleared.',
+          'The incident was verified on site and no continuing fire threat remained.',
+        ];
+      case 'accident':
+        return const [
+          'The injured person was assisted and given first aid on scene.',
+          'The accident area was secured and involved persons were assisted.',
+          'The accident was documented and endorsed for campus follow-up.',
+        ];
+      case 'flood':
+        return const [
+          'The flooded area was secured and affected persons were moved to a safer location.',
+          'Campus authorities were informed and the area was monitored until conditions stabilized.',
+          'Flood-related assistance was provided and no injuries were reported.',
+        ];
+      case 'earthquake':
+        return const [
+          'Occupants were guided to evacuate and the area was checked for hazards.',
+          'A post-earthquake assessment was completed and immediate risks were cleared.',
+          'Minor injuries were assisted and affected persons were endorsed to the campus clinic.',
+        ];
+      default:
+        return const [
+          'The concern was verified on scene and the situation was resolved safely.',
+          'Immediate response was completed and the area was cleared.',
+          'The incident was handled and appropriate campus personnel were informed.',
+        ];
+    }
+  }
+
+  String _resolveTypeLabel(String? type) {
+    switch ((type ?? '').toLowerCase()) {
+      case 'medical':
+        return 'medical';
+      case 'fire':
+        return 'fire';
+      case 'accident':
+        return 'accident';
+      case 'flood':
+        return 'flood';
+      case 'earthquake':
+        return 'earthquake';
+      default:
+        return 'general';
+    }
+  }
+
+  IconData _resolveTypeIcon(String type) {
+    switch (type) {
+      case 'medical':
+        return Icons.medical_services_rounded;
+      case 'fire':
+        return Icons.local_fire_department_rounded;
+      case 'accident':
+        return Icons.car_crash_rounded;
+      case 'flood':
+        return Icons.water_rounded;
+      case 'earthquake':
+        return Icons.public_rounded;
+      default:
+        return Icons.shield_rounded;
+    }
+  }
+
+  Widget _buildResolveNoteOption({
+    required String note,
+    required bool isSelected,
+    required VoidCallback onTap,
+  }) {
+    return Material(
+      color: isSelected ? const Color(0xFFEFF6FF) : Colors.white,
+      borderRadius: BorderRadius.circular(16),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(16),
+        child: Container(
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: isSelected ? const Color(0xFF2563EB) : const Color(0xFFE2E8F0),
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.03),
+                blurRadius: 10,
+                offset: const Offset(0, 3),
+              ),
+            ],
+          ),
+          child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                'Add a note about what happened (optional). This will be saved with the emergency report.',
-                style: TextStyle(
-                  fontSize: 14,
-                  color: Colors.grey.shade700,
+              Container(
+                width: 24,
+                height: 24,
+                decoration: BoxDecoration(
+                  color: isSelected ? const Color(0xFF2563EB) : const Color(0xFFF1F5F9),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  isSelected ? Icons.check_rounded : Icons.add_rounded,
+                  size: 16,
+                  color: isSelected ? Colors.white : const Color(0xFF64748B),
                 ),
               ),
-              const SizedBox(height: 16),
-              TextField(
-                controller: controller,
-                maxLines: 4,
-                maxLength: 1000,
-                decoration: const InputDecoration(
-                  hintText: 'e.g. Arrived on scene, provided first aid. Patient transferred to hospital.',
-                  border: OutlineInputBorder(),
-                  alignLabelWithHint: true,
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  note,
+                  style: TextStyle(
+                    fontSize: 13.5,
+                    height: 1.35,
+                    color: const Color(0xFF0F172A),
+                    fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                  ),
                 ),
               ),
             ],
           ),
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.of(context).pop();
-              _updateAssignmentStatus(
-                assignment,
-                'resolved',
-                notes: controller.text.trim().isEmpty ? null : controller.text.trim(),
-              );
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF10B981),
-              foregroundColor: Colors.white,
-            ),
-            child: const Text('Mark Resolved'),
-          ),
-        ],
       ),
     );
-    controller.dispose();
   }
 
   Future<void> _captureLocation() async {
@@ -915,7 +1256,11 @@ class _ResponderDashboardScreenState extends State<ResponderDashboardScreen> {
       ),
     );
   }
-  void _showAssignmentOnMap(AssignmentReportSummary report) {
+  void _showAssignmentOnMap(
+    AssignmentReportSummary report, {
+    ResponderAssignment? assignment,
+    bool markEnrouteWhenRouteReady = false,
+  }) {
     final coords = report.coordinates;
     if (coords == null) {
       _showSnack('No location provided for this report', isError: true);
@@ -928,6 +1273,10 @@ class _ResponderDashboardScreenState extends State<ResponderDashboardScreen> {
       _routeError = null;
       _routeDistanceKm = null;
       _routeDurationMin = null;
+      _pendingEnrouteAssignmentId =
+          markEnrouteWhenRouteReady && assignment?.status == 'accepted'
+          ? assignment!.id
+          : null;
       _selectedIndex = _isSecurityGuard ? 3 : 2; // Switch to Map View tab
     });
 
@@ -939,6 +1288,32 @@ class _ResponderDashboardScreenState extends State<ResponderDashboardScreen> {
       return;
     }
     _fetchRoute(origin, coords);
+  }
+
+  Future<void> _markPendingAssignmentEnrouteIfNeeded() async {
+    final assignmentId = _pendingEnrouteAssignmentId;
+    if (assignmentId == null || _updatingAssignmentId != null) return;
+
+    ResponderAssignment? assignment;
+    for (final item in _assignments) {
+      if (item.id == assignmentId) {
+        assignment = item;
+        break;
+      }
+    }
+
+    if (assignment == null || assignment.status != 'accepted') {
+      if (mounted) {
+        setState(() => _pendingEnrouteAssignmentId = null);
+      }
+      return;
+    }
+
+    if (mounted) {
+      setState(() => _pendingEnrouteAssignmentId = null);
+    }
+
+    await _updateAssignmentStatus(assignment, 'enroute');
   }
 
   // Check if a coordinate is near the Open Field (walkable area)
@@ -1009,6 +1384,7 @@ class _ResponderDashboardScreenState extends State<ResponderDashboardScreen> {
         _routeDurationMin = (totalDistance / 1000 / 5) * 60; // 5 km/h walking speed
         _isFetchingRoute = false;
       });
+      await _markPendingAssignmentEnrouteIfNeeded();
       return;
     }
 
@@ -1043,6 +1419,7 @@ class _ResponderDashboardScreenState extends State<ResponderDashboardScreen> {
         _routeDurationMin = ((route['duration'] as num?) ?? 0) / 60;
         _isFetchingRoute = false;
       });
+      await _markPendingAssignmentEnrouteIfNeeded();
     } catch (e) {
       if (!mounted) return;
       setState(() {
@@ -1064,7 +1441,9 @@ class _ResponderDashboardScreenState extends State<ResponderDashboardScreen> {
     if (_errorMessage != null) {
       return Scaffold(
         appBar: AppBar(
-          backgroundColor: const Color(0xFF3b82f6),
+          elevation: 0,
+          centerTitle: true,
+          backgroundColor: const Color(0xFF2563EB),
           foregroundColor: Colors.white,
           leading: Padding(
             padding: const EdgeInsets.all(8.0),
@@ -1077,6 +1456,11 @@ class _ResponderDashboardScreenState extends State<ResponderDashboardScreen> {
           ),
           title: const Text('Kapiyu Responder'),
           actions: [
+            IconButton(
+              icon: const Icon(Icons.person_rounded),
+              tooltip: 'Profile',
+              onPressed: () => Navigator.pushNamed(context, '/edit-profile'),
+            ),
             IconButton(
               icon: const Icon(Icons.refresh_rounded),
               onPressed: () => _loadPage(showLoader: true),
@@ -1110,9 +1494,43 @@ class _ResponderDashboardScreenState extends State<ResponderDashboardScreen> {
       );
     }
 
-    return Scaffold(
+    return ShowCaseWidget(
+      key: _showCaseWidgetKey,
+      enableAutoScroll: true,
+      onComplete: (int? index, GlobalKey<State<StatefulWidget>>? key) {},
+      onFinish: () {},
+      globalTooltipActionConfig: const TooltipActionConfig(
+        position: TooltipActionPosition.inside,
+        alignment: MainAxisAlignment.spaceBetween,
+        actionGap: 12,
+        gapBetweenContentAndAction: 16,
+      ),
+      globalTooltipActions: [
+        TooltipActionButton(
+          type: TooltipDefaultActionType.previous,
+          name: 'Back',
+          backgroundColor: _tourAccent.withOpacity(0.2),
+          textStyle: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 14),
+        ),
+        TooltipActionButton(
+          type: TooltipDefaultActionType.next,
+          name: 'Next',
+          backgroundColor: _tourAccent,
+          textStyle: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 14),
+        ),
+        TooltipActionButton(
+          type: TooltipDefaultActionType.skip,
+          name: 'Skip',
+          backgroundColor: Colors.white24,
+          textStyle: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 14),
+        ),
+      ],
+      builder: (context) => Scaffold(
       appBar: AppBar(
-        backgroundColor: const Color(0xFF3b82f6),
+        elevation: 0,
+        scrolledUnderElevation: 2,
+        centerTitle: true,
+        backgroundColor: const Color(0xFF2563EB),
         foregroundColor: Colors.white,
         leading: Padding(
           padding: const EdgeInsets.all(8.0),
@@ -1123,11 +1541,101 @@ class _ResponderDashboardScreenState extends State<ResponderDashboardScreen> {
             ),
           ),
         ),
-        title: const Text(
-          'Kapiyu Responder',
-          style: TextStyle(fontWeight: FontWeight.w700),
+        title: Showcase(
+          key: _tourWelcome,
+          title: 'Welcome to Kapiyu Responder',
+          description: 'As a responder you can view assignments, update your availability, get directions to incidents, and request backup. This tour will show you around.',
+          tooltipBackgroundColor: _tourAccent,
+          textColor: Colors.white,
+          titleTextStyle: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w700),
+          descTextStyle: TextStyle(color: Colors.white.withOpacity(0.95), fontSize: 14, height: 1.4),
+          child: const Text(
+            'Kapiyu Responder',
+            style: TextStyle(
+              fontWeight: FontWeight.w700,
+              fontSize: 18,
+              letterSpacing: 0.3,
+            ),
+          ),
         ),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.help_outline_rounded),
+            tooltip: 'Take a tour',
+            onPressed: _startTutorial,
+          ),
+          if (_selectedIndex == 1) ...[
+            IconButton(
+              icon: _updatingAssistance
+                  ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Colors.white,
+                      ),
+                    )
+                  : Icon(
+                      _profile?.needsAssistance == true
+                          ? Icons.cancel_outlined
+                          : Icons.emergency_rounded,
+                      color: _profile?.needsAssistance == true
+                          ? Colors.orange.shade200
+                          : Colors.white,
+                    ),
+              tooltip: _profile?.needsAssistance == true
+                  ? 'Cancel assistance request'
+                  : (_activeAssignments.isEmpty
+                      ? 'Request only available with an active assignment'
+                      : 'Request backup / I need assistance'),
+              onPressed: _updatingAssistance
+                  ? null
+                  : (_profile?.needsAssistance == true
+                      ? _cancelAssistance
+                      : (_activeAssignments.isEmpty ? null : _requestAssistance)),
+            ),
+          ],
+          Showcase(
+            key: _tourAssignmentsBtn,
+            title: 'Assignments',
+            description: 'Tap to see your active and completed assignments. New assignments appear here.',
+            tooltipBackgroundColor: _tourAccent,
+            textColor: Colors.white,
+            titleTextStyle: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w700),
+            descTextStyle: TextStyle(color: Colors.white.withOpacity(0.95), fontSize: 14, height: 1.4),
+            child: IconButton(
+              icon: Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  const Icon(Icons.notifications_outlined),
+                  if (_activeAssignments.isNotEmpty)
+                    Positioned(
+                      right: -2,
+                      top: -2,
+                      child: Container(
+                        padding: const EdgeInsets.all(4),
+                        decoration: const BoxDecoration(
+                          color: Colors.orange,
+                          shape: BoxShape.circle,
+                        ),
+                        constraints: const BoxConstraints(minWidth: 18, minHeight: 18),
+                        child: Text(
+                          '${_activeAssignments.length > 9 ? '9+' : _activeAssignments.length}',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 10,
+                            fontWeight: FontWeight.w700,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+              tooltip: 'Assignments',
+              onPressed: _showAssignmentNotificationOverlay,
+            ),
+          ),
           IconButton(
             icon: _isRefreshing
                 ? const SizedBox(
@@ -1142,33 +1650,152 @@ class _ResponderDashboardScreenState extends State<ResponderDashboardScreen> {
             onPressed: () => _loadPage(showLoader: false),
             tooltip: 'Refresh',
           ),
-          IconButton(
-            icon: const Icon(Icons.logout),
-            tooltip: 'Logout',
-            onPressed: _showLogoutDialog,
-          ),
         ],
       ),
       body: SafeArea(
         child: IndexedStack(
-          index: _selectedIndex,
-          children: _isSecurityGuard
-              ? [
-                  _buildDashboardTab(),
-                  _buildAssignmentsTab(),
-                  _buildOngoingTab(),
-                  _buildMapTab(),
-                ]
-              : [
-                  _buildDashboardTab(),
-                  _buildAssignmentsTab(),
-                  _buildMapTab(),
-                ],
+                index: _selectedIndex,
+                children: _isSecurityGuard
+                    ? [
+                        _buildDashboardTab(),
+                        _buildAssignmentsTab(),
+                        _buildOngoingTab(),
+                        _buildMapTab(),
+                        _buildProfileTab(),
+                      ]
+                    : [
+                        _buildDashboardTab(),
+                        _buildAssignmentsTab(),
+                        _buildMapTab(),
+                        _buildProfileTab(),
+                      ],
         ),
       ),
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _selectedIndex,
-        onTap: (index) {
+      bottomNavigationBar: Showcase(
+        key: _tourBottomNav,
+        title: 'Navigation',
+        description: 'Switch between Dashboard, Assignments, Map View, and Profile. Use Map to navigate to incidents.',
+        tooltipBackgroundColor: _tourAccent,
+        textColor: Colors.white,
+        titleTextStyle: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w700),
+        descTextStyle: TextStyle(color: Colors.white.withOpacity(0.95), fontSize: 14, height: 1.4),
+        child: Container(
+          decoration: BoxDecoration(
+            color: Colors.white,
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.06),
+                blurRadius: 12,
+                offset: const Offset(0, -4),
+              ),
+            ],
+          ),
+          child: SafeArea(
+            child: Container(
+              height: 70,
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                children: [
+                  Showcase(
+                    key: _tourNavDashboard,
+                    title: 'Dashboard',
+                    description: 'Readiness notice and availability. Your home tab.',
+                    tooltipBackgroundColor: _tourAccent,
+                    textColor: Colors.white,
+                    titleTextStyle: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w700),
+                    descTextStyle: TextStyle(color: Colors.white.withOpacity(0.95), fontSize: 14, height: 1.4),
+                    child: _buildResponderNavItem(Icons.dashboard_customize, 'Dashboard', 0),
+                  ),
+                  Showcase(
+                    key: _tourNavAssignments,
+                    title: 'Assignments',
+                    description: 'Your active and completed assignments. Tap a report to navigate or update status.',
+                    tooltipBackgroundColor: _tourAccent,
+                    textColor: Colors.white,
+                    titleTextStyle: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w700),
+                    descTextStyle: TextStyle(color: Colors.white.withOpacity(0.95), fontSize: 14, height: 1.4),
+                    child: _buildResponderNavItem(Icons.list_alt, 'Assignments', 1),
+                  ),
+                  if (_isSecurityGuard)
+                    Showcase(
+                      key: _tourNavOngoing,
+                      title: 'Ongoing',
+                      description: 'All active incidents. Stay aware of campus-wide emergencies.',
+                      tooltipBackgroundColor: _tourAccent,
+                      textColor: Colors.white,
+                      titleTextStyle: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w700),
+                      descTextStyle: TextStyle(color: Colors.white.withOpacity(0.95), fontSize: 14, height: 1.4),
+                      child: _buildResponderNavItem(Icons.campaign_outlined, 'Ongoing', 2),
+                    ),
+                  Showcase(
+                    key: _tourNavMap,
+                    title: 'Map View',
+                    description: 'Map of incidents and your location. Get directions to assigned reports.',
+                    tooltipBackgroundColor: _tourAccent,
+                    textColor: Colors.white,
+                    titleTextStyle: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w700),
+                    descTextStyle: TextStyle(color: Colors.white.withOpacity(0.95), fontSize: 14, height: 1.4),
+                    child: _buildResponderNavItem(Icons.map, 'Map View', _isSecurityGuard ? 3 : 2),
+                  ),
+                  Showcase(
+                    key: _tourNavProfile,
+                    title: 'Profile',
+                    description: 'Your account and edit profile. Log out from here.\n\nTo see this tour again, tap the help (?) icon in the app bar. To turn off the automatic tour, open Profile and switch off "Show tour when I open the app".',
+                    tooltipBackgroundColor: _tourAccent,
+                    textColor: Colors.white,
+                    titleTextStyle: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w700),
+                    descTextStyle: TextStyle(color: Colors.white.withOpacity(0.95), fontSize: 14, height: 1.4),
+                    child: _buildResponderNavItem(Icons.person_rounded, 'Profile', _isSecurityGuard ? 4 : 3),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+      ),
+    );
+  }
+
+  void _startTutorial() {
+    if (!mounted) return;
+    setState(() => _selectedIndex = 0);
+    final keys = <GlobalKey>[
+      _tourWelcome,
+      _tourReadiness,
+      _tourAvailability,
+      _tourAssignmentsBtn,
+      _tourBottomNav,
+      _tourNavDashboard,
+      _tourNavAssignments,
+      if (_isSecurityGuard) _tourNavOngoing,
+      _tourNavMap,
+      _tourNavProfile,
+    ];
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      Future.delayed(const Duration(milliseconds: 350), () {
+        if (!mounted) return;
+        try {
+          _showCaseWidgetKey.currentState?.startShowCase(keys);
+        } catch (e, st) {
+          debugPrint('Responder tour error: $e\n$st');
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('Could not start tour: ${e.toString()}'), backgroundColor: Colors.red),
+            );
+          }
+        }
+      });
+    });
+  }
+
+  Widget _buildResponderNavItem(IconData icon, String label, int index) {
+    final isSelected = _selectedIndex == index;
+    return Expanded(
+      child: GestureDetector(
+        onTap: () {
           setState(() {
             _selectedIndex = index;
             if (_isSecurityGuard && index == 2 && _ongoingReports.isEmpty && !_ongoingLoading) {
@@ -1176,42 +1803,143 @@ class _ResponderDashboardScreenState extends State<ResponderDashboardScreen> {
             }
           });
         },
-        selectedItemColor: const Color(0xFF3b82f6),
-        unselectedItemColor: Colors.grey,
-        type: BottomNavigationBarType.fixed,
-        items: _isSecurityGuard
-            ? const [
-                BottomNavigationBarItem(
-                  icon: Icon(Icons.dashboard_customize),
-                  label: 'Dashboard',
+        behavior: HitTestBehavior.opaque,
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 4),
+          decoration: isSelected
+              ? BoxDecoration(
+                  color: const Color(0xFF2563EB).withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(12),
+                )
+              : null,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                icon,
+                color: isSelected ? const Color(0xFF2563EB) : Colors.grey.shade600,
+                size: 24,
+              ),
+              const SizedBox(height: 2),
+              Text(
+                label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  color: isSelected ? const Color(0xFF2563EB) : Colors.grey.shade600,
+                  fontSize: 11,
+                  fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
                 ),
-                BottomNavigationBarItem(
-                  icon: Icon(Icons.list_alt),
-                  label: 'My Assignments',
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _showAssignmentNotificationOverlay() {
+    final active = _activeAssignments.length;
+    final completed = _completedAssignments.length;
+    showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (context) => Container(
+        padding: const EdgeInsets.fromLTRB(20, 20, 20, 28),
+        decoration: BoxDecoration(
+          color: Theme.of(context).scaffoldBackgroundColor,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.1),
+              blurRadius: 16,
+              offset: const Offset(0, -4),
+            ),
+          ],
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Center(
+              child: Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade300,
+                  borderRadius: BorderRadius.circular(2),
                 ),
-                BottomNavigationBarItem(
-                  icon: Icon(Icons.campaign_outlined),
-                  label: 'Ongoing',
+              ),
+            ),
+            const SizedBox(height: 20),
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: active > 0
+                        ? const Color(0xFF2563EB).withValues(alpha: 0.15)
+                        : Colors.grey.shade300,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Icon(
+                    active > 0 ? Icons.assignment_rounded : Icons.assignment_outlined,
+                    size: 24,
+                    color: active > 0 ? const Color(0xFF2563EB) : Colors.grey.shade600,
+                  ),
                 ),
-                BottomNavigationBarItem(
-                  icon: Icon(Icons.map),
-                  label: 'Map View',
-                ),
-              ]
-            : const [
-                BottomNavigationBarItem(
-                  icon: Icon(Icons.dashboard_customize),
-                  label: 'Dashboard',
-                ),
-                BottomNavigationBarItem(
-                  icon: Icon(Icons.list_alt),
-                  label: 'My Assignments',
-                ),
-                BottomNavigationBarItem(
-                  icon: Icon(Icons.map),
-                  label: 'Map View',
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        active > 0
+                            ? '${active} active assignment${active == 1 ? '' : 's'}'
+                            : 'No active assignments',
+                        style: TextStyle(
+                          fontWeight: FontWeight.w700,
+                          fontSize: 16,
+                          color: active > 0 ? const Color(0xFF1E293B) : Colors.grey.shade700,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        completed > 0 ? '$completed completed in total' : 'View your assignments',
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: Colors.grey.shade600,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ],
+            ),
+            const SizedBox(height: 20),
+            SizedBox(
+              width: double.infinity,
+              child: FilledButton.icon(
+                onPressed: () {
+                  setState(() => _selectedIndex = 1);
+                  Navigator.of(context).pop();
+                },
+                icon: const Icon(Icons.list_alt, size: 20),
+                label: const Text('View assignments'),
+                style: FilledButton.styleFrom(
+                  backgroundColor: const Color(0xFF2563EB),
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -1222,13 +1950,27 @@ class _ResponderDashboardScreenState extends State<ResponderDashboardScreen> {
       children: [
         _buildHeader(),
         const SizedBox(height: 20),
-        _buildRequestAssistanceCard(),
+        Showcase(
+          key: _tourReadiness,
+          title: 'Readiness Notice',
+          description: 'Guidance based on recent reports. Stay prepared and check equipment.',
+          tooltipBackgroundColor: _tourAccent,
+          textColor: Colors.white,
+          titleTextStyle: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w700),
+          descTextStyle: TextStyle(color: Colors.white.withOpacity(0.95), fontSize: 14, height: 1.4),
+          child: _buildReadinessNoticeCard(),
+        ),
         const SizedBox(height: 24),
-        _buildStatsGrid(),
-        const SizedBox(height: 24),
-        _buildReadinessNoticeCard(),
-        const SizedBox(height: 24),
-        _buildAvailabilityCard(),
+        Showcase(
+          key: _tourAvailability,
+          title: 'My Availability',
+          description: 'Toggle on when you can receive assignments. Dispatchers only see available responders.',
+          tooltipBackgroundColor: _tourAccent,
+          textColor: Colors.white,
+          titleTextStyle: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w700),
+          descTextStyle: TextStyle(color: Colors.white.withOpacity(0.95), fontSize: 14, height: 1.4),
+          child: _buildAvailabilityCard(),
+        ),
       ],
     );
   }
@@ -1238,7 +1980,7 @@ class _ResponderDashboardScreenState extends State<ResponderDashboardScreen> {
         'Keep equipment inspected and stay ready for anything.';
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
         gradient: const LinearGradient(
           colors: [Color(0xFFf0fdf4), Color(0xFFecfdf5)],
@@ -1246,39 +1988,74 @@ class _ResponderDashboardScreenState extends State<ResponderDashboardScreen> {
           end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(16),
-        border: Border(left: BorderSide(color: const Color(0xFF059669), width: 4)),
+        border: Border.all(color: const Color(0xFF059669).withValues(alpha: 0.4)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.green.withValues(alpha: 0.06),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
         children: [
-          Row(
-            children: [
-              Icon(Icons.shield_outlined, color: const Color(0xFF059669), size: 22),
-              const SizedBox(width: 8),
-              const Text(
-                'Readiness Notice',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFF047857),
-                ),
+          InkWell(
+            onTap: () {
+              setState(() => _readinessNoticeExpanded = !_readinessNoticeExpanded);
+            },
+            borderRadius: BorderRadius.circular(8),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 4),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(6),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF059669).withValues(alpha: 0.15),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: const Icon(Icons.shield_outlined, color: Color(0xFF059669), size: 20),
+                  ),
+                  const SizedBox(width: 10),
+                  const Expanded(
+                    child: Text(
+                      'Readiness Notice',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF047857),
+                        letterSpacing: 0.2,
+                      ),
+                    ),
+                  ),
+                  Icon(
+                    _readinessNoticeExpanded ? Icons.expand_less : Icons.expand_more,
+                    color: const Color(0xFF059669),
+                    size: 24,
+                  ),
+                ],
               ),
-            ],
-          ),
-          const SizedBox(height: 6),
-          Text(
-            'Based on recent system reports (last 30 days)',
-            style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
-          ),
-          const SizedBox(height: 10),
-          Text(
-            message,
-            style: const TextStyle(
-              fontSize: 14,
-              color: Color(0xFF374151),
-              height: 1.5,
             ),
           ),
+          if (_readinessNoticeExpanded) ...[
+            const SizedBox(height: 8),
+            Text(
+              'Based on recent system reports (this month)',
+              style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              message,
+              style: const TextStyle(
+                fontSize: 14,
+                color: Color(0xFF374151),
+                height: 1.5,
+              ),
+            ),
+          ],
         ],
       ),
     );
@@ -1306,6 +2083,146 @@ class _ResponderDashboardScreenState extends State<ResponderDashboardScreen> {
     );
   }
 
+  Widget _buildProfileTab() {
+    final responder = _profile;
+    final name = responder?.name ?? SupabaseService.currentUser?.email?.split('@').first ?? 'Responder';
+    final parts = name.trim().split(RegExp(r'\s+'));
+    final initials = responder?.initials ??
+        (parts.length >= 2
+            ? '${parts[0][0]}${parts[1][0]}'.toUpperCase()
+            : (name.isNotEmpty ? name[0].toUpperCase() : '?'));
+    final email = SupabaseService.currentUserEmail ?? SupabaseService.currentUser?.email ?? '';
+
+    return ListView(
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+      children: [
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(24),
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [Color(0xFF2563EB), Color(0xFF1D4ED8)],
+            ),
+            borderRadius: BorderRadius.circular(20),
+            boxShadow: [
+              BoxShadow(
+                color: const Color(0xFF1D4ED8).withValues(alpha: 0.25),
+                blurRadius: 20,
+                offset: const Offset(0, 8),
+              ),
+            ],
+          ),
+          child: Column(
+            children: [
+              CircleAvatar(
+                radius: 40,
+                backgroundColor: Colors.white,
+                child: Text(
+                  initials,
+                  style: const TextStyle(
+                    fontSize: 28,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF1D4ED8),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                name,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              if (email.isNotEmpty) ...[
+                const SizedBox(height: 4),
+                Text(
+                  email,
+                  style: TextStyle(
+                    color: Colors.white.withValues(alpha: 0.9),
+                    fontSize: 14,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ],
+            ],
+          ),
+        ),
+        const SizedBox(height: 24),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: Colors.grey.shade200),
+          ),
+          child: Row(
+            children: [
+              Icon(Icons.help_outline_rounded, color: _tourAccent, size: 22),
+              const SizedBox(width: 16),
+              const Expanded(
+                child: Text(
+                  'Show tour when I open the app',
+                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+                ),
+              ),
+              Switch.adaptive(
+                value: _tourAutoShow,
+                onChanged: (bool value) async {
+                  final prefs = await SharedPreferences.getInstance();
+                  await prefs.setBool(_keyTourAutoShow, value);
+                  if (mounted) setState(() => _tourAutoShow = value);
+                },
+                activeColor: _tourAccent,
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 12),
+        SizedBox(
+          width: double.infinity,
+          child: FilledButton.icon(
+            onPressed: () async {
+              final result = await Navigator.pushNamed(context, '/edit-profile');
+              if (result == true && mounted) _loadPage(showLoader: false);
+            },
+            icon: const Icon(Icons.edit_rounded, size: 20),
+            label: const Text('Edit profile'),
+            style: FilledButton.styleFrom(
+              backgroundColor: const Color(0xFF2563EB),
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(vertical: 14),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(height: 12),
+        SizedBox(
+          width: double.infinity,
+          child: OutlinedButton.icon(
+            onPressed: _showLogoutDialog,
+            icon: const Icon(Icons.logout, size: 20),
+            label: const Text('Logout'),
+            style: OutlinedButton.styleFrom(
+              foregroundColor: Colors.red,
+              side: const BorderSide(color: Colors.red),
+              padding: const EdgeInsets.symmetric(vertical: 14),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
   Widget _buildOngoingTab() {
     if (_ongoingReports.isEmpty && !_ongoingLoading) {
       _loadOngoingReports();
@@ -1319,7 +2236,7 @@ class _ResponderDashboardScreenState extends State<ResponderDashboardScreen> {
           decoration: BoxDecoration(
             color: const Color(0xFFeff6ff),
             borderRadius: BorderRadius.circular(16),
-            border: const Border(left: BorderSide(color: Color(0xFF3b82f6), width: 4)),
+            border: Border.all(color: const Color(0xFF3b82f6).withValues(alpha: 0.4)),
           ),
           child: const Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -1374,7 +2291,7 @@ class _ResponderDashboardScreenState extends State<ResponderDashboardScreen> {
             }
             final createdAt = report['created_at'];
             final timeStr = createdAt != null
-                ? DateFormat('MMM d, h:mm a').format(DateTime.parse(createdAt.toString()))
+                ? ReportDateHelper.formatReportCreatedAtShort(createdAt.toString())
                 : '—';
             final responderName = report['responder_name'] ?? (report['responder'] is Map ? (report['responder'] as Map)['name'] : null);
             return Card(
@@ -1508,27 +2425,32 @@ class _ResponderDashboardScreenState extends State<ResponderDashboardScreen> {
     if (responder == null) return const SizedBox.shrink();
 
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
       decoration: BoxDecoration(
-        color: const Color(0xFF1D4ED8),
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Color(0xFF2563EB), Color(0xFF1D4ED8)],
+        ),
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF1D4ED8).withValues(alpha: 0.2),
-            blurRadius: 18,
-            offset: const Offset(0, 10),
+            color: const Color(0xFF1D4ED8).withValues(alpha: 0.25),
+            blurRadius: 20,
+            offset: const Offset(0, 8),
           ),
         ],
       ),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           CircleAvatar(
-            radius: 32,
+            radius: 30,
             backgroundColor: Colors.white,
             child: Text(
               responder.initials,
               style: const TextStyle(
-                fontSize: 24,
+                fontSize: 22,
                 fontWeight: FontWeight.bold,
                 color: Color(0xFF1D4ED8),
               ),
@@ -1538,53 +2460,64 @@ class _ResponderDashboardScreenState extends State<ResponderDashboardScreen> {
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
                   responder.name,
                   style: const TextStyle(
                     color: Colors.white,
-                    fontSize: 20,
+                    fontSize: 19,
                     fontWeight: FontWeight.bold,
+                    letterSpacing: 0.2,
                   ),
                 ),
-                const SizedBox(height: 4),
+                const SizedBox(height: 2),
                 Text(
-                  responder.role,
-                  style: const TextStyle(
-                    color: Colors.white70,
-                    letterSpacing: 0.5,
+                  (responder.teamName != null && responder.teamName!.trim().isNotEmpty)
+                      ? responder.teamName!
+                      : 'No team',
+                  style: TextStyle(
+                    color: Colors.white.withValues(alpha: 0.9),
+                    fontSize: 13,
+                    letterSpacing: 0.3,
                   ),
                 ),
-                if (responder.teamName != null || responder.leaderName != null) ...[
-                  const SizedBox(height: 6),
-                  if (responder.teamName != null)
-                    Text(
-                      'Team: ${responder.teamName}',
-                      style: const TextStyle(
-                        color: Colors.white70,
-                        fontSize: 13,
-                      ),
+                if (responder.leaderName != null && responder.leaderName!.trim().isNotEmpty) ...[
+                  const SizedBox(height: 4),
+                  Text(
+                    'Leader: ${responder.leaderName!}',
+                    style: TextStyle(
+                      color: Colors.white.withValues(alpha: 0.85),
+                      fontSize: 12,
                     ),
-                  if (responder.teamName != null && responder.leaderName != null) const SizedBox(height: 2),
-                  if (responder.leaderName != null)
-                    Text(
-                      'Leader: ${responder.leaderName}',
-                      style: const TextStyle(
-                        color: Colors.white70,
-                        fontSize: 13,
-                      ),
-                    ),
-                ],
-                const SizedBox(height: 12),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                  decoration: BoxDecoration(
-                    color: responder.isAvailable ? Colors.green : Colors.grey.shade500,
-                    borderRadius: BorderRadius.circular(30),
                   ),
-                  child: Text(
-                    responder.isAvailable ? 'Available for dispatch' : 'Unavailable',
-                    style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
+                ],
+                const SizedBox(height: 10),
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: responder.isAvailable
+                          ? Colors.green.withValues(alpha: 0.95)
+                          : Colors.grey.shade600,
+                      borderRadius: BorderRadius.circular(24),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.15),
+                          blurRadius: 6,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: Text(
+                      responder.isAvailable ? 'Available' : 'Unavailable',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w600,
+                        fontSize: 12,
+                      ),
+                    ),
                   ),
                 ),
               ],
@@ -1599,23 +2532,23 @@ class _ResponderDashboardScreenState extends State<ResponderDashboardScreen> {
     final responder = _profile;
     if (responder == null) return const SizedBox.shrink();
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: responder.needsAssistance
             ? Colors.orange.shade50
             : Colors.white,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(20),
         border: Border.all(
           color: responder.needsAssistance
               ? Colors.orange.shade300
-              : Colors.orange.shade200,
-          width: 1.5,
+              : Colors.orange.shade100,
+          width: 1,
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.orange.withValues(alpha: 0.08),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
+            color: Colors.orange.withValues(alpha: 0.06),
+            blurRadius: 16,
+            offset: const Offset(0, 6),
           ),
         ],
       ),
@@ -1623,40 +2556,65 @@ class _ResponderDashboardScreenState extends State<ResponderDashboardScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              Icon(
-                Icons.emergency_rounded,
-                color: Colors.orange.shade700,
-                size: 24,
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: Colors.orange.shade100,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(
+                  Icons.emergency_rounded,
+                  color: Colors.orange.shade700,
+                  size: 22,
+                ),
               ),
-              const SizedBox(width: 10),
-              Text(
-                'Request assistance',
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
-                      color: Colors.orange.shade900,
-                    ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  'Request assistance',
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: Colors.orange.shade900,
+                        letterSpacing: 0.2,
+                      ),
+                ),
               ),
             ],
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 14),
           Text(
             responder.needsAssistance
                 ? 'Supervisors have been notified. Tap below to cancel when no longer needed.'
-                : 'Notify supervisors if you need backup or assistance.',
+                : 'Notify supervisors if you need backup or assistance. You can only request when you have an active assignment.',
             style: TextStyle(
               color: Colors.grey.shade700,
               fontSize: 13,
-              height: 1.35,
+              height: 1.45,
             ),
           ),
-          const SizedBox(height: 14),
-          Row(
-            children: [
-              if (!responder.needsAssistance)
-                Expanded(
-                  child: FilledButton.icon(
-                    onPressed: _updatingAssistance ? null : _requestAssistance,
+          const SizedBox(height: 16),
+          SizedBox(
+            width: double.infinity,
+            child: responder.needsAssistance
+                ? OutlinedButton.icon(
+                    onPressed: _updatingAssistance ? null : _cancelAssistance,
+                    icon: const Icon(Icons.cancel_outlined, size: 20),
+                    label: const Text('Cancel request'),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: Colors.orange.shade700,
+                      side: BorderSide(color: Colors.orange.shade700),
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                  )
+                : FilledButton.icon(
+                    onPressed: (_updatingAssistance || _activeAssignments.isEmpty)
+                        ? null
+                        : _requestAssistance,
                     icon: _updatingAssistance
                         ? const SizedBox(
                             width: 18,
@@ -1669,135 +2627,14 @@ class _ResponderDashboardScreenState extends State<ResponderDashboardScreen> {
                         : const Icon(Icons.emergency_rounded, size: 20),
                     label: const Text('Request backup / I need assistance'),
                     style: FilledButton.styleFrom(
-                      backgroundColor: Colors.orange.shade700,
+                      backgroundColor: Colors.orange.shade600,
                       foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
                     ),
                   ),
-                ),
-              if (!responder.needsAssistance) const SizedBox(width: 12),
-              if (responder.needsAssistance)
-                Expanded(
-                  child: OutlinedButton.icon(
-                    onPressed: _updatingAssistance ? null : _cancelAssistance,
-                    icon: const Icon(Icons.cancel_outlined, size: 20),
-                    label: const Text('Cancel request'),
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: Colors.orange.shade700,
-                      side: BorderSide(color: Colors.orange.shade700),
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                    ),
-                  ),
-                ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildStatsGrid() {
-    final assigned = _activeAssignments.length;
-    final completed = _completedAssignments.length;
-    final responseTime = _averageResponseMinutes;
-
-    return GridView.count(
-      crossAxisCount: 2,
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      crossAxisSpacing: 16,
-      mainAxisSpacing: 16,
-      childAspectRatio: 0.75,
-      children: [
-        _buildStatCard(
-          title: 'Assigned Reports',
-          value: assigned.toString(),
-          icon: Icons.assignment_rounded,
-          color: const Color(0xFF2563EB),
-          subtitle: 'Active right now',
-        ),
-        _buildStatCard(
-          title: 'Completed',
-          value: completed.toString(),
-          icon: Icons.verified_rounded,
-          color: const Color(0xFF10B981),
-          subtitle: 'Resolved successfully',
-        ),
-        _buildStatCard(
-          title: 'Avg Response',
-          value: responseTime == null ? '--' : '${responseTime.round()} min',
-          icon: Icons.timer_rounded,
-          color: const Color(0xFFF97316),
-          subtitle: responseTime == null ? 'Need more data' : 'Based on resolved tasks',
-        ),
-        _buildStatCard(
-          title: 'Coverage Radius',
-          value: '5 km',
-          icon: Icons.radar_rounded,
-          color: const Color(0xFFA855F7),
-          subtitle: 'Sta. Cruz Campus',
-        ),
-      ],
-    );
-  }
-
-  Widget _buildStatCard({
-    required String title,
-    required String value,
-    required IconData icon,
-    required Color color,
-    required String subtitle,
-  }) {
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: color.withValues(alpha: 0.15)),
-        boxShadow: [
-          BoxShadow(
-            color: color.withValues(alpha: 0.08),
-            blurRadius: 16,
-            offset: const Offset(0, 8),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(
-              color: color.withValues(alpha: 0.12),
-              borderRadius: BorderRadius.circular(14),
-            ),
-            child: Icon(icon, color: color, size: 22),
-          ),
-          const SizedBox(height: 12),
-          Text(
-            title,
-            style: TextStyle(
-              color: Colors.grey.shade600,
-              fontWeight: FontWeight.w600,
-              fontSize: 13,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            value,
-            style: TextStyle(
-              color: Colors.grey.shade900,
-              fontSize: 22,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          const SizedBox(height: 3),
-          Text(
-            subtitle,
-            style: TextStyle(color: Colors.grey.shade500, fontSize: 11),
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
           ),
         ],
       ),
@@ -1816,8 +2653,8 @@ class _ResponderDashboardScreenState extends State<ResponderDashboardScreen> {
         border: Border.all(color: Colors.grey.shade200),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 12,
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 16,
             offset: const Offset(0, 6),
           ),
         ],
@@ -1826,16 +2663,26 @@ class _ResponderDashboardScreenState extends State<ResponderDashboardScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              const Icon(Icons.toggle_on_rounded, color: Color(0xFF2563EB), size: 28),
-              const SizedBox(width: 8),
-              Text(
-                'My Availability',
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w700,
-                    ),
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF2563EB).withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Icon(Icons.toggle_on_rounded, color: Color(0xFF2563EB), size: 24),
               ),
-              const Spacer(),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  'My Availability',
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 0.2,
+                      ),
+                ),
+              ),
               Switch.adaptive(
                 value: responder.isAvailable,
                 onChanged: _updatingAvailability ? null : (_) => _toggleAvailability(),
@@ -1866,57 +2713,11 @@ class _ResponderDashboardScreenState extends State<ResponderDashboardScreen> {
                 : 'You are hidden from dispatchers until you toggle availability back on.',
             style: TextStyle(color: Colors.grey.shade600, height: 1.4),
           ),
-          const SizedBox(height: 16),
-          Text(
-            'Request help',
-            style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                  fontWeight: FontWeight.w600,
-                  color: Colors.grey.shade700,
-                ),
-          ),
-          const SizedBox(height: 8),
-          Row(
-            children: [
-              if (!responder.needsAssistance)
-                Expanded(
-                  child: OutlinedButton.icon(
-                    onPressed: _updatingAssistance
-                        ? null
-                        : _requestAssistance,
-                    icon: _updatingAssistance
-                        ? const SizedBox(
-                            width: 18,
-                            height: 18,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          )
-                        : const Icon(Icons.emergency_rounded, size: 20),
-                    label: const Text('Request backup / I need assistance'),
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: Colors.orange.shade800,
-                      side: BorderSide(color: Colors.orange.shade700),
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                    ),
-                  ),
-                ),
-              if (!responder.needsAssistance) const SizedBox(width: 12),
-              if (responder.needsAssistance)
-                Expanded(
-                  child: OutlinedButton.icon(
-                    onPressed: _updatingAssistance ? null : _cancelAssistance,
-                    icon: const Icon(Icons.cancel_outlined, size: 20),
-                    label: const Text('Cancel request'),
-                    style: OutlinedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                    ),
-                  ),
-                ),
-            ],
-          ),
           if (responder.needsAssistance)
             Padding(
               padding: const EdgeInsets.only(top: 8),
               child: Text(
-                'Supervisors have been notified. Tap "Cancel request" when no longer needed.',
+                'Supervisors have been notified. Go to My Assignments and tap the assistance icon to cancel.',
                 style: TextStyle(color: Colors.orange.shade700, fontSize: 12, height: 1.3),
               ),
             ),
@@ -1994,20 +2795,68 @@ class _ResponderDashboardScreenState extends State<ResponderDashboardScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          'Active Assignments',
-          style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.w800,
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                const Color(0xFF2563EB),
+                const Color(0xFF1D4ED8).withValues(alpha: 0.95),
+              ],
+            ),
+            borderRadius: BorderRadius.circular(20),
+            boxShadow: [
+              BoxShadow(
+                color: const Color(0xFF2563EB).withValues(alpha: 0.25),
+                blurRadius: 16,
+                offset: const Offset(0, 6),
               ),
+            ],
+          ),
+          child: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.2),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Icon(Icons.assignment_rounded, color: Colors.white, size: 22),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      'Active Assignments',
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                            fontWeight: FontWeight.w700,
+                            color: Colors.white,
+                            letterSpacing: 0.2,
+                          ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      _activeAssignments.isEmpty
+                          ? 'No ongoing assignments. Stay alert for new dispatches.'
+                          : 'Stay coordinated and update status as you move.',
+                      style: TextStyle(
+                        color: Colors.white.withValues(alpha: 0.9),
+                        fontSize: 12,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
-        const SizedBox(height: 6),
-        Text(
-          _activeAssignments.isEmpty
-              ? 'No ongoing assignments. Stay alert for new dispatches.'
-              : 'Stay coordinated and update the status as you move.',
-          style: TextStyle(color: Colors.grey.shade600),
-        ),
-        const SizedBox(height: 16),
+        const SizedBox(height: 20),
         if (_activeAssignments.isEmpty)
           _buildEmptyState(
             icon: Icons.assignment_turned_in_rounded,
@@ -2035,252 +2884,365 @@ class _ResponderDashboardScreenState extends State<ResponderDashboardScreen> {
 
     final primaryTarget = _primaryStatusTarget(assignment.status);
     final primaryLabel = _primaryStatusLabel(assignment.status);
-    // Only allow "Mark Resolved" when status is on_scene (backend allows enroute→on_scene, on_scene→resolved)
     final canResolve = assignment.status == 'on_scene';
 
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: statusColor.withValues(alpha: 0.2)),
+        border: Border.all(color: statusColor.withValues(alpha: 0.35)),
         boxShadow: [
           BoxShadow(
-            color: statusColor.withValues(alpha: 0.08),
-            blurRadius: 14,
-            offset: const Offset(0, 8),
+            color: Colors.black.withValues(alpha: 0.06),
+            blurRadius: 20,
+            offset: const Offset(0, 6),
+          ),
+          BoxShadow(
+            color: statusColor.withValues(alpha: 0.06),
+            blurRadius: 12,
+            offset: const Offset(0, 2),
           ),
         ],
       ),
-      padding: const EdgeInsets.all(18),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Text(
-                _typeEmoji(assignment.report.type),
-                style: const TextStyle(fontSize: 32),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      assignment.report.type?.toUpperCase() ?? 'EMERGENCY',
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        letterSpacing: 0.4,
-                      ),
-                    ),
-                    const SizedBox(height: 6),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                      decoration: BoxDecoration(
-                        color: statusColor.withValues(alpha: 0.15),
-                        borderRadius: BorderRadius.circular(30),
-                      ),
-                      child: Text(
-                        assignment.status.toUpperCase(),
-                        style: TextStyle(
-                          color: statusColor.darken(),
-                          fontWeight: FontWeight.w700,
+      clipBehavior: Clip.antiAlias,
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  width: 52,
+                  height: 52,
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    color: statusColor.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: Text(
+                    _typeEmoji(assignment.report.type),
+                    style: const TextStyle(fontSize: 28),
+                  ),
+                ),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        assignment.report.type?.toUpperCase() ?? 'EMERGENCY',
+                        style: const TextStyle(
+                          fontSize: 17,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: 0.4,
+                          color: Color(0xFF1E293B),
                         ),
                       ),
+                      const SizedBox(height: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: statusColor.withValues(alpha: 0.15),
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(color: statusColor.withValues(alpha: 0.3)),
+                        ),
+                        child: Text(
+                          assignment.status.toUpperCase(),
+                          style: TextStyle(
+                            color: statusColor.darken(),
+                            fontWeight: FontWeight.w700,
+                            fontSize: 11,
+                            letterSpacing: 0.3,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Material(
+                  color: const Color(0xFF2563EB).withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(12),
+                  child: InkWell(
+                    onTap: assignment.report.coordinates == null
+                        ? null
+                        : () => _showAssignmentOnMap(
+                            assignment.report,
+                            assignment: assignment,
+                            markEnrouteWhenRouteReady: true,
+                          ),
+                    borderRadius: BorderRadius.circular(12),
+                    child: const Padding(
+                      padding: EdgeInsets.all(10),
+                      child: Icon(Icons.navigation_rounded, color: Color(0xFF2563EB), size: 22),
                     ),
-                  ],
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+              decoration: BoxDecoration(
+                color: Colors.grey.shade50,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Text(
+                assignment.report.message ?? 'No description provided.',
+                style: TextStyle(
+                  color: Colors.grey.shade800,
+                  height: 1.5,
+                  fontSize: 14,
                 ),
               ),
-              IconButton(
-                tooltip: 'Navigate',
-                icon: const Icon(Icons.navigation_rounded),
-                color: const Color(0xFF2563EB),
-                onPressed: assignment.report.coordinates == null
-                    ? null
-                    : () => _showAssignmentOnMap(assignment.report),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Text(
-            assignment.report.message ?? 'No description provided.',
-            style: TextStyle(color: Colors.grey.shade800, height: 1.4),
-          ),
-          const SizedBox(height: 12),
-          Row(
-            children: [
-              Icon(Icons.place_outlined, color: Colors.grey.shade500, size: 18),
-              const SizedBox(width: 6),
-              Expanded(
-                child: Text(
-                  locationText,
-                  style: TextStyle(color: Colors.grey.shade600),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          Row(
-            children: [
-              Icon(Icons.access_time_rounded, color: Colors.grey.shade500, size: 18),
-              const SizedBox(width: 6),
-              Text(
-                _formatDate(assignment.assignedAt),
-                style: TextStyle(color: Colors.grey.shade600),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          Wrap(
-            spacing: 12,
-            runSpacing: 12,
-            children: [
-              if (primaryTarget != null)
-                ElevatedButton.icon(
-                  onPressed: _updatingAssignmentId == assignment.id
-                      ? null
-                      : () => _updateAssignmentStatus(assignment, primaryTarget),
-                  icon: _updatingAssignmentId == assignment.id
-                      ? const SizedBox(
-                          width: 16,
-                          height: 16,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : const Icon(Icons.check_circle_outline),
-                  label: Text(primaryLabel),
-                ),
-              if (canResolve)
-                OutlinedButton.icon(
-                  onPressed: _updatingAssignmentId == assignment.id
-                      ? null
-                      : () => _showResolveNoteDialog(assignment),
-                  icon: const Icon(Icons.flag_circle_outlined),
-                  label: const Text('Mark Resolved'),
-                ),
-              TextButton.icon(
-                onPressed: assignment.report.imagePath == null
-                    ? null
-                    : () => _showImagePreview(assignment.report.imagePath!),
-                icon: const Icon(Icons.photo_outlined),
-                label: const Text('View Photo'),
-              ),
-              if (assignment.needsBackup) ...[
-                Padding(
-                  padding: const EdgeInsets.only(top: 4),
+            ),
+            const SizedBox(height: 14),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Icon(Icons.location_on_rounded, color: Colors.grey.shade500, size: 18),
+                const SizedBox(width: 8),
+                Expanded(
                   child: Text(
-                    'Backup requested. Supervisors notified.',
-                    style: TextStyle(
-                      color: Colors.orange.shade700,
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
+                    locationText,
+                    style: TextStyle(color: Colors.grey.shade600, fontSize: 13),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                Icon(Icons.schedule_rounded, color: Colors.grey.shade500, size: 18),
+                const SizedBox(width: 8),
+                Text(
+                  _formatDate(assignment.assignedAt),
+                  style: TextStyle(color: Colors.grey.shade600, fontSize: 13),
+                ),
+              ],
+            ),
+            const SizedBox(height: 18),
+            Wrap(
+              spacing: 10,
+              runSpacing: 10,
+              children: [
+                if (primaryTarget != null)
+                  FilledButton.icon(
+                    onPressed: _updatingAssignmentId == assignment.id
+                        ? null
+                        : () => _updateAssignmentStatus(assignment, primaryTarget),
+                    icon: _updatingAssignmentId == assignment.id
+                        ? const SizedBox(
+                            width: 16,
+                            height: 16,
+                            child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                          )
+                        : const Icon(Icons.check_circle_outline_rounded, size: 18),
+                    label: Text(primaryLabel),
+                    style: FilledButton.styleFrom(
+                      backgroundColor: const Color(0xFF2563EB),
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                     ),
                   ),
-                ),
-                OutlinedButton.icon(
-                  onPressed: _updatingAssignmentId == assignment.id
+                if (canResolve)
+                  OutlinedButton.icon(
+                    onPressed: _updatingAssignmentId == assignment.id
+                        ? null
+                        : () => _showResolveNoteDialog(assignment),
+                    icon: const Icon(Icons.flag_rounded, size: 18),
+                    label: const Text('Mark Resolved'),
+                    style: OutlinedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                  ),
+                TextButton.icon(
+                  onPressed: assignment.report.imagePath == null
                       ? null
-                      : () => _cancelBackupForAssignment(assignment),
-                  icon: _updatingAssignmentId == assignment.id
-                      ? const SizedBox(
-                          width: 16,
-                          height: 16,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : const Icon(Icons.cancel_outlined, size: 18),
-                  label: const Text('Cancel backup request'),
-                  style: OutlinedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+                      : () => _showImagePreview(assignment.report.imagePath!),
+                  icon: const Icon(Icons.photo_library_outlined, size: 18),
+                  label: const Text('View Photo'),
+                  style: TextButton.styleFrom(
+                    foregroundColor: Colors.grey.shade700,
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                   ),
                 ),
-              ] else
-                OutlinedButton.icon(
-                  onPressed: _updatingAssignmentId == assignment.id
-                      ? null
-                      : () => _requestBackupForAssignment(assignment),
-                  icon: _updatingAssignmentId == assignment.id
-                      ? const SizedBox(
-                          width: 16,
-                          height: 16,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : const Icon(Icons.emergency_rounded, size: 18),
-                  label: const Text('Request backup for this incident'),
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: Colors.orange.shade800,
-                    side: BorderSide(color: Colors.orange.shade700),
-                    padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+                if (assignment.needsBackup) ...[
+                  Padding(
+                    padding: const EdgeInsets.only(top: 4),
+                    child: Text(
+                      'Backup requested. Supervisors notified.',
+                      style: TextStyle(
+                        color: Colors.orange.shade700,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
                   ),
-                ),
-            ],
-          ),
-        ],
+                  OutlinedButton.icon(
+                    onPressed: _updatingAssignmentId == assignment.id
+                        ? null
+                        : () => _cancelBackupForAssignment(assignment),
+                    icon: _updatingAssignmentId == assignment.id
+                        ? const SizedBox(
+                            width: 16,
+                            height: 16,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : const Icon(Icons.cancel_outlined, size: 18),
+                    label: const Text('Cancel backup'),
+                    style: OutlinedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 14),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                  ),
+                ] else
+                  OutlinedButton.icon(
+                    onPressed: _updatingAssignmentId == assignment.id
+                        ? null
+                        : () => _requestBackupForAssignment(assignment),
+                    icon: _updatingAssignmentId == assignment.id
+                        ? const SizedBox(
+                            width: 16,
+                            height: 16,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : const Icon(Icons.emergency_rounded, size: 18),
+                    label: const Text('Request backup'),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: Colors.orange.shade800,
+                      side: BorderSide(color: Colors.orange.shade700),
+                      padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 14),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                  ),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }
 
   Widget _buildCompletedSection() {
-    if (_completedAssignments.isEmpty) {
-      return Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Completed Assignments',
-            style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                  fontWeight: FontWeight.w800,
-                ),
-          ),
-          const SizedBox(height: 6),
-          Text(
-            'Assignments you finish will appear here for quick reference.',
-            style: TextStyle(color: Colors.grey.shade600),
-          ),
-          const SizedBox(height: 16),
-          _buildEmptyState(
-            icon: Icons.inbox_outlined,
-            message: 'Nothing completed yet. Finish an assignment to build your record.',
-          ),
-        ],
-      );
-    }
-
+    final isEmpty = _completedAssignments.isEmpty;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          'Completed Assignments',
-          style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.w800,
-              ),
-        ),
-        const SizedBox(height: 6),
-        Text(
-          'Great job! Here is a quick log of your resolved responses.',
-          style: TextStyle(color: Colors.grey.shade600),
-        ),
-        const SizedBox(height: 16),
-        ..._completedAssignments.take(5).map(
-              (assignment) => Padding(
-                padding: const EdgeInsets.only(bottom: 12),
-                child: _buildCompletedTile(assignment),
-              ),
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                const Color(0xFF059669),
+                const Color(0xFF047857).withValues(alpha: 0.95),
+              ],
             ),
+            borderRadius: BorderRadius.circular(20),
+            boxShadow: [
+              BoxShadow(
+                color: const Color(0xFF059669).withValues(alpha: 0.25),
+                blurRadius: 16,
+                offset: const Offset(0, 6),
+              ),
+            ],
+          ),
+          child: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.2),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Icon(Icons.check_circle_rounded, color: Colors.white, size: 22),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      'Completed',
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                            fontWeight: FontWeight.w700,
+                            color: Colors.white,
+                            letterSpacing: 0.2,
+                          ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      isEmpty
+                          ? 'Finished assignments will appear here.'
+                          : 'Quick log of your resolved responses.',
+                      style: TextStyle(
+                        color: Colors.white.withValues(alpha: 0.9),
+                        fontSize: 12,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 20),
+        if (isEmpty)
+          _buildEmptyState(
+            icon: Icons.inbox_rounded,
+            message: 'Nothing completed yet. Finish an assignment to build your record.',
+          )
+        else
+          ..._completedAssignments.take(5).map(
+                (assignment) => Padding(
+                  padding: const EdgeInsets.only(bottom: 12),
+                  child: _buildCompletedTile(assignment),
+                ),
+              ),
       ],
     );
   }
 
   Widget _buildCompletedTile(ResponderAssignment assignment) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: Colors.green.shade50,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.green.shade100),
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: const Color(0xFF10B981).withValues(alpha: 0.35)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 16,
+            offset: const Offset(0, 4),
+          ),
+          BoxShadow(
+            color: const Color(0xFF10B981).withValues(alpha: 0.08),
+            blurRadius: 12,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Icon(Icons.verified, color: Color(0xFF10B981)),
-          const SizedBox(width: 12),
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: const Color(0xFF10B981).withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: const Icon(Icons.check_circle_rounded, color: Color(0xFF10B981), size: 24),
+          ),
+          const SizedBox(width: 14),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -2288,34 +3250,49 @@ class _ResponderDashboardScreenState extends State<ResponderDashboardScreen> {
                 Text(
                   assignment.report.type?.toUpperCase() ?? 'EMERGENCY',
                   style: const TextStyle(
-                    fontWeight: FontWeight.w700,
+                    fontWeight: FontWeight.w800,
                     color: Color(0xFF065F46),
+                    fontSize: 14,
+                    letterSpacing: 0.3,
                   ),
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  'Completed ${_formatDate(assignment.completedAt)}',
-                  style: const TextStyle(color: Color(0xFF047857)),
+                  'Completed ${_formatDate(assignment.completedAt ?? assignment.updatedAt)}',
+                  style: const TextStyle(
+                    color: Color(0xFF047857),
+                    fontSize: 13,
+                    fontWeight: FontWeight.w500,
+                  ),
                 ),
                 if (assignment.notes != null && assignment.notes!.isNotEmpty) ...[
-                  const SizedBox(height: 6),
+                  const SizedBox(height: 10),
                   Container(
-                    padding: const EdgeInsets.all(8),
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: Colors.green.shade100.withValues(alpha: 0.5),
-                      borderRadius: BorderRadius.circular(8),
+                      color: const Color(0xFF10B981).withValues(alpha: 0.08),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: const Color(0xFF10B981).withValues(alpha: 0.2),
+                      ),
                     ),
                     child: Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Icon(Icons.note_alt_outlined, size: 16, color: Colors.green.shade800),
-                        const SizedBox(width: 6),
+                        Icon(
+                          Icons.note_rounded,
+                          size: 18,
+                          color: Colors.green.shade800,
+                        ),
+                        const SizedBox(width: 8),
                         Expanded(
                           child: Text(
                             assignment.notes!,
                             style: TextStyle(
-                              fontSize: 12,
+                              fontSize: 13,
                               color: Colors.green.shade900,
+                              height: 1.4,
                             ),
                           ),
                         ),
@@ -2336,155 +3313,356 @@ class _ResponderDashboardScreenState extends State<ResponderDashboardScreen> {
     final center = _mapCenter();
 
     return Container(
-      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.grey.shade200),
+        borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 16,
-            offset: const Offset(0, 10),
+            color: Colors.black.withValues(alpha: 0.06),
+            blurRadius: 24,
+            offset: const Offset(0, 8),
+          ),
+          BoxShadow(
+            color: const Color(0xFF2563EB).withValues(alpha: 0.04),
+            blurRadius: 32,
+            offset: const Offset(0, 4),
           ),
         ],
       ),
+      clipBehavior: Clip.antiAlias,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
         children: [
-          Row(
-            children: [
-              const Icon(Icons.map_rounded, color: Color(0xFF2563EB)),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  'Live Map View',
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w700,
-                      ),
-                ),
-              ),
-              TextButton.icon(
-                onPressed: _updatingLocation ? null : _captureLocation,
-                icon: _updatingLocation
-                    ? const SizedBox(
-                        width: 16,
-                        height: 16,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                    : const Icon(Icons.my_location),
-                label: const Text(
-                  'Update',
-                  style: TextStyle(fontSize: 13),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          SizedBox(
-            height: 240,
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(16),
-              child: FlutterMap(
-                mapController: _mapController,
-                options: MapOptions(
-                  initialCenter: center,
-                  initialZoom: _deviceLocation != null ? 18 : 14,
-                  interactionOptions: const InteractionOptions(
-                    flags: InteractiveFlag.all & ~InteractiveFlag.rotate,
-                  ),
-                ),
-                children: [
-                  TileLayer(
-                    urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                    userAgentPackageName: 'com.lspu.responder',
-                    tileProvider: NetworkTileProvider(
-                      headers: {
-                        'Cache-Control': 'no-cache, no-store, must-revalidate',
-                        'Pragma': 'no-cache',
-                        'Expires': '0',
-                      },
-                    ),
-                  ),
-                  if (_routePolyline.isNotEmpty)
-                    PolylineLayer(
-                      polylines: [
-                        Polyline(
-                          points: _routePolyline,
-                          strokeWidth: 5,
-                          color: const Color(0xFF2563EB),
-                        ),
-                      ],
-                    ),
-                  if (markers.isNotEmpty) MarkerLayer(markers: markers),
+          // Header strip
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  const Color(0xFF2563EB),
+                  const Color(0xFF1D4ED8).withValues(alpha: 0.95),
                 ],
               ),
             ),
-          ),
-          const SizedBox(height: 12),
-          Text(
-            markers.isEmpty
-                ? 'Location data is not available yet. Update your location to help dispatchers.'
-                : _routePolyline.isEmpty && _activeAssignments.isNotEmpty
-                    ? 'Blue pin shows your position. Red pins highlight active assignments. Tap "Update" to enable routing.'
-                    : 'Blue pin shows your position. Red pins highlight active assignments.',
-            style: TextStyle(color: Colors.grey.shade600, fontSize: 13),
-          ),
-          const SizedBox(height: 8),
-          if (_isFetchingRoute)
-            const Row(
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                SizedBox(
-                  width: 18,
-                  height: 18,
-                  child: CircularProgressIndicator(strokeWidth: 2),
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.2),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Icon(Icons.map_rounded, color: Colors.white, size: 22),
                 ),
-                SizedBox(width: 8),
-                Flexible(
-                  child: Text('Building navigation route...'),
-                ),
-              ],
-            )
-          else if (_routePolyline.isNotEmpty)
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Route ready: ${_routeDistanceKm?.toStringAsFixed(1) ?? '--'} km • '
-                  '${_routeDurationMin?.toStringAsFixed(0) ?? '--'} min',
-                  style: const TextStyle(
-                    color: Color(0xFF2563EB),
-                    fontWeight: FontWeight.w600,
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        'Live Map View',
+                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                              fontWeight: FontWeight.w700,
+                              color: Colors.white,
+                              letterSpacing: 0.3,
+                            ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        'Your position & assignments',
+                        style: TextStyle(
+                          color: Colors.white.withValues(alpha: 0.85),
+                          fontSize: 12,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-                const SizedBox(height: 4),
-                Text(
-                  'Follow the highlighted line to reach the destination.',
-                  style: TextStyle(color: Colors.grey.shade600),
+                Material(
+                  color: Colors.white.withValues(alpha: 0.2),
+                  borderRadius: BorderRadius.circular(12),
+                  child: InkWell(
+                    onTap: _updatingLocation ? null : _captureLocation,
+                    borderRadius: BorderRadius.circular(12),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                      child: _updatingLocation
+                          ? const SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Colors.white,
+                              ),
+                            )
+                          : const Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(Icons.my_location_rounded, color: Colors.white, size: 20),
+                                SizedBox(width: 6),
+                                Text(
+                                  'Update',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.w600,
+                                    fontSize: 13,
+                                  ),
+                                ),
+                              ],
+                            ),
+                    ),
+                  ),
                 ),
               ],
+            ),
+          ),
+          // Map viewport
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
+            child: Container(
+              height: 280,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(20),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.08),
+                    blurRadius: 16,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(20),
+                child: FlutterMap(
+                  mapController: _mapController,
+                  options: MapOptions(
+                    initialCenter: center,
+                    initialZoom: _deviceLocation != null ? 18 : 14,
+                    interactionOptions: const InteractionOptions(
+                      flags: InteractiveFlag.all & ~InteractiveFlag.rotate,
+                    ),
+                  ),
+                  children: [
+                    TileLayer(
+                      urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                      userAgentPackageName: 'com.lspu.responder',
+                      tileProvider: NetworkTileProvider(
+                        headers: {
+                          'Cache-Control': 'no-cache, no-store, must-revalidate',
+                          'Pragma': 'no-cache',
+                          'Expires': '0',
+                        },
+                      ),
+                    ),
+                    if (_routePolyline.isNotEmpty)
+                      PolylineLayer(
+                        polylines: [
+                          Polyline(
+                            points: _routePolyline,
+                            strokeWidth: 6,
+                            color: const Color(0xFF2563EB),
+                          ),
+                        ],
+                      ),
+                    if (markers.isNotEmpty) MarkerLayer(markers: markers),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          // Legend chips
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Wrap(
+              spacing: 12,
+              runSpacing: 8,
+              children: [
+                _legendChip(
+                  color: const Color(0xFF2563EB),
+                  icon: Icons.person_pin_circle_rounded,
+                  label: 'You',
+                ),
+                if (_activeAssignments.isNotEmpty)
+                  _legendChip(
+                    color: Colors.red.shade400,
+                    icon: Icons.warning_amber_rounded,
+                    label: 'Assignment',
+                  ),
+                if (_pendingMapTarget != null)
+                  _legendChip(
+                    color: Colors.orange.shade600,
+                    icon: Icons.flag_rounded,
+                    label: 'Destination',
+                  ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 12),
+          // Status / helper text
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Text(
+              markers.isEmpty
+                  ? 'Location data is not available yet. Update your location to help dispatchers.'
+                  : _routePolyline.isEmpty && _activeAssignments.isNotEmpty
+                      ? 'Blue pin shows your position. Red pins are active assignments. Tap "Update" to enable routing.'
+                      : 'Blue pin shows your position. Red pins highlight active assignments.',
+              style: TextStyle(
+                color: Colors.grey.shade600,
+                fontSize: 13,
+                height: 1.4,
+              ),
+            ),
+          ),
+          const SizedBox(height: 10),
+          if (_isFetchingRoute)
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Row(
+                children: [
+                  SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: Theme.of(context).colorScheme.primary,
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Text(
+                    'Building navigation route...',
+                    style: TextStyle(
+                      color: Colors.grey.shade700,
+                      fontWeight: FontWeight.w500,
+                      fontSize: 13,
+                    ),
+                  ),
+                ],
+              ),
+            )
+          else if (_routePolyline.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF2563EB).withValues(alpha: 0.08),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: const Color(0xFF2563EB).withValues(alpha: 0.2),
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    Icon(Icons.route_rounded, color: const Color(0xFF2563EB), size: 20),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            '${_routeDistanceKm?.toStringAsFixed(1) ?? '--'} km • ${_routeDurationMin?.toStringAsFixed(0) ?? '--'} min',
+                            style: const TextStyle(
+                              color: Color(0xFF2563EB),
+                              fontWeight: FontWeight.w700,
+                              fontSize: 14,
+                            ),
+                          ),
+                          Text(
+                            'Follow the blue line to reach the destination.',
+                            style: TextStyle(
+                              color: Colors.grey.shade600,
+                              fontSize: 12,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             )
           else if (_routeError != null)
-            Text(
-              'Route error: $_routeError',
-              style: const TextStyle(color: Colors.redAccent),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Row(
+                children: [
+                  Icon(Icons.error_outline_rounded, color: Colors.red.shade400, size: 20),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'Route error: $_routeError',
+                      style: TextStyle(color: Colors.red.shade700, fontSize: 13),
+                    ),
+                  ),
+                ],
+              ),
             ),
           if (_pendingMapTarget != null && !_isFetchingRoute)
-            TextButton.icon(
-              onPressed: () {
-                final origin = _deviceLocation;
-                if (origin == null) {
-                  _showSnack(
-                    'Share your live location first by tapping "Update" in the map view.',
-                    isError: true,
-                  );
-                  return;
-                }
-                _fetchRoute(origin, _pendingMapTarget!);
-              },
-              icon: const Icon(Icons.route),
-              label: const Text('Recalculate route'),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 4, 16, 20),
+              child: SizedBox(
+                width: double.infinity,
+                child: OutlinedButton.icon(
+                  onPressed: () {
+                    final origin = _deviceLocation;
+                    if (origin == null) {
+                      _showSnack(
+                        'Share your live location first by tapping "Update" in the map view.',
+                        isError: true,
+                      );
+                      return;
+                    }
+                    _fetchRoute(origin, _pendingMapTarget!);
+                  },
+                  icon: const Icon(Icons.route_rounded, size: 20),
+                  label: const Text('Recalculate route'),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: const Color(0xFF2563EB),
+                    side: const BorderSide(color: Color(0xFF2563EB)),
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                ),
+              ),
+            )
+          else
+            const SizedBox(height: 20),
+        ],
+      ),
+    );
+  }
+
+  Widget _legendChip({required Color color, required IconData icon, required String label}) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: color.withValues(alpha: 0.3)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 16, color: color),
+          const SizedBox(width: 6),
+          Text(
+            label,
+            style: TextStyle(
+              color: color.withValues(alpha: 0.95),
+              fontWeight: FontWeight.w600,
+              fontSize: 12,
             ),
+          ),
         ],
       ),
     );
@@ -2550,18 +3728,24 @@ class _ResponderDashboardScreenState extends State<ResponderDashboardScreen> {
   Widget _buildMapMarker({required Color color, required IconData icon}) {
     return Container(
       decoration: BoxDecoration(
-        color: color,
         shape: BoxShape.circle,
+        border: Border.all(color: Colors.white, width: 3),
         boxShadow: [
           BoxShadow(
-            color: color.withValues(alpha: 0.4),
-            blurRadius: 12,
+            color: color.withValues(alpha: 0.5),
+            blurRadius: 14,
             offset: const Offset(0, 4),
           ),
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.15),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
         ],
+        color: color,
       ),
-      padding: const EdgeInsets.all(6),
-      child: Icon(icon, color: Colors.white, size: 24),
+      padding: const EdgeInsets.all(8),
+      child: Icon(icon, color: Colors.white, size: 22),
     );
   }
 
@@ -2585,20 +3769,39 @@ class _ResponderDashboardScreenState extends State<ResponderDashboardScreen> {
 
   Widget _buildEmptyState({required IconData icon, required String message}) {
     return Container(
-      padding: const EdgeInsets.all(24),
+      padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 32),
       decoration: BoxDecoration(
-        color: Colors.grey.shade100,
-        borderRadius: BorderRadius.circular(18),
+        color: Colors.grey.shade50,
+        borderRadius: BorderRadius.circular(20),
         border: Border.all(color: Colors.grey.shade200),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.03),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       child: Column(
+        mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 48, color: Colors.grey.shade500),
-          const SizedBox(height: 12),
+          Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: Colors.grey.shade200.withValues(alpha: 0.6),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(icon, size: 44, color: Colors.grey.shade600),
+          ),
+          const SizedBox(height: 16),
           Text(
             message,
             textAlign: TextAlign.center,
-            style: TextStyle(color: Colors.grey.shade600, height: 1.4),
+            style: TextStyle(
+              color: Colors.grey.shade700,
+              height: 1.45,
+              fontSize: 14,
+            ),
           ),
         ],
       ),

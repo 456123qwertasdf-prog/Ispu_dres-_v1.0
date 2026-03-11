@@ -776,6 +776,85 @@
             display: none;
         }
         
+        /* Verification link expired / invalid banner */
+        .verification-error-banner {
+            display: flex;
+            align-items: flex-start;
+            gap: 0.75rem;
+            padding: 1rem 1.25rem;
+            margin-bottom: 1.25rem;
+            background: #fef3c7;
+            border: 1px solid #f59e0b;
+            border-radius: 10px;
+            color: #92400e;
+            text-align: left;
+        }
+        .verification-error-banner.hidden {
+            display: none;
+        }
+        .verification-error-icon {
+            flex-shrink: 0;
+            font-size: 1.25rem;
+            color: #d97706;
+        }
+        .verification-error-content {
+            flex: 1;
+        }
+        .verification-error-content strong {
+            display: block;
+            margin-bottom: 0.35rem;
+        }
+        .verification-error-content p {
+            margin: 0;
+            font-size: 0.875rem;
+            line-height: 1.5;
+            color: #78350f;
+        }
+        .verification-error-dismiss {
+            flex-shrink: 0;
+            background: none;
+            border: none;
+            color: #92400e;
+            font-size: 1.25rem;
+            cursor: pointer;
+            padding: 0.25rem;
+            line-height: 1;
+        }
+        .verification-error-dismiss:hover {
+            color: #78350f;
+        }
+        .verification-error-cta {
+            margin-top: 0.5rem;
+            margin-bottom: 0;
+        }
+        .verification-request-btn {
+            background: #d97706;
+            color: white;
+            border: none;
+            padding: 0.4rem 0.75rem;
+            border-radius: 6px;
+            font-size: 0.875rem;
+            cursor: pointer;
+            font-weight: 500;
+        }
+        .verification-request-btn:hover {
+            background: #b45309;
+        }
+        .request-verification-message {
+            margin-top: 0.75rem;
+            padding: 0.5rem 0.75rem;
+            border-radius: 6px;
+            font-size: 0.875rem;
+        }
+        .request-verification-message.success {
+            background: #d1fae5;
+            color: #065f46;
+        }
+        .request-verification-message.error {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+        
         /* Decorative Elements */
         .decorative-shape {
             position: absolute;
@@ -1167,6 +1246,48 @@
         <!-- Centered Form Container -->
         <div class="form-panel">
             <div class="form-container">
+                <!-- Verification link error banner (expired/invalid) -->
+                <div id="verificationErrorBanner" class="verification-error-banner hidden" role="alert">
+                    <div class="verification-error-icon"><i class="bi bi-exclamation-triangle-fill"></i></div>
+                    <div class="verification-error-content">
+                        <strong>Verification link expired or invalid</strong>
+                        <p>This link has expired or was already used. Verification links are valid for 1 hour. You can still sign in below with your email and password.</p>
+                        <p class="verification-error-cta">Need a new link? <button type="button" class="verification-request-btn" onclick="openRequestVerificationModal()">Request new verification link</button> — your administrator will send it to you.</p>
+                    </div>
+                    <button type="button" class="verification-error-dismiss" onclick="dismissVerificationErrorBanner()" aria-label="Dismiss">&#215;</button>
+                </div>
+                <!-- Request verification link modal -->
+                <div id="requestVerificationModal" class="modal-overlay hidden" role="dialog" aria-labelledby="requestVerificationModalTitle" onclick="if(event.target === this) closeRequestVerificationModal()">
+                    <div class="modal-content request-verification-modal" onclick="event.stopPropagation()">
+                        <div class="modal-inner">
+                            <div class="modal-header">
+                                <div class="modal-header-left">
+                                    <div class="modal-icon"><i class="bi bi-envelope-check"></i></div>
+                                    <div class="modal-title-group">
+                                        <h3 id="requestVerificationModalTitle" class="modal-title">Request new verification link</h3>
+                                        <p class="modal-title-sub">We'll notify your administrator</p>
+                                    </div>
+                                </div>
+                                <button type="button" class="modal-close" onclick="closeRequestVerificationModal()" aria-label="Close">&#215;</button>
+                            </div>
+                            <div class="modal-body">
+                                <p class="modal-message">Enter the email address for your account. Your administrator will be notified and can send you a new verification link.</p>
+                                <div class="form-group">
+                                    <div class="input-icon"><i class="bi bi-envelope"></i></div>
+                                    <input type="email" id="requestVerificationEmail" class="form-input" placeholder="Your email address" required>
+                                </div>
+                                <div id="requestVerificationMessage" class="request-verification-message hidden"></div>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="modal-btn modal-btn-secondary" onclick="closeRequestVerificationModal()">Cancel</button>
+                                <button type="button" class="modal-btn modal-btn-primary" id="requestVerificationSubmitBtn" onclick="submitRequestVerification()">
+                                    <span id="requestVerificationSubmitText"><i class="bi bi-send"></i> Submit request</span>
+                                    <span id="requestVerificationSubmitLoading" class="hidden"><div class="loading"></div> Sending...</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
                 <!-- Sign In Form (Default) -->
                 <div id="signInForm" class="form-content">
                     <div class="form-header">
@@ -1362,15 +1483,38 @@
                 checkInit();
             });
 
-            // Check if this is a password reset redirect
+            // Check if this is a password reset redirect (hash tokens or PKCE code)
             const urlParams = new URLSearchParams(window.location.search);
             const hashParams = new URLSearchParams(window.location.hash.substring(1));
             const hasResetToken = hashParams.get('access_token') || hashParams.get('type') === 'recovery';
+            const hasResetCode = urlParams.get('code');
             
             if (hasResetToken || urlParams.get('reset') === 'true') {
-                // Redirect to reset password page
                 window.location.href = 'reset-password.html' + window.location.hash;
                 return;
+            }
+            if (hasResetCode) {
+                window.location.href = 'reset-password.html' + window.location.search + (window.location.hash || '');
+                return;
+            }
+
+            // Check for verification/link expired or invalid (Supabase redirects with error in query or hash)
+            const searchParams = new URLSearchParams(window.location.search);
+            const hashParamsAuth = new URLSearchParams(window.location.hash.substring(1));
+            const err = searchParams.get('error') || hashParamsAuth.get('error');
+            const errDesc = searchParams.get('error_description') || hashParamsAuth.get('error_description');
+            const errCode = searchParams.get('error_code') || hashParamsAuth.get('error_code');
+            const isLinkError = err && (
+                (errDesc && /expired|invalid|has expired/i.test(errDesc)) ||
+                (errCode && String(errCode).startsWith('4'))
+            );
+            if (isLinkError) {
+                const banner = document.getElementById('verificationErrorBanner');
+                if (banner) banner.classList.remove('hidden');
+                // Clean URL so refresh doesn't show error params again
+                if (window.history && window.history.replaceState) {
+                    window.history.replaceState({}, document.title, window.location.pathname || '/login.html');
+                }
             }
 
             // Set up form handlers
@@ -1420,6 +1564,69 @@
             const modal = document.getElementById('forgotPasswordModal');
             modal.classList.remove('active');
             document.getElementById('forgotPasswordEmail').value = '';
+        }
+        
+        function dismissVerificationErrorBanner() {
+            const banner = document.getElementById('verificationErrorBanner');
+            if (banner) banner.classList.add('hidden');
+        }
+        
+        function openRequestVerificationModal() {
+            const modal = document.getElementById('requestVerificationModal');
+            const input = document.getElementById('requestVerificationEmail');
+            const msg = document.getElementById('requestVerificationMessage');
+            if (modal) {
+                modal.classList.remove('hidden');
+                modal.classList.add('active');
+            }
+            if (input) { input.value = ''; input.focus(); }
+            if (msg) { msg.classList.add('hidden'); msg.textContent = ''; msg.classList.remove('success', 'error'); }
+        }
+        
+        function closeRequestVerificationModal() {
+            const modal = document.getElementById('requestVerificationModal');
+            if (modal) {
+                modal.classList.add('hidden');
+                modal.classList.remove('active');
+            }
+        }
+        
+        async function submitRequestVerification() {
+            const input = document.getElementById('requestVerificationEmail');
+            const msgEl = document.getElementById('requestVerificationMessage');
+            const submitBtn = document.getElementById('requestVerificationSubmitBtn');
+            const submitText = document.getElementById('requestVerificationSubmitText');
+            const submitLoading = document.getElementById('requestVerificationSubmitLoading');
+            const email = input?.value?.trim();
+            if (!email) {
+                if (msgEl) { msgEl.textContent = 'Please enter your email address.'; msgEl.classList.remove('hidden', 'success'); msgEl.classList.add('error'); }
+                return;
+            }
+            try {
+                submitBtn.disabled = true;
+                submitText.classList.add('hidden');
+                submitLoading.classList.remove('hidden');
+                if (msgEl) msgEl.classList.add('hidden');
+                const { data, error } = await window.emergencySystem.supabase.functions.invoke('request-verification-link', { body: { email } });
+                if (error) throw error;
+                if (msgEl) {
+                    msgEl.textContent = data?.message || 'Request submitted. Your administrator will send a new verification link.';
+                    msgEl.classList.remove('hidden', 'error');
+                    msgEl.classList.add('success');
+                }
+                if (input) input.value = '';
+                setTimeout(closeRequestVerificationModal, 2500);
+            } catch (e) {
+                if (msgEl) {
+                    msgEl.textContent = (e?.message || e?.error || 'Request failed. Try again or contact your administrator.');
+                    msgEl.classList.remove('hidden', 'success');
+                    msgEl.classList.add('error');
+                }
+            } finally {
+                submitBtn.disabled = false;
+                submitText.classList.remove('hidden');
+                submitLoading.classList.add('hidden');
+            }
         }
         
         // Handle forgot password

@@ -3,726 +3,588 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Super User • SOS Alerts - LSPU Emergency Response System</title>
+    <title>SOS Alerts - LSPU Emergency Response System</title>
     <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/su-header-shared.css">
     <link rel="stylesheet" href="css/system-status.css">
+    <link rel="stylesheet" href="css/su-tour.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <script src="https://cdn.jsdelivr.net/npm/supabase@2"></script>
+    <script src="js/supabase.js"></script>
     <style>
-        /* Reuse Super User theme from dashboard */
-        .su-nav {
-            background: #020617;
-            color: white;
-            padding: 0.75rem 2rem;
+        /* ── Sidebar theme ── */
+        .sidebar { background: linear-gradient(180deg, #0f172a 0%, #064e3b 100%) !important; }
+        .nav-item.active { background: rgba(16,185,129,0.2) !important; color: #34d399 !important; border-left: 3px solid #10b981 !important; border-top:none !important; border-right:none !important; border-bottom:none !important; font-weight:600; }
+        .nav-item:hover { background: rgba(16,185,129,0.1) !important; color: #a7f3d0 !important; border-left-color: rgba(16,185,129,0.4) !important; }
+        .status-dot.online { background: #10b981 !important; box-shadow: 0 0 0 3px rgba(16,185,129,0.25) !important; }
+        .user-avatar { background: rgba(16,185,129,0.25) !important; color: #34d399 !important; }
+        .sidebar-header { border-bottom: 1px solid rgba(16,185,129,0.15) !important; }
+        .system-status { padding: 10px 20px; border-bottom: 1px solid rgba(16,185,129,0.15); }
+        .su-role-badge { display:inline-flex; align-items:center; gap:4px; font-size:0.65rem; font-weight:700; letter-spacing:0.08em; text-transform:uppercase; background:rgba(16,185,129,0.2); color:#34d399; border:1px solid rgba(16,185,129,0.4); border-radius:9999px; padding:2px 8px; margin-top:4px; }
+        .su-logout-btn { width:100%; padding:0.75rem 1rem; background:rgba(239,68,68,0.1); border:1px solid rgba(239,68,68,0.3); color:#fca5a5; border-radius:8px; font-size:0.875rem; font-weight:500; cursor:pointer; transition:all 0.2s; display:flex; align-items:center; gap:0.5rem; }
+        .su-logout-btn:hover { background:#ef4444 !important; border-color:#ef4444 !important; color:white !important; }
+
+        /* Page header */
+        .sos-header {
+            background: linear-gradient(135deg, #0f172a 0%, #064e3b 100%);
+            border-radius: 20px;
+            padding: 1.75rem 2rem;
+            margin-bottom: 1.75rem;
             display: flex;
             justify-content: space-between;
             align-items: center;
+            flex-wrap: wrap;
             gap: 1rem;
-            box-shadow: 0 4px 12px rgba(15,23,42,0.45);
-            position: sticky;
-            top: 0;
-            z-index: 40;
-        }
-        .su-nav-title {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            font-weight: 600;
-        }
-        .su-nav-links {
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-            font-size: 0.9rem;
-        }
-        .su-nav-link {
-            color: rgba(248,250,252,0.85);
-            text-decoration: none;
-            padding: 0.35rem 0.75rem;
-            border-radius: 9999px;
-            display: inline-flex;
-            align-items: center;
-            gap: 0.35rem;
-        }
-        .su-nav-link:hover {
-            background: rgba(148,163,184,0.25);
-        }
-        .su-nav-link.active {
-            background: linear-gradient(135deg, #3b82f6, #2563eb);
-            color: white;
-        }
-        .super-user-container {
-            background: #f8f9fa;
-            min-height: 100vh;
-        }
-        .super-user-header {
-            background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
-            color: white;
-            padding: 2rem;
-            border-radius: 0 0 24px 24px;
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
-            margin-bottom: 2rem;
-        }
-        .super-user-badge {
-            display: inline-flex;
-            align-items: center;
-            gap: 0.5rem;
-            padding: 0.5rem 1rem;
-            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
-            color: white;
-            border-radius: 9999px;
-            font-size: 0.75rem;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-            box-shadow: 0 4px 6px rgba(59, 130, 246, 0.4);
-            border: 2px solid rgba(255, 255, 255, 0.3);
-        }
-        .stats-row {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 1rem;
-            margin-top: 1.5rem;
-        }
-        .stat-item {
-            background: rgba(255, 255, 255, 0.2);
-            padding: 1rem;
-            border-radius: 8px;
-            text-align: center;
-        }
-        .stat-number {
-            font-size: 1.75rem;
-            font-weight: 700;
-            color: white;
-        }
-        .stat-label {
-            font-size: 0.875rem;
-            color: rgba(255, 255, 255, 0.9);
-            margin-top: 0.5rem;
-        }
-        .broadcast-card {
-            background: white;
-            border-radius: 16px;
-            padding: 1.5rem 1.75rem;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-            margin-bottom: 2rem;
-            border: 2px solid #e5e7eb;
-        }
-        .modal {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.6);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 10000;
-            backdrop-filter: blur(4px);
-        }
-        .modal.hidden {
-            display: none;
-        }
-        .modal-content {
-            background: white;
-            border-radius: 16px;
-            padding: 2rem;
-            max-width: 600px;
-            width: 90%;
-            max-height: 90vh;
-            overflow-y: auto;
-            box-shadow: 0 20px 25px rgba(0, 0, 0, 0.3);
-        }
-        .status-badge {
-            display: inline-block;
-            padding: 0.25rem 0.75rem;
-            border-radius: 9999px;
-            font-size: 0.75rem;
-            font-weight: 600;
-            text-transform: uppercase;
-        }
-        .status-active {
-            background: #fee2e2;
-            color: #991b1b;
-        }
-        .status-acknowledged {
-            background: #fef3c7;
-            color: #92400e;
-        }
-        .status-resolved {
-            background: #d1fae5;
-            color: #065f46;
-        }
-        .btn-action {
-            padding: 0.35rem 0.75rem;
-            border: none;
-            border-radius: 6px;
-            font-size: 0.8rem;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.2s;
-            display: inline-flex;
-            align-items: center;
-            gap: 0.35rem;
-        }
-        .btn-acknowledge {
-            background: #f59e0b;
-            color: white;
-        }
-        .btn-acknowledge:hover {
-            background: #d97706;
-        }
-        .btn-resolve {
-            background: #10b981;
-            color: white;
-        }
-        .btn-resolve:hover {
-            background: #059669;
-        }
-        .btn-view-map {
-            background: #3b82f6;
-            color: white;
-        }
-        .btn-view-map:hover {
-            background: #2563eb;
-        }
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 0.85rem;
-        }
-        thead tr {
-            background: #f3f4f6;
-        }
-        th {
-            text-align: left;
-            padding: 0.75rem 0.5rem;
-            border-bottom: 2px solid #e5e7eb;
-            font-weight: 600;
-            color: #374151;
-        }
-        td {
-            padding: 0.75rem 0.5rem;
-            border-bottom: 1px solid #e5e7eb;
-            color: #4b5563;
-        }
-        tbody tr:hover {
-            background: #f9fafb;
-        }
-        .location-cell {
-            max-width: 200px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.18);
+            position: relative;
             overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
         }
+        .sos-header::before {
+            content:''; position:absolute; top:-40px; right:-40px;
+            width:160px; height:160px;
+            background:rgba(16,185,129,0.12); border-radius:50%;
+        }
+        .sos-header::after {
+            content:''; position:absolute; bottom:-30px; right:80px;
+            width:100px; height:100px;
+            background:rgba(16,185,129,0.07); border-radius:50%;
+        }
+        .sos-header h1 { margin:0; font-size:1.6rem; font-weight:800; color:white; display:flex; align-items:center; gap:0.7rem; letter-spacing:-0.02em; }
+        .sos-header h1 i { color:#34d399; font-size:1.5rem; }
+        .sos-header p { margin:0.3rem 0 0; font-size:0.875rem; color:rgba(255,255,255,0.7); }
+
+        /* Page header */
+        .sos-header {
+            background: linear-gradient(135deg, #0f172a 0%, #064e3b 100%);
+            border-radius: 20px;
+            padding: 1.75rem 2rem;
+            margin-bottom: 1.75rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.18);
+            position: relative;
+            overflow: hidden;
+        }
+        .sos-header::before {
+            content:''; position:absolute; top:-40px; right:-40px;
+            width:160px; height:160px;
+            background:rgba(16,185,129,0.12); border-radius:50%;
+        }
+        .sos-header::after {
+            content:''; position:absolute; bottom:-30px; right:80px;
+            width:100px; height:100px;
+            background:rgba(16,185,129,0.07); border-radius:50%;
+        }
+        .sos-header h1 { margin:0; font-size:1.6rem; font-weight:800; color:white; display:flex; align-items:center; gap:0.7rem; letter-spacing:-0.02em; }
+        .sos-header h1 i { color:#34d399; font-size:1.5rem; }
+        .sos-header p { margin:0.3rem 0 0; font-size:0.875rem; color:rgba(255,255,255,0.7); }
+
+        /* ── Page layout ── */
+        .sos-main { padding: 1.75rem; background: #f1f5f9; min-height: 100vh; }
+
+        /* Stat cards */
+        .sos-stats { display:grid; grid-template-columns:repeat(4,1fr); gap:1rem; margin-bottom:1.75rem; }
+        @media(max-width:800px){ .sos-stats{ grid-template-columns:repeat(2,1fr); } }
+        .sos-stat {
+            background:white; border-radius:16px; padding:1.25rem 1.5rem;
+            box-shadow:0 2px 12px rgba(0,0,0,0.06); border:1px solid rgba(0,0,0,0.04);
+            display:flex; align-items:center; gap:1rem;
+            transition:transform 0.2s, box-shadow 0.2s;
+        }
+        .sos-stat:hover { transform:translateY(-3px); box-shadow:0 8px 24px rgba(0,0,0,0.1); }
+        .sos-stat-icon { width:50px; height:50px; border-radius:14px; display:flex; align-items:center; justify-content:center; font-size:1.4rem; flex-shrink:0; }
+        .sos-stat-number { font-size:1.75rem; font-weight:800; line-height:1; letter-spacing:-0.02em; }
+        .sos-stat-label { font-size:0.78rem; color:#6b7280; margin-top:0.2rem; font-weight:500; }
+
+        /* Main panel */
+        .sos-panel { background:white; border-radius:16px; box-shadow:0 2px 12px rgba(0,0,0,0.06); border:1px solid rgba(0,0,0,0.04); overflow:hidden; }
+        .sos-panel-header { padding:1.1rem 1.5rem; border-bottom:1px solid #f1f5f9; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:0.75rem; }
+        .sos-panel-title { font-size:0.95rem; font-weight:700; color:#0f172a; display:flex; align-items:center; gap:0.5rem; }
+        .sos-panel-title i { color:#ef4444; }
+
+        /* Search & filter bar */
+        .sos-toolbar { display:flex; gap:0.6rem; flex-wrap:wrap; align-items:center; }
+        .sos-search {
+            padding:0.45rem 0.9rem; border-radius:10px;
+            border:1.5px solid #e5e7eb; font-size:0.83rem;
+            outline:none; min-width:200px; color:#374151;
+            transition:border-color 0.2s;
+        }
+        .sos-search:focus { border-color:#ef4444; }
+        .sos-select {
+            padding:0.45rem 0.9rem; border-radius:10px;
+            border:1.5px solid #e5e7eb; font-size:0.83rem;
+            outline:none; color:#374151; cursor:pointer;
+            background:white;
+        }
+        .sos-refresh-btn {
+            padding:0.45rem 1rem; border-radius:10px; border:none;
+            background:linear-gradient(135deg,#ef4444,#b91c1c); color:white;
+            font-size:0.83rem; font-weight:700; cursor:pointer;
+            display:inline-flex; align-items:center; gap:0.35rem;
+            transition:filter 0.2s;
+        }
+        .sos-refresh-btn:hover { filter:brightness(1.1); }
+
+        /* Table */
+        .sos-table-wrap { overflow-x:auto; }
+        table { width:100%; border-collapse:collapse; font-size:0.84rem; }
+        thead tr { background:#fef2f2; }
+        th { padding:0.85rem 1rem; text-align:left; font-weight:700; color:#7f1d1d; font-size:0.78rem; text-transform:uppercase; letter-spacing:0.04em; white-space:nowrap; }
+        td { padding:0.85rem 1rem; border-bottom:1px solid #f8fafc; color:#374151; vertical-align:middle; }
+        tbody tr:hover { background:#fffbfb; }
+        tbody tr:last-child td { border-bottom:none; }
+        .location-cell { max-width:200px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+
+        /* Status badges */
+        .s-badge { display:inline-flex; align-items:center; gap:0.3rem; padding:0.25rem 0.7rem; border-radius:9999px; font-size:0.72rem; font-weight:700; text-transform:uppercase; letter-spacing:0.04em; }
+        .s-active { background:#fef2f2; color:#dc2626; }
+        .s-acknowledged { background:#fefce8; color:#b45309; }
+        .s-resolved { background:#ecfdf5; color:#059669; }
+
+        /* Action buttons */
+        .act-btn { padding:0.3rem 0.7rem; border:none; border-radius:8px; font-size:0.75rem; font-weight:700; cursor:pointer; display:inline-flex; align-items:center; gap:0.3rem; transition:filter 0.15s, transform 0.15s; white-space:nowrap; }
+        .act-btn:hover { filter:brightness(1.1); transform:translateY(-1px); }
+        .act-ack  { background:#fef3c7; color:#b45309; }
+        .act-res  { background:#ecfdf5; color:#059669; }
+        .act-view { background:#eff6ff; color:#2563eb; }
+
+        /* Reporter cell */
+        .reporter-cell { display:flex; align-items:center; gap:0.6rem; }
+        .reporter-avatar { width:30px; height:30px; border-radius:50%; background:linear-gradient(135deg,#ef4444,#b91c1c); color:white; display:flex; align-items:center; justify-content:center; font-size:0.75rem; font-weight:700; flex-shrink:0; }
+
+        /* Empty state */
+        .sos-empty { text-align:center; padding:3rem 1rem; color:#9ca3af; }
+        .sos-empty i { font-size:2.5rem; display:block; margin-bottom:0.75rem; color:#d1d5db; }
+        .sos-empty p { font-size:0.9rem; margin:0; }
+
+        /* Modal */
+        .sos-modal { position:fixed; inset:0; background:rgba(0,0,0,0.55); display:flex; align-items:center; justify-content:center; z-index:9999; backdrop-filter:blur(4px); }
+        .sos-modal.hidden { display:none; }
+        .sos-modal-box { background:white; border-radius:20px; padding:0; max-width:600px; width:92%; max-height:90vh; overflow-y:auto; box-shadow:0 24px 48px rgba(0,0,0,0.25); }
+        .sos-modal-header { background:linear-gradient(135deg,#1e0a0a,#7f1d1d); padding:1.25rem 1.5rem; border-radius:20px 20px 0 0; display:flex; align-items:center; justify-content:space-between; }
+        .sos-modal-header h2 { margin:0; font-size:1.1rem; font-weight:700; color:white; display:flex; align-items:center; gap:0.5rem; }
+        .sos-modal-close { background:rgba(255,255,255,0.15); border:none; width:32px; height:32px; border-radius:50%; color:white; font-size:1.1rem; cursor:pointer; display:flex; align-items:center; justify-content:center; transition:background 0.2s; }
+        .sos-modal-close:hover { background:rgba(255,255,255,0.3); }
+        .sos-modal-body { padding:1.5rem; }
+        .sos-detail-row { display:flex; gap:0.5rem; padding:0.6rem 0; border-bottom:1px solid #f1f5f9; font-size:0.875rem; }
+        .sos-detail-row:last-child { border-bottom:none; }
+        .sos-detail-label { color:#6b7280; font-weight:600; min-width:130px; flex-shrink:0; }
+        .sos-detail-value { color:#0f172a; flex:1; }
+        .sos-map-btn { display:inline-flex; align-items:center; gap:0.5rem; margin-top:1rem; padding:0.6rem 1.2rem; background:linear-gradient(135deg,#3b82f6,#1d4ed8); color:white; border-radius:10px; text-decoration:none; font-size:0.875rem; font-weight:700; transition:filter 0.2s; }
+        .sos-map-btn:hover { filter:brightness(1.1); }
+
+        /* Logout modal */
+        .logout-modal { position:fixed; inset:0; z-index:9999; display:flex; align-items:center; justify-content:center; }
+        .logout-modal.hidden { display:none; }
+        .logout-overlay { position:absolute; inset:0; background:rgba(0,0,0,0.45); }
+        .logout-box { position:relative; background:white; border-radius:16px; padding:2rem; width:90%; max-width:340px; text-align:center; box-shadow:0 20px 40px rgba(0,0,0,0.2); }
+        .logout-box h3 { margin:0 0 0.5rem; font-size:1.15rem; font-weight:700; color:#111827; }
+        .logout-box p { margin:0 0 1.5rem; color:#6b7280; font-size:0.875rem; }
+        .logout-btns { display:flex; gap:0.75rem; }
+        .logout-btns button { flex:1; padding:0.6rem; border-radius:8px; border:none; font-size:0.9rem; font-weight:600; cursor:pointer; }
     </style>
-    <script src="https://cdn.jsdelivr.net/npm/supabase@2"></script>
-    <script src="js/supabase.js"></script>
 </head>
 <body>
-    <nav class="su-nav">
-        <div class="su-nav-title">
-            <i class="bi bi-shield-check"></i>
-            <span>LSPU Emergency • Super User</span>
+<div class="dashboard-container">
+
+    <!-- Sidebar -->
+    <div class="sidebar" style="display:flex;flex-direction:column;">
+        <div class="sidebar-header">
+            <div class="sidebar-logo">
+                <img src="images/logolspu.jpg" alt="LSPU Logo"
+                     style="width:50px;height:50px;object-fit:contain;border-radius:50%;border:2px solid rgba(52,211,153,0.6);display:block;">
+                <div class="logo-text">
+                    <h3 style="margin:0;font-size:15px;font-weight:700;color:white;">Super User</h3>
+                    <p style="margin:2px 0 0 0;font-size:11px;color:rgba(255,255,255,0.6);">Emergency Response</p>
+                    <span class="su-role-badge"><i class="bi bi-shield-star-fill"></i> Super User</span>
+                </div>
+            </div>
         </div>
-        <div class="su-nav-links">
-            <a href="super-user.html" class="su-nav-link">
-                <i class="bi bi-grid-fill"></i>
-                Dashboard
-            </a>
-            <a href="super-user-reports.html" class="su-nav-link">
-                <i class="bi bi-clipboard-data"></i>
-                Recent Reports
-            </a>
-            <a href="super-user-sos-alerts.html" class="su-nav-link active">
-                <i class="bi bi-exclamation-triangle-fill"></i>
-                SOS Alerts
-            </a>
-            <a href="super-user-early-warning.html" class="su-nav-link">
-                <i class="bi bi-shield-exclamation"></i>
-                Early Warning
-            </a>
-            <a href="super-user-map.html" class="su-nav-link">
-                <i class="bi bi-map"></i>
-                Map View
-            </a>
-            <a href="super-user-evacuation.html" class="su-nav-link">
-                <i class="bi bi-shield-check"></i>
-                Evacuation Guide
-            </a>
-            <a href="super-user-announcements.html" class="su-nav-link">
-                <i class="bi bi-megaphone-fill"></i>
-                General Announcements
-            </a>
-            <button type="button" onclick="showLogoutConfirm()" class="su-nav-link" style="border:none;background:none;cursor:pointer;">
-                <i class="bi bi-box-arrow-right"></i>
-                Logout
+        <div class="system-status">
+            <div class="status-indicator">
+                <span class="status-dot online"></span>
+                <span style="font-size:0.8rem;color:rgba(255,255,255,0.75);">System Status: Online</span>
+            </div>
+        </div>
+        <nav class="sidebar-nav">
+            <a href="super-user.html" class="nav-item"><i class="bi bi-house"></i> Dashboard</a>
+            <a href="super-user-reports.html" class="nav-item"><i class="bi bi-clipboard-data"></i> Emergency Reports</a>
+            <a href="super-user-early-warning.html" class="nav-item"><i class="bi bi-shield-exclamation"></i> Early Warning</a>
+            <a href="super-user-map.html" class="nav-item"><i class="bi bi-map"></i> Map View</a>
+            <a href="super-user-announcements.html" class="nav-item"><i class="bi bi-megaphone-fill"></i> Announcements</a>
+            <a href="readiness-safety-notice.html" class="nav-item"><i class="bi bi-shield-check"></i> Readiness &amp; Safety</a>
+            <a href="super-user-sos-alerts.html" class="nav-item active"><i class="bi bi-exclamation-octagon-fill"></i> SOS Alerts</a>
+        </nav>
+        <div class="sidebar-footer">
+            <div class="user-info-card">
+                <div class="user-avatar">S</div>
+                <div class="user-details">
+                    <h4 id="suUserName" style="margin:0;font-size:0.875rem;font-weight:600;color:white;">Super User</h4>
+                    <p style="margin:0;font-size:0.75rem;color:rgba(255,255,255,0.55);">LSPU Command</p>
+                </div>
+            </div>
+            <button class="su-logout-btn" onclick="showLogoutConfirm()">
+                <i class="bi bi-box-arrow-right"></i> Logout
             </button>
         </div>
-    </nav>
+    </div>
 
-    <div class="super-user-container">
-        <!-- Header -->
-        <div class="super-user-header">
-            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+    <!-- Main Content -->
+    <div class="main-content" style="background:#f1f5f9;overflow-y:auto;">
+    <div class="sos-main">
+
+        <!-- Page Header -->
+        <div class="su-page-header">
+            <div>
+                <h1><i class="bi bi-exclamation-octagon-fill"></i> SOS Emergency Alerts</h1>
+                <p>Life-or-death emergency alerts requiring immediate attention</p>
+            </div>
+            <div class="su-header-right">
+                <button type="button" id="su-take-tour-btn" class="su-tour-btn" title="Take a guided tour"><i class="bi bi-question-circle-fill"></i> Take a tour</button>
+                <span class="su-badge"><i class="bi bi-shield-star-fill"></i> Super User</span>
+                <div class="su-header-time">
+                    <div class="time-label">Logged in as</div>
+                    <div class="time-value" id="userEmail">Super User</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Stat Cards -->
+        <div class="sos-stats">
+            <div class="sos-stat">
+                <div class="sos-stat-icon" style="background:#f3f4f6;color:#374151;"><i class="bi bi-bell-fill"></i></div>
                 <div>
-                    <h1 style="margin: 0; font-size: 2rem; display: flex; align-items: center; gap: 1rem;">
-                        <i class="bi bi-exclamation-triangle-fill" style="color: #ef4444;"></i>
-                        SOS Emergency Alerts
-                        <span class="super-user-badge">
-                            <i class="bi bi-star-fill"></i> Premium Access
-                        </span>
-                    </h1>
-                    <p style="margin: 0.5rem 0 0 0; opacity: 0.9;">
-                        Life-or-death emergency alerts requiring immediate attention.
-                    </p>
-                </div>
-                <div style="text-align: right;">
-                    <div style="font-size: 0.875rem; opacity: 0.8;">Logged in as</div>
-                    <div style="font-weight: 600;" id="userEmail">Super User</div>
+                    <div class="sos-stat-number" style="color:#0f172a;" id="totalAlerts">0</div>
+                    <div class="sos-stat-label">Total Alerts</div>
                 </div>
             </div>
-
-            <div class="stats-row">
-                <div class="stat-item">
-                    <div class="stat-number" id="totalAlerts">0</div>
-                    <div class="stat-label">Total Alerts</div>
+            <div class="sos-stat">
+                <div class="sos-stat-icon" style="background:#fef2f2;color:#ef4444;"><i class="bi bi-exclamation-circle-fill"></i></div>
+                <div>
+                    <div class="sos-stat-number" style="color:#ef4444;" id="activeAlerts">0</div>
+                    <div class="sos-stat-label">Active</div>
                 </div>
-                <div class="stat-item">
-                    <div class="stat-number" id="activeAlerts">0</div>
-                    <div class="stat-label">Active</div>
+            </div>
+            <div class="sos-stat">
+                <div class="sos-stat-icon" style="background:#fefce8;color:#ca8a04;"><i class="bi bi-eye-fill"></i></div>
+                <div>
+                    <div class="sos-stat-number" style="color:#ca8a04;" id="acknowledgedAlerts">0</div>
+                    <div class="sos-stat-label">Acknowledged</div>
                 </div>
-                <div class="stat-item">
-                    <div class="stat-number" id="acknowledgedAlerts">0</div>
-                    <div class="stat-label">Acknowledged</div>
-                </div>
-                <div class="stat-item">
-                    <div class="stat-number" id="resolvedAlerts">0</div>
-                    <div class="stat-label">Resolved</div>
+            </div>
+            <div class="sos-stat">
+                <div class="sos-stat-icon" style="background:#ecfdf5;color:#10b981;"><i class="bi bi-check-circle-fill"></i></div>
+                <div>
+                    <div class="sos-stat-number" style="color:#10b981;" id="resolvedAlerts">0</div>
+                    <div class="sos-stat-label">Resolved</div>
                 </div>
             </div>
         </div>
 
-        <!-- Main Content -->
-        <div style="max-width: 1400px; margin: 0 auto; padding: 0 2rem 2rem;">
-            <div class="broadcast-card">
-                <div style="display:flex;justify-content:space-between;align-items:center;gap:0.75rem;flex-wrap:wrap;margin-bottom:1rem;">
-                    <div style="display:flex;align-items:center;gap:0.75rem;">
-                        <i class="bi bi-list-ul" style="font-size: 1.75rem; color: #ef4444;"></i>
-                        <div>
-                            <h2 style="margin:0;color:#111827;">All SOS Alerts</h2>
-                            <p style="margin:0;color:#6b7280;font-size:0.9rem;">
-                                Critical life-or-death emergency alerts. Click actions to acknowledge or resolve.
-                            </p>
-                        </div>
-                    </div>
-                    <div style="display:flex;gap:0.5rem;flex-wrap:wrap;">
-                        <input
-                            id="alertSearchInput"
-                            type="text"
-                            placeholder="Search by reporter name or location..."
-                            style="padding:0.4rem 0.75rem;border-radius:9999px;border:1px solid #d1d5db;font-size:0.85rem;min-width:220px;outline:none;">
-                        <select id="statusFilter" style="padding:0.4rem 0.75rem;border-radius:9999px;border:1px solid #d1d5db;font-size:0.85rem;">
-                            <option value="all">All statuses</option>
-                            <option value="active">Active</option>
-                            <option value="acknowledged">Acknowledged</option>
-                            <option value="resolved">Resolved</option>
-                        </select>
-                        <button onclick="loadSOSAlerts()" style="padding:0.4rem 0.75rem;border-radius:9999px;border:none;background:linear-gradient(135deg,#3b82f6 0%,#2563eb 100%);color:white;font-size:0.85rem;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:0.35rem;">
-                            <i class="bi bi-arrow-clockwise"></i>
-                            Refresh
-                        </button>
-                    </div>
+        <!-- Alerts Panel -->
+        <div class="sos-panel">
+            <div class="sos-panel-header">
+                <div class="sos-panel-title">
+                    <i class="bi bi-list-ul"></i> All SOS Alerts
+                    <span style="font-size:0.78rem;font-weight:400;color:#6b7280;">— Critical emergency alerts. Click actions to acknowledge or resolve.</span>
                 </div>
-
-                <div style="overflow-x:auto;">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Reporter</th>
-                                <th>Location</th>
-                                <th>Status</th>
-                                <th>Created At</th>
-                                <th>Acknowledged At</th>
-                                <th>Resolved At</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody id="alertsTableBody">
-                            <tr>
-                                <td colspan="7" style="text-align:center;padding:2rem;color:#6b7280;">Loading SOS alerts...</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Alert Detail Modal -->
-    <div id="alertModal" class="modal hidden">
-        <div class="modal-content" style="max-width: 700px;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
-                <h2 style="margin: 0; color: #111827;">
-                    <i class="bi bi-exclamation-triangle-fill" style="color: #ef4444;"></i> SOS Alert Details
-                </h2>
-                <button onclick="closeAlertModal()" style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: #6b7280;">
-                    <i class="bi bi-x"></i>
-                </button>
-            </div>
-
-            <div id="alertDetails">
-                <div style="display: grid; gap: 1rem;">
-                    <div>
-                        <p style="margin: 0.25rem 0; font-size: 0.9rem; color: #4b5563;">
-                            <strong>Alert ID:</strong> <span id="alertModalId"></span>
-                        </p>
-                        <p style="margin: 0.25rem 0; font-size: 0.9rem; color: #4b5563;">
-                            <strong>Reporter:</strong> <span id="alertModalReporter"></span>
-                        </p>
-                        <p style="margin: 0.25rem 0; font-size: 0.9rem; color: #4b5563;">
-                            <strong>Status:</strong> <span id="alertModalStatus"></span>
-                        </p>
-                        <p style="margin: 0.25rem 0; font-size: 0.9rem; color: #4b5563;">
-                            <strong>Location:</strong> <span id="alertModalLocation"></span>
-                        </p>
-                        <p style="margin: 0.25rem 0; font-size: 0.9rem; color: #4b5563;">
-                            <strong>Coordinates:</strong> <span id="alertModalCoordinates"></span>
-                        </p>
-                        <p style="margin: 0.25rem 0; font-size: 0.9rem; color: #4b5563;">
-                            <strong>Created At:</strong> <span id="alertModalCreated"></span>
-                        </p>
-                        <p id="alertModalAcknowledged" style="margin: 0.25rem 0; font-size: 0.9rem; color: #4b5563; display: none;">
-                            <strong>Acknowledged At:</strong> <span id="alertModalAcknowledgedValue"></span>
-                        </p>
-                        <p id="alertModalResolved" style="margin: 0.25rem 0; font-size: 0.9rem; color: #4b5563; display: none;">
-                            <strong>Resolved At:</strong> <span id="alertModalResolvedValue"></span>
-                        </p>
-                    </div>
-                    <div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid #e5e7eb;">
-                        <a id="alertModalMapLink" href="#" target="_blank" class="btn-action btn-view-map" style="text-decoration: none;">
-                            <i class="bi bi-map"></i> View on Map
-                        </a>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Logout Modal -->
-    <div id="logoutModal" class="modal hidden">
-        <div class="modal-content">
-            <h2 style="margin: 0 0 1rem 0;">Confirm Logout</h2>
-            <p>Are you sure you want to logout?</p>
-            <div style="display:flex;gap:1rem;margin-top:1.5rem;">
-                <button class="btn btn-secondary" onclick="closeLogoutModal()" style="flex:1;padding:0.75rem 1.5rem;border:none;border-radius:8px;font-weight:600;cursor:pointer;background:#e5e7eb;color:#374151;">
-                    Cancel
-                </button>
-                <button class="btn btn-primary" onclick="confirmLogout()" style="flex:1;padding:0.75rem 1.5rem;border:none;border-radius:8px;font-weight:600;cursor:pointer;background:linear-gradient(135deg,#3b82f6 0%,#2563eb 100%);color:white;">
-                    Logout
-                </button>
-            </div>
-        </div>
-    </div>
-
-    <script>
-        let alertsCache = [];
-        let currentAlertId = null;
-
-        document.addEventListener('DOMContentLoaded', async function () {
-            try {
-                await window.emergencySystem.initialize();
-
-                const userRole = window.emergencySystem.user?.user_metadata?.role;
-                if (!window.emergencySystem.user || userRole !== 'super_user') {
-                    console.log('User not super_user, redirecting...');
-                    if (userRole === 'admin') {
-                        window.location.href = 'admin.html';
-                    } else {
-                        window.location.href = 'login.html';
-                    }
-                    return;
-                }
-
-                if (window.emergencySystem.user?.email) {
-                    document.getElementById('userEmail').textContent = window.emergencySystem.user.email;
-                }
-
-                await loadSOSAlerts();
-
-                const searchInput = document.getElementById('alertSearchInput');
-                const statusFilter = document.getElementById('statusFilter');
-                if (searchInput) {
-                    searchInput.addEventListener('input', applyFilters);
-                }
-                if (statusFilter) {
-                    statusFilter.addEventListener('change', applyFilters);
-                }
-
-                console.log('✅ Super User SOS alerts page initialized');
-            } catch (error) {
-                console.error('❌ Error initializing super user SOS alerts page:', error);
-            }
-        });
-
-        async function loadSOSAlerts() {
-            try {
-                const { data: alerts, error } = await window.emergencySystem.supabase
-                    .from('sos_alerts')
-                    .select('*')
-                    .order('created_at', { ascending: false });
-
-                if (error) {
-                    console.error('Error loading SOS alerts:', error);
-                    window.emergencySystem.showError('Failed to load SOS alerts: ' + error.message);
-                    alertsCache = [];
-                    updateStats();
-                    renderAlertsTable([]);
-                    return;
-                }
-
-                alertsCache = alerts || [];
-                updateStats();
-                applyFilters();
-            } catch (error) {
-                console.error('Error loading SOS alerts:', error);
-                window.emergencySystem.showError('Failed to load SOS alerts');
-                alertsCache = [];
-                updateStats();
-                renderAlertsTable([]);
-            }
-        }
-
-        function updateStats() {
-            const total = alertsCache.length;
-            const active = alertsCache.filter(a => a.status === 'active').length;
-            const acknowledged = alertsCache.filter(a => a.status === 'acknowledged').length;
-            const resolved = alertsCache.filter(a => a.status === 'resolved').length;
-
-            document.getElementById('totalAlerts').textContent = total;
-            document.getElementById('activeAlerts').textContent = active;
-            document.getElementById('acknowledgedAlerts').textContent = acknowledged;
-            document.getElementById('resolvedAlerts').textContent = resolved;
-        }
-
-        function applyFilters() {
-            const searchInput = document.getElementById('alertSearchInput');
-            const statusFilter = document.getElementById('statusFilter');
-            
-            const searchTerm = (searchInput?.value || '').toLowerCase();
-            const statusFilterValue = statusFilter?.value || 'all';
-
-            let filtered = alertsCache;
-
-            // Apply search filter
-            if (searchTerm) {
-                filtered = filtered.filter(alert => {
-                    const reporterName = (alert.reporter_name || '').toLowerCase();
-                    const location = (alert.location_address || '').toLowerCase();
-                    return reporterName.includes(searchTerm) || location.includes(searchTerm);
-                });
-            }
-
-            // Apply status filter
-            if (statusFilterValue !== 'all') {
-                filtered = filtered.filter(alert => alert.status === statusFilterValue);
-            }
-
-            renderAlertsTable(filtered);
-        }
-
-        function renderAlertsTable(alerts) {
-            const tbody = document.getElementById('alertsTableBody');
-            
-            if (!alerts || alerts.length === 0) {
-                tbody.innerHTML = `
-                    <tr>
-                        <td colspan="7" style="text-align:center;padding:2rem;color:#6b7280;">
-                            No SOS alerts found.
-                        </td>
-                    </tr>
-                `;
-                return;
-            }
-
-            tbody.innerHTML = alerts.map(alert => {
-                const statusClass = `status-${alert.status}`;
-                const statusText = alert.status.charAt(0).toUpperCase() + alert.status.slice(1);
-                
-                const location = alert.location_address || 
-                    `${alert.latitude?.toFixed(6)}, ${alert.longitude?.toFixed(6)}`;
-                
-                const createdDate = new Date(alert.created_at).toLocaleString();
-                const acknowledgedDate = alert.acknowledged_at ? 
-                    new Date(alert.acknowledged_at).toLocaleString() : '-';
-                const resolvedDate = alert.resolved_at ? 
-                    new Date(alert.resolved_at).toLocaleString() : '-';
-
-                const actions = [];
-                if (alert.status === 'active') {
-                    actions.push(`
-                        <button class="btn-action btn-acknowledge" onclick="acknowledgeAlert('${alert.id}')">
-                            <i class="bi bi-check-circle"></i> Acknowledge
-                        </button>
-                    `);
-                }
-                if (alert.status === 'active' || alert.status === 'acknowledged') {
-                    actions.push(`
-                        <button class="btn-action btn-resolve" onclick="resolveAlert('${alert.id}')">
-                            <i class="bi bi-check2-circle"></i> Resolve
-                        </button>
-                    `);
-                }
-                actions.push(`
-                    <button class="btn-action btn-view-map" onclick="viewAlertDetails('${alert.id}')">
-                        <i class="bi bi-eye"></i> View
+                <div class="sos-toolbar">
+                    <input id="alertSearchInput" type="text" class="sos-search" placeholder="Search reporter or location…">
+                    <select id="statusFilter" class="sos-select">
+                        <option value="all">All statuses</option>
+                        <option value="active">Active</option>
+                        <option value="acknowledged">Acknowledged</option>
+                        <option value="resolved">Resolved</option>
+                    </select>
+                    <button class="sos-refresh-btn" onclick="loadSOSAlerts()">
+                        <i class="bi bi-arrow-clockwise"></i> Refresh
                     </button>
-                `);
+                </div>
+            </div>
 
-                return `
-                    <tr>
-                        <td>${alert.reporter_name || 'Anonymous'}</td>
-                        <td class="location-cell" title="${location}">${location}</td>
-                        <td><span class="status-badge ${statusClass}">${statusText}</span></td>
-                        <td>${createdDate}</td>
-                        <td>${acknowledgedDate}</td>
-                        <td>${resolvedDate}</td>
-                        <td style="display:flex;gap:0.5rem;flex-wrap:wrap;">
-                            ${actions.join('')}
-                        </td>
-                    </tr>
-                `;
-            }).join('');
-        }
+            <div class="sos-table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Reporter</th>
+                            <th>Location</th>
+                            <th>Status</th>
+                            <th>Created</th>
+                            <th>Acknowledged</th>
+                            <th>Resolved</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="alertsTableBody">
+                        <tr>
+                            <td colspan="7" style="text-align:center;padding:3rem;color:#9ca3af;">
+                                <i class="bi bi-hourglass-split" style="font-size:1.5rem;display:block;margin-bottom:0.5rem;"></i>
+                                Loading SOS alerts…
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
 
-        async function acknowledgeAlert(alertId) {
-            if (!alertId) return;
-            
-            const confirmed = window.confirm('Acknowledge this SOS alert? This will mark it as acknowledged.');
-            if (!confirmed) return;
+    </div><!-- end .sos-main -->
+    </div><!-- end .main-content -->
+</div><!-- end .dashboard-container -->
 
-            try {
-                const currentUser = window.emergencySystem.user;
-                const { error } = await window.emergencySystem.supabase
-                    .from('sos_alerts')
-                    .update({
-                        status: 'acknowledged',
-                        acknowledged_by: currentUser?.id || null,
-                        acknowledged_at: new Date().toISOString()
-                    })
-                    .eq('id', alertId);
+<!-- Alert Detail Modal -->
+<div id="alertModal" class="sos-modal hidden">
+    <div class="sos-modal-box">
+        <div class="sos-modal-header">
+            <h2><i class="bi bi-exclamation-octagon-fill"></i> SOS Alert Details</h2>
+            <button class="sos-modal-close" onclick="closeAlertModal()"><i class="bi bi-x"></i></button>
+        </div>
+        <div class="sos-modal-body">
+            <div class="sos-detail-row">
+                <span class="sos-detail-label">Alert ID</span>
+                <span class="sos-detail-value" id="alertModalId"></span>
+            </div>
+            <div class="sos-detail-row">
+                <span class="sos-detail-label">Reporter</span>
+                <span class="sos-detail-value" id="alertModalReporter"></span>
+            </div>
+            <div class="sos-detail-row">
+                <span class="sos-detail-label">Status</span>
+                <span class="sos-detail-value" id="alertModalStatus"></span>
+            </div>
+            <div class="sos-detail-row">
+                <span class="sos-detail-label">Location</span>
+                <span class="sos-detail-value" id="alertModalLocation"></span>
+            </div>
+            <div class="sos-detail-row">
+                <span class="sos-detail-label">Coordinates</span>
+                <span class="sos-detail-value" id="alertModalCoordinates"></span>
+            </div>
+            <div class="sos-detail-row">
+                <span class="sos-detail-label">Created At</span>
+                <span class="sos-detail-value" id="alertModalCreated"></span>
+            </div>
+            <div class="sos-detail-row" id="alertModalAcknowledged" style="display:none;">
+                <span class="sos-detail-label">Acknowledged At</span>
+                <span class="sos-detail-value" id="alertModalAcknowledgedValue"></span>
+            </div>
+            <div class="sos-detail-row" id="alertModalResolved" style="display:none;">
+                <span class="sos-detail-label">Resolved At</span>
+                <span class="sos-detail-value" id="alertModalResolvedValue"></span>
+            </div>
+        </div>
+    </div>
+</div>
 
-                if (error) {
-                    console.error('Failed to acknowledge alert:', error);
-                    window.emergencySystem.showError('Failed to acknowledge alert: ' + error.message);
-                    return;
-                }
+<!-- Logout Modal -->
+<div id="logoutModal" class="logout-modal hidden">
+    <div class="logout-overlay" onclick="closeLogoutModal()"></div>
+    <div class="logout-box">
+        <i class="bi bi-box-arrow-right" style="font-size:2rem;color:#ef4444;display:block;margin-bottom:0.75rem;"></i>
+        <h3>Confirm Logout</h3>
+        <p>Are you sure you want to logout?</p>
+        <div class="logout-btns">
+            <button onclick="closeLogoutModal()" style="background:#f3f4f6;color:#374151;">Cancel</button>
+            <button onclick="confirmLogout()" style="background:#ef4444;color:white;">Logout</button>
+        </div>
+    </div>
+</div>
 
-                window.emergencySystem.showSuccess('SOS alert acknowledged successfully.');
-                await loadSOSAlerts();
-            } catch (error) {
-                console.error('Error acknowledging alert:', error);
-                window.emergencySystem.showError('Failed to acknowledge alert');
-            }
-        }
+<script>
+window.SU_TOUR_STEPS = [
+    { sel: '.su-page-header', title: 'SOS Emergency Alerts', desc: 'Life-or-death emergency alerts requiring immediate attention. Monitor and manage critical SOS reports here.' },
+    { sel: '.sos-stats', title: 'Alert stats', desc: 'Total alerts, active, acknowledged, and resolved counts at a glance.' },
+    { sel: '.sos-panel', title: 'All SOS Alerts', desc: 'Search and filter alerts. Use the table to acknowledge or resolve each alert. Refresh to load latest data.' },
+    { sel: '.sidebar-nav', title: 'Navigation', desc: 'Go to Dashboard, Emergency Reports, Early Warning, Map View, Announcements, Readiness & Safety.' }
+];
+</script>
+<script src="js/su-tour.js"></script>
+<script>
+    let alertsCache = [];
+    let currentAlertId = null;
 
-        async function resolveAlert(alertId) {
-            if (!alertId) return;
-            
-            const confirmed = window.confirm('Resolve this SOS alert? This will mark it as resolved.');
-            if (!confirmed) return;
+    document.addEventListener('DOMContentLoaded', async function () {
+        try {
+            await window.emergencySystem.initialize();
 
-            try {
-                const { error } = await window.emergencySystem.supabase
-                    .from('sos_alerts')
-                    .update({
-                        status: 'resolved',
-                        resolved_at: new Date().toISOString()
-                    })
-                    .eq('id', alertId);
-
-                if (error) {
-                    console.error('Failed to resolve alert:', error);
-                    window.emergencySystem.showError('Failed to resolve alert: ' + error.message);
-                    return;
-                }
-
-                window.emergencySystem.showSuccess('SOS alert resolved successfully.');
-                await loadSOSAlerts();
-            } catch (error) {
-                console.error('Error resolving alert:', error);
-                window.emergencySystem.showError('Failed to resolve alert');
-            }
-        }
-
-        async function viewAlertDetails(alertId) {
-            const alert = alertsCache.find(a => a.id === alertId);
-            if (!alert) {
-                window.emergencySystem.showError('Alert not found');
+            const userRole = window.emergencySystem.user?.user_metadata?.role;
+            if (!window.emergencySystem.user || userRole !== 'super_user') {
+                window.location.href = userRole === 'admin' ? 'admin.html' : 'login.html';
                 return;
             }
 
-            currentAlertId = alertId;
-            
-            document.getElementById('alertModalId').textContent = alert.id;
-            document.getElementById('alertModalReporter').textContent = alert.reporter_name || 'Anonymous';
-            document.getElementById('alertModalStatus').innerHTML = 
-                `<span class="status-badge status-${alert.status}">${alert.status.charAt(0).toUpperCase() + alert.status.slice(1)}</span>`;
-            
-            const location = alert.location_address || 'No address available';
-            document.getElementById('alertModalLocation').textContent = location;
-            document.getElementById('alertModalCoordinates').textContent = 
-                `${alert.latitude?.toFixed(6)}, ${alert.longitude?.toFixed(6)}`;
-            
-            document.getElementById('alertModalCreated').textContent = 
-                new Date(alert.created_at).toLocaleString();
-            
-            if (alert.acknowledged_at) {
-                document.getElementById('alertModalAcknowledged').style.display = 'block';
-                document.getElementById('alertModalAcknowledgedValue').textContent = 
-                    new Date(alert.acknowledged_at).toLocaleString();
+            const email = window.emergencySystem.user?.email;
+            if (email) document.getElementById('userEmail').textContent = email;
+
+            const name = window.emergencySystem.user?.user_metadata?.full_name || email?.split('@')[0] || 'Super User';
+            const nameEl = document.getElementById('suUserName');
+            if (nameEl) nameEl.textContent = name;
+
+            await loadSOSAlerts();
+
+            document.getElementById('alertSearchInput').addEventListener('input', applyFilters);
+            document.getElementById('statusFilter').addEventListener('change', applyFilters);
+
+        } catch (error) {
+            console.error('❌ Error initializing SOS alerts page:', error);
+        }
+    });
+
+    async function loadSOSAlerts() {
+        try {
+            const tbody = document.getElementById('alertsTableBody');
+            tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:3rem;color:#9ca3af;">
+                <i class="bi bi-hourglass-split" style="font-size:1.5rem;display:block;margin-bottom:0.5rem;"></i>Loading…</td></tr>`;
+
+            const { data: alerts, error } = await window.emergencySystem.supabase
+                .from('sos_alerts').select('*').order('created_at', { ascending: false });
+
+            if (error) {
+                window.emergencySystem.showError('Failed to load SOS alerts: ' + error.message);
+                alertsCache = [];
             } else {
-                document.getElementById('alertModalAcknowledged').style.display = 'none';
+                alertsCache = alerts || [];
             }
-            
-            if (alert.resolved_at) {
-                document.getElementById('alertModalResolved').style.display = 'block';
-                document.getElementById('alertModalResolvedValue').textContent = 
-                    new Date(alert.resolved_at).toLocaleString();
-            } else {
-                document.getElementById('alertModalResolved').style.display = 'none';
+            updateStats();
+            applyFilters();
+        } catch (error) {
+            console.error('Error loading SOS alerts:', error);
+            window.emergencySystem.showError('Failed to load SOS alerts');
+        }
+    }
+
+    function updateStats() {
+        document.getElementById('totalAlerts').textContent       = alertsCache.length;
+        document.getElementById('activeAlerts').textContent      = alertsCache.filter(a => a.status === 'active').length;
+        document.getElementById('acknowledgedAlerts').textContent = alertsCache.filter(a => a.status === 'acknowledged').length;
+        document.getElementById('resolvedAlerts').textContent    = alertsCache.filter(a => a.status === 'resolved').length;
+    }
+
+    function applyFilters() {
+        const search = (document.getElementById('alertSearchInput')?.value || '').toLowerCase();
+        const status = document.getElementById('statusFilter')?.value || 'all';
+        let filtered = alertsCache;
+        if (search) filtered = filtered.filter(a =>
+            (a.reporter_name || '').toLowerCase().includes(search) ||
+            (a.location_address || '').toLowerCase().includes(search));
+        if (status !== 'all') filtered = filtered.filter(a => a.status === status);
+        renderAlertsTable(filtered);
+    }
+
+    function renderAlertsTable(alerts) {
+        const tbody = document.getElementById('alertsTableBody');
+        if (!alerts || alerts.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="7">
+                <div class="sos-empty">
+                    <i class="bi bi-shield-check"></i>
+                    <p>No SOS alerts found.</p>
+                </div></td></tr>`;
+            return;
+        }
+
+        tbody.innerHTML = alerts.map(a => {
+            const statusClass = a.status === 'active' ? 's-active'
+                : a.status === 'acknowledged' ? 's-acknowledged' : 's-resolved';
+            const statusText = a.status.charAt(0).toUpperCase() + a.status.slice(1);
+            const location = a.location_address || `${a.latitude?.toFixed(5)}, ${a.longitude?.toFixed(5)}`;
+            const initial = (a.reporter_name || 'A').charAt(0).toUpperCase();
+            const fmt = d => {
+                if (!d) return '<span style="color:#d1d5db;">—</span>';
+                const date = new Date(d);
+                if (isNaN(date.getTime())) return 'Invalid date';
+                return date.toLocaleString('en-PH', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit', hour12: true });
+            };
+
+            const actions = [];
+            if (a.status === 'active')
+                actions.push(`<button class="act-btn act-ack" onclick="acknowledgeAlert('${a.id}')"><i class="bi bi-check-circle"></i> Acknowledge</button>`);
+            if (a.status === 'active' || a.status === 'acknowledged')
+                actions.push(`<button class="act-btn act-res" onclick="resolveAlert('${a.id}')"><i class="bi bi-check2-circle"></i> Resolve</button>`);
+            actions.push(`<button class="act-btn act-view" onclick="viewAlertDetails('${a.id}')"><i class="bi bi-eye"></i> Detail</button>`);
+            if (a.latitude && a.longitude) {
+                const lbl = encodeURIComponent(a.reporter_name || 'SOS Alert');
+                actions.push(`<a class="act-btn" href="super-user-map.html?sosLat=${a.latitude}&sosLng=${a.longitude}&sosLabel=${lbl}" style="background:#ecfdf5;color:#059669;text-decoration:none;"><i class="bi bi-map"></i> Map</a>`);
             }
 
-            // Set map link
-            const mapLink = document.getElementById('alertModalMapLink');
-            mapLink.href = `https://www.google.com/maps?q=${alert.latitude},${alert.longitude}`;
+            return `<tr>
+                <td>
+                    <div class="reporter-cell">
+                        <div class="reporter-avatar">${initial}</div>
+                        <span>${a.reporter_name || 'Anonymous'}</span>
+                    </div>
+                </td>
+                <td class="location-cell" title="${location}">${location}</td>
+                <td><span class="s-badge ${statusClass}">${statusText}</span></td>
+                <td style="font-size:0.8rem;color:#6b7280;">${fmt(a.created_at)}</td>
+                <td style="font-size:0.8rem;color:#6b7280;">${fmt(a.acknowledged_at)}</td>
+                <td style="font-size:0.8rem;color:#6b7280;">${fmt(a.resolved_at)}</td>
+                <td><div style="display:flex;gap:0.4rem;flex-wrap:wrap;">${actions.join('')}</div></td>
+            </tr>`;
+        }).join('');
+    }
 
-            document.getElementById('alertModal').classList.remove('hidden');
-        }
+    async function acknowledgeAlert(alertId) {
+        if (!confirm('Acknowledge this SOS alert?')) return;
+        try {
+            const { error } = await window.emergencySystem.supabase.from('sos_alerts').update({
+                status: 'acknowledged',
+                acknowledged_by: window.emergencySystem.user?.id || null,
+                acknowledged_at: new Date().toISOString()
+            }).eq('id', alertId);
+            if (error) { window.emergencySystem.showError('Failed: ' + error.message); return; }
+            window.emergencySystem.showSuccess('Alert acknowledged.');
+            await loadSOSAlerts();
+        } catch (e) { window.emergencySystem.showError('Failed to acknowledge alert'); }
+    }
 
-        function closeAlertModal() {
-            document.getElementById('alertModal').classList.add('hidden');
-            currentAlertId = null;
-        }
+    async function resolveAlert(alertId) {
+        if (!confirm('Mark this SOS alert as resolved?')) return;
+        try {
+            const { error } = await window.emergencySystem.supabase.from('sos_alerts').update({
+                status: 'resolved',
+                resolved_at: new Date().toISOString()
+            }).eq('id', alertId);
+            if (error) { window.emergencySystem.showError('Failed: ' + error.message); return; }
+            window.emergencySystem.showSuccess('Alert resolved.');
+            await loadSOSAlerts();
+        } catch (e) { window.emergencySystem.showError('Failed to resolve alert'); }
+    }
 
-        // Logout functions
-        function showLogoutConfirm() {
-            document.getElementById('logoutModal').classList.remove('hidden');
-        }
+    function viewAlertDetails(alertId) {
+        const a = alertsCache.find(x => x.id === alertId);
+        if (!a) { window.emergencySystem.showError('Alert not found'); return; }
+        currentAlertId = alertId;
+        document.getElementById('alertModalId').textContent = a.id;
+        document.getElementById('alertModalReporter').textContent = a.reporter_name || 'Anonymous';
+        document.getElementById('alertModalStatus').innerHTML =
+            `<span class="s-badge ${a.status === 'active' ? 's-active' : a.status === 'acknowledged' ? 's-acknowledged' : 's-resolved'}">${a.status.charAt(0).toUpperCase() + a.status.slice(1)}</span>`;
+        document.getElementById('alertModalLocation').textContent = a.location_address || 'No address available';
+        document.getElementById('alertModalCoordinates').textContent = `${a.latitude?.toFixed(6)}, ${a.longitude?.toFixed(6)}`;
+        const toLocal = (d) => { if (!d) return '—'; const x = new Date(d); return isNaN(x.getTime()) ? '—' : x.toLocaleString('en-PH', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit', hour12: true }); };
+        document.getElementById('alertModalCreated').textContent = toLocal(a.created_at);
+        const ackEl = document.getElementById('alertModalAcknowledged');
+        ackEl.style.display = a.acknowledged_at ? 'flex' : 'none';
+        if (a.acknowledged_at) document.getElementById('alertModalAcknowledgedValue').textContent = toLocal(a.acknowledged_at);
+        const resEl = document.getElementById('alertModalResolved');
+        resEl.style.display = a.resolved_at ? 'flex' : 'none';
+        if (a.resolved_at) document.getElementById('alertModalResolvedValue').textContent = toLocal(a.resolved_at);
+        document.getElementById('alertModal').classList.remove('hidden');
+    }
 
-        function closeLogoutModal() {
-            document.getElementById('logoutModal').classList.add('hidden');
-        }
+    function closeAlertModal() {
+        document.getElementById('alertModal').classList.add('hidden');
+        currentAlertId = null;
+    }
 
-        async function confirmLogout() {
-            try {
-                await window.emergencySystem.signOut();
-                window.location.href = 'login.html';
-            } catch (error) {
-                console.error('Logout error:', error);
-                window.emergencySystem.showError('Failed to logout');
-            }
-        }
-    </script>
+    function showLogoutConfirm() { document.getElementById('logoutModal').classList.remove('hidden'); }
+    function closeLogoutModal() { document.getElementById('logoutModal').classList.add('hidden'); }
+    async function confirmLogout() {
+        try { await window.emergencySystem.signOut(); } catch (_) {}
+        window.location.href = 'login.html';
+    }
+</script>
 </body>
 </html>

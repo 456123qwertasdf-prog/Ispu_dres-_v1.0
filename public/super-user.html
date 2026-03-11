@@ -5,8 +5,48 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Super User Dashboard - LSPU Emergency Response System</title>
     <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/su-header-shared.css">
     <link rel="stylesheet" href="css/system-status.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        /* Modern design tokens */
+        :root {
+            --su-font: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+            --su-bg: #f1f5f9;
+            --su-surface: #ffffff;
+            --su-border: rgba(0,0,0,0.06);
+            --su-radius: 16px;
+            --su-radius-lg: 20px;
+            --su-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            --su-shadow-hover: 0 12px 40px -12px rgba(0,0,0,0.12);
+            --su-primary: #0d9488;
+            --su-primary-hover: #0f766e;
+            --su-sidebar: linear-gradient(180deg, #0f172a 0%, #134e4a 100%);
+            --su-header: linear-gradient(135deg, #0f172a 0%, #134e4a 100%);
+            --su-text: #0f172a;
+            --su-muted: #64748b;
+        }
+        body { font-family: var(--su-font) !important; }
+        /* Custom tour (no external package) – modern */
+        .su-tour-overlay { position:fixed; inset:0; z-index:99998; pointer-events:none; }
+        .su-tour-spotlight-panel { position:fixed; background:rgba(15,23,42,0.65); backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px); pointer-events:auto; transition:left 0.2s, top 0.2s, width 0.2s, height 0.2s; will-change:auto; }
+        .su-tour-highlight-ring { position:fixed; z-index:100001; pointer-events:none; border:3px solid var(--su-primary); border-radius:16px; box-sizing:border-box; transition:left 0.2s, top 0.2s, width 0.2s, height 0.2s; box-shadow:0 0 0 1px rgba(255,255,255,0.08), 0 0 0 6px rgba(13,148,136,0.2), inset 0 0 20px 2px rgba(15,23,42,0.06); }
+        .su-tour-popover { position:fixed; z-index:100002; background:var(--su-surface); border-radius:var(--su-radius-lg); box-shadow:var(--su-shadow-hover), 0 0 0 1px rgba(0,0,0,0.04); min-width:280px; max-width:360px; padding:2rem 1.5rem 1.5rem; left:50%; bottom:2rem; transform:translateX(-50%); font-family:var(--su-font); }
+        .su-tour-popover h3 { margin:0 0 0.5rem; font-size:1.125rem; font-weight:700; color:var(--su-text); letter-spacing:-0.01em; }
+        .su-tour-popover p { margin:0; font-size:0.9rem; line-height:1.55; color:var(--su-muted); }
+        .su-tour-popover-footer { margin-top:1.25rem; display:flex; align-items:center; justify-content:space-between; gap:0.75rem; }
+        .su-tour-popover-footer > span { display:flex; gap:0.5rem; }
+        .su-tour-progress { font-size:0.8rem; color:var(--su-muted); font-weight:500; }
+        .su-tour-popover button { padding:0.5rem 1rem; border-radius:10px; font-size:0.875rem; font-weight:600; cursor:pointer; border:none; background:#f1f5f9; color:#334155; transition:background 0.2s, color 0.2s; }
+        .su-tour-popover button:hover { background:#e2e8f0; }
+        .su-tour-popover button.su-tour-next { background:var(--su-primary); color:#fff; }
+        .su-tour-popover button.su-tour-next:hover { background:var(--su-primary-hover); }
+        .su-tour-popover button.su-tour-close { position:absolute; top:0.75rem; right:0.75rem; padding:0.35rem; background:transparent; color:#94a3b8; font-size:1.25rem; line-height:1; border-radius:8px; }
+        .su-tour-popover button.su-tour-close:hover { color:var(--su-text); background:#f1f5f9; }
+    </style>
     <style>
         /* Notification Toast Animations */
         @keyframes slideIn {
@@ -217,24 +257,162 @@
             color: rgba(255, 255, 255, 0.9);
             margin-top: 0.5rem;
         }
-        /* ── Super-User Sidebar Theme ── */
-        .sidebar { background: linear-gradient(180deg, #0f172a 0%, #064e3b 100%) !important; }
-        .nav-item.active { background: rgba(16,185,129,0.2) !important; color: #34d399 !important; border-left: 3px solid #10b981 !important; border-top: none !important; border-right: none !important; border-bottom: none !important; font-weight: 600; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-        .nav-item:hover { background: rgba(16,185,129,0.1) !important; color: #a7f3d0 !important; border-left-color: rgba(16,185,129,0.4) !important; }
-        .status-dot.online { background: #10b981 !important; box-shadow: 0 0 0 3px rgba(16,185,129,0.25) !important; }
-        .user-avatar { background: rgba(16,185,129,0.25) !important; color: #34d399 !important; }
-        .sidebar-header { border-bottom: 1px solid rgba(16,185,129,0.15) !important; }
-        .system-status { padding: 10px 20px; border-bottom: 1px solid rgba(16,185,129,0.15); }
-        .su-role-badge { display:inline-flex; align-items:center; gap:4px; font-size:0.65rem; font-weight:700; letter-spacing:0.08em; text-transform:uppercase; background:rgba(16,185,129,0.2); color:#34d399; border:1px solid rgba(16,185,129,0.4); border-radius:9999px; padding:2px 8px; margin-top:4px; }
-        .su-logout-btn { width:100%; padding:0.75rem 1rem; background:rgba(239,68,68,0.1); border:1px solid rgba(239,68,68,0.3); color:#fca5a5; border-radius:8px; font-size:0.875rem; font-weight:500; cursor:pointer; transition:all 0.2s ease; display:flex; align-items:center; gap:0.5rem; }
-        .su-logout-btn:hover { background:#EF4444 !important; border-color:#EF4444 !important; color:white !important; }
-        .su-content-header { background:linear-gradient(135deg, #0f172a 0%, #064e3b 100%); color:white; padding:1.5rem 2rem; border-radius:16px; box-shadow:0 8px 24px rgba(0,0,0,0.15); border-left:4px solid #10b981; margin-bottom:1.75rem; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:1rem; }
-        .su-content-header h1 { margin:0; font-size:1.5rem; font-weight:700; display:flex; align-items:center; gap:0.75rem; }
-        .su-content-header h1 i { color:#34d399; }
-        .su-content-header p { margin:0.4rem 0 0 0; font-size:0.875rem; opacity:0.8; }
+        /* ── Super-User Sidebar Theme (modern) ── */
+        .sidebar { background: var(--su-sidebar) !important; }
+        .nav-item { font-weight: 500; border-radius: 0 10px 10px 0; margin-right: 8px; transition: background 0.2s, color 0.2s; }
+        .nav-item.active { background: rgba(13,148,136,0.2) !important; color: #2dd4bf !important; border-left: 3px solid var(--su-primary) !important; border-top: none !important; border-right: none !important; border-bottom: none !important; font-weight: 600; box-shadow: none; }
+        .nav-item:hover { background: rgba(13,148,136,0.12) !important; color: #99f6e4 !important; border-left-color: rgba(13,148,136,0.4) !important; }
+        .status-dot.online { background: var(--su-primary) !important; box-shadow: 0 0 0 3px rgba(13,148,136,0.25) !important; }
+        .user-avatar { background: rgba(13,148,136,0.25) !important; color: #2dd4bf !important; }
+        .sidebar-header { border-bottom: 1px solid rgba(255,255,255,0.08) !important; }
+        .system-status { padding: 12px 20px; border-bottom: 1px solid rgba(255,255,255,0.08); }
+        .su-role-badge { display:inline-flex; align-items:center; gap:4px; font-size:0.65rem; font-weight:700; letter-spacing:0.08em; text-transform:uppercase; background:rgba(13,148,136,0.25); color:#2dd4bf; border:1px solid rgba(13,148,136,0.4); border-radius:9999px; padding:2px 8px; margin-top:4px; }
+        .su-logout-btn { width:100%; padding:0.75rem 1rem; background:rgba(239,68,68,0.08); border:1px solid rgba(239,68,68,0.2); color:#fca5a5; border-radius:10px; font-size:0.875rem; font-weight:500; cursor:pointer; transition:all 0.2s ease; display:flex; align-items:center; gap:0.5rem; }
+        .su-logout-btn:hover { background:rgba(239,68,68,0.2) !important; border-color:rgba(239,68,68,0.4) !important; color:#fecaca !important; }
+
+        /* Page header (modern) */
+        .su-page-header { background: var(--su-header); border-radius: var(--su-radius-lg); padding: 1.75rem 2rem; margin-bottom: 1.75rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; box-shadow: 0 4px 24px -4px rgba(0,0,0,0.15); position: relative; overflow: hidden; }
+        .su-page-header::before { content: ''; position: absolute; top: -40px; right: -40px; width: 160px; height: 160px; background: rgba(13,148,136,0.15); border-radius: 50%; }
+        .su-page-header::after { content: ''; position: absolute; bottom: -30px; right: 80px; width: 100px; height: 100px; background: rgba(13,148,136,0.08); border-radius: 50%; }
+        .su-page-header h1 { margin:0; font-size:1.5rem; font-weight:800; color:white; display:flex; align-items:center; gap:0.6rem; letter-spacing:-0.025em; font-family:var(--su-font); }
+        .su-page-header h1 i { color:#2dd4bf; font-size:1.4rem; }
+        .su-page-header p { margin:0.25rem 0 0; font-size:0.875rem; color:rgba(255,255,255,0.75); font-weight:500; }
+        .su-header-right { display:flex; align-items:center; gap:1rem; flex-wrap:wrap; }
+        .su-badge { background:rgba(13,148,136,0.25); border:1px solid rgba(45,212,191,0.4); color:#2dd4bf; border-radius:9999px; padding:0.35rem 0.9rem; font-size:0.7rem; font-weight:700; letter-spacing:0.06em; text-transform:uppercase; display:flex; align-items:center; gap:0.35rem; }
+        .su-header-time { text-align:right; }
+        .su-header-time .time-label { font-size:0.7rem; color:rgba(255,255,255,0.5); font-weight:500; }
+        .su-header-time .time-value { font-size:0.875rem; font-weight:600; color:white; }
+        .su-tour-btn { display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.5rem 1rem; border-radius: 10px; background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.2); color: white; font-size: 0.8rem; font-weight: 600; cursor: pointer; transition: background 0.2s, border-color 0.2s, transform 0.15s; }
+        .su-tour-btn:hover { background: rgba(13,148,136,0.35); border-color: #2dd4bf; color: white; transform: translateY(-1px); }
+
+        /* ── Modern Dashboard Styles ── */
+        .su-main { padding: 1.75rem; background: var(--su-bg); min-height: 100vh; font-family: var(--su-font); }
+
+        /* Stat cards */
+        .su-stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+            gap: 1rem;
+            margin-bottom: 1.75rem;
+        }
+        .su-stat-card {
+            background: var(--su-surface);
+            border-radius: var(--su-radius);
+            padding: 1.25rem 1.5rem;
+            box-shadow: var(--su-shadow);
+            border: 1px solid var(--su-border);
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        .su-stat-card:hover { transform: translateY(-2px); box-shadow: var(--su-shadow-hover); }
+        .su-stat-icon {
+            width: 52px; height: 52px;
+            border-radius: 14px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.35rem;
+            flex-shrink: 0;
+        }
+        .su-stat-info { flex: 1; min-width: 0; }
+        .su-stat-number { font-size: 1.75rem; font-weight: 800; line-height: 1; color: var(--su-text); letter-spacing: -0.025em; font-family: var(--su-font); }
+        .su-stat-label { font-size: 0.8rem; color: var(--su-muted); margin-top: 0.25rem; font-weight: 500; }
+        .su-stat-trend { font-size: 0.72rem; margin-top: 0.35rem; font-weight: 600; display: flex; align-items: center; gap: 0.25rem; }
+
+        /* Two-column grid */
+        .su-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem; margin-bottom: 1.25rem; }
+        .su-grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.25rem; margin-bottom: 1.25rem; }
+        @media (max-width: 900px) { .su-grid-2, .su-grid-3 { grid-template-columns: 1fr; } }
+
+        /* Panel card */
+        .su-panel {
+            background: var(--su-surface);
+            border-radius: var(--su-radius);
+            box-shadow: var(--su-shadow);
+            border: 1px solid var(--su-border);
+            overflow: hidden;
+        }
+        .su-panel-header {
+            padding: 1.15rem 1.5rem;
+            border-bottom: 1px solid rgba(0,0,0,0.05);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.75rem;
+        }
+        .su-panel-title { font-size: 0.95rem; font-weight: 700; color: var(--su-text); display: flex; align-items: center; gap: 0.5rem; font-family: var(--su-font); }
+        .su-panel-title i { color: var(--su-primary); font-size: 1.05rem; }
+        .su-panel-body { padding: 1.25rem 1.5rem; }
+        .su-panel-badge { font-size: 0.72rem; font-weight: 700; padding: 0.25rem 0.65rem; border-radius: 9999px; }
+
+        /* Quick-access nav cards */
+        .su-nav-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 0.9rem; }
+        .su-nav-card {
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            gap: 0.6rem; padding: 1.15rem 0.75rem;
+            border-radius: 14px; border: 1px solid var(--su-border);
+            background: var(--su-surface); text-decoration: none;
+            font-size: 0.8rem; font-weight: 600; color: var(--su-text);
+            transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s, background 0.2s; text-align: center;
+            box-shadow: var(--su-shadow);
+        }
+        .su-nav-card:hover { background: #f0fdfa; border-color: var(--su-primary); color: var(--su-primary-hover); transform: translateY(-2px); box-shadow: var(--su-shadow-hover); }
+        .su-nav-card i { font-size: 1.6rem; }
+
+        /* Alert buttons */
+        .su-alert-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.9rem; }
+        .su-alert-btn {
+            display: flex; align-items: center; gap: 0.75rem;
+            padding: 1rem 1.25rem; border: none; border-radius: 12px;
+            font-size: 0.875rem; font-weight: 700; color: white; cursor: pointer;
+            transition: transform 0.2s ease, box-shadow 0.2s ease; text-align: left;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+        }
+        .su-alert-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 20px -4px rgba(0,0,0,0.2); }
+        .su-alert-btn i { font-size: 1.4rem; flex-shrink: 0; }
+        .su-alert-btn .btn-label { font-size: 0.78rem; font-weight: 500; opacity: 0.92; margin-top: 0.1rem; }
+
+        /* Bar chart rows */
+        .su-bar-row { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.85rem; }
+        .su-bar-row:last-child { margin-bottom: 0; }
+        .su-bar-label { font-size: 0.8rem; color: var(--su-text); font-weight: 500; width: 90px; flex-shrink: 0; }
+        .su-bar-track { flex: 1; height: 8px; background: #f1f5f9; border-radius: 99px; overflow: hidden; }
+        .su-bar-fill { height: 100%; border-radius: 99px; transition: width 0.6s ease; }
+        .su-bar-pct { font-size: 0.78rem; font-weight: 700; color: var(--su-muted); width: 36px; text-align: right; flex-shrink: 0; }
+
+        /* Activity feed */
+        .su-activity-item {
+            display: flex; align-items: center; gap: 0.9rem;
+            padding: 0.7rem 0.9rem; margin-bottom: 0.5rem;
+            background: #f8fafc; border-radius: 12px;
+            border: 1px solid transparent;
+            transition: background 0.2s ease, border-color 0.2s;
+        }
+        .su-activity-item:last-child { margin-bottom: 0; }
+        .su-activity-item:hover { background: #f1f5f9; border-color: var(--su-border); }
+        .su-activity-icon {
+            width: 38px; height: 38px; border-radius: 10px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1rem; flex-shrink: 0;
+        }
+        .su-activity-body { flex: 1; min-width: 0; }
+        .su-activity-title { font-size: 0.83rem; font-weight: 700; color: var(--su-text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .su-activity-sub { font-size: 0.74rem; color: var(--su-muted); margin-top: 0.1rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .su-activity-meta { display: flex; flex-direction: column; align-items: flex-end; gap: 0.25rem; flex-shrink: 0; }
+        .su-activity-time { font-size: 0.71rem; color: var(--su-muted); font-weight: 500; }
+        .su-activity-badge { font-size: 0.68rem; font-weight: 700; padding: 0.15rem 0.5rem; border-radius: 9999px; text-transform: uppercase; letter-spacing: 0.04em; }
+
+        /* Active alerts */
+        .su-active-alert { display: flex; align-items: center; gap: 0.75rem; padding: 0.75rem 1rem; background: #fef2f2; border: 1px solid #fecaca; border-radius: 12px; margin-bottom: 0.6rem; font-size: 0.82rem; color: #991b1b; transition: background 0.2s; }
+        .su-active-alert:hover { background: #fee2e2; }
+        .su-active-alert i { color: #ef4444; font-size: 1rem; flex-shrink: 0; }
+        .su-active-alert .alert-dismiss { margin-left: auto; background: none; border: none; color: #9ca3af; cursor: pointer; font-size: 1rem; padding: 0; }
+        .su-empty-state { text-align: center; padding: 1.75rem; color: var(--su-muted); font-size: 0.875rem; font-weight: 500; }
+        .su-empty-state i { font-size: 2rem; display: block; margin-bottom: 0.5rem; opacity: 0.7; }
     </style>
     <script src="https://cdn.jsdelivr.net/npm/supabase@2"></script>
     <script src="js/supabase.js"></script>
+    
 </head>
 <body>
 <div class="dashboard-container">
@@ -259,11 +437,12 @@
         </div>
         <nav class="sidebar-nav">
             <a href="super-user.html" class="nav-item active"><i class="bi bi-house"></i> Dashboard</a>
-            <a href="super-user-reports.html" class="nav-item"><i class="bi bi-clipboard-data"></i> Recent Reports</a>
+            <a href="super-user-reports.html" class="nav-item"><i class="bi bi-clipboard-data"></i> Emergency Reports</a>
             <a href="super-user-early-warning.html" class="nav-item"><i class="bi bi-shield-exclamation"></i> Early Warning</a>
             <a href="super-user-map.html" class="nav-item"><i class="bi bi-map"></i> Map View</a>
-            <a href="super-user-evacuation.html" class="nav-item"><i class="bi bi-shield-check"></i> Evacuation Guide</a>
             <a href="super-user-announcements.html" class="nav-item"><i class="bi bi-megaphone-fill"></i> Announcements</a>
+            <a href="readiness-safety-notice.html" class="nav-item"><i class="bi bi-shield-check"></i> Readiness & Safety</a>
+            <a href="super-user-sos-alerts.html" class="nav-item"><i class="bi bi-exclamation-octagon-fill"></i> SOS Alerts</a>
         </nav>
         <div class="sidebar-footer">
             <div class="user-info-card">
@@ -279,92 +458,200 @@
         </div>
     </div>
     <!-- Main Content -->
-    <div class="main-content">
-        <!-- Page Header -->
-        <div class="su-content-header">
-            <div>
-                <h1><i class="bi bi-shield-check"></i> Super User Dashboard</h1>
-                <p>System-wide control and citizen communication</p>
-            </div>
-            <div style="display:flex;align-items:center;gap:1rem;flex-wrap:wrap;">
-                <span style="background:rgba(16,185,129,0.15);border:1px solid rgba(16,185,129,0.35);color:#34d399;border-radius:9999px;padding:0.3rem 0.85rem;font-size:0.75rem;font-weight:700;letter-spacing:0.05em;text-transform:uppercase;"><i class="bi bi-shield-star-fill"></i> Super User</span>
-                <div style="text-align:right;">
-                    <div style="font-size:0.75rem;color:rgba(255,255,255,0.7);">Logged in as</div>
-                    <div style="font-weight:600;color:white;font-size:0.875rem;" id="userEmail">Super User</div>
-                </div>
-            </div>
-        </div>
-        <!-- Quick Stats -->
-        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;margin-bottom:1.5rem;">
-            <div style="background:white;border-radius:12px;padding:1.25rem;box-shadow:0 2px 8px rgba(0,0,0,0.07);border:1px solid #e5e7eb;text-align:center;">
-                <div style="font-size:2rem;font-weight:700;color:#111827;" id="totalCitizens">0</div>
-                <div style="font-size:0.875rem;color:#6b7280;margin-top:0.35rem;">Total Citizens</div>
-            </div>
-            <div style="background:white;border-radius:12px;padding:1.25rem;box-shadow:0 2px 8px rgba(0,0,0,0.07);border:1px solid #e5e7eb;text-align:center;">
-                <div style="font-size:2rem;font-weight:700;color:#ef4444;" id="activeReports">0</div>
-                <div style="font-size:0.875rem;color:#6b7280;margin-top:0.35rem;">Active Reports</div>
-            </div>
-            <div style="background:white;border-radius:12px;padding:1.25rem;box-shadow:0 2px 8px rgba(0,0,0,0.07);border:1px solid #e5e7eb;text-align:center;">
-                <div style="font-size:2rem;font-weight:700;color:#3b82f6;" id="totalUsers">0</div>
-                <div style="font-size:0.875rem;color:#6b7280;margin-top:0.35rem;">Total Users</div>
-            </div>
-        </div>
-        <div style="padding: 0 0 2rem;">
-            <!-- Readiness Synopsis (Prepare / be ready / inspect) -->
-            <div class="broadcast-card" style="margin-bottom: 1.5rem; background: linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 100%); border-left: 4px solid #059669;">
-                <h2 style="margin: 0 0 0.5rem 0; color: #047857; display: flex; align-items: center; gap: 0.5rem;">
-                    <i class="bi bi-shield-check"></i> Readiness Notice
-                </h2>
-                <p style="margin: 0; color: #374151; font-size: 0.95rem; line-height: 1.5;" id="superUserResponderSynopsis">Loading...</p>
-            </div>
-            <!-- Safety Notice (Citizen) — editable; only admin/super_user can disable showing -->
-            <div class="broadcast-card" style="margin-bottom: 1.5rem; background: linear-gradient(135deg, #eff6ff 0%, #f0f9ff 100%); border-left: 4px solid #3b82f6;">
-                <h2 style="margin: 0 0 0.5rem 0; color: #1e40af; display: flex; align-items: center; gap: 0.5rem;">
-                    <i class="bi bi-info-circle"></i> Safety Notice (Citizen)
-                </h2>
-                <p style="margin: 0 0 1rem 0; color: #6b7280; font-size: 0.875rem;">Shown on citizen home. When disabled, the notice is hidden for all users.</p>
-                <div style="margin-bottom: 1rem;">
-                    <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; font-weight: 500; color: #374151;">
-                        <input type="checkbox" id="safetyNoticeEnabled" checked>
-                        Show safety notice to citizens
-                    </label>
-                </div>
-                <textarea id="safetyNoticeMessage" rows="3" placeholder="Leave empty to use auto-generated message from recent reports." style="width:100%;padding:0.75rem;border:1px solid #e5e7eb;border-radius:8px;font-size:0.9rem;resize:vertical;"></textarea>
-                <div style="margin-top: 0.75rem;">
-                    <button type="button" class="btn btn-primary" id="saveSafetyNoticeBtn" onclick="saveSafetyNotice()">Save Safety Notice</button>
-                    <span id="safetyNoticeStatus" style="margin-left:0.75rem;font-size:0.875rem;color:#6b7280;"></span>
-                </div>
-            </div>
-            <!-- Quick One-Tap Alerts: FIRST thing on the dashboard -->
-            <div class="broadcast-row" style="margin-bottom: 1.5rem;">
-                <div class="broadcast-card broadcast-quick" style="flex: 1 1 100%;">
-                    <h2 style="margin: 0 0 1rem 0; color: #111827; display: flex; align-items: center; gap: 0.75rem;">
-                        <i class="bi bi-lightning-charge-fill" style="font-size: 2rem; color: #f59e0b;"></i>
-                        Quick One-Tap Alerts
-                    </h2>
-                    <p style="color: #6b7280; margin-bottom: 1.25rem;">
-                        Send predefined emergency alerts and important announcements with a single tap, and monitor which critical alerts are still active.
-                    </p>
-                    
-                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 0.75rem;">
-                        <button type="button" class="btn btn-primary" style="background: linear-gradient(135deg, #ef4444 0%, #b91c1c 100%);" onclick="sendQuickNotification('fire')">
-                            <i class="bi bi-fire"></i> Fire Emergency Alert
-                        </button>
-                        <button type="button" class="btn btn-primary" style="background: linear-gradient(135deg, #f97316 0%, #b91c1c 100%);" onclick="sendQuickNotification('earthquake')">
-                            <i class="bi bi-exclamation-triangle-fill"></i> Earthquake Safety Alert
-                        </button>
-                    </div>
+    <div class="main-content" style="background:#f1f5f9;overflow-y:auto;">
+    <div class="su-main">
 
-                    <div style="margin-top:1.5rem;padding-top:1rem;border-top:1px solid #e5e7eb;">
-                        <h3 style="margin:0 0 0.5rem 0;font-size:0.9rem;font-weight:600;color:#374151;display:flex;align-items:center;gap:0.5rem;">
-                            <i class="bi bi-activity" style="color:#ef4444;"></i>
-                            Active Critical Alerts
-                        </h3>
-                        <div id="activeAlertsContainer" style="font-size:0.85rem;color:#4b5563;"></div>
+        <!-- Page Header -->
+        <div class="su-page-header">
+            <div>
+                <h1><i class="bi bi-shield-star-fill"></i> Super User Dashboard</h1>
+                <p>System-wide control, monitoring &amp; citizen communication</p>
+            </div>
+            <div class="su-header-right">
+                <button type="button" id="su-take-tour-btn" class="su-tour-btn" title="Take a guided tour">
+                    <i class="bi bi-question-circle-fill"></i> Take a tour
+                </button>
+                <span class="su-badge"><i class="bi bi-shield-star-fill"></i> Super User</span>
+                <div class="su-header-time">
+                    <div class="time-label">Logged in as</div>
+                    <div class="time-value" id="userEmail">Super User</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Stat Cards -->
+        <div class="su-stats-grid">
+            <div class="su-stat-card">
+                <div class="su-stat-icon" style="background:#ecfdf5;color:#10b981;"><i class="bi bi-people-fill"></i></div>
+                <div class="su-stat-info">
+                    <div class="su-stat-number" id="totalCitizens">0</div>
+                    <div class="su-stat-label">Total Citizens</div>
+                    <div class="su-stat-trend" style="color:#10b981;"><i class="bi bi-arrow-up-short"></i> Registered</div>
+                </div>
+            </div>
+            <div class="su-stat-card">
+                <div class="su-stat-icon" style="background:#fef2f2;color:#ef4444;"><i class="bi bi-exclamation-triangle-fill"></i></div>
+                <div class="su-stat-info">
+                    <div class="su-stat-number" id="activeReports">0</div>
+                    <div class="su-stat-label">Active Reports</div>
+                    <div class="su-stat-trend" style="color:#ef4444;" id="activeReportsTrend"><i class="bi bi-circle-fill" style="font-size:0.5rem;"></i> Live</div>
+                </div>
+            </div>
+            <div class="su-stat-card">
+                <div class="su-stat-icon" style="background:#eff6ff;color:#3b82f6;"><i class="bi bi-person-badge-fill"></i></div>
+                <div class="su-stat-info">
+                    <div class="su-stat-number" id="totalUsers">0</div>
+                    <div class="su-stat-label">Total Users</div>
+                    <div class="su-stat-trend" style="color:#3b82f6;"><i class="bi bi-people"></i> All roles</div>
+                </div>
+            </div>
+            <div class="su-stat-card">
+                <div class="su-stat-icon" style="background:#ecfdf5;color:#10b981;"><i class="bi bi-check-circle-fill"></i></div>
+                <div class="su-stat-info">
+                    <div class="su-stat-number" id="completedReports">0</div>
+                    <div class="su-stat-label">Total Completed Reports</div>
+                    <div class="su-stat-trend" style="color:#10b981;"><i class="bi bi-shield-check"></i> Resolved</div>
+                </div>
+            </div>
+            <div class="su-stat-card">
+                <div class="su-stat-icon" style="background:#f5f3ff;color:#8b5cf6;"><i class="bi bi-bell-fill"></i></div>
+                <div class="su-stat-info">
+                    <div class="su-stat-number" id="totalAlerts">0</div>
+                    <div class="su-stat-label">Total Notifications</div>
+                    <div class="su-stat-trend" style="color:#8b5cf6;"><i class="bi bi-megaphone"></i> Total</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Access Nav -->
+        <div class="su-panel" style="margin-bottom:1.25rem;">
+            <div class="su-panel-header">
+                <div class="su-panel-title"><i class="bi bi-grid-fill"></i> Quick Access</div>
+                <span class="su-panel-badge" style="background:#ecfdf5;color:#059669;">Navigation</span>
+            </div>
+            <div class="su-panel-body">
+                <div class="su-nav-grid">
+                    <a href="super-user-reports.html" class="su-nav-card" style="color:#3b82f6;border-color:#dbeafe;background:#eff6ff;">
+                        <i class="bi bi-clipboard-data-fill" style="color:#3b82f6;"></i>
+                        Recent Reports
+                    </a>
+                    <a href="super-user-early-warning.html" class="su-nav-card" style="color:#dc2626;border-color:#fecaca;background:#fef2f2;">
+                        <i class="bi bi-shield-exclamation" style="color:#dc2626;"></i>
+                        Early Warning
+                    </a>
+                    <a href="super-user-map.html" class="su-nav-card" style="color:#0891b2;border-color:#bae6fd;background:#f0f9ff;">
+                        <i class="bi bi-map-fill" style="color:#0891b2;"></i>
+                        Map View
+                    </a>
+                    <a href="super-user-announcements.html" class="su-nav-card" style="color:#d97706;border-color:#fde68a;background:#fffbeb;">
+                        <i class="bi bi-megaphone-fill" style="color:#d97706;"></i>
+                        Announcements
+                    </a>
+                    <a href="readiness-safety-notice.html" class="su-nav-card" style="color:#059669;border-color:#a7f3d0;background:#ecfdf5;">
+                        <i class="bi bi-shield-check" style="color:#059669;"></i>
+                        Readiness &amp; Safety
+                    </a>
+                    <a href="super-user-sos-alerts.html" class="su-nav-card" style="color:#9333ea;border-color:#e9d5ff;background:#faf5ff;">
+                        <i class="bi bi-exclamation-octagon-fill" style="color:#9333ea;"></i>
+                        SOS Alerts
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Row: Alerts + Active Alerts -->
+        <div class="su-grid-2">
+            <!-- Quick One-Tap Alerts -->
+            <div class="su-panel" id="su-quick-alerts-panel">
+                <div class="su-panel-header">
+                    <div class="su-panel-title"><i class="bi bi-lightning-charge-fill" style="color:#f59e0b;"></i> Quick Alerts</div>
+                    <span class="su-panel-badge" style="background:#fef3c7;color:#b45309;">One-Tap</span>
+                </div>
+                <div class="su-panel-body">
+                    <p style="font-size:0.82rem;color:#6b7280;margin:0 0 1rem;">Send critical emergency alerts to all users instantly.</p>
+                    <div class="su-alert-grid">
+                        <button class="su-alert-btn" style="background:linear-gradient(135deg,#ef4444,#b91c1c);" onclick="sendQuickNotification('fire')">
+                            <i class="bi bi-fire"></i>
+                            <div><div>Fire Alert</div><div class="btn-label">Emergency broadcast</div></div>
+                        </button>
+                        <button class="su-alert-btn" style="background:linear-gradient(135deg,#f97316,#c2410c);" onclick="sendQuickNotification('earthquake')">
+                            <i class="bi bi-exclamation-triangle-fill"></i>
+                            <div><div>Earthquake</div><div class="btn-label">Safety alert</div></div>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Active Critical Alerts -->
+            <div class="su-panel">
+                <div class="su-panel-header">
+                    <div class="su-panel-title"><i class="bi bi-activity" style="color:#ef4444;"></i> Active Critical Alerts</div>
+                    <span class="su-panel-badge" style="background:#fef2f2;color:#dc2626;" id="activeAlertsBadge">Live</span>
+                </div>
+                <div class="su-panel-body" id="activeAlertsContainer" style="max-height:260px;overflow-y:auto;">
+                    <div class="su-empty-state">
+                        <i class="bi bi-shield-check" style="color:#10b981;"></i>
+                        No active critical alerts
                     </div>
                 </div>
             </div>
         </div>
+
+        <!-- Row: Emergency Breakdown + Recent Activity -->
+        <div class="su-grid-2">
+            <!-- Emergency Type Breakdown -->
+            <div class="su-panel">
+                <div class="su-panel-header">
+                    <div class="su-panel-title"><i class="bi bi-bar-chart-fill"></i> Emergency Breakdown</div>
+                    <span class="su-panel-badge" style="background:#eff6ff;color:#2563eb;">By type</span>
+                </div>
+                <div class="su-panel-body" id="emergencyBreakdownPanel">
+                    <div class="su-bar-row">
+                        <div class="su-bar-label">Fire</div>
+                        <div class="su-bar-track"><div class="su-bar-fill" id="bar-fire" style="width:0%;background:linear-gradient(90deg,#ef4444,#dc2626);"></div></div>
+                        <div class="su-bar-pct" id="pct-fire">0%</div>
+                    </div>
+                    <div class="su-bar-row">
+                        <div class="su-bar-label">Flood</div>
+                        <div class="su-bar-track"><div class="su-bar-fill" id="bar-flood" style="width:0%;background:linear-gradient(90deg,#3b82f6,#2563eb);"></div></div>
+                        <div class="su-bar-pct" id="pct-flood">0%</div>
+                    </div>
+                    <div class="su-bar-row">
+                        <div class="su-bar-label">Medical</div>
+                        <div class="su-bar-track"><div class="su-bar-fill" id="bar-medical" style="width:0%;background:linear-gradient(90deg,#10b981,#059669);"></div></div>
+                        <div class="su-bar-pct" id="pct-medical">0%</div>
+                    </div>
+                    <div class="su-bar-row">
+                        <div class="su-bar-label">Accident</div>
+                        <div class="su-bar-track"><div class="su-bar-fill" id="bar-accident" style="width:0%;background:linear-gradient(90deg,#6b7280,#4b5563);"></div></div>
+                        <div class="su-bar-pct" id="pct-accident">0%</div>
+                    </div>
+                    <div class="su-bar-row">
+                        <div class="su-bar-label">Other</div>
+                        <div class="su-bar-track"><div class="su-bar-fill" id="bar-other" style="width:0%;background:linear-gradient(90deg,#8b5cf6,#7c3aed);"></div></div>
+                        <div class="su-bar-pct" id="pct-other">0%</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recent Activity Feed -->
+            <div class="su-panel">
+                <div class="su-panel-header">
+                    <div class="su-panel-title"><i class="bi bi-clock-history"></i> Recent Activity</div>
+                    <a href="super-user-reports.html" style="font-size:0.75rem;font-weight:600;color:#7c3aed;text-decoration:none;display:flex;align-items:center;gap:0.25rem;">
+                        View All <i class="bi bi-arrow-right"></i>
+                    </a>
+                </div>
+                <div class="su-panel-body" style="max-height:280px;overflow-y:auto;" id="recentActivityFeed">
+                    <div class="su-empty-state">
+                        <i class="bi bi-hourglass-split"></i>
+                        Loading activity…
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div><!-- end .su-main -->
     </div><!-- end .main-content -->
 </div><!-- end .dashboard-container -->
 
@@ -410,8 +697,7 @@
                 // Load stats
                 await loadStats();
                 await loadActiveAlerts();
-                await loadSafetyNotice();
-                
+
                 // Set up real-time notifications
                 await setupRealTimeNotifications();
                 
@@ -524,74 +810,118 @@
         // Load statistics
         async function loadStats() {
             try {
-                // Get all users
-                const { data: users, error: usersError } = await window.emergencySystem.supabase.functions.invoke('get-users', {
-                    body: {}
-                });
-                
+                // Users
+                const { data: users, error: usersError } = await window.emergencySystem.supabase.functions.invoke('get-users', { body: {} });
                 if (!usersError && users?.users) {
                     const totalUsers = users.users.length;
-                    const citizens = users.users.filter(u => 
-                        (u.role || u.user_metadata?.role || 'citizen') === 'citizen'
-                    ).length;
-                    
+                    const citizens = users.users.filter(u => (u.role || u.user_metadata?.role || 'citizen') === 'citizen').length;
                     document.getElementById('totalUsers').textContent = totalUsers;
                     document.getElementById('totalCitizens').textContent = citizens;
                 }
-                
-                // Get active reports (for stats only) - exclude false alarm and non_emergency
+
+                // Reports
                 const reports = await window.emergencySystem.getReports();
                 if (reports) {
-                    // Filter out non-emergency reports - only count actual emergencies
                     const emergencyReports = reports.filter(r => {
-                        const effectiveType = (r.corrected_type || r.type || '').toLowerCase().trim();
-                        return effectiveType !== 'non_emergency' && effectiveType !== 'false_alarm';
+                        const t = (r.corrected_type || r.type || '').toLowerCase().trim();
+                        return t !== 'non_emergency' && t !== 'false_alarm';
                     });
-                    const activeReports = emergencyReports.filter(r => r.status !== 'resolved' && r.status !== 'closed');
-                    document.getElementById('activeReports').textContent = activeReports.length;
-                    // Readiness synopsis (prepare / be ready / inspect)
-                    try {
-                        const synopsis = window.emergencySystem.getSynopsisForRole(reports, 'super_user');
-                        const el = document.getElementById('superUserResponderSynopsis');
-                        if (el) el.textContent = synopsis.responderMessage;
-                    } catch (e) {
-                        const el = document.getElementById('superUserResponderSynopsis');
-                        if (el) el.textContent = 'Keep equipment inspected and stay ready for anything.';
+                    const active = emergencyReports.filter(r => r.status !== 'resolved' && r.status !== 'closed');
+                    document.getElementById('activeReports').textContent = active.length;
+
+                    // Emergency breakdown bars
+                    const total = emergencyReports.length || 1;
+                    const typeCounts = { fire: 0, flood: 0, medical: 0, accident: 0, other: 0 };
+                    emergencyReports.forEach(r => {
+                        const t = (r.corrected_type || r.type || '').toLowerCase().trim();
+                        if (t.includes('fire'))           typeCounts.fire++;
+                        else if (t.includes('flood'))     typeCounts.flood++;
+                        else if (t.includes('medical') || t.includes('health')) typeCounts.medical++;
+                        else if (t.includes('accident') || t.includes('vehic')) typeCounts.accident++;
+                        else                              typeCounts.other++;
+                    });
+                    Object.entries(typeCounts).forEach(([key, count]) => {
+                        const pct = Math.round((count / total) * 100);
+                        const bar = document.getElementById('bar-' + key);
+                        const lbl = document.getElementById('pct-' + key);
+                        if (bar) bar.style.width = pct + '%';
+                        if (lbl) lbl.textContent  = pct + '%';
+                    });
+
+                    // Recent activity feed
+                    const sorted = [...reports].sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0)).slice(0, 10);
+                    const feedEl = document.getElementById('recentActivityFeed');
+                    if (feedEl) {
+                        if (sorted.length === 0) {
+                            feedEl.innerHTML = '<div class="su-empty-state"><i class="bi bi-inbox"></i>No recent activity</div>';
+                        } else {
+                            feedEl.innerHTML = sorted.map(r => {
+                                const type = (r.corrected_type || r.type || 'Unknown');
+                                const status = r.status || 'pending';
+                                const isResolved = status === 'resolved' || status === 'closed';
+                                const isActive   = status === 'active';
+                                const iconBg   = isResolved ? '#ecfdf5' : isActive ? '#fef2f2' : '#fefce8';
+                                const iconColor = isResolved ? '#10b981' : isActive ? '#ef4444' : '#f59e0b';
+                                const icon      = isResolved ? 'bi-check-circle-fill'
+                                    : isActive ? 'bi-exclamation-circle-fill' : 'bi-hourglass-split';
+                                const badgeBg   = isResolved ? '#ecfdf5' : isActive ? '#fef2f2' : '#fefce8';
+                                const badgeColor = isResolved ? '#059669' : isActive ? '#dc2626' : '#b45309';
+                                const typeIcon  = type.toLowerCase().includes('fire') ? 'bi-fire'
+                                    : type.toLowerCase().includes('flood') ? 'bi-droplet-fill'
+                                    : type.toLowerCase().includes('medical') ? 'bi-heart-pulse-fill'
+                                    : type.toLowerCase().includes('accident') ? 'bi-car-front-fill'
+                                    : 'bi-exclamation-triangle-fill';
+                                return `<div class="su-activity-item">
+                                    <div class="su-activity-icon" style="background:${iconBg};color:${iconColor};">
+                                        <i class="bi ${typeIcon}"></i>
+                                    </div>
+                                    <div class="su-activity-body">
+                                        <div class="su-activity-title">${type}</div>
+                                        <div class="su-activity-sub"><i class="bi bi-geo-alt" style="font-size:0.7rem;"></i> ${r.location || 'Unknown location'}</div>
+                                    </div>
+                                    <div class="su-activity-meta">
+                                        <span class="su-activity-time">${timeAgo(r.created_at)}</span>
+                                        <span class="su-activity-badge" style="background:${badgeBg};color:${badgeColor};">${status}</span>
+                                    </div>
+                                </div>`;
+                            }).join('');
+                        }
                     }
                 }
+
+                // Total Completed Reports (resolved or closed)
+                try {
+                    const { count: cCount, error: cErr } = await window.emergencySystem.supabase
+                        .from('reports')
+                        .select('*', { count: 'exact', head: true })
+                        .in('status', ['resolved', 'closed', 'completed']);
+                    const cEl = document.getElementById('completedReports');
+                    if (cEl && !cErr) cEl.textContent = cCount ?? 0;
+                } catch (_) {}
+
+                // Alerts Sent count (announcements)
+                try {
+                    const { count: aCount, error: aErr } = await window.emergencySystem.supabase
+                        .from('announcements')
+                        .select('*', { count: 'exact', head: true });
+                    const aEl = document.getElementById('totalAlerts');
+                    if (aEl && !aErr) aEl.textContent = aCount ?? 0;
+                } catch (_) {}
+
             } catch (error) {
                 console.error('Error loading stats:', error);
             }
         }
 
-        async function loadSafetyNotice() {
-            try {
-                const notice = await window.emergencySystem.getSafetyNotice();
-                const enabledEl = document.getElementById('safetyNoticeEnabled');
-                const messageEl = document.getElementById('safetyNoticeMessage');
-                if (enabledEl) enabledEl.checked = notice ? notice.enabled !== false : true;
-                if (messageEl) messageEl.value = notice?.message || '';
-            } catch (e) {
-                console.warn('loadSafetyNotice failed:', e);
-            }
-        }
-
-        async function saveSafetyNotice() {
-            const btn = document.getElementById('saveSafetyNoticeBtn');
-            const statusEl = document.getElementById('safetyNoticeStatus');
-            const message = (document.getElementById('safetyNoticeMessage')?.value || '').trim();
-            const enabled = document.getElementById('safetyNoticeEnabled')?.checked !== false;
-            if (btn) btn.disabled = true;
-            if (statusEl) statusEl.textContent = 'Saving...';
-            try {
-                await window.emergencySystem.updateSafetyNotice({ message: message || null, enabled });
-                if (statusEl) statusEl.textContent = 'Saved.';
-                setTimeout(() => { if (statusEl) statusEl.textContent = ''; }, 3000);
-            } catch (e) {
-                if (statusEl) statusEl.textContent = 'Failed: ' + (e?.message || e);
-            } finally {
-                if (btn) btn.disabled = false;
-            }
+        function timeAgo(dateStr) {
+            if (!dateStr) return '—';
+            const diff = Date.now() - new Date(dateStr).getTime();
+            const m = Math.floor(diff / 60000);
+            if (m < 1)  return 'just now';
+            if (m < 60) return m + 'm ago';
+            const h = Math.floor(m / 60);
+            if (h < 24) return h + 'h ago';
+            return Math.floor(h / 24) + 'd ago';
         }
 
         // Common helper to create an announcement that is visible
@@ -730,33 +1060,24 @@
 
                 const critical = (data || []).filter(a => a.type === 'emergency' || a.priority === 'critical');
 
+                const badge = document.getElementById('activeAlertsBadge');
                 if (!critical.length) {
-                    container.innerHTML = '<p style="color:#6b7280;font-size:0.9rem;">No critical alerts at this time.</p>';
+                    container.innerHTML = '<div class="su-empty-state"><i class="bi bi-shield-check" style="color:#10b981;"></i>No active critical alerts</div>';
+                    if (badge) { badge.textContent = 'Clear'; badge.style.background = '#ecfdf5'; badge.style.color = '#059669'; }
                     return;
                 }
+                if (badge) { badge.textContent = critical.length + ' active'; badge.style.background = '#fef2f2'; badge.style.color = '#dc2626'; }
 
                 container.innerHTML = critical.map(a => `
-                    <div data-alert-id="${a.id}" style="display:flex;justify-content:space-between;align-items:flex-start;padding:0.5rem 0;border-bottom:1px solid #e5e7eb;gap:0.75rem;">
+                    <div class="su-active-alert" data-alert-id="${a.id}">
+                        <i class="bi bi-exclamation-circle-fill"></i>
                         <div style="flex:1;min-width:0;">
-                            <div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.25rem;">
-                                <span style="font-size:1.2rem;">${getAnnouncementIcon(a.type)}</span>
-                                <strong style="font-size:0.9rem;color:#111827;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${a.title}</strong>
-                            </div>
-                            <div style="font-size:0.75rem;color:#6b7280;">
-                                Started: ${new Date(a.created_at).toLocaleString()}
-                                ${a.status && a.status !== 'active' ? `<span style="margin-left:0.5rem;padding:0.1rem 0.5rem;border-radius:9999px;background:#e5e7eb;color:#4b5563;font-size:0.7rem;text-transform:uppercase;">${a.status === 'expired' ? 'EXPIRED' : 'RESOLVED'}</span>` : ''}
-                            </div>
+                            <div style="font-weight:700;font-size:0.85rem;">${a.title}</div>
+                            <div style="font-size:0.72rem;color:#b91c1c;margin-top:0.1rem;">${timeAgo(a.created_at)}</div>
                         </div>
                         ${a.status === 'active'
-                            ? `<button
-                                onclick="resolveAlert('${a.id}')"
-                                style="white-space:nowrap;font-size:0.75rem;padding:0.35rem 0.75rem;border-radius:9999px;border:none;background:#16a34a;color:white;cursor:pointer;">
-                                Mark as Resolved
-                               </button>`
-                            : `<span style="white-space:nowrap;font-size:0.75rem;padding:0.35rem 0.75rem;border-radius:9999px;border:1px solid #d1d5db;background:#f9fafb;color:#6b7280;">
-                                Done
-                               </span>`
-                        }
+                            ? `<button onclick="resolveAlert('${a.id}')" style="font-size:0.72rem;padding:0.25rem 0.65rem;border-radius:9999px;border:none;background:#16a34a;color:white;cursor:pointer;white-space:nowrap;">Resolve</button>`
+                            : `<span style="font-size:0.72rem;color:#6b7280;">Done</span>`}
                     </div>
                 `).join('');
             } catch (e) {
@@ -812,6 +1133,168 @@
             }
         }
         
+        // ── Custom tour (no external package) ──
+        var SU_TOUR_STEPS = [
+            { sel: '.su-page-header', title: 'Super User Dashboard', desc: 'Your central hub for system-wide control, monitoring, and citizen communication. Use this dashboard to view stats, send alerts, and manage emergency response.' },
+            { sel: '.su-stats-grid', title: 'Key metrics', desc: 'Total citizens, active reports, users, completed reports, and notifications at a glance.' },
+            { sel: '.su-nav-grid', title: 'Quick Access', desc: 'Shortcuts to Recent Reports, Early Warning, Map View, Announcements, Readiness & Safety, and SOS Alerts.' },
+            { sel: '#su-quick-alerts-panel', title: 'Quick Alerts', desc: 'Send critical emergency alerts (e.g. Fire, Earthquake) to all users with one tap.' },
+            { sel: '#activeAlertsContainer', title: 'Active critical alerts', desc: 'See and resolve active emergency announcements here.' },
+            { sel: '#emergencyBreakdownPanel', title: 'Emergency breakdown', desc: 'Distribution of reports by type: Fire, Flood, Medical, Accident, and Other.' },
+            { sel: '#recentActivityFeed', title: 'Recent activity', desc: 'Latest reports and updates. Click "View All" to go to the full reports list.' },
+            { sel: '.sidebar-nav', title: 'Navigation', desc: 'Use the sidebar to go to Emergency Reports, Early Warning, Map View, Announcements, Readiness & Safety, and SOS Alerts. Start with Emergency Reports to see and manage reports.' }
+        ];
+        var suTourIndex = 0;
+        var suTourOverlay = null;
+        var suTourPopover = null;
+        var suTourHighlightRing = null;
+        var suTourSpotTop = null;
+        var suTourSpotLeft = null;
+        var suTourSpotRight = null;
+        var suTourSpotBottom = null;
+        var suTourResizeHandler = null;
+        var PAD = 10;
+        var OVERLAP = 2;
+
+        function suTourPositionSpotlight(el) {
+            var r = el && el.getBoundingClientRect ? el.getBoundingClientRect() : null;
+            var vw = window.innerWidth;
+            var vh = window.innerHeight;
+            var left = r ? (r.left - PAD) : 0;
+            var top = r ? (r.top - PAD) : 0;
+            var w = r ? (r.width + PAD * 2) : 0;
+            var h = r ? (r.height + PAD * 2) : 0;
+            if (suTourSpotTop) {
+                suTourSpotTop.style.left = '0'; suTourSpotTop.style.top = '0'; suTourSpotTop.style.right = '0';
+                suTourSpotTop.style.height = Math.max(0, top + OVERLAP) + 'px';
+            }
+            if (suTourSpotBottom) {
+                suTourSpotBottom.style.left = '0'; suTourSpotBottom.style.right = '0'; suTourSpotBottom.style.bottom = '0';
+                suTourSpotBottom.style.top = (top + h - OVERLAP) + 'px';
+                suTourSpotBottom.style.height = Math.max(0, vh - (top + h) + OVERLAP) + 'px';
+            }
+            if (suTourSpotLeft) {
+                suTourSpotLeft.style.left = '0'; suTourSpotLeft.style.top = (top + OVERLAP) + 'px';
+                suTourSpotLeft.style.width = Math.max(0, left + OVERLAP) + 'px';
+                suTourSpotLeft.style.height = Math.max(0, h - OVERLAP * 2) + 'px';
+            }
+            if (suTourSpotRight) {
+                suTourSpotRight.style.right = '0'; suTourSpotRight.style.top = (top + OVERLAP) + 'px';
+                suTourSpotRight.style.width = Math.max(0, vw - (left + w) + OVERLAP) + 'px';
+                suTourSpotRight.style.height = Math.max(0, h - OVERLAP * 2) + 'px';
+            }
+        }
+
+        function suTourPositionRing(el) {
+            if (!suTourHighlightRing) return;
+            if (!el || !el.getBoundingClientRect) {
+                suTourHighlightRing.style.display = 'none';
+                return;
+            }
+            var r = el.getBoundingClientRect();
+            suTourHighlightRing.style.display = 'block';
+            suTourHighlightRing.style.left = (r.left - PAD) + 'px';
+            suTourHighlightRing.style.top = (r.top - PAD) + 'px';
+            suTourHighlightRing.style.width = (r.width + PAD * 2) + 'px';
+            suTourHighlightRing.style.height = (r.height + PAD * 2) + 'px';
+        }
+
+        function suTourClose() {
+            if (suTourHighlightRing && suTourHighlightRing.parentNode) suTourHighlightRing.parentNode.removeChild(suTourHighlightRing);
+            if (suTourResizeHandler) {
+                window.removeEventListener('resize', suTourResizeHandler);
+                window.removeEventListener('scroll', suTourResizeHandler, true);
+            }
+            if (suTourOverlay && suTourOverlay.parentNode) suTourOverlay.parentNode.removeChild(suTourOverlay);
+            if (suTourPopover && suTourPopover.parentNode) suTourPopover.parentNode.removeChild(suTourPopover);
+            suTourHighlightRing = null;
+            suTourSpotTop = suTourSpotLeft = suTourSpotRight = suTourSpotBottom = null;
+            suTourOverlay = null;
+            suTourPopover = null;
+            suTourResizeHandler = null;
+            suTourIndex = 0;
+        }
+
+        function suTourShowStep(i) {
+            if (i < 0 || i >= SU_TOUR_STEPS.length) { suTourClose(); return; }
+            suTourIndex = i;
+            var step = SU_TOUR_STEPS[i];
+            var el = document.querySelector(step.sel);
+            if (el) {
+                el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+            if (!suTourPopover) return;
+            suTourPopover.querySelector('.su-tour-title').textContent = step.title;
+            suTourPopover.querySelector('.su-tour-desc').textContent = step.desc;
+            suTourPopover.querySelector('.su-tour-progress').textContent = (i + 1) + ' of ' + SU_TOUR_STEPS.length;
+            suTourPopover.querySelector('.su-tour-prev').disabled = i === 0;
+            suTourPopover.querySelector('.su-tour-next').textContent = i === SU_TOUR_STEPS.length - 1 ? 'Done' : 'Next →';
+            function updateSpotlight() {
+                suTourPositionSpotlight(el);
+                if (suTourHighlightRing) {
+                    if (el) {
+                        suTourPositionRing(el);
+                    } else {
+                        suTourHighlightRing.style.display = 'none';
+                    }
+                }
+            }
+            if (el) {
+                requestAnimationFrame(updateSpotlight);
+                setTimeout(updateSpotlight, 400);
+                if (!suTourResizeHandler) {
+                    suTourResizeHandler = function() {
+                        var stepEl = document.querySelector(SU_TOUR_STEPS[suTourIndex].sel);
+                        if (stepEl) {
+                            suTourPositionSpotlight(stepEl);
+                            suTourPositionRing(stepEl);
+                        }
+                    };
+                    window.addEventListener('resize', suTourResizeHandler);
+                    window.addEventListener('scroll', suTourResizeHandler, true);
+                }
+            } else {
+                suTourPositionSpotlight(null);
+                if (suTourHighlightRing) suTourHighlightRing.style.display = 'none';
+            }
+        }
+
+        function startSuperUserTour() {
+            suTourClose();
+            suTourOverlay = document.createElement('div');
+            suTourOverlay.className = 'su-tour-overlay';
+            suTourSpotTop = document.createElement('div');
+            suTourSpotLeft = document.createElement('div');
+            suTourSpotRight = document.createElement('div');
+            suTourSpotBottom = document.createElement('div');
+            [suTourSpotTop, suTourSpotLeft, suTourSpotRight, suTourSpotBottom].forEach(function(panel) {
+                panel.className = 'su-tour-spotlight-panel';
+                panel.addEventListener('click', suTourClose);
+                suTourOverlay.appendChild(panel);
+            });
+            document.body.appendChild(suTourOverlay);
+            suTourHighlightRing = document.createElement('div');
+            suTourHighlightRing.className = 'su-tour-highlight-ring';
+            suTourHighlightRing.setAttribute('aria-hidden', 'true');
+            document.body.appendChild(suTourHighlightRing);
+            suTourPopover = document.createElement('div');
+            suTourPopover.className = 'su-tour-popover';
+            suTourPopover.innerHTML = '<button type="button" class="su-tour-close" aria-label="Close">&times;</button><h3 class="su-tour-title"></h3><p class="su-tour-desc"></p><div class="su-tour-popover-footer"><span class="su-tour-progress"></span><span><button type="button" class="su-tour-prev">&larr; Previous</button><button type="button" class="su-tour-next">Next →</button></span></div>';
+            suTourPopover.querySelector('.su-tour-close').onclick = suTourClose;
+            suTourPopover.querySelector('.su-tour-prev').onclick = function() { suTourShowStep(suTourIndex - 1); };
+            suTourPopover.querySelector('.su-tour-next').onclick = function() {
+                if (suTourIndex === SU_TOUR_STEPS.length - 1) suTourClose();
+                else suTourShowStep(suTourIndex + 1);
+            };
+            document.body.appendChild(suTourPopover);
+            suTourShowStep(0);
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            var tourBtn = document.getElementById('su-take-tour-btn');
+            if (tourBtn) tourBtn.addEventListener('click', startSuperUserTour);
+        });
+
         // Get announcement icon (mirror of user.html for active alerts list)
         function getAnnouncementIcon(type) {
             const icons = {

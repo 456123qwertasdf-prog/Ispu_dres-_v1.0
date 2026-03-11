@@ -5,7 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Early Warning Dashboard - Super User - LSPU Emergency Response</title>
     <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/su-header-shared.css">
     <link rel="stylesheet" href="css/system-status.css">
+    <link rel="stylesheet" href="css/su-tour.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
     <script src="https://cdn.jsdelivr.net/npm/supabase@2"></script>
     <script src="js/supabase.js"></script>
@@ -520,6 +522,73 @@
         .su-content-header h1 { margin:0; font-size:1.5rem; font-weight:700; display:flex; align-items:center; gap:0.75rem; }
         .su-content-header h1 i { color:#34d399; }
         .su-content-header p { margin:0.4rem 0 0 0; font-size:0.875rem; opacity:0.8; }
+
+        /* ── Early Warning Modern Layout ── */
+        .ew-header { background:linear-gradient(135deg,#0f172a 0%,#064e3b 100%); border-radius:20px; padding:1.75rem 2rem; margin-bottom:1.75rem; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:1rem; box-shadow:0 8px 32px rgba(0,0,0,0.18); position:relative; overflow:hidden; }
+        .ew-header::before { content:''; position:absolute; top:-40px; right:-40px; width:160px; height:160px; background:rgba(16,185,129,0.12); border-radius:50%; }
+        .ew-header::after  { content:''; position:absolute; bottom:-30px; right:80px; width:100px; height:100px; background:rgba(16,185,129,0.07); border-radius:50%; }
+        .ew-header h1 { margin:0; font-size:1.6rem; font-weight:800; color:white; display:flex; align-items:center; gap:0.7rem; letter-spacing:-0.02em; }
+        .ew-header h1 i { color:#34d399; }
+        .ew-header p  { margin:0.3rem 0 0; font-size:0.875rem; color:rgba(255,255,255,0.7); }
+        .ew-header { background:linear-gradient(135deg,#0f172a 0%,#064e3b 100%); border-radius:20px; padding:1.75rem 2rem; margin-bottom:1.75rem; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:1rem; box-shadow:0 8px 32px rgba(0,0,0,0.18); position:relative; overflow:hidden; }
+        .ew-header::before { content:''; position:absolute; top:-40px; right:-40px; width:160px; height:160px; background:rgba(16,185,129,0.12); border-radius:50%; }
+        .ew-header::after  { content:''; position:absolute; bottom:-30px; right:80px; width:100px; height:100px; background:rgba(16,185,129,0.07); border-radius:50%; }
+        .ew-header h1 { margin:0; font-size:1.6rem; font-weight:800; color:white; display:flex; align-items:center; gap:0.7rem; letter-spacing:-0.02em; }
+        .ew-header h1 i { color:#34d399; }
+        .ew-header p  { margin:0.3rem 0 0; font-size:0.875rem; color:rgba(255,255,255,0.7); }
+        .ew-main { padding:1.75rem; background:#f1f5f9; min-height:100vh; }
+
+        /* Modern page header */
+        .ew-su-badge  { background:rgba(16,185,129,0.18); border:1px solid rgba(16,185,129,0.4); color:#34d399; border-radius:9999px; padding:0.3rem 0.9rem; font-size:0.72rem; font-weight:700; letter-spacing:0.06em; text-transform:uppercase; display:inline-flex; align-items:center; gap:0.35rem; }
+        .ew-btn { padding:0.5rem 1.1rem; border-radius:10px; font-size:0.83rem; font-weight:700; cursor:pointer; display:inline-flex; align-items:center; gap:0.4rem; transition:filter 0.15s, transform 0.15s; white-space:nowrap; border:none; }
+        .ew-btn:hover { filter:brightness(1.08); transform:translateY(-1px); }
+        .ew-btn-green   { background:linear-gradient(135deg,#10b981,#059669); color:white; box-shadow:0 2px 8px rgba(16,185,129,0.3); }
+        .ew-btn-outline { background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.25)!important; color:rgba(255,255,255,0.9); }
+        .ew-btn-outline:hover { background:rgba(255,255,255,0.18); }
+        .ew-btn-sm { padding:0.32rem 0.75rem; font-size:0.78rem; }
+
+        /* Weather grid */
+        .ew-grid { display:grid; grid-template-columns:1.2fr 1fr; gap:1.25rem; }
+        @media (max-width:960px) { .ew-grid { grid-template-columns:1fr; } }
+
+        /* Panels */
+        .ew-panel { background:white; border-radius:16px; box-shadow:0 2px 12px rgba(0,0,0,0.06); border:1px solid rgba(0,0,0,0.04); overflow:hidden; }
+        .ew-panel-header { padding:1rem 1.5rem; border-bottom:1px solid #f1f5f9; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:0.6rem; }
+        .ew-panel-title { font-size:0.95rem; font-weight:700; color:#0f172a; display:flex; align-items:center; gap:0.5rem; }
+        .ew-panel-title i { color:#10b981; }
+        .ew-panel-body { padding:1.25rem 1.5rem; }
+
+        /* Live status row */
+        .ew-live-row { display:flex; align-items:center; gap:0.45rem; font-size:0.78rem; color:#6b7280; }
+        .ew-live-dot { width:8px; height:8px; border-radius:50%; background:#9ca3af; flex-shrink:0; transition:background 0.3s; }
+
+        /* Weather meta - green tint */
+        .weather-meta-item { background:linear-gradient(135deg,#f0fdf4,#f9fafb) !important; border:1px solid rgba(16,185,129,0.18) !important; }
+
+        /* Hourly items - green tint */
+        .hourly-item { background:linear-gradient(145deg,#f0fdf4,#ecfdf5) !important; border:1px solid rgba(16,185,129,0.18) !important; }
+        .hourly-rain { color:#10b981 !important; }
+
+        /* Forecast cards */
+        .ew-forecast-item { background:white; border:1.5px solid #f1f5f9; border-radius:12px; padding:0.9rem 1rem; transition:all 0.2s; cursor:default; }
+        .ew-forecast-item:hover { border-color:#10b981; box-shadow:0 4px 14px rgba(16,185,129,0.13); transform:translateY(-2px); }
+        .ew-forecast-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(160px,1fr)); gap:0.65rem; max-height:440px; overflow-y:auto; padding-right:2px; }
+
+        /* Logout modal */
+        .ew-logout-modal { position:fixed; top:0; left:0; width:100%; height:100%; z-index:10001; display:flex; align-items:center; justify-content:center; animation:ewFadeIn 0.2s ease; }
+        .ew-logout-modal.hidden { display:none; }
+        .ew-logout-overlay { position:absolute; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); backdrop-filter:blur(4px); }
+        .ew-logout-box { position:relative; background:white; border-radius:16px; padding:2rem; max-width:420px; width:90%; box-shadow:0 20px 25px -5px rgba(0,0,0,0.3); text-align:center; animation:ewSlideUp 0.3s ease; }
+        .ew-logout-icon { width:64px; height:64px; margin:0 auto 1.25rem; background:linear-gradient(135deg,#fef2f2,#fee2e2); border-radius:50%; display:flex; align-items:center; justify-content:center; border:3px solid #fca5a5; }
+        .ew-logout-icon i { font-size:2rem; color:#ef4444; }
+        .ew-logout-btn-row { display:flex; gap:0.75rem; justify-content:center; margin-top:1.5rem; }
+        .ew-lbtn { padding:0.7rem 1.5rem; border-radius:8px; font-size:0.875rem; font-weight:700; cursor:pointer; transition:all 0.2s; display:flex; align-items:center; gap:0.45rem; border:2px solid transparent; }
+        .ew-lbtn.cancel  { background:#f3f4f6; color:#374151; border-color:#e5e7eb; }
+        .ew-lbtn.cancel:hover  { background:#e5e7eb; }
+        .ew-lbtn.confirm { background:linear-gradient(135deg,#ef4444,#dc2626); color:white; border-color:#ef4444; box-shadow:0 2px 8px rgba(239,68,68,0.3); }
+        .ew-lbtn.confirm:hover { background:linear-gradient(135deg,#dc2626,#b91c1c); }
+        @keyframes ewFadeIn  { from{opacity:0} to{opacity:1} }
+        @keyframes ewSlideUp { from{opacity:0;transform:translateY(16px) scale(0.96)} to{opacity:1;transform:translateY(0) scale(1)} }
     </style>
 </head>
 <body>
@@ -545,11 +614,12 @@
         </div>
         <nav class="sidebar-nav">
             <a href="super-user.html" class="nav-item"><i class="bi bi-house"></i> Dashboard</a>
-            <a href="super-user-reports.html" class="nav-item"><i class="bi bi-clipboard-data"></i> Recent Reports</a>
+            <a href="super-user-reports.html" class="nav-item"><i class="bi bi-clipboard-data"></i> Emergency Reports</a>
             <a href="super-user-early-warning.html" class="nav-item active"><i class="bi bi-shield-exclamation"></i> Early Warning</a>
             <a href="super-user-map.html" class="nav-item"><i class="bi bi-map"></i> Map View</a>
-            <a href="super-user-evacuation.html" class="nav-item"><i class="bi bi-shield-check"></i> Evacuation Guide</a>
             <a href="super-user-announcements.html" class="nav-item"><i class="bi bi-megaphone-fill"></i> Announcements</a>
+            <a href="readiness-safety-notice.html" class="nav-item"><i class="bi bi-shield-check"></i> Readiness & Safety</a>
+            <a href="super-user-sos-alerts.html" class="nav-item"><i class="bi bi-exclamation-octagon-fill"></i> SOS Alerts</a>
         </nav>
         <div class="sidebar-footer">
             <div class="user-info-card">
@@ -565,158 +635,159 @@
         </div>
     </div>
     <!-- Main Content -->
-    <div class="main-content">
+    <div class="main-content ew-main">
+
         <!-- Page Header -->
-        <div class="su-content-header">
+        <div class="su-page-header">
             <div>
                 <h1><i class="bi bi-shield-exclamation"></i> Early Warning Dashboard</h1>
-                <p>Real-time monitoring of weather conditions, air quality, and safety metrics for LSPU Sta. Cruz Campus</p>
+                <p>Real-time weather, air quality &amp; safety metrics · LSPU Sta. Cruz Campus</p>
             </div>
-            <span style="background:rgba(16,185,129,0.15);border:1px solid rgba(16,185,129,0.35);color:#34d399;border-radius:9999px;padding:0.3rem 0.85rem;font-size:0.75rem;font-weight:700;letter-spacing:0.05em;text-transform:uppercase;"><i class="bi bi-shield-star-fill"></i> Super User</span>
-        </div>
-        <div class="main-content-wrapper" style="max-width:1400px;margin:0 auto;padding:0 0 2rem;">
-            <!-- Header Section -->
-            <div class="card">
-                <div class="card-header">
-                    <h2 class="card-title">Early Warning Dashboard</h2>
-                    <p class="card-subtitle">Real-time monitoring of weather conditions, air quality, and safety metrics for LSPU Sta. Cruz Campus</p>
+            <div class="su-header-right">
+                <button type="button" id="su-take-tour-btn" class="su-tour-btn" title="Take a guided tour"><i class="bi bi-question-circle-fill"></i> Take a tour</button>
+                <button onclick="refreshAllData()" class="ew-btn ew-btn-green">
+                    <i class="bi bi-arrow-clockwise"></i> Refresh All
+                </button>
+                <button onclick="generateEarlyWarningReport()" class="ew-btn ew-btn-outline">
+                    <i class="bi bi-file-earmark-text"></i> Generate Report
+                </button>
+                <span class="su-badge"><i class="bi bi-shield-star-fill"></i> Super User</span>
+                <div class="su-header-time">
+                    <div class="time-label">Logged in as</div>
+                    <div class="time-value" id="userEmail">Super User</div>
                 </div>
-                <div class="card-body">
-                    <div class="flex gap-4">
-                        <button onclick="refreshAllData()" class="btn btn-primary">
-                            <i class="bi bi-arrow-clockwise"></i> Refresh All Data
+            </div>
+        </div>
+
+        <!-- Weather Grid -->
+        <div class="ew-grid">
+
+            <!-- Weather Overview Panel -->
+            <div class="ew-panel">
+                <div class="ew-panel-header">
+                    <div class="ew-panel-title">
+                        <i class="bi bi-cloud-sun-fill"></i> Weather Overview
+                    </div>
+                    <div style="display:flex;align-items:center;gap:0.75rem;">
+                        <div class="ew-live-row">
+                            <div class="ew-live-dot" id="adminWeatherStatusDot"></div>
+                            <span id="adminWeatherStatusText">Loading…</span>
+                        </div>
+                        <button onclick="refreshAllWeatherData()" class="ew-btn ew-btn-green ew-btn-sm">
+                            <i class="bi bi-arrow-clockwise"></i> Refresh
                         </button>
-                        <button onclick="generateEarlyWarningReport()" class="btn btn-secondary">
-                            <i class="bi bi-file-earmark-text"></i> Generate Report
-                        </button>
+                    </div>
+                </div>
+                <div class="ew-panel-body weather-today-card">
+                    <!-- Location & time -->
+                    <div style="margin-bottom:0.85rem;">
+                        <div class="weather-location">LSPU Sta. Cruz Campus, Laguna</div>
+                        <div class="weather-asof">
+                            As of <span id="lastUpdatedShort">--:--</span>
+                            &nbsp;·&nbsp;
+                            <span id="lastUpdated" style="font-size:0.72rem;color:#9ca3af;">Loading…</span>
+                        </div>
+                    </div>
+                    <!-- Temp row -->
+                    <div class="weather-main">
+                        <div class="weather-main-left">
+                            <div class="weather-temp-row">
+                                <div style="display:flex;align-items:center;">
+                                    <span id="temperature" class="weather-temp">--°C</span>
+                                    <div id="tempStatus" class="status-indicator weather-temp-status"></div>
+                                </div>
+                                <div class="weather-condition">
+                                    <div id="weatherDescription" class="weather-description">Loading…</div>
+                                    <div class="weather-range">Day <span id="dayHigh">--°</span> · Night <span id="nightLow">--°</span></div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="weather-main-right">
+                            <div class="weather-meta-grid">
+                                <div class="weather-meta-item">
+                                    <div class="weather-meta-header"><span class="meta-label">Feels Like</span></div>
+                                    <span id="feelsLike" class="meta-value">--°C</span>
+                                </div>
+                                <div class="weather-meta-item">
+                                    <div class="weather-meta-header"><span class="meta-label">Humidity</span></div>
+                                    <span id="humidity" class="meta-value">--%</span>
+                                </div>
+                                <div class="weather-meta-item">
+                                    <div class="weather-meta-header">
+                                        <div id="rainVolumeStatus" class="status-indicator"></div>
+                                        <span class="meta-label">Rain Chance</span>
+                                    </div>
+                                    <span id="rainVolume" class="meta-value">--%</span>
+                                    <span id="rainVolumeDescription" class="meta-subvalue">No rain expected</span>
+                                </div>
+                                <div class="weather-meta-item">
+                                    <div class="weather-meta-header">
+                                        <div id="windStatus" class="status-indicator"></div>
+                                        <span class="meta-label">Wind</span>
+                                    </div>
+                                    <span id="windSpeed" class="meta-value">-- km/h</span>
+                                    <span id="windWarning" class="meta-subvalue">CALM</span>
+                                </div>
+                                <div class="weather-meta-item aqi-meta">
+                                    <div class="weather-meta-header">
+                                        <div id="airQualityStatus" class="status-indicator"></div>
+                                        <span class="meta-label">Air Quality (AQI)</span>
+                                    </div>
+                                    <span id="airQuality" class="meta-value">--</span>
+                                    <span id="airQualityDescription" class="meta-subvalue">Loading…</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Hourly strip -->
+                    <div id="hourlyStrip" class="hourly-strip"></div>
+                </div>
+            </div>
+
+            <!-- Forecast Panel -->
+            <div class="ew-panel">
+                <div class="ew-panel-header">
+                    <div class="ew-panel-title">
+                        <i class="bi bi-calendar-day-fill"></i> Weather Forecast
+                    </div>
+                    <span style="font-size:0.75rem;color:#9ca3af;font-weight:600;">Next 24 hours</span>
+                </div>
+                <div class="ew-panel-body">
+                    <div id="weatherForecast">
+                        <div style="text-align:center;padding:3rem 1rem;color:#9ca3af;">
+                            <i class="bi bi-hourglass-split" style="font-size:2.5rem;display:block;margin-bottom:0.75rem;color:#d1d5db;"></i>
+                            Loading forecast…
+                        </div>
                     </div>
                 </div>
             </div>
 
-            <!-- Weather Overview and Forecast Side-by-Side -->
-            <div class="flex gap-4 mb-6" style="flex-wrap: wrap;">
-                <!-- Unified Weather Overview -->
-                <div class="card" style="flex: 1; min-width: 500px;">
-                    <div class="card-header">
-                        <div class="flex" style="justify-content: space-between; align-items: center;">
-                            <div>
-                                <h3 class="card-title">
-                                    <i class="bi bi-cloud-sun"></i> Weather Overview
-                                </h3>
-                                <p class="card-subtitle">Current weather conditions for LSPU Sta. Cruz Campus</p>
-                                <div style="font-size: 0.875rem; color: #6b7280; margin-top: 0.5rem;">
-                                    Last updated: <span id="lastUpdated">Loading...</span>
-                                </div>
-                            </div>
-                            <div class="flex" style="align-items: center; gap: 0.5rem;">
-                                <div id="adminWeatherStatus" class="flex" style="align-items: center; gap: 0.25rem; font-size: 0.875rem; color: #6b7280;">
-                                    <div class="w-2 h-2 bg-gray-400 rounded-full" id="adminWeatherStatusDot" style="width: 8px; height: 8px; background: #9ca3af; border-radius: 50%;"></div>
-                                    <span id="adminWeatherStatusText">Loading...</span>
-                                </div>
-                                <button onclick="refreshAllWeatherData()" class="btn btn-secondary" style="padding: 0.5rem 1rem; font-size: 0.875rem;">
-                                    <i class="bi bi-arrow-clockwise"></i> Refresh
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="card-body weather-today-card">
-                        <div class="weather-main">
-                            <div class="weather-main-left">
-                                <div class="weather-location">LSPU Sta. Cruz Campus, Laguna</div>
-                                <div class="weather-asof">As of <span id="lastUpdatedShort">--:--</span></div>
-                                <div class="weather-temp-row">
-                                    <div class="flex" style="align-items: center;">
-                                        <span id="temperature" class="weather-temp">--°C</span>
-                                        <div id="tempStatus" class="status-indicator weather-temp-status"></div>
-                                    </div>
-                                    <div class="weather-condition">
-                                        <div id="weatherDescription" class="weather-description">Loading...</div>
-                                        <div class="weather-range">
-                                            Day <span id="dayHigh">--°</span> • Night <span id="nightLow">--°</span>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="weather-main-right">
-                                <div class="weather-meta-grid">
-                                    <div class="weather-meta-item">
-                                        <div class="weather-meta-header">
-                                            <span class="meta-label">Feels Like</span>
-                                        </div>
-                                        <span id="feelsLike" class="meta-value">--°C</span>
-                                    </div>
-                                    <div class="weather-meta-item">
-                                        <div class="weather-meta-header">
-                                            <span class="meta-label">Humidity</span>
-                                        </div>
-                                        <span id="humidity" class="meta-value">--%</span>
-                                    </div>
-                                    <div class="weather-meta-item">
-                                        <div class="weather-meta-header">
-                                            <div id="rainVolumeStatus" class="status-indicator"></div>
-                                            <span class="meta-label">Rain Chance</span>
-                                        </div>
-                                        <span id="rainVolume" class="meta-value">--%</span>
-                                        <span id="rainVolumeDescription" class="meta-subvalue">No rain expected</span>
-                                    </div>
-                                    <div class="weather-meta-item">
-                                        <div class="weather-meta-header">
-                                            <div id="windStatus" class="status-indicator"></div>
-                                            <span class="meta-label">Wind</span>
-                                        </div>
-                                        <span id="windSpeed" class="meta-value">-- km/h</span>
-                                        <span id="windWarning" class="meta-subvalue">CALM</span>
-                                    </div>
-                                    <div class="weather-meta-item aqi-meta">
-                                        <div class="weather-meta-header">
-                                            <div id="airQualityStatus" class="status-indicator"></div>
-                                            <span class="meta-label">Air Quality (AQI)</span>
-                                        </div>
-                                        <span id="airQuality" class="meta-value">--</span>
-                                        <span id="airQualityDescription" class="meta-subvalue">Loading...</span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <div id="hourlyStrip" class="hourly-strip">
-                            <!-- Populated by JS -->
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Weather Forecast -->
-                <div class="card" style="flex: 1; min-width: 400px;">
-                    <div class="card-header">
-                        <h3 class="card-title">
-                            <i class="bi bi-calendar-day"></i> Weather Forecast
-                        </h3>
-                    </div>
-                    <div class="card-body" style="padding: 1rem;">
-                        <div id="weatherForecast">
-                            <div style="text-align: center; padding: 2rem 0;">
-                                <div class="loading-spinner"></div>
-                                <p style="color: #6b7280; margin-top: 1rem;">Loading forecast...</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
+        </div><!-- end .ew-grid -->
     </div><!-- end .main-content -->
 </div><!-- end .dashboard-container -->
 
     <!-- Logout Modal -->
-    <div id="logoutModal" class="modal hidden">
-        <div class="modal-content">
-            <h2 style="margin: 0 0 1rem 0;">Confirm Logout</h2>
-            <p>Are you sure you want to logout?</p>
-            <div style="display:flex;gap:1rem;margin-top:1.5rem;">
-                <button class="btn btn-secondary" onclick="closeLogoutModal()">Cancel</button>
-                <button class="btn btn-primary" onclick="confirmLogout()">Logout</button>
+    <div id="logoutModal" class="ew-logout-modal hidden">
+        <div class="ew-logout-overlay" onclick="closeLogoutModal()"></div>
+        <div class="ew-logout-box">
+            <div class="ew-logout-icon"><i class="bi bi-exclamation-triangle"></i></div>
+            <h3 style="margin:0 0 0.5rem;font-size:1.4rem;font-weight:800;color:#111827;">Confirm Logout</h3>
+            <p style="margin:0;font-size:0.9375rem;color:#6b7280;line-height:1.6;">Are you sure you want to logout? You'll need to sign in again to access the system.</p>
+            <div class="ew-logout-btn-row">
+                <button class="ew-lbtn cancel" onclick="closeLogoutModal()"><i class="bi bi-x-circle"></i> Cancel</button>
+                <button class="ew-lbtn confirm" onclick="confirmLogout()"><i class="bi bi-box-arrow-right"></i> Logout</button>
             </div>
         </div>
     </div>
 
+<script>
+window.SU_TOUR_STEPS = [
+    { sel: '.su-page-header', title: 'Early Warning Dashboard', desc: 'Real-time weather, air quality, and safety metrics for LSPU Sta. Cruz Campus. Use Refresh All and Generate Report from here.' },
+    { sel: '.ew-grid', title: 'Weather & metrics', desc: 'Weather overview, forecasts, and safety status. Monitor temperature, humidity, and alerts.' },
+    { sel: '.sidebar-nav', title: 'Navigation', desc: 'Go to Dashboard, Emergency Reports, Map View, Announcements, Readiness & Safety, or SOS Alerts.' }
+];
+</script>
+<script src="js/su-tour.js"></script>
     <script>
         let weatherData = null;
 
@@ -820,9 +891,9 @@
             const description = (weatherData.weather?.[0]?.description || 'Current conditions');
             
             const forecastSummary = weatherData.forecast_summary;
-            const maxRainChance = forecastSummary?.next_24h_forecast?.reduce((max, item) => 
-                Math.max(max, item.rain_chance || 0), 0) || 0;
-            const rainChancePercent = Math.round(maxRainChance * 100);
+            const firstPeriod = forecastSummary?.next_24h_forecast?.[0];
+            const currentRainChance = firstPeriod ? (firstPeriod.rain_chance ?? 0) : 0;
+            const rainChancePercent = Math.min(100, Math.round(currentRainChance * 100));
             const pressure = Math.round(weatherData.main?.pressure || 1013);
             const aqi = calculateSimplifiedAQI(pressure, humidity);
             
@@ -971,6 +1042,19 @@
             }
         }
 
+        function formatForecastTime(value, indexFallback) {
+            if (value == null || value === '') return (indexFallback != null ? `In ${indexFallback + 1}h` : '--');
+            let d;
+            if (typeof value === 'number') {
+                d = value < 1e12 ? new Date(value * 1000) : new Date(value);
+            } else {
+                const s = String(value).trim().replace(' ', 'T');
+                d = new Date(s);
+            }
+            if (isNaN(d.getTime())) return (indexFallback != null ? `In ${indexFallback + 1}h` : '--');
+            return d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
+        }
+
         function updateHourlyStrip(forecastSummary) {
             const strip = document.getElementById('hourlyStrip');
             if (!strip) return;
@@ -980,13 +1064,9 @@
             }
 
             const hours = forecastSummary.next_24h_forecast.slice(0, 6);
-            strip.innerHTML = hours.map(item => {
-                const time = new Date(item.time).toLocaleTimeString('en-US', {
-                    hour: '2-digit',
-                    minute: '2-digit',
-                    hour12: true
-                });
-                const rainChance = Math.round((item.rain_chance || 0) * 100);
+            strip.innerHTML = hours.map((item, i) => {
+                const time = formatForecastTime(item.time, i);
+                const rainChance = Math.min(100, Math.round((item.rain_chance || 0) * 100));
                 return `
                     <div class="hourly-item">
                         <div class="hourly-time">${time}</div>
@@ -1038,36 +1118,21 @@
             const container = document.getElementById('weatherForecast');
             
             container.innerHTML = `
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 0.75rem; max-height: 400px; overflow-y: auto; padding-right: 4px;">
-                    ${forecast.map(item => {
-                        const time = new Date(item.time).toLocaleTimeString('en-US', { 
-                            hour: '2-digit', 
-                            minute: '2-digit',
-                            hour12: true 
-                        });
-                        const rainChance = Math.round(item.rain_chance * 100);
+                <div class="ew-forecast-grid">
+                    ${forecast.map((item, i) => {
+                        const time = formatForecastTime(item.time, i);
+                        const rainChance = Math.min(100, Math.round((item.rain_chance || 0) * 100));
                         const rainVolume = item.rain_volume;
-                        
+                        const rainColor = rainChance >= 60 ? '#dc2626' : rainChance >= 30 ? '#f97316' : '#10b981';
+
                         return `
-                            <div class="forecast-card">
-                                <div style="display: flex; align-items: flex-start; gap: 0.875rem;">
-                                    <div style="flex: 1; min-width: 0;">
-                                        <div class="metric-label" style="margin-bottom: 0.25rem; font-weight: 700;">
-                                            ${time}
-                                        </div>
-                                        <div class="metric-value" style="font-size: 1.625rem; margin: 0.25rem 0;">
-                                            ${Math.round(item.temp)}°C
-                                        </div>
-                                        <div style="font-size: 0.625rem; color: #6b7280; text-transform: capitalize; margin-bottom: 0.375rem;">
-                                            ${item.description}
-                                        </div>
-                                        <div style="display: flex; align-items: center; gap: 0.5rem; margin-top: 0.375rem; padding: 0.375rem 0.5rem; background: linear-gradient(135deg, rgba(59, 130, 246, 0.08) 0%, rgba(59, 130, 246, 0.04) 100%); border-radius: 6px;">
-                                            <i class="bi bi-droplet" style="font-size: 0.875rem; color: #3b82f6;"></i>
-                                            <span style="font-size: 0.6875rem; color: #374151; font-weight: 600;">
-                                                ${rainChance}%${rainVolume > 0 ? ` <span style="color: #64748b;">(${rainVolume}mm)</span>` : ''}
-                                            </span>
-                                        </div>
-                                    </div>
+                            <div class="ew-forecast-item">
+                                <div style="font-size:0.7rem;font-weight:800;text-transform:uppercase;letter-spacing:0.05em;color:#6b7280;margin-bottom:0.3rem;">${time}</div>
+                                <div style="font-size:1.55rem;font-weight:800;color:#0f172a;line-height:1;margin-bottom:0.3rem;">${Math.round(item.temp)}°C</div>
+                                <div style="font-size:0.72rem;color:#6b7280;text-transform:capitalize;margin-bottom:0.55rem;">${item.description}</div>
+                                <div style="display:flex;align-items:center;gap:0.4rem;padding:0.3rem 0.6rem;background:linear-gradient(135deg,rgba(16,185,129,0.08),rgba(16,185,129,0.03));border-radius:7px;border:1px solid rgba(16,185,129,0.15);">
+                                    <i class="bi bi-droplet-fill" style="font-size:0.78rem;color:${rainColor};"></i>
+                                    <span style="font-size:0.7rem;color:#374151;font-weight:700;">${rainChance}%${rainVolume > 0 ? ` <span style="color:#9ca3af;">(${rainVolume}mm)</span>` : ''}</span>
                                 </div>
                             </div>
                         `;

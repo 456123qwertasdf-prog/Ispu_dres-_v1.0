@@ -1,10 +1,12 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
+import 'package:intl/intl.dart';
 import 'package:latlong2/latlong.dart' as latlong;
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../services/supabase_service.dart';
 import '../models/responder_models.dart';
+import '../utils/report_date_helper.dart';
 import 'report_detail_loader_screen.dart';
 
 class SuperUserMapScreen extends StatefulWidget {
@@ -364,38 +366,31 @@ class _SuperUserMapScreenState extends State<SuperUserMapScreen> {
 
   Widget _buildEmergencyMarker(String type, String status, Map<String, dynamic> report) {
     Color color;
-    IconData icon;
-    String emoji = _getTypeEmoji(type);
 
     // Determine color and icon based on status
     switch (status.toLowerCase()) {
       case 'active':
       case 'pending':
         color = const Color(0xFFef4444); // Red
-        icon = Icons.warning_rounded;
         break;
       case 'assigned':
       case 'processing':
       case 'classified':
         color = const Color(0xFFf97316); // Orange
-        icon = Icons.access_time_rounded;
         break;
       case 'in-progress':
       case 'enroute':
         color = const Color(0xFF3b82f6); // Blue
-        icon = Icons.local_fire_department_rounded;
         break;
       case 'completed':
       case 'resolved':
         color = const Color(0xFF10b981); // Green
-        icon = Icons.check_circle_rounded;
         break;
       default:
         color = const Color(0xFF3b82f6); // Blue
-        icon = Icons.info_rounded;
     }
 
-    // Determine color based on emergency type if status is pending
+    // Color by emergency type when pending/active (same as report cards)
     if (status.toLowerCase() == 'pending' || status.toLowerCase() == 'active') {
       switch (type.toLowerCase()) {
         case 'fire':
@@ -419,6 +414,10 @@ class _SuperUserMapScreenState extends State<SuperUserMapScreen> {
       }
     }
 
+    // Same layout as responder marker: label on top + icon below (circle, white border, shadow)
+    final IconData icon = _getEmergencyTypeIcon(type);
+    final String label = _getEmergencyTypeLabel(type);
+
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -438,21 +437,50 @@ class _SuperUserMapScreenState extends State<SuperUserMapScreen> {
           shape: BoxShape.circle,
           border: Border.all(color: Colors.white, width: 3),
         ),
-        padding: const EdgeInsets.all(10),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              emoji,
-              style: const TextStyle(fontSize: 20),
-            ),
-            const SizedBox(height: 2),
-            Icon(icon, color: Colors.white, size: 16),
-          ],
+        padding: const EdgeInsets.all(6),
+        child: FittedBox(
+          fit: BoxFit.scaleDown,
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                label,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 11,
+                  fontWeight: FontWeight.bold,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+              const SizedBox(height: 1),
+              Icon(icon, color: Colors.white, size: 12),
+            ],
+          ),
         ),
       ),
     );
+  }
+
+  /// Short label for emergency type (like responder initials).
+  String _getEmergencyTypeLabel(String type) {
+    switch (type.toLowerCase()) {
+      case 'fire':
+        return 'F';
+      case 'medical':
+        return 'M';
+      case 'accident':
+        return 'A';
+      case 'flood':
+        return 'Fl';
+      case 'storm':
+        return 'S';
+      case 'earthquake':
+        return 'E';
+      default:
+        return '?';
+    }
   }
 
   Widget _buildResponderMarker(
@@ -526,26 +554,27 @@ class _SuperUserMapScreenState extends State<SuperUserMapScreen> {
           shape: BoxShape.circle,
           border: Border.all(color: Colors.white, width: 3),
         ),
-        padding: const EdgeInsets.all(8),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Flexible(
-              child: Text(
+        padding: const EdgeInsets.all(6),
+        child: FittedBox(
+          fit: BoxFit.scaleDown,
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
                 responder.initials,
                 style: const TextStyle(
                   color: Colors.white,
-                  fontSize: 12,
+                  fontSize: 11,
                   fontWeight: FontWeight.bold,
                 ),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
               ),
-            ),
-            const SizedBox(height: 2),
-            Icon(icon, color: Colors.white, size: 14),
-          ],
+              const SizedBox(height: 1),
+              Icon(icon, color: Colors.white, size: 12),
+            ],
+          ),
         ),
       ),
     );
@@ -855,13 +884,13 @@ class _SuperUserMapScreenState extends State<SuperUserMapScreen> {
                             if (assignment['reports']?['created_at'] != null) ...[
                               _buildInfoRow(
                                 'Reported At',
-                                _formatDate(DateTime.parse(assignment['reports']?['created_at'])),
+                                ReportDateHelper.formatReportCreatedAt(assignment['reports']?['created_at']?.toString()),
                                 Icons.schedule,
                               ),
                               const SizedBox(height: 12),
                               _buildInfoRow(
                                 'Time Since',
-                                _getTimeSince(DateTime.parse(assignment['reports']?['created_at'])),
+                                _getTimeSince(ReportDateHelper.parseReportCreatedAt(assignment['reports']?['created_at']?.toString()) ?? DateTime.now()),
                                 Icons.timer_outlined,
                               ),
                               const SizedBox(height: 12),
@@ -1269,13 +1298,13 @@ class _SuperUserMapScreenState extends State<SuperUserMapScreen> {
                           if (createdAt != null) ...[
                             _buildInfoRow(
                               'Reported At',
-                              _formatDate(DateTime.parse(createdAt.toString())),
+                              ReportDateHelper.formatReportCreatedAt(createdAt.toString()),
                               Icons.schedule,
                             ),
                             const SizedBox(height: 12),
                             _buildInfoRow(
                               'Time Since',
-                              _getTimeSince(DateTime.parse(createdAt.toString())),
+                              _getTimeSince(ReportDateHelper.parseReportCreatedAt(createdAt.toString()) ?? DateTime.now()),
                               Icons.timer_outlined,
                             ),
                             const SizedBox(height: 12),
@@ -1307,18 +1336,21 @@ class _SuperUserMapScreenState extends State<SuperUserMapScreen> {
                       ),
                     ),
                     const SizedBox(height: 20),
-                    // Action Button
+                    // Action Button - open report detail (same as web "view report")
                     ElevatedButton.icon(
                       onPressed: () {
-                        Navigator.pop(context);
-                        Navigator.pushNamed(
-                          context,
-                          '/super-user-reports',
-                          arguments: report,
-                        );
+                        final reportId = report['id']?.toString();
+                        if (reportId != null && context.mounted) {
+                          Navigator.pop(context);
+                          Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (context) => ReportDetailLoaderScreen(reportId: reportId),
+                            ),
+                          );
+                        }
                       },
-                      icon: const Icon(Icons.open_in_new),
-                      label: const Text('View Full Details'),
+                      icon: const Icon(Icons.description_outlined),
+                      label: const Text('View Report Details'),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFF3b82f6),
                         foregroundColor: Colors.white,
@@ -1363,7 +1395,7 @@ class _SuperUserMapScreenState extends State<SuperUserMapScreen> {
   }
 
   String _formatDate(DateTime date) {
-    return '${date.month}/${date.day}/${date.year} ${date.hour}:${date.minute.toString().padLeft(2, '0')}';
+    return DateFormat('MMM d, yyyy • h:mm a').format(date.toLocal());
   }
 
   String _getTypeEmoji(String type) {
@@ -1391,14 +1423,28 @@ class _SuperUserMapScreenState extends State<SuperUserMapScreen> {
       appBar: AppBar(
         title: const Text(
           'Super User Map',
-          style: TextStyle(fontWeight: FontWeight.bold),
+          style: TextStyle(
+            fontWeight: FontWeight.w700,
+            fontSize: 20,
+            letterSpacing: -0.3,
+          ),
         ),
-        backgroundColor: const Color(0xFF3b82f6),
+        backgroundColor: Colors.transparent,
         foregroundColor: Colors.white,
         elevation: 0,
+        scrolledUnderElevation: 0,
+        flexibleSpace: Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [Color(0xFF2563eb), Color(0xFF1d4ed8)],
+            ),
+          ),
+        ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.refresh),
+            icon: const Icon(Icons.refresh_rounded),
             onPressed: _loadData,
             tooltip: 'Refresh',
           ),
@@ -1443,24 +1489,24 @@ class _SuperUserMapScreenState extends State<SuperUserMapScreen> {
             left: 16,
             right: 16,
             child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
               decoration: BoxDecoration(
                 color: Colors.white,
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(16),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.1),
-                    blurRadius: 8,
-                    offset: const Offset(0, 2),
+                    color: Colors.black.withOpacity(0.08),
+                    blurRadius: 16,
+                    offset: const Offset(0, 4),
                   ),
                 ],
               ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
-                  _buildFilterButton('all', 'All', Icons.list),
-                  _buildFilterButton('active', 'Active', Icons.warning, isDefault: true),
-                  _buildFilterButton('completed', 'Completed', Icons.check_circle),
+                  _buildFilterButton('all', 'All', Icons.list_rounded),
+                  _buildFilterButton('active', 'Active', Icons.warning_rounded, isDefault: true),
+                  _buildFilterButton('completed', 'Completed', Icons.check_circle_rounded),
                 ],
               ),
             ),
@@ -1470,15 +1516,15 @@ class _SuperUserMapScreenState extends State<SuperUserMapScreen> {
             top: 80,
             right: 16,
             child: Container(
-              padding: const EdgeInsets.all(12),
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
               decoration: BoxDecoration(
                 color: Colors.white,
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(16),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.1),
-                    blurRadius: 8,
-                    offset: const Offset(0, 2),
+                    color: Colors.black.withOpacity(0.08),
+                    blurRadius: 16,
+                    offset: const Offset(0, 4),
                   ),
                 ],
               ),
@@ -1490,14 +1536,15 @@ class _SuperUserMapScreenState extends State<SuperUserMapScreen> {
                     'Legend',
                     style: TextStyle(
                       fontSize: 14,
-                      fontWeight: FontWeight.bold,
+                      fontWeight: FontWeight.w700,
+                      color: Color(0xFF1e293b),
                     ),
                   ),
-                  const SizedBox(height: 8),
-                  _buildLegendItem(Icons.warning, 'Emergency', Colors.red),
-                  _buildLegendItem(Icons.person, 'Available', Colors.green),
+                  const SizedBox(height: 10),
+                  _buildLegendItem(Icons.warning_rounded, 'Emergency', Colors.red),
+                  _buildLegendItem(Icons.person_rounded, 'Available', Colors.green),
                   _buildLegendItem(Icons.airport_shuttle_rounded, 'En Route', Colors.cyan),
-                  _buildLegendItem(Icons.location_on, 'On Scene', Colors.green),
+                  _buildLegendItem(Icons.location_on_rounded, 'On Scene', Colors.green),
                 ],
               ),
             ),
@@ -1512,25 +1559,25 @@ class _SuperUserMapScreenState extends State<SuperUserMapScreen> {
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: const BorderRadius.only(
-                  topLeft: Radius.circular(20),
-                  topRight: Radius.circular(20),
+                  topLeft: Radius.circular(24),
+                  topRight: Radius.circular(24),
                 ),
                 boxShadow: [
                   BoxShadow(
                     color: Colors.black.withOpacity(0.1),
-                    blurRadius: 10,
-                    offset: const Offset(0, -2),
+                    blurRadius: 20,
+                    offset: const Offset(0, -4),
                   ),
                 ],
               ),
               child: Column(
                 children: [
                   Container(
-                    margin: const EdgeInsets.only(top: 8),
+                    margin: const EdgeInsets.only(top: 12),
                     width: 40,
                     height: 4,
                     decoration: BoxDecoration(
-                      color: Colors.grey.shade300,
+                      color: Colors.grey.shade400,
                       borderRadius: BorderRadius.circular(2),
                     ),
                   ),
@@ -1574,7 +1621,21 @@ class _SuperUserMapScreenState extends State<SuperUserMapScreen> {
                             itemCount: _reports.length,
                             itemBuilder: (context, index) {
                               final report = _reports[index];
-                              return _buildReportCard(report);
+                              final reportId = report['id']?.toString();
+                              return Material(
+                                color: Colors.transparent,
+                                child: InkWell(
+                                  onTap: reportId != null
+                                      ? () => Navigator.of(context).push(
+                                            MaterialPageRoute(
+                                              builder: (context) => ReportDetailLoaderScreen(reportId: reportId),
+                                            ),
+                                          )
+                                      : null,
+                                  borderRadius: BorderRadius.circular(16),
+                                  child: _buildReportCard(report),
+                                ),
+                              );
                             },
                           ),
                   ),
@@ -1596,18 +1657,24 @@ class _SuperUserMapScreenState extends State<SuperUserMapScreen> {
           color: Colors.transparent,
           child: InkWell(
             onTap: () => _setFilter(filter),
-            borderRadius: BorderRadius.circular(8),
-            child: Container(
-              padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+            borderRadius: BorderRadius.circular(12),
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
               decoration: BoxDecoration(
                 color: isActive
                     ? const Color(0xFF3b82f6)
                     : Colors.grey.shade100,
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(
-                  color: isActive ? const Color(0xFF2563eb) : Colors.transparent,
-                  width: 2,
-                ),
+                borderRadius: BorderRadius.circular(12),
+                boxShadow: isActive
+                    ? [
+                        BoxShadow(
+                          color: const Color(0xFF3b82f6).withOpacity(0.3),
+                          blurRadius: 8,
+                          offset: const Offset(0, 2),
+                        ),
+                      ]
+                    : null,
               ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -1615,16 +1682,16 @@ class _SuperUserMapScreenState extends State<SuperUserMapScreen> {
                 children: [
                   Icon(
                     icon,
-                    size: 16,
+                    size: 18,
                     color: isActive ? Colors.white : Colors.grey.shade700,
                   ),
-                  const SizedBox(width: 4),
+                  const SizedBox(width: 6),
                   Flexible(
                     child: Text(
                       label,
                       style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: isActive ? FontWeight.w600 : FontWeight.normal,
+                        fontSize: 13,
+                        fontWeight: isActive ? FontWeight.w600 : FontWeight.w500,
                         color: isActive ? Colors.white : Colors.grey.shade700,
                       ),
                       overflow: TextOverflow.ellipsis,
@@ -1660,75 +1727,102 @@ class _SuperUserMapScreenState extends State<SuperUserMapScreen> {
     final type = report['type']?.toString() ?? 'Unknown';
     final status = report['status']?.toString() ?? 'Unknown';
     final message = report['message']?.toString() ?? 'No description';
+    final statusColor = _getStatusColor(status);
 
-    return Container(
+    return SizedBox(
+      height: 108,
       width: 200,
-      margin: const EdgeInsets.only(right: 12),
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey.shade200),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 4,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Row(
-            children: [
-              Text(
-                _getTypeEmoji(type),
-                style: const TextStyle(fontSize: 24),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  type.toUpperCase(),
-                  style: const TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.bold,
+      child: Container(
+        margin: const EdgeInsets.only(right: 12),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: statusColor.withOpacity(0.3)),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.06),
+              blurRadius: 12,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Row(
+              children: [
+                Icon(
+                  _getEmergencyTypeIcon(type),
+                  size: 22,
+                  color: statusColor,
+                ),
+                const SizedBox(width: 6),
+                Expanded(
+                  child: Text(
+                    type.toUpperCase(),
+                    style: const TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.bold,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ),
+            const SizedBox(height: 6),
+            Expanded(
+              child: Text(
+                message,
+                style: TextStyle(
+                  fontSize: 10,
+                  color: Colors.grey.shade700,
+                ),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+            const SizedBox(height: 6),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              decoration: BoxDecoration(
+                color: statusColor.withOpacity(0.12),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Text(
+                status.toUpperCase(),
+                style: TextStyle(
+                  fontSize: 9,
+                  fontWeight: FontWeight.w700,
+                  color: statusColor,
                 ),
               ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          Text(
-            message,
-            style: TextStyle(
-              fontSize: 11,
-              color: Colors.grey.shade700,
             ),
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-          ),
-          const SizedBox(height: 8),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-            decoration: BoxDecoration(
-              color: const Color(0xFF3b82f6).withOpacity(0.1),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Text(
-              status.toUpperCase(),
-              style: const TextStyle(
-                fontSize: 10,
-                fontWeight: FontWeight.w600,
-                color: Color(0xFF3b82f6),
-              ),
-            ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
+  }
+
+  /// Material icon for emergency type (matches report card and marker style).
+  IconData _getEmergencyTypeIcon(String type) {
+    switch (type.toLowerCase()) {
+      case 'fire':
+        return Icons.local_fire_department_rounded;
+      case 'medical':
+        return Icons.medical_services_rounded;
+      case 'accident':
+        return Icons.car_crash_rounded;
+      case 'flood':
+        return Icons.water_drop_rounded;
+      case 'storm':
+        return Icons.thunderstorm_rounded;
+      case 'earthquake':
+        return Icons.landscape_rounded;
+      default:
+        return Icons.warning_rounded;
+    }
   }
 }

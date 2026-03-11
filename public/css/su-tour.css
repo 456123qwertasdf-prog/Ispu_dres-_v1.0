@@ -1,0 +1,87 @@
+/* Shared Super User product tour – works on all SU pages */
+.su-tour-overlay { position: fixed; inset: 0; z-index: 99998; pointer-events: none; }
+.su-tour-spotlight-panel {
+    position: fixed;
+    background: rgba(15, 23, 42, 0.65);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    pointer-events: auto;
+    transition: left 0.2s, top 0.2s, width 0.2s, height 0.2s;
+}
+.su-tour-highlight-ring {
+    position: fixed;
+    z-index: 100001;
+    pointer-events: none;
+    border: 3px solid var(--su-primary, #0d9488);
+    border-radius: 16px;
+    box-sizing: border-box;
+    transition: left 0.2s, top 0.2s, width 0.2s, height 0.2s;
+    box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.08), 0 0 0 6px rgba(13, 148, 136, 0.2), inset 0 0 20px 2px rgba(15, 23, 42, 0.06);
+}
+.su-tour-popover {
+    position: fixed;
+    z-index: 100002;
+    background: var(--su-surface, #ffffff);
+    border-radius: var(--su-radius-lg, 16px);
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25), 0 0 0 1px rgba(0, 0, 0, 0.04);
+    min-width: 280px;
+    max-width: 360px;
+    padding: 2rem 1.5rem 1.5rem;
+    left: 50%;
+    bottom: 2rem;
+    transform: translateX(-50%);
+    font-family: var(--su-font, system-ui, sans-serif);
+}
+.su-tour-popover h3 { margin: 0 0 0.5rem; font-size: 1.125rem; font-weight: 700; color: var(--su-text, #0f172a); letter-spacing: -0.01em; }
+.su-tour-popover p { margin: 0; font-size: 0.9rem; line-height: 1.55; color: var(--su-muted, #64748b); }
+.su-tour-popover-footer { margin-top: 1.25rem; display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; }
+.su-tour-popover-footer > span { display: flex; gap: 0.5rem; }
+.su-tour-progress { font-size: 0.8rem; color: var(--su-muted, #64748b); font-weight: 500; }
+.su-tour-popover button {
+    padding: 0.5rem 1rem;
+    border-radius: 10px;
+    font-size: 0.875rem;
+    font-weight: 600;
+    cursor: pointer;
+    border: none;
+    background: #f1f5f9;
+    color: #334155;
+    transition: background 0.2s, color 0.2s;
+}
+.su-tour-popover button:hover { background: #e2e8f0; }
+.su-tour-popover button.su-tour-next { background: var(--su-primary, #0d9488); color: #fff; }
+.su-tour-popover button.su-tour-next:hover { background: var(--su-primary-hover, #0f766e); }
+.su-tour-popover button.su-tour-close {
+    position: absolute;
+    top: 0.75rem;
+    right: 0.75rem;
+    padding: 0.35rem;
+    background: transparent;
+    color: #94a3b8;
+    font-size: 1.25rem;
+    line-height: 1;
+    border-radius: 8px;
+}
+.su-tour-popover button.su-tour-close:hover { color: var(--su-text, #0f172a); background: #f1f5f9; }
+.su-tour-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.5rem 1rem;
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.12);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: white;
+    font-size: 0.8rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s, border-color 0.2s, transform 0.15s;
+}
+.su-tour-btn:hover { background: rgba(13, 148, 136, 0.35); border-color: #2dd4bf; color: white; transform: translateY(-1px); }
+/* Light background variant (citizen/responder pages) */
+.su-tour-btn-light {
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    color: #334155;
+}
+.su-tour-btn-light:hover { background: #0d9488; border-color: #0d9488; color: white; transform: translateY(-1px); }

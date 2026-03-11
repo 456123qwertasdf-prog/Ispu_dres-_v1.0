@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Emergency Report - LSPU Emergency Response</title>
     <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/su-tour.css">
     <link rel="manifest" href="manifest.json">
     <link rel="icon" type="image/x-icon" href="images/favicon.ico">
     <!-- Bootstrap Icons -->
@@ -259,6 +260,7 @@
                 </div>
                 <div class="navbar-nav">
                     <div data-auth="required" class="hidden" style="display: flex; align-items: center; gap: 15px;">
+                        <button type="button" id="su-take-tour-btn" class="su-tour-btn" title="Take a guided tour"><i class="bi bi-question-circle-fill"></i> Take a tour</button>
                         <!-- Notification Icon -->
                         <div class="notification-container" style="position: relative;">
                             <button onclick="toggleNotifications()" class="notification-btn" style="background: none; border: none; color: white; font-size: 1.5rem; cursor: pointer; position: relative;">
@@ -348,19 +350,30 @@
                     <button onclick="showSafetyTips()" class="btn btn-primary">
                         <i class="bi bi-book"></i> Learn More
                     </button>
+                    <a href="safety-tips.html" class="btn btn-outline" style="margin-left:0.5rem;">
+                        <i class="bi bi-shield-check"></i> View full guide
+                    </a>
+                    <a href="map-citizen.html" class="btn btn-outline" style="margin-left:0.5rem;">
+                        <i class="bi bi-map"></i> Campus map
+                    </a>
                 </div>
             </div>
         </section>
 
         <!-- Safety Synopsis (Citizen) -->
         <section id="citizenSynopsisSection" class="card mb-8" style="background: linear-gradient(135deg, #eff6ff 0%, #f0f9ff 100%); border-left: 4px solid #3b82f6;">
-            <div class="card-header">
-                <h2 class="card-title">
-                    <i class="bi bi-info-circle"></i> Safety Notice
-                </h2>
-                <p class="card-subtitle">Based on recent reports in your area</p>
+            <div class="card-header" style="display: flex; align-items: flex-start; justify-content: space-between; cursor: pointer; user-select: none;" onclick="toggleCitizenNotice()">
+                <div>
+                    <h2 class="card-title">
+                        <i class="bi bi-info-circle"></i> Safety Notice
+                    </h2>
+                    <p class="card-subtitle">Based on recent reports in your area</p>
+                </div>
+                <button id="citizenNoticeToggleBtn" title="Minimize / Expand" style="background: rgba(59,130,246,0.12); border: 1px solid rgba(59,130,246,0.35); border-radius: 8px; color: #1e40af; width: 34px; height: 34px; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 1rem; transition: all 0.2s ease; flex-shrink: 0; margin-left: 0.75rem;">
+                    <i class="bi bi-chevron-up" style="transition: transform 0.3s ease;"></i>
+                </button>
             </div>
-            <div class="p-6">
+            <div id="citizenNoticeBody" class="p-6" style="transition: max-height 0.35s ease, opacity 0.3s ease, padding 0.3s ease; overflow: hidden; max-height: 500px; opacity: 1;">
                 <p id="citizenSynopsisMessage" class="text-gray-700 leading-relaxed" style="font-size: 1rem;">
                     Loading...
                 </p>
@@ -764,9 +777,56 @@
     <!-- Scripts -->
     <script src="js/supabase.js"></script>
     <script>
+    window.SU_TOUR_STEPS = [
+        { sel: 'main section.text-center.mb-8', title: 'Welcome', desc: 'Your LSPU Emergency Application for reporting emergencies. Stay safe and connected.' },
+        { sel: 'main section.grid.gap-6.mb-8', title: 'Quick actions', desc: 'Access Modules, view My Reports, and learn Safety Tips. Use these shortcuts to navigate the app.' },
+        { sel: '#citizenSynopsisSection', title: 'Safety Notice', desc: 'Current safety information based on recent reports in your area. Click to expand or minimize.' },
+        { sel: '#weatherSection', title: 'Weather', desc: 'Daily weather outlook for LSPU Sta. Cruz Campus. Check conditions before heading out.' },
+        { sel: '#reportForm', title: 'Emergency Report', desc: 'Submit an emergency report with a photo and optional details. Location can be auto-detected. Use this when you need to report an emergency.' },
+        { sel: '.navbar', title: 'Navigation', desc: 'Notifications and profile. Open your profile to edit details or logout.' }
+    ];
+    </script>
+    <script src="js/su-tour.js"></script>
+    <script>
         // Real-time announcements functionality
         let announcementsSubscription = null;
         let announcements = [];
+
+        // Citizen safety notice collapse/expand
+        function toggleCitizenNotice() {
+            const body = document.getElementById('citizenNoticeBody');
+            const btn = document.getElementById('citizenNoticeToggleBtn');
+            if (!body) return;
+            const isCollapsed = body.style.maxHeight === '0px';
+            if (isCollapsed) {
+                body.style.maxHeight = '500px';
+                body.style.opacity = '1';
+                if (btn) btn.querySelector('i').style.transform = 'rotate(0deg)';
+                localStorage.setItem('citizenNoticeCollapsed', 'false');
+            } else {
+                body.style.maxHeight = '0px';
+                body.style.opacity = '0';
+                body.style.paddingTop = '0';
+                body.style.paddingBottom = '0';
+                if (btn) btn.querySelector('i').style.transform = 'rotate(180deg)';
+                localStorage.setItem('citizenNoticeCollapsed', 'true');
+            }
+        }
+
+        // Restore citizen notice panel state
+        (function restoreCitizenNoticeState() {
+            if (localStorage.getItem('citizenNoticeCollapsed') === 'true') {
+                const body = document.getElementById('citizenNoticeBody');
+                const btn = document.getElementById('citizenNoticeToggleBtn');
+                if (body) {
+                    body.style.maxHeight = '0px';
+                    body.style.opacity = '0';
+                    body.style.paddingTop = '0';
+                    body.style.paddingBottom = '0';
+                }
+                if (btn) btn.querySelector('i').style.transform = 'rotate(180deg)';
+            }
+        })();
 
         // Initialize page
         document.addEventListener('DOMContentLoaded', async () => {
@@ -1003,12 +1063,13 @@
                 submitText.classList.add('hidden');
                 submitLoading.classList.remove('hidden');
 
-                // Get form data
+                // Get form data (capture submit time so created_at reflects when user submitted)
                 const formData = {
                     type: 'other', // Will be determined by AI
                     message: document.getElementById('description').value || 'Emergency reported via photo',
                     reporter_name: document.getElementById('reporterName').value,
-                    location: document.getElementById('location').value
+                    location: document.getElementById('location').value,
+                    created_at: new Date().toISOString()
                 };
 
                 // Upload image if provided
@@ -1142,13 +1203,14 @@
             const now = new Date();
             const lastUpdatedEl = document.getElementById('lastUpdatedUser');
             if (lastUpdatedEl) {
-                lastUpdatedEl.textContent = now.toLocaleString();
+                lastUpdatedEl.textContent = now.toLocaleString('en-PH', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit', hour12: true });
             }
             const shortEl = document.getElementById('lastUpdatedShortUser');
             if (shortEl) {
-                shortEl.textContent = now.toLocaleTimeString('en-US', {
+                shortEl.textContent = now.toLocaleTimeString('en-PH', {
                     hour: '2-digit',
-                    minute: '2-digit'
+                    minute: '2-digit',
+                    hour12: true
                 });
             }
 
@@ -1722,7 +1784,7 @@
                                 '<div class="flex items-center gap-4 text-sm text-gray-500">' +
                                     '<span><i class="bi bi-person"></i> ' + (report.reporter_name || 'Anonymous') + '</span>' +
                                     '<span><i class="bi bi-geo-alt"></i> ' + (report.location || 'Location not specified') + '</span>' +
-                                    '<span><i class="bi bi-clock"></i> ' + new Date(report.created_at).toLocaleString() + '</span>' +
+                                    '<span><i class="bi bi-clock"></i> ' + formatReportDate(report.created_at) + '</span>' +
                                 '</div>' +
                                 confidenceHtml +
                             '</div>' +
@@ -1769,6 +1831,35 @@
             // Handle both string and non-string priorities
             const priorityStr = typeof priority === 'string' ? priority.toLowerCase() : 'medium';
             return colors[priorityStr] || 'yellow-600';
+        }
+
+        function formatReportDate(dateString) {
+            if (dateString == null || dateString === '') return '—';
+            const date = new Date(dateString);
+            if (isNaN(date.getTime())) return '—';
+            return date.toLocaleString('en-PH', {
+                month: 'short',
+                day: 'numeric',
+                year: 'numeric',
+                hour: 'numeric',
+                minute: '2-digit',
+                hour12: true
+            });
+        }
+
+        function getTimeAgo(dateInput) {
+            if (dateInput == null) return '—';
+            const date = dateInput instanceof Date ? dateInput : new Date(dateInput);
+            if (isNaN(date.getTime())) return '—';
+            const diff = Date.now() - date.getTime();
+            const m = Math.floor(diff / 60000);
+            if (m < 1) return 'Just now';
+            if (m < 60) return m + 'm ago';
+            const h = Math.floor(m / 60);
+            if (h < 24) return h + 'h ago';
+            const d = Math.floor(h / 24);
+            if (d < 7) return d + 'd ago';
+            return formatReportDate(dateInput);
         }
 
         // Check user role and redirect if necessary
@@ -2032,9 +2123,9 @@
                     <button onclick="markAllAsRead()" style="background: #3b82f6; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; font-size: 0.9rem; margin-right: 8px;">
                         Mark All as Read
                     </button>
-                    <button onclick="viewAllAnnouncements()" style="background: #10b981; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; font-size: 0.9rem;">
-                        View All
-                    </button>
+                    <a href="notifications.html" style="background: #10b981; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; font-size: 0.9rem; text-decoration: none; display: inline-block;">
+                        View all notifications
+                    </a>
                 </div>
             `;
             
@@ -2062,7 +2153,7 @@
                         <div style="flex: 1;">
                             <div style="font-weight: 500; font-size: 0.9rem; margin-bottom: 4px;">${notification.title}</div>
                             <div style="font-size: 0.8rem; color: #6b7280; margin-bottom: 4px;">${notification.message}</div>
-                            <div style="font-size: 0.7rem; color: #9ca3af;">${new Date(notification.timestamp).toLocaleString()}</div>
+                            <div style="font-size: 0.7rem; color: #9ca3af;">${getTimeAgo(notification.timestamp)}</div>
                         </div>
                         ${!notification.read ? '<div style="width: 8px; height: 8px; background: #3b82f6; border-radius: 50%; margin-left: 8px;"></div>' : ''}
                     </div>

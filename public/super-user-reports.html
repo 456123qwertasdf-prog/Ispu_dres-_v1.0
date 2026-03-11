@@ -5,7 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Super User • Reports - LSPU Emergency Response System</title>
     <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/su-header-shared.css">
     <link rel="stylesheet" href="css/system-status.css">
+    <link rel="stylesheet" href="css/su-tour.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
     <script src="https://cdn.jsdelivr.net/npm/supabase@2"></script>
     <script src="js/supabase.js"></script>
@@ -60,6 +62,113 @@
 
         /* Hide emergencySystem alert elements */
         .alert, .alerts-container { display:none !important; }
+
+        /* Page header */
+        .rp-header {
+            background: linear-gradient(135deg, #0f172a 0%, #064e3b 100%);
+            border-radius: 20px; padding: 1.75rem 2rem; margin-bottom: 1.75rem;
+            display: flex; justify-content: space-between; align-items: center;
+            flex-wrap: wrap; gap: 1rem;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.18);
+            position: relative; overflow: hidden;
+        }
+        .rp-header::before { content:''; position:absolute; top:-40px; right:-40px; width:160px; height:160px; background:rgba(16,185,129,0.12); border-radius:50%; }
+        .rp-header::after  { content:''; position:absolute; bottom:-30px; right:80px; width:100px; height:100px; background:rgba(16,185,129,0.07); border-radius:50%; }
+        .rp-header h1 { margin:0; font-size:1.6rem; font-weight:800; color:white; display:flex; align-items:center; gap:0.7rem; letter-spacing:-0.02em; }
+        .rp-header h1 i { color:#34d399; }
+        .rp-header p  { margin:0.3rem 0 0; font-size:0.875rem; color:rgba(255,255,255,0.7); }
+        .rp-su-badge  { background:rgba(16,185,129,0.18); border:1px solid rgba(16,185,129,0.4); color:#34d399; border-radius:9999px; padding:0.3rem 0.9rem; font-size:0.72rem; font-weight:700; letter-spacing:0.06em; text-transform:uppercase; display:inline-flex; align-items:center; gap:0.35rem; }
+
+        /* Page header */
+        .rp-header {
+            background: linear-gradient(135deg, #0f172a 0%, #064e3b 100%);
+            border-radius: 20px; padding: 1.75rem 2rem; margin-bottom: 1.75rem;
+            display: flex; justify-content: space-between; align-items: center;
+            flex-wrap: wrap; gap: 1rem;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.18);
+            position: relative; overflow: hidden;
+        }
+        .rp-header::before { content:''; position:absolute; top:-40px; right:-40px; width:160px; height:160px; background:rgba(16,185,129,0.12); border-radius:50%; }
+        .rp-header::after  { content:''; position:absolute; bottom:-30px; right:80px; width:100px; height:100px; background:rgba(16,185,129,0.07); border-radius:50%; }
+        .rp-header h1 { margin:0; font-size:1.6rem; font-weight:800; color:white; display:flex; align-items:center; gap:0.7rem; letter-spacing:-0.02em; }
+        .rp-header h1 i { color:#34d399; }
+        .rp-header p  { margin:0.3rem 0 0; font-size:0.875rem; color:rgba(255,255,255,0.7); }
+        .rp-su-badge  { background:rgba(16,185,129,0.18); border:1px solid rgba(16,185,129,0.4); color:#34d399; border-radius:9999px; padding:0.3rem 0.9rem; font-size:0.72rem; font-weight:700; letter-spacing:0.06em; text-transform:uppercase; display:inline-flex; align-items:center; gap:0.35rem; }
+
+        /* ── Modern Reports Page ── */
+        .rp-main { padding: 1.75rem; background: #f1f5f9; min-height: 100vh; }
+
+        /* Filter panel */
+        .rp-panel { background:white; border-radius:16px; box-shadow:0 2px 12px rgba(0,0,0,0.06); border:1px solid rgba(0,0,0,0.04); overflow:hidden; margin-bottom:1.25rem; }
+        .rp-panel-header { padding:1rem 1.5rem; border-bottom:1px solid #f1f5f9; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:0.75rem; }
+        .rp-panel-title { font-size:0.95rem; font-weight:700; color:#0f172a; display:flex; align-items:center; gap:0.5rem; }
+        .rp-panel-title i { color:#10b981; }
+        .rp-panel-body { padding:1.25rem 1.5rem; }
+
+        /* Toolbar */
+        .rp-toolbar { display:flex; flex-wrap:wrap; gap:0.75rem; align-items:flex-end; }
+        .rp-filter-group { display:flex; flex-direction:column; gap:0.3rem; }
+        .rp-filter-group label { font-size:0.72rem; font-weight:700; color:#6b7280; text-transform:uppercase; letter-spacing:0.04em; }
+        .rp-select {
+            padding:0.45rem 0.85rem; border-radius:10px; border:1.5px solid #e5e7eb;
+            font-size:0.83rem; color:#374151; background:white; outline:none; cursor:pointer; min-width:140px;
+        }
+        .rp-select:focus { border-color:#10b981; }
+        .rp-btn { padding:0.45rem 1rem; border-radius:10px; border:none; font-size:0.83rem; font-weight:700; cursor:pointer; display:inline-flex; align-items:center; gap:0.35rem; transition:filter 0.15s, transform 0.15s; white-space:nowrap; }
+        .rp-btn:hover { filter:brightness(1.08); transform:translateY(-1px); }
+        .rp-btn-green  { background:linear-gradient(135deg,#10b981,#059669); color:white; }
+        .rp-btn-blue   { background:linear-gradient(135deg,#3b82f6,#2563eb); color:white; }
+        .rp-btn-gray   { background:#f3f4f6; color:#374151; border:1.5px solid #e5e7eb; }
+        .rp-divider    { width:1px; background:#e5e7eb; height:34px; margin:0 0.25rem; }
+
+        /* Table */
+        .rp-table-wrap { overflow-x:auto; }
+        .rp-table { width:100%; border-collapse:collapse; font-size:0.84rem; }
+        .rp-table thead tr { background:#f0fdf4; }
+        .rp-table th { padding:0.85rem 1rem; text-align:left; font-weight:700; color:#065f46; font-size:0.75rem; text-transform:uppercase; letter-spacing:0.04em; white-space:nowrap; }
+        .rp-table td { padding:0.85rem 1rem; border-bottom:1px solid #f8fafc; color:#374151; vertical-align:middle; }
+        .rp-table tbody tr:hover { background:#f0fdf4; }
+        .rp-table tbody tr:last-child td { border-bottom:none; }
+
+        /* Type icon chip */
+        .rp-type-chip { display:inline-flex; align-items:center; gap:0.35rem; padding:0.25rem 0.6rem; border-radius:8px; font-size:0.75rem; font-weight:700; white-space:nowrap; }
+
+        /* Status pill */
+        .rp-status { display:inline-flex; align-items:center; gap:0.3rem; padding:0.22rem 0.65rem; border-radius:9999px; font-size:0.72rem; font-weight:700; text-transform:uppercase; letter-spacing:0.04em; }
+        .rp-s-pending    { background:#fefce8; color:#b45309; }
+        .rp-s-processing { background:#eff6ff; color:#2563eb; }
+        .rp-s-assigned   { background:#f5f3ff; color:#7c3aed; }
+        .rp-s-active     { background:#fef2f2; color:#dc2626; }
+        .rp-s-completed  { background:#ecfdf5; color:#059669; }
+        .rp-s-resolved   { background:#ecfdf5; color:#059669; }
+        .rp-s-closed     { background:#f3f4f6; color:#6b7280; }
+        .rp-s-default    { background:#f3f4f6; color:#6b7280; }
+
+        /* Priority dot */
+        .rp-priority { display:inline-flex; align-items:center; gap:0.35rem; font-size:0.78rem; font-weight:700; }
+
+        /* Action buttons */
+        .rp-act { padding:0.28rem 0.65rem; border:none; border-radius:7px; font-size:0.74rem; font-weight:700; cursor:pointer; display:inline-flex; align-items:center; gap:0.28rem; transition:filter 0.15s; white-space:nowrap; }
+        .rp-act:hover { filter:brightness(1.1); }
+        .rp-act-view { background:#eff6ff; color:#2563eb; }
+        .rp-act-edit { background:#fefce8; color:#b45309; }
+        .rp-act-map  { background:#ecfdf5; color:#059669; }
+
+        /* Pagination */
+        .rp-pagination { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:0.75rem; padding:1rem 1.5rem; border-top:1px solid #f1f5f9; }
+        .rp-pag-info { font-size:0.8rem; color:#6b7280; }
+        .rp-pag-controls { display:flex; align-items:center; gap:0.5rem; }
+        .rp-pag-btn { padding:0.35rem 0.8rem; border-radius:8px; border:1.5px solid #e5e7eb; background:white; color:#374151; font-size:0.8rem; font-weight:600; cursor:pointer; transition:all 0.15s; display:inline-flex; align-items:center; gap:0.3rem; }
+        .rp-pag-btn:hover:not(:disabled) { border-color:#10b981; color:#059669; }
+        .rp-pag-btn:disabled { opacity:0.45; cursor:not-allowed; }
+        .rp-pag-num { display:inline-flex; gap:0.3rem; }
+        .rp-pag-num .page-btn { width:32px; height:32px; border-radius:8px; border:1.5px solid #e5e7eb; background:white; font-size:0.8rem; font-weight:600; color:#374151; cursor:pointer; display:flex; align-items:center; justify-content:center; transition:all 0.15s; }
+        .rp-pag-num .page-btn.active { background:#10b981; border-color:#10b981; color:white; }
+        .rp-pag-num .page-btn:hover:not(.active) { border-color:#10b981; color:#059669; }
+
+        /* Empty / loading */
+        .rp-empty { text-align:center; padding:3rem 1rem; color:#9ca3af; }
+        .rp-empty i { font-size:2.5rem; display:block; margin-bottom:0.75rem; color:#d1d5db; }
     </style>
 </head>
 <body>
@@ -85,11 +194,12 @@
         </div>
         <nav class="sidebar-nav">
             <a href="super-user.html" class="nav-item"><i class="bi bi-house"></i> Dashboard</a>
-            <a href="super-user-reports.html" class="nav-item active"><i class="bi bi-clipboard-data"></i> Recent Reports</a>
+            <a href="super-user-reports.html" class="nav-item active"><i class="bi bi-clipboard-data"></i> Emergency Reports</a>
             <a href="super-user-early-warning.html" class="nav-item"><i class="bi bi-shield-exclamation"></i> Early Warning</a>
             <a href="super-user-map.html" class="nav-item"><i class="bi bi-map"></i> Map View</a>
-            <a href="super-user-evacuation.html" class="nav-item"><i class="bi bi-shield-check"></i> Evacuation Guide</a>
             <a href="super-user-announcements.html" class="nav-item"><i class="bi bi-megaphone-fill"></i> Announcements</a>
+            <a href="readiness-safety-notice.html" class="nav-item"><i class="bi bi-shield-check"></i> Readiness & Safety</a>
+            <a href="super-user-sos-alerts.html" class="nav-item"><i class="bi bi-exclamation-octagon-fill"></i> SOS Alerts</a>
         </nav>
         <div class="sidebar-footer">
             <div class="user-info-card">
@@ -106,127 +216,132 @@
     </div>
 
     <!-- Main Content -->
-    <div class="main-content">
+    <div class="main-content rp-main">
+
         <!-- Page Header -->
-        <div class="su-content-header">
+        <div class="su-page-header">
             <div>
-                <h1><i class="bi bi-clipboard-data"></i> Emergency Reports</h1>
-                <p>Manage and monitor emergency reports across the system.</p>
+                <h1><i class="bi bi-clipboard-data-fill"></i> Emergency Reports</h1>
+                <p>Manage and monitor all emergency reports across the system</p>
             </div>
-            <div style="display:flex;align-items:center;gap:1rem;flex-wrap:wrap;">
-                <span style="background:rgba(16,185,129,0.15);border:1px solid rgba(16,185,129,0.35);color:#34d399;border-radius:9999px;padding:0.3rem 0.85rem;font-size:0.75rem;font-weight:700;letter-spacing:0.05em;text-transform:uppercase;">
-                    <i class="bi bi-shield-star-fill"></i> Super User
-                </span>
-                <div style="text-align:right;">
-                    <div style="font-size:0.75rem;color:rgba(255,255,255,0.7);">Logged in as</div>
-                    <div style="font-weight:600;color:white;font-size:0.875rem;" id="userEmail">Super User</div>
+            <div class="su-header-right">
+                <button type="button" id="su-take-tour-btn" class="su-tour-btn" title="Take a guided tour"><i class="bi bi-question-circle-fill"></i> Take a tour</button>
+                <span class="su-badge"><i class="bi bi-shield-star-fill"></i> Super User</span>
+                <div class="su-header-time">
+                    <div class="time-label">Logged in as</div>
+                    <div class="time-value" id="userEmail">Super User</div>
                 </div>
             </div>
         </div>
 
-        <!-- Reports Section -->
-        <div class="admin-section active">
-            <!-- Filters Card -->
-            <div class="card">
-                <div class="card-body">
-                    <div class="mb-6">
-                        <div class="flex flex-wrap gap-4 mb-4">
-                            <div class="filter-group">
-                                <label for="statusFilter" class="filter-label">Status:</label>
-                                <select id="statusFilter" class="form-select" onchange="filterReports()">
-                                    <option value="all">All Status</option>
-                                    <option value="pending">Pending</option>
-                                    <option value="processing">Processing</option>
-                                    <option value="assigned">Assigned</option>
-                                    <option value="classified">Classified</option>
-                                    <option value="completed">Completed</option>
-                                    <option value="resolved">Resolved</option>
-                                    <option value="closed">Closed</option>
-                                </select>
-                            </div>
-                            <div class="filter-group">
-                                <label for="typeFilter" class="filter-label">Type:</label>
-                                <select id="typeFilter" class="form-select" onchange="filterReports()">
-                                    <option value="all">All Types</option>
-                                    <option value="fire">Fire</option>
-                                    <option value="flood">Flood</option>
-                                    <option value="accident">Accident</option>
-                                    <option value="medical">Medical</option>
-                                    <option value="earthquake">Earthquake</option>
-                                    <option value="storm">Storm</option>
-                                    <option value="false_alarm">False Alarm</option>
-                                    <option value="other">Other</option>
-                                </select>
-                            </div>
-                            <div class="filter-group">
-                                <label for="priorityFilter" class="filter-label">Priority:</label>
-                                <select id="priorityFilter" class="form-select" onchange="filterReports()">
-                                    <option value="all">All Priorities</option>
-                                    <option value="1">Critical</option>
-                                    <option value="2">High</option>
-                                    <option value="3">Medium</option>
-                                    <option value="4">Low</option>
-                                </select>
-                            </div>
-                        </div>
+        <!-- Filter + Table Panel -->
+        <div class="rp-panel">
+            <div class="rp-panel-header">
+                <div class="rp-panel-title">
+                    <i class="bi bi-funnel-fill"></i> Filter Reports
+                </div>
+                <div style="display:flex;gap:0.5rem;flex-wrap:wrap;">
+                    <button onclick="forceRefreshReports()" class="rp-btn rp-btn-green">
+                        <i class="bi bi-arrow-clockwise"></i> Refresh
+                    </button>
+                    <button onclick="syncAllCompletedStatuses()" class="rp-btn rp-btn-blue">
+                        <i class="bi bi-arrow-repeat"></i> Sync All
+                    </button>
+                    <button onclick="exportReports()" class="rp-btn rp-btn-gray">
+                        <i class="bi bi-download"></i> Export CSV
+                    </button>
+                </div>
+            </div>
 
-                        <div class="flex gap-2">
-                            <button onclick="forceRefreshReports()" class="btn btn-primary">
-                                <i class="bi bi-arrow-clockwise"></i> Refresh Reports
-                            </button>
-                            <button onclick="syncAllCompletedStatuses()" class="btn btn-success">
-                                <i class="bi bi-arrow-repeat"></i> Sync All
-                            </button>
-                            <button onclick="exportReports()" class="btn btn-secondary">
-                                <i class="bi bi-download"></i> Export CSV
-                            </button>
-                        </div>
+            <div class="rp-panel-body" style="padding-bottom:0.75rem;">
+                <div class="rp-toolbar">
+                    <div class="rp-filter-group">
+                        <label for="statusFilter">Status</label>
+                        <select id="statusFilter" class="rp-select" onchange="filterReports()">
+                            <option value="all">All Status</option>
+                            <option value="pending">Pending</option>
+                            <option value="processing">Processing</option>
+                            <option value="assigned">Assigned</option>
+                            <option value="classified">Classified</option>
+                            <option value="completed">Completed</option>
+                            <option value="resolved">Resolved</option>
+                            <option value="closed">Closed</option>
+                        </select>
                     </div>
-
-                    <!-- Reports Table -->
-                    <div class="table-responsive">
-                        <table class="data-table">
-                            <thead>
-                                <tr>
-                                    <th>ID</th>
-                                    <th>Type</th>
-                                    <th>Reporter</th>
-                                    <th>Location</th>
-                                    <th>Status</th>
-                                    <th>Priority</th>
-                                    <th>Created</th>
-                                    <th>Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody id="reportsTableBody">
-                                <tr>
-                                    <td colspan="8" class="text-center py-8">
-                                        <div class="loading-spinner"></div>
-                                        <p>Loading reports...</p>
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
+                    <div class="rp-filter-group">
+                        <label for="typeFilter">Type</label>
+                        <select id="typeFilter" class="rp-select" onchange="filterReports()">
+                            <option value="all">All Types</option>
+                            <option value="fire">🔥 Fire</option>
+                            <option value="flood">🌊 Flood</option>
+                            <option value="accident">🚗 Accident</option>
+                            <option value="medical">🏥 Medical</option>
+                            <option value="earthquake">🌍 Earthquake</option>
+                            <option value="storm">⛈️ Storm</option>
+                            <option value="false_alarm">🚫 False Alarm</option>
+                            <option value="other">⚠️ Other</option>
+                        </select>
                     </div>
-
-                    <!-- Pagination -->
-                    <div class="pagination-container">
-                        <div class="pagination-info">
-                            <span>Showing <span id="showingFrom">0</span> to <span id="showingTo">0</span> of <span id="totalReports">0</span> reports</span>
-                        </div>
-                        <div class="pagination-controls">
-                            <button class="btn btn-sm btn-outline" onclick="previousPage()" id="prevBtn" disabled>
-                                <i class="bi bi-chevron-left"></i> Previous
-                            </button>
-                            <div class="page-numbers" id="pageNumbers"></div>
-                            <button class="btn btn-sm btn-outline" onclick="nextPage()" id="nextBtn" disabled>
-                                Next <i class="bi bi-chevron-right"></i>
-                            </button>
-                        </div>
+                    <div class="rp-filter-group">
+                        <label for="priorityFilter">Priority</label>
+                        <select id="priorityFilter" class="rp-select" onchange="filterReports()">
+                            <option value="all">All Priorities</option>
+                            <option value="1">🔴 Critical</option>
+                            <option value="2">🟠 High</option>
+                            <option value="3">🟡 Medium</option>
+                            <option value="4">🟢 Low</option>
+                        </select>
                     </div>
                 </div>
             </div>
+
+            <!-- Reports Table -->
+            <div class="rp-table-wrap">
+                <table class="rp-table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Type</th>
+                            <th>Reporter</th>
+                            <th>Location</th>
+                            <th>Status</th>
+                            <th>Priority</th>
+                            <th>Created</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="reportsTableBody">
+                        <tr>
+                            <td colspan="8">
+                                <div class="rp-empty">
+                                    <i class="bi bi-hourglass-split"></i>
+                                    Loading reports…
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Pagination -->
+            <div class="rp-pagination">
+                <div class="rp-pag-info">
+                    Showing <strong><span id="showingFrom">0</span></strong> –
+                    <strong><span id="showingTo">0</span></strong> of
+                    <strong><span id="totalReports">0</span></strong> reports
+                </div>
+                <div class="rp-pag-controls">
+                    <button class="rp-pag-btn" onclick="previousPage()" id="prevBtn" disabled>
+                        <i class="bi bi-chevron-left"></i> Prev
+                    </button>
+                    <div class="rp-pag-num" id="pageNumbers"></div>
+                    <button class="rp-pag-btn" onclick="nextPage()" id="nextBtn" disabled>
+                        Next <i class="bi bi-chevron-right"></i>
+                    </button>
+                </div>
+            </div>
         </div>
+
     </div><!-- end .main-content -->
 </div><!-- end .dashboard-container -->
 
@@ -386,62 +501,111 @@
     </div>
 </div>
 
-<!-- Classification Correction Modal -->
-<div id="correction-modal" class="modal hidden">
-    <div class="modal-content" style="max-width:600px;">
-        <div class="modal-header">
-            <h2>Correct Classification</h2>
-            <button class="modal-close" onclick="closeCorrectionModal()">&times;</button>
+<!-- Classification Correction Modal (Super User styled) -->
+<div id="correction-modal" style="display:none;position:fixed;inset:0;z-index:1050;background:rgba(0,0,0,0.6);backdrop-filter:blur(4px);align-items:flex-start;justify-content:center;overflow-y:auto;padding:2rem 1rem;">
+    <div style="background:white;border-radius:16px;width:100%;max-width:620px;box-shadow:0 24px 60px rgba(0,0,0,0.3);overflow:hidden;margin:auto;">
+
+        <!-- Modal Header -->
+        <div style="background:linear-gradient(135deg,#0f172a 0%,#064e3b 100%);color:white;padding:1.35rem 1.75rem;display:flex;justify-content:space-between;align-items:center;border-left:4px solid #10b981;">
+            <div>
+                <h2 style="margin:0;font-size:1.15rem;font-weight:800;display:flex;align-items:center;gap:0.6rem;"><i class="bi bi-pencil-square" style="color:#34d399;"></i> Correct Classification</h2>
+                <p style="margin:0.25rem 0 0;font-size:0.8rem;opacity:0.75;">Super User — AI Classification Override</p>
+            </div>
+            <button onclick="closeCorrectionModal()" style="background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.2);color:white;width:34px;height:34px;border-radius:50%;cursor:pointer;font-size:1.15rem;display:flex;align-items:center;justify-content:center;transition:background 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.22)'" onmouseout="this.style.background='rgba(255,255,255,0.12)'">&times;</button>
         </div>
-        <form onsubmit="event.preventDefault(); submitCorrection();" style="padding:1.5rem;">
-            <div class="form-group" style="margin-bottom:1rem;">
-                <label class="form-label" style="display:block;margin-bottom:0.5rem;font-weight:500;color:#374151;">Current Classification</label>
-                <div style="padding:0.75rem;background:#f3f4f6;border-radius:0.375rem;">
-                    <div style="display:flex;justify-content:space-between;align-items:center;">
-                        <span><strong>Type:</strong> <span id="current-type">-</span></span>
-                        <span><strong>Confidence:</strong> <span id="current-confidence">-</span></span>
+
+        <form onsubmit="event.preventDefault(); submitCorrection();" style="padding:1.5rem;display:flex;flex-direction:column;gap:1.1rem;">
+
+            <!-- Current Classification -->
+            <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:1rem 1.25rem;">
+                <div style="font-size:0.72rem;font-weight:800;text-transform:uppercase;letter-spacing:0.06em;color:#065f46;margin-bottom:0.6rem;display:flex;align-items:center;gap:0.4rem;">
+                    <i class="bi bi-robot"></i> Current AI Classification
+                </div>
+                <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:0.5rem;">
+                    <div style="display:flex;align-items:center;gap:0.5rem;">
+                        <span style="font-size:0.75rem;color:#6b7280;font-weight:600;">Type:</span>
+                        <span id="current-type" style="font-weight:800;font-size:0.9rem;color:#064e3b;background:#d1fae5;padding:0.2rem 0.65rem;border-radius:9999px;">-</span>
+                    </div>
+                    <div style="display:flex;align-items:center;gap:0.5rem;">
+                        <span style="font-size:0.75rem;color:#6b7280;font-weight:600;">Confidence:</span>
+                        <span id="current-confidence" style="font-weight:700;font-size:0.875rem;color:#059669;">-</span>
                     </div>
                 </div>
             </div>
-            <div class="form-group" style="margin-bottom:1rem;">
-                <label class="form-label" style="display:block;margin-bottom:0.5rem;font-weight:500;color:#374151;">AI Analysis</label>
-                <div id="ai-analysis-info" style="padding:0.75rem;background:#f3f4f6;border-radius:0.375rem;font-size:0.875rem;color:#6b7280;">Loading...</div>
+
+            <!-- AI Analysis -->
+            <div>
+                <label style="display:block;font-size:0.72rem;font-weight:800;text-transform:uppercase;letter-spacing:0.06em;color:#374151;margin-bottom:0.45rem;"><i class="bi bi-cpu" style="color:#10b981;"></i> AI Analysis</label>
+                <div id="ai-analysis-info" style="padding:0.85rem 1rem;background:#f9fafb;border:1px solid #e5e7eb;border-radius:10px;font-size:0.85rem;color:#6b7280;line-height:1.5;">Loading…</div>
             </div>
-            <div class="form-group" style="margin-bottom:1rem;">
-                <label class="form-label" for="corrected-type" style="display:block;margin-bottom:0.5rem;font-weight:500;color:#374151;">Correct Emergency Type *</label>
-                <select id="corrected-type" class="form-input" required style="width:100%;padding:0.75rem;border:1px solid #d1d5db;border-radius:0.375rem;font-size:0.875rem;">
-                    <option value="">Select correct type...</option>
-                    <option value="flood">Flood</option>
-                    <option value="accident">Accident</option>
-                    <option value="fire">Fire</option>
-                    <option value="medical">Medical</option>
-                    <option value="earthquake">Earthquake</option>
-                    <option value="storm">Storm</option>
-                    <option value="false_alarm">False Alarm</option>
-                    <option value="other">Other</option>
+
+            <!-- Correct Emergency Type -->
+            <div>
+                <label for="corrected-type" style="display:block;font-size:0.72rem;font-weight:800;text-transform:uppercase;letter-spacing:0.06em;color:#374151;margin-bottom:0.45rem;">
+                    <i class="bi bi-exclamation-triangle-fill" style="color:#10b981;"></i> Correct Emergency Type <span style="color:#ef4444;">*</span>
+                </label>
+                <select id="corrected-type" required style="width:100%;padding:0.65rem 0.85rem;border:1.5px solid #d1d5db;border-radius:10px;font-size:0.875rem;color:#1f2937;background:white;outline:none;cursor:pointer;" onfocus="this.style.borderColor='#10b981'" onblur="this.style.borderColor='#d1d5db'">
+                    <option value="">Select correct type…</option>
+                    <option value="flood">🌊 Flood</option>
+                    <option value="accident">🚗 Accident</option>
+                    <option value="fire">🔥 Fire</option>
+                    <option value="medical">🏥 Medical</option>
+                    <option value="earthquake">🌍 Earthquake</option>
+                    <option value="storm">⛈️ Storm</option>
+                    <option value="false_alarm">🚫 False Alarm</option>
+                    <option value="other">⚠️ Other</option>
                 </select>
             </div>
-            <div class="form-group" style="margin-bottom:1rem;">
-                <label class="form-label" style="display:block;margin-bottom:0.5rem;font-weight:500;color:#374151;">Issue Categories (Optional)</label>
-                <div style="display:flex;flex-direction:column;gap:0.5rem;">
-                    <label style="display:flex;align-items:center;gap:0.5rem;font-weight:normal;"><input type="checkbox" name="issue-category" value="wrong-context"> Wrong context detected</label>
-                    <label style="display:flex;align-items:center;gap:0.5rem;font-weight:normal;"><input type="checkbox" name="issue-category" value="missing-keywords"> Missing keywords or visual indicators</label>
-                    <label style="display:flex;align-items:center;gap:0.5rem;font-weight:normal;"><input type="checkbox" name="issue-category" value="visual-misclassification"> Visual misclassification</label>
-                    <label style="display:flex;align-items:center;gap:0.5rem;font-weight:normal;"><input type="checkbox" name="issue-category" value="confusing-similarity"> Confusing similarity to another type</label>
-                    <label style="display:flex;align-items:center;gap:0.5rem;font-weight:normal;"><input type="checkbox" name="issue-category" value="low-confidence"> Low confidence classification error</label>
+
+            <!-- Issue Categories -->
+            <div>
+                <label style="display:block;font-size:0.72rem;font-weight:800;text-transform:uppercase;letter-spacing:0.06em;color:#374151;margin-bottom:0.55rem;">
+                    <i class="bi bi-list-check" style="color:#10b981;"></i> Issue Categories <span style="font-weight:400;text-transform:none;letter-spacing:0;color:#9ca3af;">(Optional)</span>
+                </label>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.4rem 1rem;">
+                    <label style="display:flex;align-items:center;gap:0.5rem;font-size:0.84rem;color:#374151;cursor:pointer;padding:0.35rem 0;">
+                        <input type="checkbox" name="issue-category" value="wrong-context" style="accent-color:#10b981;width:15px;height:15px;cursor:pointer;"> Wrong context detected
+                    </label>
+                    <label style="display:flex;align-items:center;gap:0.5rem;font-size:0.84rem;color:#374151;cursor:pointer;padding:0.35rem 0;">
+                        <input type="checkbox" name="issue-category" value="missing-keywords" style="accent-color:#10b981;width:15px;height:15px;cursor:pointer;"> Missing keywords / visual indicators
+                    </label>
+                    <label style="display:flex;align-items:center;gap:0.5rem;font-size:0.84rem;color:#374151;cursor:pointer;padding:0.35rem 0;">
+                        <input type="checkbox" name="issue-category" value="visual-misclassification" style="accent-color:#10b981;width:15px;height:15px;cursor:pointer;"> Visual misclassification
+                    </label>
+                    <label style="display:flex;align-items:center;gap:0.5rem;font-size:0.84rem;color:#374151;cursor:pointer;padding:0.35rem 0;">
+                        <input type="checkbox" name="issue-category" value="confusing-similarity" style="accent-color:#10b981;width:15px;height:15px;cursor:pointer;"> Confusing similarity to another type
+                    </label>
+                    <label style="display:flex;align-items:center;gap:0.5rem;font-size:0.84rem;color:#374151;cursor:pointer;padding:0.35rem 0;">
+                        <input type="checkbox" name="issue-category" value="low-confidence" style="accent-color:#10b981;width:15px;height:15px;cursor:pointer;"> Low confidence classification error
+                    </label>
                 </div>
             </div>
-            <div class="form-group" style="margin-bottom:1rem;">
-                <label class="form-label" for="corrected-description" style="display:block;margin-bottom:0.5rem;font-weight:500;color:#374151;">Corrected Description <span style="font-weight:normal;color:#6b7280;font-size:0.875rem;">(Optional)</span></label>
-                <input type="text" id="corrected-description" class="form-input" placeholder="e.g., Fallen Tree, Fallen Branch, Pathway Blocked" style="width:100%;padding:0.75rem;border:1px solid #d1d5db;border-radius:0.375rem;font-size:0.875rem;" />
+
+            <!-- Corrected Description -->
+            <div>
+                <label for="corrected-description" style="display:block;font-size:0.72rem;font-weight:800;text-transform:uppercase;letter-spacing:0.06em;color:#374151;margin-bottom:0.45rem;">
+                    <i class="bi bi-card-text" style="color:#10b981;"></i> Corrected Description <span style="font-weight:400;text-transform:none;letter-spacing:0;color:#9ca3af;">(Optional)</span>
+                </label>
+                <input type="text" id="corrected-description" placeholder="e.g., Fallen Tree, Fallen Branch, Pathway Blocked" style="width:100%;padding:0.65rem 0.85rem;border:1.5px solid #d1d5db;border-radius:10px;font-size:0.875rem;box-sizing:border-box;outline:none;" onfocus="this.style.borderColor='#10b981'" onblur="this.style.borderColor='#d1d5db'" />
             </div>
-            <div class="form-group" style="margin-bottom:1rem;">
-                <label class="form-label" for="correction-reason" style="display:block;margin-bottom:0.5rem;font-weight:500;color:#374151;">Detailed Correction Reason * <span style="font-weight:normal;color:#6b7280;font-size:0.875rem;">(Min. 20 characters)</span></label>
-                <textarea id="correction-reason" class="form-input" rows="5" required minlength="20" placeholder="Explain why the AI classification is incorrect..." style="width:100%;padding:0.75rem;border:1px solid #d1d5db;border-radius:0.375rem;font-size:0.875rem;font-family:inherit;"></textarea>
+
+            <!-- Detailed Correction Reason -->
+            <div>
+                <label for="correction-reason" style="display:block;font-size:0.72rem;font-weight:800;text-transform:uppercase;letter-spacing:0.06em;color:#374151;margin-bottom:0.45rem;">
+                    <i class="bi bi-chat-text-fill" style="color:#10b981;"></i> Detailed Correction Reason <span style="color:#ef4444;">*</span>
+                    <span style="font-weight:400;text-transform:none;letter-spacing:0;color:#9ca3af;"> (Min. 20 characters)</span>
+                </label>
+                <textarea id="correction-reason" rows="4" required minlength="20" placeholder="Explain why the AI classification is incorrect and what the correct classification should be…" style="width:100%;padding:0.65rem 0.85rem;border:1.5px solid #d1d5db;border-radius:10px;font-size:0.875rem;font-family:inherit;resize:vertical;box-sizing:border-box;outline:none;" onfocus="this.style.borderColor='#10b981'" onblur="this.style.borderColor='#d1d5db'"></textarea>
             </div>
-            <div style="display:flex;gap:0.75rem;justify-content:flex-end;margin-top:1.5rem;">
-                <button type="button" onclick="closeCorrectionModal()" style="padding:0.75rem 1.5rem;background:#6b7280;color:white;border:none;border-radius:0.375rem;cursor:pointer;font-weight:500;">Cancel</button>
-                <button type="submit" style="padding:0.75rem 1.5rem;background:#3b82f6;color:white;border:none;border-radius:0.375rem;cursor:pointer;font-weight:500;">Submit Correction</button>
+
+            <!-- Action Buttons -->
+            <div style="display:flex;gap:0.75rem;justify-content:flex-end;padding-top:0.25rem;border-top:1px solid #f1f5f9;margin-top:0.25rem;">
+                <button type="button" onclick="closeCorrectionModal()" style="padding:0.65rem 1.35rem;background:#f3f4f6;color:#374151;border:1.5px solid #e5e7eb;border-radius:10px;font-size:0.875rem;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:0.4rem;transition:all 0.15s;" onmouseover="this.style.background='#e5e7eb'" onmouseout="this.style.background='#f3f4f6'">
+                    <i class="bi bi-x-lg"></i> Cancel
+                </button>
+                <button type="submit" style="padding:0.65rem 1.5rem;background:linear-gradient(135deg,#059669,#10b981);color:white;border:none;border-radius:10px;font-size:0.875rem;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:0.4rem;box-shadow:0 2px 8px rgba(16,185,129,0.35);transition:filter 0.15s;" onmouseover="this.style.filter='brightness(1.08)'" onmouseout="this.style.filter='none'">
+                    <i class="bi bi-check2-circle"></i> Submit Correction
+                </button>
             </div>
         </form>
     </div>
@@ -461,6 +625,16 @@
     </div>
 </div>
 
+<script>
+window.SU_TOUR_STEPS = [
+    { sel: '.su-page-header', title: 'Emergency Reports', desc: 'View and manage all emergency reports. Filter by status, type, and priority. Use Refresh to reload and Export to download CSV.' },
+    { sel: '.rp-panel', title: 'Filter & table', desc: 'Filter reports by status, type, and priority. Use Refresh, Sync All, and Export CSV. The table shows ID, type, reporter, location, status, priority, and actions (View, Edit, Map).' },
+    { sel: '.rp-table-wrap', title: 'Reports list', desc: 'All emergency reports appear here. Click View to see details, Edit to update, or Map to open the location on the map.' },
+    { sel: '.rp-pagination', title: 'Pagination', desc: 'Navigate through pages of reports. Use Prev/Next or click a page number.' },
+    { sel: '.sidebar-nav', title: 'Navigation', desc: 'Jump to Dashboard, Early Warning, Map View, Announcements, Readiness & Safety, or SOS Alerts.' }
+];
+</script>
+<script src="js/su-tour.js"></script>
 <script>
     function escapeHtml(text) {
         const map = { '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;' };
@@ -602,6 +776,27 @@
     }
 
     // ── Display ───────────────────────────────────────────────────────────────
+    function getStatusClass(status) {
+        const map = { pending:'rp-s-pending', processing:'rp-s-processing', assigned:'rp-s-assigned',
+                      classified:'rp-s-assigned', active:'rp-s-active', completed:'rp-s-completed',
+                      resolved:'rp-s-resolved', closed:'rp-s-closed' };
+        return map[status] || 'rp-s-default';
+    }
+    function getTypeStyle(type) {
+        const map = { fire:'background:#fef2f2;color:#b91c1c', flood:'background:#eff6ff;color:#1d4ed8',
+                      accident:'background:#fefce8;color:#b45309', medical:'background:#f0fdf4;color:#166534',
+                      earthquake:'background:#fff7ed;color:#c2410c', storm:'background:#f5f3ff;color:#6d28d9',
+                      false_alarm:'background:#f3f4f6;color:#6b7280', other:'background:#fff7ed;color:#92400e' };
+        return map[type] || 'background:#f3f4f6;color:#6b7280';
+    }
+    function getPriorityStyle(priority) {
+        const map = { 1:'color:#dc2626', 2:'color:#d97706', 3:'color:#ca8a04', 4:'color:#16a34a' };
+        return map[priority] || 'color:#6b7280';
+    }
+    function getPriorityIcon(priority) {
+        return { 1:'🔴', 2:'🟠', 3:'🟡', 4:'🟢' }[priority] || '⚪';
+    }
+
     function displayReports() {
         const tbody = document.getElementById('reportsTableBody');
         if (!tbody) return;
@@ -611,46 +806,59 @@
         const pageReports = filteredReports.slice(start, end);
 
         if (!pageReports.length) {
-            tbody.innerHTML = '<tr><td colspan="8" class="text-center py-8"><p class="text-gray-500">No reports found</p></td></tr>';
+            tbody.innerHTML = `<tr><td colspan="8"><div class="rp-empty"><i class="bi bi-inbox"></i>No reports found</div></td></tr>`;
             return;
         }
 
-        tbody.innerHTML = pageReports.map(report => `
+        tbody.innerHTML = pageReports.map(report => {
+            const shortId = report.id ? report.id.substring(0, 8) : 'N/A';
+            const typeLabel = (report.type || 'other').replace('_', ' ');
+            const statusLabel = (report.status || 'pending').toUpperCase();
+            const createdDate = report.created_at ? formatReportDate(report.created_at) : 'N/A';
+            const address = report.location?.address || 'Location detected';
+
+            return `
             <tr>
-                <td class="font-mono text-sm">${report.id ? report.id.substring(0, 8) + '...' : 'N/A'}</td>
+                <td style="font-family:monospace;font-size:0.8rem;color:#6b7280;" title="${report.id || ''}">${shortId}…</td>
                 <td>
-                    <span class="badge badge-${report.type || 'other'}">${getEmergencyIcon(report.type)} ${(report.type || 'other').toUpperCase()}</span>
+                    <span class="rp-type-chip" style="${getTypeStyle(report.type)}">
+                        ${getEmergencyIcon(report.type)} ${typeLabel.toUpperCase()}
+                    </span>
                 </td>
-                <td>${report.reporter_name || 'Anonymous'}</td>
-                <td>
-                    <a href="super-user-map.html?reportId=${report.id}" style="color:#3b82f6;text-decoration:none;cursor:pointer;" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'" title="View on Map">
-                        <i class="bi bi-geo-alt-fill"></i> ${report.location?.address || 'Location detected'}
+                <td style="font-weight:500;">${report.reporter_name || 'Anonymous'}</td>
+                <td style="max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
+                    <a href="super-user-map.html?reportId=${report.id}" style="color:#2563eb;text-decoration:none;display:flex;align-items:center;gap:0.25rem;font-size:0.83rem;" title="View on Map">
+                        <i class="bi bi-geo-alt-fill" style="color:#10b981;flex-shrink:0;"></i>${address}
                     </a>
                 </td>
-                <td><span class="badge badge-${report.status || 'pending'}">${(report.status || 'pending').toUpperCase()}</span></td>
-                <td><span class="badge badge-priority-${report.priority || 4}">${getPriorityText(report.priority || 4)}</span></td>
-                <td>${report.created_at ? new Date(report.created_at).toLocaleDateString() : 'N/A'}</td>
+                <td><span class="rp-status ${getStatusClass(report.status)}">${statusLabel}</span></td>
                 <td>
-                    <div class="action-buttons">
-                        <button onclick="viewReport('${report.id}')" class="btn btn-sm btn-info" title="View Details">
-                            <i class="bi bi-eye"></i>
+                    <span class="rp-priority" style="${getPriorityStyle(report.priority || 4)}">
+                        ${getPriorityIcon(report.priority || 4)} ${getPriorityText(report.priority || 4)}
+                    </span>
+                </td>
+                <td style="font-size:0.82rem;color:#6b7280;white-space:nowrap;">${createdDate}</td>
+                <td>
+                    <div style="display:flex;gap:0.35rem;flex-wrap:wrap;">
+                        <button onclick="viewReport('${report.id}')" class="rp-act rp-act-view" title="View Details">
+                            <i class="bi bi-eye-fill"></i> View
                         </button>
-                        ${report.type ? `<button onclick="openCorrectionModalFromId('${report.id}')" class="btn btn-sm" style="background:#F59E0B;color:white;" title="Correct Classification">
+                        ${report.type ? `<button onclick="openCorrectionModalFromId('${report.id}')" class="rp-act rp-act-edit" title="Correct Classification">
                             <i class="bi bi-pencil-square"></i>
                         </button>` : ''}
-                        <button onclick="editReport('${report.id}')" class="btn btn-sm btn-warning" title="Edit">
-                            <i class="bi bi-pencil"></i>
+                        <button onclick="editReport('${report.id}')" class="rp-act" style="background:#f3e8ff;color:#7c3aed;" title="Edit">
+                            <i class="bi bi-pencil-fill"></i>
                         </button>
-                        <button onclick="archiveReport('${report.id}')" class="btn btn-sm btn-secondary" title="Archive">
-                            <i class="bi bi-archive"></i>
+                        <button onclick="archiveReport('${report.id}')" class="rp-act" style="background:#f3f4f6;color:#6b7280;" title="Archive">
+                            <i class="bi bi-archive-fill"></i>
                         </button>
-                        <button onclick="deleteReport('${report.id}')" class="btn btn-sm btn-danger" title="Delete">
-                            <i class="bi bi-trash"></i>
+                        <button onclick="deleteReport('${report.id}')" class="rp-act" style="background:#fef2f2;color:#dc2626;" title="Delete">
+                            <i class="bi bi-trash-fill"></i>
                         </button>
                     </div>
                 </td>
-            </tr>
-        `).join('');
+            </tr>`;
+        }).join('');
     }
 
     // ── Filter ────────────────────────────────────────────────────────────────
@@ -712,11 +920,26 @@
             else if (report.location.formatted_address) { locationText = report.location.formatted_address; }
             else { locationText = 'Location detected'; }
         }
-        const createdAt = report.created_at ? new Date(report.created_at).toLocaleString() : 'N/A';
-        const updatedAt = report.last_update ? new Date(report.last_update).toLocaleString() : 'Never updated';
+        const createdAt = report.created_at ? formatReportDate(report.created_at) : 'N/A';
+        const updatedAt = report.last_update ? formatReportDate(report.last_update) : 'Never updated';
         let classification = report.corrected_description || report.ai_description || '';
         if (classification && classification.includes('-')) { const parts = classification.split('-').map(p=>p.trim()); if(parts.length>1) classification=parts.slice(1).join('-').trim(); }
-        if (!classification) { classification = report.message || 'Not specified'; if(classification.length>50) classification=classification.substring(0,50)+'...'; }
+        if (!classification) {
+            const msg = (report.message || '').trim();
+            const isGenericSource = /emergency\s+reported\s+from\s+mobile\s+app/i.test(msg);
+            const alreadyClassified = (report.status || '').toLowerCase() === 'classified' && (report.type || '').length > 0;
+            if (isGenericSource) {
+                const t = report.type || '';
+                if (alreadyClassified && t) {
+                    classification = t.charAt(0).toUpperCase() + t.slice(1).replace(/_/g, ' ') + ' Emergency';
+                } else {
+                    classification = t ? (t.charAt(0).toUpperCase() + t.slice(1).replace(/_/g, ' ') + ' (pending)') : 'Pending classification';
+                }
+            } else {
+                classification = msg || 'Not specified';
+                if (classification.length > 50) classification = classification.substring(0, 50) + '...';
+            }
+        }
         const rName = report.reporter_full_name || report.reporter_name || 'Anonymous';
         const rEmail = report.reporter_email || report.email || report.gmail || 'Not provided';
         const rStuNo = report.reporter_student_number || report.student_number || 'Not provided';
@@ -734,7 +957,7 @@
         // assignments (any active status so we show responder for accepted/enroute/on_scene too)
         let assignedText = 'Not assigned';
         try {
-            const activeStatusesDisplay = ['assigned', 'accepted', 'enroute', 'in_progress', 'on_scene'];
+            const activeStatusesDisplay = ['assigned', 'accepted', 'enroute', 'on_scene'];
             const { data: asgn } = await window.emergencySystem.supabase.from('assignment').select('responder_id,status').eq('report_id', rId).in('status', activeStatusesDisplay);
             if (asgn && asgn.length > 0) {
                 const resp = await window.emergencySystem.getResponders();
@@ -902,7 +1125,7 @@
         list.innerHTML = '<div style="padding:1rem;text-align:center;color:#6b7280;">Loading responders...</div>';
         try {
             const responders = await window.emergencySystem.getResponders();
-            const activeStatuses = ['assigned', 'accepted', 'enroute', 'in_progress', 'on_scene'];
+            const activeStatuses = ['assigned', 'accepted', 'enroute', 'on_scene'];
             let assignedIds = [];
             try {
                 const { data } = await window.emergencySystem.supabase.from('assignment').select('responder_id').eq('report_id', reportId).in('status', activeStatuses);
@@ -980,8 +1203,9 @@
     }
 
     async function confirmAssignResponderVR() {
-        const checked = document.querySelectorAll('#vrResponderList input[type="checkbox"]:checked:not(:disabled)');
-        let selectedIds = Array.from(checked).map(cb => cb.value);
+        // Only collect from responder checkboxes (id="vr-resp-<uuid>"); team "Assign whole team" checkboxes have no value and would send "on"
+        const checked = document.querySelectorAll('#vrResponderList input[type="checkbox"][id^="vr-resp-"]:checked:not(:disabled)');
+        let selectedIds = Array.from(checked).map(cb => cb.value).filter(v => v && v !== 'on');
         if (!selectedIds.length) { showToast('Please select at least one responder', 'error'); return; }
         const respondersList = window._lastAssignModalResponders || [];
         const expandedSet = new Set(selectedIds);
@@ -990,7 +1214,7 @@
         });
         selectedIds = Array.from(expandedSet);
         try {
-            const activeStatuses = ['assigned', 'accepted', 'enroute', 'in_progress', 'on_scene'];
+            const activeStatuses = ['assigned', 'accepted', 'enroute', 'on_scene'];
             const { data: existing } = await window.emergencySystem.supabase.from('assignment').select('responder_id').eq('report_id', currentReportId).in('status', activeStatuses);
             const existingIds = existing ? existing.map(a => a.responder_id) : [];
             const newIds = selectedIds.filter(id => !existingIds.includes(id));
@@ -1004,16 +1228,32 @@
                 showToast('Cannot assign: these responder(s) already have an active assignment and must finish it first: ' + names, 'error');
                 return;
             }
-            const { error } = await window.emergencySystem.supabase.from('assignment').insert(newIds.map(id => ({ report_id: currentReportId, responder_id: id, status: 'assigned' })));
-            if (error) throw error;
-            await window.emergencySystem.supabase.from('reports').update({ status: 'assigned', last_update: new Date().toISOString() }).eq('id', currentReportId).neq('status','completed');
+            const assignedAt = new Date().toISOString();
+            const rows = newIds.map(id => ({
+                report_id: currentReportId,
+                responder_id: id,
+                status: 'assigned',
+                assigned_at: assignedAt,
+                role: 'primary'
+            }));
+            const { data: inserted, error } = await window.emergencySystem.supabase.from('assignment').insert(rows).select('id');
+            if (error) {
+                console.error('Assignment insert error:', error.code, error.message, error.details);
+                throw error;
+            }
+            await window.emergencySystem.supabase.from('reports').update({ status: 'assigned', last_update: assignedAt }).eq('id', currentReportId).neq('status','completed');
             showToast(`${newIds.length} responder(s) assigned successfully!`, 'success');
             closeAssignResponderModalVR();
             await loadReports();
             if (!document.getElementById('viewReportModal').classList.contains('hidden')) {
                 await viewReport(currentReportId);
             }
-        } catch(e) { showToast('Failed to assign: ' + e.message, 'error'); }
+        } catch(e) {
+            const msg = e?.message || String(e);
+            const details = e?.details ? ' ' + JSON.stringify(e.details) : '';
+            console.error('Assign responder failed:', e);
+            showToast('Failed to assign: ' + msg + details, 'error');
+        }
     }
 
     function editReport(reportId) {
@@ -1061,7 +1301,7 @@
             report.location?.address || 'Location detected',
             report.status || 'pending',
             getPriorityText(report.priority || 4),
-            report.created_at ? new Date(report.created_at).toLocaleString() : 'N/A',
+            report.created_at ? formatReportDate(report.created_at) : 'N/A',
             report.message || ''
         ]);
         return [headers, ...rows].map(row => row.map(field => `"${field}"`).join(',')).join('\n');
@@ -1084,7 +1324,7 @@
         for (let i = 1; i <= totalPages; i++) {
             const btn = document.createElement('button');
             btn.textContent = i;
-            btn.className = `page-number ${i === currentPage ? 'active' : ''}`;
+            btn.className = `page-btn ${i === currentPage ? 'active' : ''}`;
             btn.onclick = () => goToPage(i);
             pageNumbers.appendChild(btn);
         }
@@ -1104,9 +1344,34 @@
         return { 1:'Critical', 2:'High', 3:'Medium', 4:'Low' }[priority] || 'Low';
     }
 
+    /**
+     * Format report date. Backend returns timestamps with +00 (e.g. 15:18:54+00).
+     * That value is the submitter's local time stored as-is (not true UTC), so we
+     * strip the timezone and parse as local so it displays correctly (e.g. 15:18 → 3:18 PM).
+     */
+    function formatReportDate(dateString) {
+        if (dateString == null || dateString === '') return 'N/A';
+        let toParse = String(dateString).trim();
+        if (toParse.endsWith('Z')) {
+            toParse = toParse.slice(0, -1);
+        } else if (/[+-]\d{2}:?\d{2}$/.test(toParse)) {
+            toParse = toParse.replace(/[+-]\d{2}:?\d{2}$/, '');
+        }
+        const date = new Date(toParse);
+        if (isNaN(date.getTime())) return 'N/A';
+        return date.toLocaleString('en-PH', {
+            month: 'short',
+            day: 'numeric',
+            year: 'numeric',
+            hour: 'numeric',
+            minute: '2-digit',
+            hour12: true
+        });
+    }
+
     function showLoadingIndicator() {
         const tbody = document.getElementById('reportsTableBody');
-        if (tbody) tbody.innerHTML = '<tr><td colspan="8" class="text-center py-8"><div class="loading-spinner"></div><p>Loading reports...</p></td></tr>';
+        if (tbody) tbody.innerHTML = `<tr><td colspan="8"><div class="rp-empty"><i class="bi bi-hourglass-split"></i>Loading reports…</div></td></tr>`;
     }
 
     function hideLoadingIndicator() {}
@@ -1127,7 +1392,8 @@
 
     function openCorrectionModal(reportId, reportData) {
         currentReportForCorrection = { id: reportId, ...reportData };
-        document.getElementById('correction-modal').classList.remove('hidden');
+        const cm = document.getElementById('correction-modal');
+        cm.style.display = 'flex';
         document.getElementById('current-type').textContent = (reportData.type || 'unknown').toUpperCase();
         document.getElementById('current-confidence').textContent = reportData.confidence ? `${(reportData.confidence * 100).toFixed(0)}%` : 'N/A';
         const aiInfo = document.getElementById('ai-analysis-info');
@@ -1146,7 +1412,7 @@
     }
 
     function closeCorrectionModal() {
-        document.getElementById('correction-modal').classList.add('hidden');
+        document.getElementById('correction-modal').style.display = 'none';
         currentReportForCorrection = null;
     }
 

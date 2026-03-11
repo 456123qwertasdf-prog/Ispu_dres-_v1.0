@@ -601,6 +601,51 @@
             }
         }
         
+        /* Collapsible Panel Toggle */
+        .panel-toggle-btn {
+            background: rgba(255, 255, 255, 0.15);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 8px;
+            color: white;
+            width: 34px;
+            height: 34px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: all 0.2s ease;
+            flex-shrink: 0;
+            margin-left: 0.75rem;
+        }
+
+        .panel-toggle-btn:hover {
+            background: rgba(255, 255, 255, 0.25);
+            border-color: rgba(255, 255, 255, 0.5);
+        }
+
+        .panel-toggle-btn i {
+            transition: transform 0.3s ease;
+        }
+
+        .panel-collapsible-body {
+            transition: max-height 0.35s ease, opacity 0.3s ease, padding 0.3s ease;
+            overflow: hidden;
+            max-height: 1000px;
+            opacity: 1;
+        }
+
+        .panel-collapsible-body.collapsed {
+            max-height: 0 !important;
+            opacity: 0;
+            padding-top: 0 !important;
+            padding-bottom: 0 !important;
+        }
+
+        .collapsible-panel .panel-header-modern {
+            user-select: none;
+        }
+
         /* Modern Panel Styles */
         .dashboard-panels-container {
             display: flex;
@@ -1125,6 +1170,9 @@
                 <a href="reports.html" class="nav-item">
                     <i class="bi bi-file-text"></i> Reports
                 </a>
+                <a href="synopsis-notice.html" class="nav-item">
+                    <i class="bi bi-chat-quote"></i> Synopsis & Notice
+                </a>
                 <a href="announcements.html" class="nav-item">
                     <i class="bi bi-megaphone"></i> Announcements
                 </a>
@@ -1137,11 +1185,11 @@
                 <a href="evacuation-guide.html" class="nav-item">
                     <i class="bi bi-shield-check"></i> Evacuation Guide
                 </a>
-                <a href="archive.html" class="nav-item">
-                    <i class="bi bi-folder"></i> Archived
+                <a href="archive.html" class="nav-item" style="font-weight: 700;">
+                    <i class="bi bi-folder"></i> Archived Reports
                 </a>
-                <a href="analytics.html" class="nav-item">
-                    <i class="bi bi-graph-up"></i> Analytics
+                <a href="analytics.html" class="nav-item" style="font-weight: 700;">
+                    <i class="bi bi-graph-up"></i> Analytics Dashboard
                 </a>
                 <a href="user-management.html" class="nav-item">
                     <i class="bi bi-people"></i> User Management
@@ -1227,55 +1275,6 @@
                     </div>
                 </div>
 
-                <!-- Report Synopsis (Admin: both citizen and responder messages) -->
-                <div class="dashboard-panel" style="margin-bottom: 1.5rem;">
-                    <div class="panel-header-modern">
-                        <div class="panel-title">
-                            <i class="bi bi-chat-quote"></i>
-                            <span>Report Synopsis</span>
-                        </div>
-                        <p class="panel-subtitle">Role-based messages from recent reports (last 30 days)</p>
-                    </div>
-                    <div class="panel-body-modern" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem;">
-                        <div style="background: linear-gradient(135deg, #eff6ff 0%, #f0f9ff 100%); border-left: 4px solid #3b82f6; padding: 1rem 1.25rem; border-radius: 8px;">
-                            <div style="font-weight: 600; color: #1e40af; margin-bottom: 0.5rem;">
-                                <i class="bi bi-people"></i> For citizens
-                            </div>
-                            <p id="adminCitizenSynopsis" style="margin: 0; color: #374151; font-size: 0.9rem; line-height: 1.5;">Loading...</p>
-                        </div>
-                        <div style="background: linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 100%); border-left: 4px solid #059669; padding: 1rem 1.25rem; border-radius: 8px;">
-                            <div style="font-weight: 600; color: #047857; margin-bottom: 0.5rem;">
-                                <i class="bi bi-shield-check"></i> For responders / super users
-                            </div>
-                            <p id="adminResponderSynopsis" style="margin: 0; color: #374151; font-size: 0.9rem; line-height: 1.5;">Loading...</p>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Safety Notice (Citizen) — editable; only admin/super_user can disable showing -->
-                <div class="dashboard-panel" style="margin-bottom: 1.5rem;">
-                    <div class="panel-header-modern">
-                        <div class="panel-title">
-                            <i class="bi bi-info-circle"></i>
-                            <span>Safety Notice (Citizen)</span>
-                        </div>
-                        <p class="panel-subtitle">Shown on citizen home. When disabled, the notice is hidden for all users.</p>
-                    </div>
-                    <div class="panel-body-modern">
-                        <div style="margin-bottom: 1rem;">
-                            <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; font-weight: 500; color: #374151;">
-                                <input type="checkbox" id="adminSafetyNoticeEnabled" checked>
-                                Show safety notice to citizens
-                            </label>
-                        </div>
-                        <textarea id="adminSafetyNoticeMessage" rows="3" placeholder="Leave empty to use auto-generated message from recent reports." style="width:100%;padding:0.75rem;border:1px solid #e5e7eb;border-radius:8px;font-size:0.9rem;resize:vertical;"></textarea>
-                        <div style="margin-top: 0.75rem;">
-                            <button type="button" class="btn btn-primary" id="adminSaveSafetyNoticeBtn" onclick="adminSaveSafetyNotice()">Save Safety Notice</button>
-                            <span id="adminSafetyNoticeStatus" style="margin-left:0.75rem;font-size:0.875rem;color:#6b7280;"></span>
-                        </div>
-                    </div>
-                </div>
-            
                 <!-- Analytics, Teams, and Reports Container -->
                 <div class="dashboard-panels-container">
                     <!-- Emergency Analytics -->
@@ -1395,7 +1394,6 @@
                 
                 // Load dashboard data
                 await loadDashboardData();
-                await loadAdminSafetyNotice();
                 
                 // Set up real-time updates
                 await setupRealTimeUpdates();
@@ -1554,52 +1552,8 @@
                 // Update active emergency reports
                 updateActiveReports(reports || []);
 
-                // Update report synopsis (citizen + responder messages)
-                try {
-                    const synopsis = window.emergencySystem.getSynopsisForRole(reports || [], 'admin');
-                    const citizenEl = document.getElementById('adminCitizenSynopsis');
-                    const responderEl = document.getElementById('adminResponderSynopsis');
-                    if (citizenEl) citizenEl.textContent = synopsis.citizenMessage;
-                    if (responderEl) responderEl.textContent = synopsis.responderMessage;
-                } catch (e) {
-                    const citizenEl = document.getElementById('adminCitizenSynopsis');
-                    const responderEl = document.getElementById('adminResponderSynopsis');
-                    if (citizenEl) citizenEl.textContent = 'Stay alert and report real emergencies.';
-                    if (responderEl) responderEl.textContent = 'Keep equipment inspected and stay ready.';
-                }
-                
             } catch (error) {
                 console.error('Error loading dashboard data:', error);
-            }
-        }
-
-        async function loadAdminSafetyNotice() {
-            try {
-                const notice = await window.emergencySystem.getSafetyNotice();
-                const enabledEl = document.getElementById('adminSafetyNoticeEnabled');
-                const messageEl = document.getElementById('adminSafetyNoticeMessage');
-                if (enabledEl) enabledEl.checked = notice ? notice.enabled !== false : true;
-                if (messageEl) messageEl.value = notice?.message || '';
-            } catch (e) {
-                console.warn('loadAdminSafetyNotice failed:', e);
-            }
-        }
-
-        async function adminSaveSafetyNotice() {
-            const btn = document.getElementById('adminSaveSafetyNoticeBtn');
-            const statusEl = document.getElementById('adminSafetyNoticeStatus');
-            const message = (document.getElementById('adminSafetyNoticeMessage')?.value || '').trim();
-            const enabled = document.getElementById('adminSafetyNoticeEnabled')?.checked !== false;
-            if (btn) btn.disabled = true;
-            if (statusEl) statusEl.textContent = 'Saving...';
-            try {
-                await window.emergencySystem.updateSafetyNotice({ message: message || null, enabled });
-                if (statusEl) statusEl.textContent = 'Saved.';
-                setTimeout(() => { if (statusEl) statusEl.textContent = ''; }, 3000);
-            } catch (e) {
-                if (statusEl) statusEl.textContent = 'Failed: ' + (e?.message || e);
-            } finally {
-                if (btn) btn.disabled = false;
             }
         }
 
@@ -1946,13 +1900,16 @@
         }
 
         function formatDate(dateString) {
+            if (dateString == null || dateString === '') return '—';
             const date = new Date(dateString);
-            return date.toLocaleString('en-US', { 
-                month: 'short', 
-                day: 'numeric', 
-                hour: 'numeric', 
-                minute: 'numeric', 
-                hour12: true 
+            if (isNaN(date.getTime())) return 'Invalid date';
+            return date.toLocaleString('en-PH', {
+                month: 'short',
+                day: 'numeric',
+                year: 'numeric',
+                hour: 'numeric',
+                minute: '2-digit',
+                hour12: true
             });
         }
 

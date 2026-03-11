@@ -31,6 +31,7 @@ serve(async (req) => {
       phone,
       studentNumber,
       userType,
+      userTypes,
       isActive
     } = body || {}
 
@@ -57,7 +58,8 @@ serve(async (req) => {
 
     // Update auth user only if fields provided (skip on pure archive/restore)
     const displayName = `${firstName ?? ''} ${lastName ?? ''}`.trim()
-    const shouldUpdateAuth = !!(email || password || firstName || lastName || role || phone || studentNumber || userType)
+    const typesArr = Array.isArray(userTypes) && userTypes.length ? userTypes : (userType ? [userType] : null)
+    const shouldUpdateAuth = !!(email || password || firstName || lastName || role || phone || studentNumber || userType || typesArr)
     let authRes: any = null
     if (shouldUpdateAuth) {
       // Get existing user metadata to preserve it
@@ -66,12 +68,13 @@ serve(async (req) => {
       
       const authUpdate: any = {
         user_metadata: {
-          ...existingMetadata, // Preserve existing metadata
+          ...existingMetadata,
           full_name: displayName || existingMetadata.full_name || undefined,
           role: role ?? existingMetadata.role ?? undefined,
           phone: phone ?? existingMetadata.phone ?? undefined,
           student_number: studentNumber ?? existingMetadata.student_number ?? undefined,
-          user_type: userType || existingMetadata.user_type || (studentNumber ? 'student' : undefined) // Always update user_type if provided, or infer from student_number
+          user_type: typesArr ? typesArr[0] : (userType || existingMetadata.user_type || (studentNumber ? 'student' : undefined)),
+          user_types: typesArr || existingMetadata.user_types || undefined
         }
       }
       if (email) authUpdate.email = email
@@ -132,13 +135,16 @@ serve(async (req) => {
         )
       }
     } else {
-      // Restore or update active profile
       const profilePayload: any = {}
       if (role !== undefined) profilePayload.role = role
       if (displayName) profilePayload.name = displayName
       if (phone !== undefined) profilePayload.phone = phone
       if (studentNumber !== undefined) profilePayload.student_number = studentNumber
       if (isActive !== undefined) profilePayload.is_active = !!isActive
+      if (typesArr) {
+        profilePayload.user_type = typesArr[0]
+        profilePayload.user_types = typesArr
+      }
 
       // If restoring from archive, move it back
       if (isActive === true) {
@@ -155,7 +161,9 @@ serve(async (req) => {
             phone: archived.phone,
             student_number: archived.student_number,
             is_active: true,
-            created_at: archived.created_at
+            created_at: archived.created_at,
+            user_type: 'student',
+            user_types: ['student']
           }
           const { error: insertBackErr } = await supabase
             .from('user_profiles')

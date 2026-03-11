@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'package:intl/intl.dart';
 import '../models/notification_model.dart';
 import '../services/supabase_service.dart';
 import 'report_detail_loader_screen.dart';
@@ -107,11 +108,12 @@ class _NotificationDetailsScreenState extends State<NotificationDetailsScreen> {
   }
 
   String _formatTimestamp(DateTime timestamp) {
+    final local = timestamp.toLocal();
     final now = DateTime.now();
-    final difference = now.difference(timestamp);
+    final difference = now.difference(local);
 
     if (difference.inDays > 7) {
-      return '${timestamp.month}/${timestamp.day}/${timestamp.year}, ${timestamp.hour}:${timestamp.minute.toString().padLeft(2, '0')} ${timestamp.hour >= 12 ? 'PM' : 'AM'}';
+      return DateFormat('MMM d, yyyy • h:mm a').format(local);
     } else if (difference.inDays > 0) {
       return '${difference.inDays} day${difference.inDays > 1 ? 's' : ''} ago';
     } else if (difference.inHours > 0) {

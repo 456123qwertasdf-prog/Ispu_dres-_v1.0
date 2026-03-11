@@ -39,6 +39,9 @@
                 <a href="reports.html" class="nav-item active">
                     <i class="bi bi-file-text"></i> Reports
                 </a>
+                <a href="synopsis-notice.html" class="nav-item">
+                    <i class="bi bi-chat-quote"></i> Synopsis & Notice
+                </a>
                 <a href="announcements.html" class="nav-item">
                     <i class="bi bi-megaphone"></i> Announcements
                 </a>
@@ -668,7 +671,7 @@
                     <td>
                         <span class="badge badge-priority-${report.priority || 4}">${getPriorityText(report.priority || 4)}</span>
                     </td>
-                    <td>${report.created_at ? new Date(report.created_at).toLocaleDateString() : 'N/A'}</td>
+                    <td>${report.created_at ? formatReportDate(report.created_at) : 'N/A'}</td>
                     <td>
                         <div class="action-buttons">
                             <button onclick="viewReport('${report.id}')" class="btn btn-sm btn-info" title="View Details">
@@ -777,7 +780,7 @@
                 report.location?.address || 'Location detected',
                 report.status || 'pending',
                 getPriorityText(report.priority || 4),
-                report.created_at ? new Date(report.created_at).toLocaleString() : 'N/A',
+                report.created_at ? formatReportDate(report.created_at) : 'N/A',
                 report.message || ''
             ]);
             
@@ -856,6 +859,20 @@
                 4: 'Low'
             };
             return priorities[priority] || 'Low';
+        }
+
+        function formatReportDate(dateString) {
+            if (dateString == null || dateString === '') return 'N/A';
+            const date = new Date(dateString);
+            if (isNaN(date.getTime())) return 'N/A';
+            return date.toLocaleString('en-PH', {
+                month: 'short',
+                day: 'numeric',
+                year: 'numeric',
+                hour: 'numeric',
+                minute: '2-digit',
+                hour12: true
+            });
         }
 
         function showLoadingIndicator() {

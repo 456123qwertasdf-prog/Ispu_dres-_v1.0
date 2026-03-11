@@ -94,31 +94,86 @@ class _ReportDetailLoaderScreenState extends State<ReportDetailLoaderScreen> {
   Widget build(BuildContext context) {
     if (_loading) {
       return Scaffold(
-        appBar: AppBar(title: const Text('Report details')),
-        body: const Center(child: CircularProgressIndicator()),
+        appBar: AppBar(
+          elevation: 0,
+          centerTitle: true,
+          backgroundColor: const Color(0xFF2563EB),
+          foregroundColor: Colors.white,
+          title: const Text(
+            'Report details',
+            style: TextStyle(fontWeight: FontWeight.w600, fontSize: 18),
+          ),
+        ),
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const CircularProgressIndicator(),
+              const SizedBox(height: 20),
+              Text(
+                'Loading report...',
+                style: TextStyle(
+                  fontSize: 15,
+                  color: Colors.grey.shade600,
+                ),
+              ),
+            ],
+          ),
+        ),
       );
     }
     if (_error != null || _report == null) {
       return Scaffold(
-        appBar: AppBar(title: const Text('Report details')),
+        appBar: AppBar(
+          elevation: 0,
+          centerTitle: true,
+          backgroundColor: const Color(0xFF2563EB),
+          foregroundColor: Colors.white,
+          title: const Text(
+            'Report details',
+            style: TextStyle(fontWeight: FontWeight.w600, fontSize: 18),
+          ),
+        ),
         body: Center(
           child: Padding(
-            padding: const EdgeInsets.all(24),
+            padding: const EdgeInsets.symmetric(horizontal: 32),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(Icons.error_outline, size: 64, color: Theme.of(context).colorScheme.error),
-                const SizedBox(height: 16),
+                Container(
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).colorScheme.error.withValues(alpha: 0.1),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    Icons.error_outline_rounded,
+                    size: 56,
+                    color: Theme.of(context).colorScheme.error,
+                  ),
+                ),
+                const SizedBox(height: 24),
                 Text(
                   _error ?? 'Report not found',
                   textAlign: TextAlign.center,
-                  style: Theme.of(context).textTheme.bodyLarge,
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        color: Colors.grey.shade800,
+                        height: 1.4,
+                      ),
                 ),
-                const SizedBox(height: 24),
+                const SizedBox(height: 28),
                 FilledButton.icon(
                   onPressed: () => Navigator.of(context).pop(),
-                  icon: const Icon(Icons.arrow_back),
+                  icon: const Icon(Icons.arrow_back_rounded, size: 20),
                   label: const Text('Back'),
+                  style: FilledButton.styleFrom(
+                    backgroundColor: const Color(0xFF2563EB),
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
                 ),
               ],
             ),

@@ -39,6 +39,9 @@
                 <a href="reports.html" class="nav-item">
                     <i class="bi bi-file-text"></i> Reports
                 </a>
+                <a href="synopsis-notice.html" class="nav-item">
+                    <i class="bi bi-chat-quote"></i> Synopsis & Notice
+                </a>
                 <a href="announcements.html" class="nav-item">
                     <i class="bi bi-megaphone"></i> Announcements
                 </a>
@@ -51,11 +54,11 @@
                 <a href="evacuation-guide.html" class="nav-item">
                     <i class="bi bi-shield-check"></i> Evacuation Guide
                 </a>
-                <a href="archive.html" class="nav-item active">
-                    <i class="bi bi-folder"></i> Archived
+                <a href="archive.html" class="nav-item active" style="font-weight: 700;">
+                    <i class="bi bi-folder"></i> Archived Reports
                 </a>
-                <a href="analytics.html" class="nav-item">
-                    <i class="bi bi-graph-up"></i> Analytics
+                <a href="analytics.html" class="nav-item" style="font-weight: 700;">
+                    <i class="bi bi-graph-up"></i> Analytics Dashboard
                 </a>
                 <a href="user-management.html" class="nav-item">
                     <i class="bi bi-people"></i> User Management
@@ -718,14 +721,20 @@
         }
 
         function formatDate(dateString) {
-            if (!dateString) return 'Unknown';
-            
+            if (dateString == null || dateString === '') return 'Unknown';
             try {
                 const date = new Date(dateString);
-                if (isNaN(date.getTime())) return 'Invalid Date';
-                return date.toLocaleDateString() + ' ' + date.toLocaleTimeString();
+                if (isNaN(date.getTime())) return 'Invalid date';
+                return date.toLocaleString('en-PH', {
+                    month: 'short',
+                    day: 'numeric',
+                    year: 'numeric',
+                    hour: 'numeric',
+                    minute: '2-digit',
+                    hour12: true
+                });
             } catch (error) {
-                return 'Invalid Date';
+                return 'Invalid date';
             }
         }
 

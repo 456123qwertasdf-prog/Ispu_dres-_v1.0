@@ -5,63 +5,48 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>View Report - Super User - LSPU Emergency Response System</title>
     <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/su-header-shared.css">
+    <link rel="stylesheet" href="css/system-status.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/supabase@2"></script>
     <script src="js/supabase.js"></script>
     <style>
-        /* Super User Navigation */
-        .su-nav {
-            background: #020617;
-            color: white;
-            padding: 0.75rem 2rem;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            gap: 1rem;
-            box-shadow: 0 4px 12px rgba(15,23,42,0.45);
-            position: sticky;
-            top: 0;
-            z-index: 40;
-        }
-        .su-nav-title {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            font-weight: 600;
-        }
-        .su-nav-links {
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-            font-size: 0.9rem;
-        }
-        .su-nav-link {
-            color: rgba(248,250,252,0.85);
-            text-decoration: none;
-            padding: 0.35rem 0.75rem;
-            border-radius: 9999px;
-            display: inline-flex;
-            align-items: center;
-            gap: 0.35rem;
-        }
-        .su-nav-link:hover {
-            background: rgba(148,163,184,0.25);
-        }
-        .su-nav-link.active {
-            background: linear-gradient(135deg, #3b82f6, #2563eb);
-            color: white;
-        }
-        .super-user-container {
-            background: #f8f9fa;
-            min-height: 100vh;
-        }
-        .main-content-wrapper {
-            max-width: 1400px;
-            margin: 0 auto;
-            padding: 2rem;
-        }
+        /* ── Super-User Sidebar Theme ── */
+        .sidebar { background: linear-gradient(180deg, #0f172a 0%, #064e3b 100%) !important; }
+        .nav-item.active { background: rgba(16,185,129,0.2) !important; color: #34d399 !important; border-left: 3px solid #10b981 !important; border-top:none !important; border-right:none !important; border-bottom:none !important; font-weight:600; }
+        .nav-item:hover { background: rgba(16,185,129,0.1) !important; color: #a7f3d0 !important; border-left-color: rgba(16,185,129,0.4) !important; }
+        .status-dot.online { background: #10b981 !important; box-shadow: 0 0 0 3px rgba(16,185,129,0.25) !important; }
+        .user-avatar { background: rgba(16,185,129,0.25) !important; color: #34d399 !important; }
+        .sidebar-header { border-bottom: 1px solid rgba(16,185,129,0.15) !important; }
+        .system-status { padding: 10px 20px; border-bottom: 1px solid rgba(16,185,129,0.15); }
+        .su-role-badge { display:inline-flex; align-items:center; gap:4px; font-size:0.65rem; font-weight:700; letter-spacing:0.08em; text-transform:uppercase; background:rgba(16,185,129,0.2); color:#34d399; border:1px solid rgba(16,185,129,0.4); border-radius:9999px; padding:2px 8px; margin-top:4px; }
+        .su-logout-btn { width:100%; padding:0.75rem 1rem; background:rgba(239,68,68,0.1); border:1px solid rgba(239,68,68,0.3); color:#fca5a5; border-radius:8px; font-size:0.875rem; font-weight:500; cursor:pointer; transition:all 0.2s; display:flex; align-items:center; gap:0.5rem; }
+        .su-logout-btn:hover { background:#EF4444 !important; border-color:#EF4444 !important; color:white !important; }
+
+        /* ── Page header ── */
+        .vr-header { background:linear-gradient(135deg,#0f172a 0%,#064e3b 100%); border-radius:20px; padding:1.75rem 2rem; margin-bottom:1.75rem; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:1rem; box-shadow:0 8px 32px rgba(0,0,0,0.18); position:relative; overflow:hidden; }
+        .vr-header::before { content:''; position:absolute; top:-40px; right:-40px; width:160px; height:160px; background:rgba(16,185,129,0.12); border-radius:50%; }
+        .vr-header::after  { content:''; position:absolute; bottom:-30px; right:80px; width:100px; height:100px; background:rgba(16,185,129,0.07); border-radius:50%; }
+        .vr-header h1 { margin:0; font-size:1.5rem; font-weight:800; color:white; display:flex; align-items:center; gap:0.7rem; letter-spacing:-0.02em; position:relative; z-index:1; }
+        .vr-header h1 i { color:#34d399; }
+        .vr-header p { margin:0.3rem 0 0; font-size:0.875rem; color:rgba(255,255,255,0.7); position:relative; z-index:1; }
+        .vr-su-badge { background:rgba(16,185,129,0.18); border:1px solid rgba(16,185,129,0.4); color:#34d399; border-radius:9999px; padding:0.3rem 0.9rem; font-size:0.72rem; font-weight:700; letter-spacing:0.06em; text-transform:uppercase; display:inline-flex; align-items:center; gap:0.35rem; position:relative; z-index:1; }
+
+        /* ── Page header ── */
+        .vr-header { background:linear-gradient(135deg,#0f172a 0%,#064e3b 100%); border-radius:20px; padding:1.75rem 2rem; margin-bottom:1.75rem; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:1rem; box-shadow:0 8px 32px rgba(0,0,0,0.18); position:relative; overflow:hidden; }
+        .vr-header::before { content:''; position:absolute; top:-40px; right:-40px; width:160px; height:160px; background:rgba(16,185,129,0.12); border-radius:50%; }
+        .vr-header::after  { content:''; position:absolute; bottom:-30px; right:80px; width:100px; height:100px; background:rgba(16,185,129,0.07); border-radius:50%; }
+        .vr-header h1 { margin:0; font-size:1.5rem; font-weight:800; color:white; display:flex; align-items:center; gap:0.7rem; letter-spacing:-0.02em; position:relative; z-index:1; }
+        .vr-header h1 i { color:#34d399; }
+        .vr-header p { margin:0.3rem 0 0; font-size:0.875rem; color:rgba(255,255,255,0.7); position:relative; z-index:1; }
+        .vr-su-badge { background:rgba(16,185,129,0.18); border:1px solid rgba(16,185,129,0.4); color:#34d399; border-radius:9999px; padding:0.3rem 0.9rem; font-size:0.72rem; font-weight:700; letter-spacing:0.06em; text-transform:uppercase; display:inline-flex; align-items:center; gap:0.35rem; position:relative; z-index:1; }
+
+        /* ── Page layout ── */
+        .vr-main { padding:1.75rem; background:#f1f5f9; min-height:100vh; }
+
+        .vr-content { background:white; border-radius:16px; box-shadow:0 2px 12px rgba(0,0,0,0.06); border:1px solid rgba(0,0,0,0.04); padding:2rem; }
         .report-header-card {
             background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%);
             color: white;
@@ -79,9 +64,16 @@
             gap: 1rem;
         }
         .report-header-card .subtitle {
-            font-size: 1.1rem;
-            opacity: 0.9;
-            margin: 0;
+            font-size: 0.9rem;
+            opacity: 0.85;
+            margin: 0.25rem 0 0 0;
+        }
+        .report-header-card .status-badge.header-status {
+            font-size: 0.75rem;
+            padding: 0.25rem 0.6rem;
+            background: rgba(255, 255, 255, 0.25);
+            color: rgba(255, 255, 255, 0.95);
+            margin-left: 0.75rem;
         }
         .report-meta {
             display: flex;
@@ -101,9 +93,12 @@
         }
         .info-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            grid-template-columns: repeat(3, 1fr);
             gap: 1.5rem;
             margin-bottom: 2rem;
+        }
+        @media (max-width: 1024px) {
+            .info-grid { grid-template-columns: 1fr; }
         }
         .info-card {
             background: white;
@@ -343,59 +338,83 @@
     </style>
 </head>
 <body>
-    <nav class="su-nav">
-        <div class="su-nav-title">
-            <i class="bi bi-shield-check"></i>
-            <span>LSPU Emergency • Super User</span>
+<div class="dashboard-container">
+
+    <!-- ── Sidebar ── -->
+    <div class="sidebar" style="display:flex;flex-direction:column;">
+        <div class="sidebar-header">
+            <div class="sidebar-logo">
+                <img src="images/logolspu.jpg" alt="LSPU Logo"
+                     style="width:50px;height:50px;object-fit:contain;border-radius:50%;border:2px solid rgba(52,211,153,0.6);display:block;">
+                <div class="logo-text">
+                    <h3 style="margin:0;font-size:15px;font-weight:700;color:white;">Super User</h3>
+                    <p style="margin:2px 0 0 0;font-size:11px;color:rgba(255,255,255,0.6);">Emergency Response</p>
+                    <span class="su-role-badge"><i class="bi bi-shield-star-fill"></i> Super User</span>
+                </div>
+            </div>
         </div>
-        <div class="su-nav-links">
-            <a href="super-user.html" class="su-nav-link">
-                <i class="bi bi-grid-fill"></i>
-                Dashboard
-            </a>
-            <a href="super-user-reports.html" class="su-nav-link">
-                <i class="bi bi-clipboard-data"></i>
-                Recent Reports
-            </a>
-            <a href="super-user-early-warning.html" class="su-nav-link">
-                <i class="bi bi-shield-exclamation"></i>
-                Early Warning
-            </a>
-            <a href="super-user-map.html" class="su-nav-link">
-                <i class="bi bi-map"></i>
-                Map View
-            </a>
-            <a href="super-user-evacuation.html" class="su-nav-link">
-                <i class="bi bi-shield-check"></i>
-                Evacuation Guide
-            </a>
-            <a href="super-user-announcements.html" class="su-nav-link">
-                <i class="bi bi-megaphone-fill"></i>
-                General Announcements
-            </a>
-            <button type="button" onclick="window.location.href='login.html'" class="su-nav-link" style="border:none;background:none;cursor:pointer;">
-                <i class="bi bi-box-arrow-right"></i>
-                Logout
+        <div class="system-status">
+            <div class="status-indicator">
+                <span class="status-dot online"></span>
+                <span style="font-size:0.8rem;color:rgba(255,255,255,0.75);">System Status: Online</span>
+            </div>
+        </div>
+        <nav class="sidebar-nav">
+            <a href="super-user.html" class="nav-item"><i class="bi bi-house"></i> Dashboard</a>
+            <a href="super-user-reports.html" class="nav-item active"><i class="bi bi-clipboard-data"></i> Emergency Reports</a>
+            <a href="super-user-early-warning.html" class="nav-item"><i class="bi bi-shield-exclamation"></i> Early Warning</a>
+            <a href="super-user-map.html" class="nav-item"><i class="bi bi-map"></i> Map View</a>
+            <a href="super-user-announcements.html" class="nav-item"><i class="bi bi-megaphone-fill"></i> Announcements</a>
+            <a href="readiness-safety-notice.html" class="nav-item"><i class="bi bi-shield-check"></i> Readiness &amp; Safety</a>
+            <a href="super-user-sos-alerts.html" class="nav-item"><i class="bi bi-exclamation-octagon-fill"></i> SOS Alerts</a>
+        </nav>
+        <div class="sidebar-footer">
+            <div class="user-info-card">
+                <div class="user-avatar">S</div>
+                <div class="user-details">
+                    <h4 id="suUserName" style="margin:0;font-size:0.875rem;font-weight:600;color:white;">Super User</h4>
+                    <p style="margin:0;font-size:0.75rem;color:rgba(255,255,255,0.55);">LSPU Command</p>
+                </div>
+            </div>
+            <button class="su-logout-btn" onclick="window.location.href='login.html'">
+                <i class="bi bi-box-arrow-right"></i> Logout
             </button>
         </div>
-    </nav>
+    </div>
 
-    <div class="super-user-container">
-        <div class="main-content-wrapper">
+    <!-- ── Main Content ── -->
+    <div class="main-content">
+        <div class="vr-main">
+
+            <!-- Page Header (green banner like image 1) -->
+            <div class="vr-header" style="margin-bottom:1.75rem;">
+                <div>
+                    <h1><i class="bi bi-file-earmark-text-fill"></i> View Report</h1>
+                    <p>Detailed report information &amp; responder management</p>
+                </div>
+                <div style="display:flex;align-items:center;gap:1rem;flex-wrap:wrap;">
+                    <span class="vr-su-badge"><i class="bi bi-shield-star-fill"></i> SUPER USER</span>
+                    <div style="font-size:0.8rem;color:rgba(255,255,255,0.85);">Logged in as <strong id="userEmail">Super User</strong></div>
+                </div>
+            </div>
+
+            <!-- Content wrapper -->
+            <div class="vr-content">
+
             <div id="loadingState" class="loading-state">
                 <div class="spinner"></div>
                 <span>Loading report details...</span>
             </div>
 
             <div id="reportContent" style="display: none;">
-                <!-- Report Header -->
+                <!-- Report Header (dark blue card like image 1) -->
                 <div class="report-header-card">
-                    <a href="super-user-map.html" class="back-button">
-                        <i class="bi bi-arrow-left"></i> Back to Map
+                    <a href="super-user-reports.html" class="back-button">
+                        <i class="bi bi-arrow-left"></i> Back to Reports
                     </a>
                     <h1>
                         <span id="reportType">Emergency Report</span>
-                        <span class="status-badge" id="reportStatusBadge">PENDING</span>
+                        <span class="status-badge header-status" id="reportStatusBadge">PENDING</span>
                     </h1>
                     <p class="subtitle">Report ID: <span id="reportId">-</span></p>
                     <div class="report-meta">
@@ -408,13 +427,13 @@
                             <span id="reportReporter">-</span>
                         </div>
                         <div class="meta-item">
-                            <i class="bi bi-flag"></i>
+                            <i class="bi bi-exclamation-circle"></i>
                             <span id="reportPriority">-</span>
                         </div>
                     </div>
                 </div>
 
-                <!-- Action Buttons -->
+                <!-- Action Buttons (order & colors like image 1: Edit yellow, Assign blue, Map gray, Delete red) -->
                 <div class="action-buttons">
                     <button class="btn-action btn-warning" onclick="editReport()">
                         <i class="bi bi-pencil"></i> Edit Report
@@ -428,7 +447,7 @@
                     <button class="btn-action btn-warning" onclick="assignResponder()" id="assignBackupBtn" style="display: none;" title="Assign an additional responder to backup or assist">
                         <i class="bi bi-person-plus-fill"></i> Assign backup / Assist
                     </button>
-                    <button class="btn-action btn-secondary" onclick="viewOnMap()">
+                    <button class="btn-action btn-secondary" onclick="viewOnMap()" style="background:#4b5563;color:white;">
                         <i class="bi bi-map"></i> View on Map
                     </button>
                     <button class="btn-action btn-danger" onclick="deleteReport()">
@@ -436,9 +455,9 @@
                     </button>
                 </div>
 
-                <!-- Info Grid -->
+                <!-- Info Grid: 3 panels like image 1 -->
                 <div class="info-grid">
-                    <!-- Report Details -->
+                    <!-- Report Details (includes image) -->
                     <div class="info-card">
                         <h3><i class="bi bi-info-circle"></i> Report Details</h3>
                         <div class="info-row">
@@ -465,9 +484,19 @@
                             <span class="info-label">Last Updated:</span>
                             <span class="info-value" id="reportUpdatedAt">-</span>
                         </div>
+                        <div style="margin-top:1rem;padding-top:1rem;border-top:1px solid #f3f4f6;">
+                            <div class="info-label" style="margin-bottom:0.5rem;">Report Image</div>
+                            <div id="reportImageContainer">
+                                <img id="reportImage" class="image-preview" style="display: none;" alt="Report image">
+                                <div id="noImage" class="no-image">
+                                    <i class="bi bi-image" style="font-size: 2rem; opacity: 0.3;"></i>
+                                    <div style="margin-top: 0.5rem; font-size: 0.85rem;">No image available</div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
 
-                    <!-- Location Information -->
+                    <!-- Location -->
                     <div class="info-card">
                         <h3><i class="bi bi-geo-alt"></i> Location</h3>
                         <div class="info-row">
@@ -481,7 +510,7 @@
                         <div id="mapContainer" class="map-container"></div>
                     </div>
 
-                    <!-- Assignment Information -->
+                    <!-- Assignment -->
                     <div class="info-card">
                         <h3><i class="bi bi-person-badge"></i> Assignment</h3>
                         <div class="info-row">
@@ -499,18 +528,6 @@
                         </div>
                         <div id="assignmentHistory" class="assignment-history"></div>
                     </div>
-
-                    <!-- Report Image -->
-                    <div class="info-card">
-                        <h3><i class="bi bi-image"></i> Report Image</h3>
-                        <div id="reportImageContainer">
-                            <img id="reportImage" class="image-preview" style="display: none;" alt="Report image">
-                            <div id="noImage" class="no-image">
-                                <i class="bi bi-image" style="font-size: 3rem; opacity: 0.3;"></i>
-                                <div style="margin-top: 1rem;">No image available</div>
-                            </div>
-                        </div>
-                    </div>
                 </div>
             </div>
 
@@ -518,12 +535,15 @@
                 <i class="bi bi-exclamation-triangle" style="font-size: 3rem; color: #ef4444;"></i>
                 <h2 style="color: #1f2937; margin-top: 1rem;">Report Not Found</h2>
                 <p style="color: #6b7280;">The report you're looking for doesn't exist or you don't have permission to view it.</p>
-                <a href="super-user-map.html" class="btn-action btn-primary" style="margin-top: 1rem;">
-                    <i class="bi bi-arrow-left"></i> Back to Map
+                <a href="super-user-reports.html" class="btn-action btn-primary" style="margin-top: 1rem;">
+                    <i class="bi bi-arrow-left"></i> Back to Reports
                 </a>
             </div>
-        </div>
-    </div>
+
+            </div><!-- end .vr-content -->
+        </div><!-- end .vr-main -->
+    </div><!-- end .main-content -->
+</div><!-- end .dashboard-container -->
 
     <script>
         let currentReport = null;
@@ -564,6 +584,12 @@
                     }
                     return;
                 }
+
+                // Set display name in sidebar
+                const displayName = window.emergencySystem.user?.user_metadata?.full_name
+                    || window.emergencySystem.user?.email?.split('@')[0] || 'Super User';
+                const nameEl = document.getElementById('suUserName');
+                if (nameEl) nameEl.textContent = displayName;
                 
                 // Load report details
                 await loadReportDetails();
@@ -642,15 +668,16 @@
         // Populate report details in UI
         function populateReportDetails(report, assignment, assignmentHistory) {
             // Header
-            document.getElementById('reportId').textContent = report.id || '-';
+            const rawId = (report.id || '').replace(/-/g, ' ').trim();
+            document.getElementById('reportId').textContent = rawId || '-';
             document.getElementById('reportType').textContent = (report.type || report.classification || 'Emergency').toUpperCase();
             document.getElementById('reportTypeValue').textContent = report.type || report.classification || 'Unknown';
             
-            // Status
+            // Status (header badge stays light on blue card)
             const status = (report.status || 'pending').toLowerCase();
             const statusBadge = document.getElementById('reportStatusBadge');
             statusBadge.textContent = status.toUpperCase();
-            statusBadge.className = 'status-badge status-' + status;
+            statusBadge.className = 'status-badge header-status status-' + status;
             document.getElementById('reportStatusValue').textContent = status.toUpperCase();
             
             // Priority

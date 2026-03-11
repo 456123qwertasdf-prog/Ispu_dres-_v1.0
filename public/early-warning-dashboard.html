@@ -749,6 +749,9 @@
                 <a href="reports.html" class="nav-item">
                     <i class="bi bi-file-text"></i> Reports
                 </a>
+                <a href="synopsis-notice.html" class="nav-item">
+                    <i class="bi bi-chat-quote"></i> Synopsis & Notice
+                </a>
                 <a href="announcements.html" class="nav-item">
                     <i class="bi bi-megaphone"></i> Announcements
                 </a>
@@ -1246,20 +1249,31 @@
         // Helper functions
 
         function formatDate(dateString) {
-            return new Date(dateString).toLocaleString();
+            if (dateString == null || dateString === '') return '—';
+            const date = new Date(dateString);
+            if (isNaN(date.getTime())) return 'Invalid date';
+            return date.toLocaleString('en-PH', {
+                month: 'short',
+                day: 'numeric',
+                year: 'numeric',
+                hour: 'numeric',
+                minute: '2-digit',
+                hour12: true
+            });
         }
 
         function updateLastUpdated() {
             const now = new Date();
             const fullEl = document.getElementById('lastUpdated');
             if (fullEl) {
-                fullEl.textContent = now.toLocaleString();
+                fullEl.textContent = now.toLocaleString('en-PH', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit', hour12: true });
             }
             const shortEl = document.getElementById('lastUpdatedShort');
             if (shortEl) {
-                shortEl.textContent = now.toLocaleTimeString('en-US', {
+                shortEl.textContent = now.toLocaleTimeString('en-PH', {
                     hour: '2-digit',
-                    minute: '2-digit'
+                    minute: '2-digit',
+                    hour12: true
                 });
             }
         }

@@ -45,6 +45,7 @@ Deno.serve(async (req) => {
       phone,
       studentNumber,
       userType,
+      userTypes,
       leaderId,
       teamName
     } = body || {}
@@ -74,7 +75,7 @@ Deno.serve(async (req) => {
       SERVICE_ROLE
     )
 
-    // Create auth user with metadata
+    const typesArr = Array.isArray(userTypes) && userTypes.length ? userTypes : (userType ? [userType] : ['student'])
     const displayName = `${firstName ?? ''} ${lastName ?? ''}`.trim()
     const { data: created, error: createErr } = await supabase.auth.admin.createUser({
       email,
@@ -85,9 +86,10 @@ Deno.serve(async (req) => {
         role,
         phone: phone ?? '',
         student_number: studentNumber ?? '',
-        user_type: userType ?? '', // Store user type (student/teacher/security_guard)
+        user_type: typesArr[0],
+        user_types: typesArr,
         must_change_password: true,
-        temporary_password: generatedPassword // Store actual password, not boolean
+        temporary_password: generatedPassword
       }
     })
 
@@ -106,7 +108,6 @@ Deno.serve(async (req) => {
 
     const userId = created.user.id
 
-    // Insert profile row
     const { data: profile, error: profileErr } = await supabase
       .from('user_profiles')
       .insert([{
@@ -115,7 +116,8 @@ Deno.serve(async (req) => {
         name: displayName || (email.split('@')[0] || 'Unknown'),
         phone: phone ?? '',
         student_number: studentNumber ?? '',
-        user_type: userType ?? 'student', // Add user_type to profile
+        user_type: typesArr[0],
+        user_types: typesArr,
         is_active: true
       }])
       .select()
@@ -194,9 +196,10 @@ Deno.serve(async (req) => {
           role,
           phone: phone ?? '',
           student_number: studentNumber ?? '',
-          user_type: userType ?? '', // Store user type in metadata
+          user_type: typesArr[0],
+          user_types: typesArr,
           must_change_password: true,
-          temporary_password: generatedPassword // Store actual password for template access
+          temporary_password: generatedPassword
         }
       })
 

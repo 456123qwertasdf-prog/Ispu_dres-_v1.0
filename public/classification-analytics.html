@@ -228,7 +228,7 @@
                                 <td>${case_.id.substring(0, 8)}...</td>
                                 <td><strong>${case_.type}</strong></td>
                                 <td><span class="badge badge-low">${(parseFloat(case_.confidence) * 100).toFixed(0)}%</span></td>
-                                <td>${new Date(case_.createdAt).toLocaleDateString()}</td>
+                                <td>${case_.createdAt ? new Date(case_.createdAt).toLocaleDateString('en-PH', { month: 'short', day: 'numeric', year: 'numeric' }) : '—'}</td>
                                 <td>${case_.description || 'No description'}</td>
                             </tr>
                         `;
