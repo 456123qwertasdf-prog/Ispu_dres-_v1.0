@@ -200,10 +200,12 @@ function normalizeAccuWeatherToEnhanced(
     ? (hourly as Record<string, unknown>[]).reduce((sum: number, h: Record<string, unknown>) => sum + (Number((h?.PrecipitationProbability ?? 0)) || 0), 0) / Math.max(hourly.length, 1) / 100
     : 0;
 
+  // Normalize all rain chance to 0-1 so every client can do: displayPercent = value <= 1 ? value * 100 : value
   const next24hForecast = (hourly as Record<string, unknown>[]).slice(0, 12).map((h) => {
     const dt = (h?.DateTime as string) || new Date().toISOString();
     const t = (h?.Temperature as { Value?: number })?.Value ?? temp;
-    const rainChance = Number(h?.PrecipitationProbability ?? 0);
+    const raw = Number(h?.PrecipitationProbability ?? 0); // AccuWeather returns 0-100
+    const rainChance = raw <= 1 ? raw : raw / 100;
     const phrase = (h?.IconPhrase as string) || weatherText;
     return {
       time: new Date(dt).toISOString().slice(11, 16),
@@ -215,7 +217,7 @@ function normalizeAccuWeatherToEnhanced(
   });
 
   const maxRainChance = next24hForecast.length > 0
-    ? Math.max(...next24hForecast.map((x) => x.rain_chance)) / 100
+    ? Math.max(...next24hForecast.map((x) => x.rain_chance))
     : 0;
 
   // Day high / night low from next 12h hourly (for day/night labels in app)

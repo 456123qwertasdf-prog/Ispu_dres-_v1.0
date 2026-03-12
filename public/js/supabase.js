@@ -319,7 +319,12 @@ class EmergencyResponseSystem {
 
       this.user = data.user;
       this.updateUIForAuthenticatedUser();
-      
+
+      // Ensure session is in the client and persisted before caller redirects
+      // (avoids dashboard loading before localStorage has the session and sending user back to login)
+      await this.supabase.auth.getSession();
+      await new Promise((r) => setTimeout(r, 250));
+
       this.showSuccess('Successfully signed in!');
       return data;
     } catch (error) {

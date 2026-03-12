@@ -77,6 +77,84 @@ Deno.serve(async (req) => {
 
     const typesArr = Array.isArray(userTypes) && userTypes.length ? userTypes : (userType ? [userType] : ['student'])
     const displayName = `${firstName ?? ''} ${lastName ?? ''}`.trim()
+
+    const errors: { code: string; field: string; message: string }[] = []
+
+    // Check for duplicate ID number (student_number)
+    const studentNum = (studentNumber ?? '').toString().trim()
+    if (studentNum) {
+      const { data: idExists } = await supabase.rpc('check_student_number_exists', { num: studentNum })
+      if (idExists === true) {
+        errors.push({
+          code: 'STUDENT_NUMBER_EXISTS',
+          field: 'studentNumber',
+          message: 'This ID number is already registered. Use a different ID number or find the user in the list.'
+        })
+      }
+    }
+
+    // Check for duplicate phone (contact number)
+    const phoneStr = (phone ?? '').toString().trim()
+    if (phoneStr) {
+      const { data: phoneMatch } = await supabase.from('user_profiles').select('user_id').eq('phone', phoneStr).limit(1)
+      if (phoneMatch && phoneMatch.length > 0) {
+        errors.push({
+          code: 'PHONE_EXISTS',
+          field: 'contactNumber',
+          message: 'This contact number is already registered. Use a different number or find the user in the list.'
+        })
+      }
+    }
+
+    // Check for duplicate email (so we can return it together with ID/phone errors)
+    const emailTrimmed = (email ?? '').toString().trim().toLowerCase()
+    if (emailTrimmed) {
+      try {
+        let page = 1
+        const perPage = 1000
+        let emailExists = false
+        while (true) {
+          const { data: listData } = await supabase.auth.admin.listUsers({ page: String(page), per_page: String(perPage) })
+          const list = (listData as { users?: { email?: string }[]; nextPage?: number }) || {}
+          const users = list.users || []
+          if (users.some((u) => (u.email || '').trim().toLowerCase() === emailTrimmed)) {
+            emailExists = true
+            break
+          }
+          if (users.length < perPage || list.nextPage == null) break
+          page = list.nextPage
+        }
+        if (emailExists) {
+          errors.push({
+            code: 'EMAIL_EXISTS',
+            field: 'gmail',
+            message: 'This email is already registered. Use a different email or find the user in the list.'
+          })
+        }
+      } catch (_) {
+        // If listUsers fails, we will still detect email duplicate when createUser fails below
+      }
+    }
+
+    if (errors.length > 0) {
+      const codes = errors.map((e) => e.code)
+      const codeToLabel = (code: string) =>
+        code === 'STUDENT_NUMBER_EXISTS' ? 'ID number' : code === 'PHONE_EXISTS' ? 'Contact number' : code === 'EMAIL_EXISTS' ? 'Email' : code
+      const message = errors.length === 1
+        ? errors[0].message
+        : `The following already exist: ${errors.map((e) => codeToLabel(e.code)).join(', ')}. Please change them or find the user in the list.`
+      return new Response(
+        JSON.stringify({
+          code: codes[0],
+          codes,
+          errors,
+          message,
+          error: 'Validation failed'
+        }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
     const { data: created, error: createErr } = await supabase.auth.admin.createUser({
       email,
       password: generatedPassword,
@@ -96,13 +174,21 @@ Deno.serve(async (req) => {
     if (createErr || !created?.user) {
       const details = createErr?.message || 'Unknown'
       const isDuplicate = /already registered|already exists|duplicate/i.test(details)
+      const errList = isDuplicate
+        ? [{ code: 'EMAIL_EXISTS', field: 'gmail', message: 'This email is already registered. Use a different email or find the user in the list.' }]
+        : []
       return new Response(
         JSON.stringify({
+          code: isDuplicate ? 'EMAIL_EXISTS' : 'AUTH_ERROR',
+          codes: isDuplicate ? ['EMAIL_EXISTS'] : [],
+          errors: errList,
+          message: isDuplicate
+            ? 'This email is already registered. Use a different email or find the user in the list.'
+            : 'Failed to create account. ' + details,
           error: isDuplicate ? 'Email already registered' : 'Failed to create auth user',
-          details,
-          code: isDuplicate ? 'EMAIL_EXISTS' : 'AUTH_ERROR'
+          details
         }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        { status: isDuplicate ? 400 : 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
 
@@ -124,17 +210,36 @@ Deno.serve(async (req) => {
       .single()
 
     if (profileErr) {
+      const msg = profileErr.message || ''
+      const isDuplicate = /duplicate|unique|already exists/i.test(msg)
+      let code = 'PROFILE_INSERT_ERROR'
+      let field = 'studentNumber'
+      let message = 'User account was created but profile could not be saved. Try again or edit the user.'
+      if (isDuplicate) {
+        if (/student_number|student number|id number/i.test(msg)) {
+          code = 'STUDENT_NUMBER_EXISTS'
+          field = 'studentNumber'
+          message = 'This ID number is already registered. Use a different ID number or find the user in the list.'
+        } else if (/phone|contact/i.test(msg)) {
+          code = 'PHONE_EXISTS'
+          field = 'contactNumber'
+          message = 'This contact number is already registered. Use a different number or find the user in the list.'
+        } else {
+          message = 'This ID number, email, or contact number may already be in use. Check and try again.'
+        }
+      }
+      const errList = isDuplicate ? [{ code, field, message }] : []
       return new Response(
         JSON.stringify({
-          error: 'User created but profile insert failed',
-          details: profileErr.message,
-          userId,
-          code: 'PROFILE_INSERT_ERROR',
-          hint: /duplicate|unique|already exists/i.test(profileErr.message)
-            ? 'ID number or email may already be in use.'
-            : undefined
+          code,
+          codes: isDuplicate ? [code] : [],
+          errors: errList,
+          message,
+          error: 'Profile insert failed',
+          details: msg,
+          userId
         }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        { status: isDuplicate ? 400 : 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
 

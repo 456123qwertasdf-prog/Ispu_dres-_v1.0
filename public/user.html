@@ -1158,10 +1158,17 @@
                 Math.max(max, item.rain_volume || 0), 0) || 0;
             const rainfall = weatherData.rain?.["1h"] || forecastRainfall;
             
-            // Use the SAME rain chance calculation as admin interface
-            const rainChance = forecastSummary?.next_24h_max_rain_chance ? 
-                Math.round(forecastSummary.next_24h_max_rain_chance * 100) : 
-                Math.round((weatherData.pop || 0) * 100);
+            // Match AccuWeather: current/next hour (first period), same as admin
+            function toPercent(raw) {
+                const n = Number(raw) ?? 0;
+                return n <= 1 ? Math.round(n * 100) : Math.min(100, Math.round(n));
+            }
+            const firstPeriod = forecastSummary?.next_24h_forecast?.[0];
+            const rainChance = (firstPeriod != null && firstPeriod.rain_chance != null)
+                ? toPercent(firstPeriod.rain_chance)
+                : (forecastSummary?.next_24h_max_rain_chance != null
+                    ? toPercent(forecastSummary.next_24h_max_rain_chance)
+                    : toPercent(weatherData.pop || 0));
             
             console.log('🌤️ Rain chance calculation:', {
                 next_24h_max_rain_chance: forecastSummary?.next_24h_max_rain_chance,
@@ -1271,13 +1278,21 @@
             }
 
             const hours = forecastSummary.next_24h_forecast.slice(0, 5);
+            const toPercent = (raw) => { const n = Number(raw) ?? 0; return n <= 1 ? Math.round(n * 100) : Math.min(100, Math.round(n)); };
+            const formatTime = (t) => {
+                if (!t) return '--';
+                const m = String(t).match(/^(\d{1,2}):(\d{2})/);
+                if (m) {
+                    const d = new Date();
+                    d.setHours(parseInt(m[1], 10), parseInt(m[2], 10), 0, 0);
+                    return d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
+                }
+                const d = new Date(t);
+                return isNaN(d.getTime()) ? t : d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
+            };
             strip.innerHTML = hours.map(item => {
-                const time = new Date(item.time).toLocaleTimeString('en-US', {
-                    hour: '2-digit',
-                    minute: '2-digit',
-                    hour12: true
-                });
-                const rainChance = Math.round((item.rain_chance || 0) * 100);
+                const time = formatTime(item.time);
+                const rainChance = toPercent(item.rain_chance);
                 return `
                     <div class="hourly-item">
                         <div class="hourly-time">${time}</div>

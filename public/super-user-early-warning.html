@@ -892,9 +892,19 @@ window.SU_TOUR_STEPS = [
             const description = (weatherData.weather?.[0]?.description || 'Current conditions');
             
             const forecastSummary = weatherData.forecast_summary;
+            // Match AccuWeather: show current/next hour (first period), same as admin
+            function toPercent(raw) {
+                const n = Number(raw) ?? 0;
+                return n <= 1 ? Math.round(n * 100) : Math.min(100, Math.round(n));
+            }
+            let rainChancePercent = 0;
             const firstPeriod = forecastSummary?.next_24h_forecast?.[0];
-            const currentRainChance = firstPeriod ? (firstPeriod.rain_chance ?? 0) : 0;
-            const rainChancePercent = Math.min(100, Math.round(currentRainChance * 100));
+            if (firstPeriod != null && firstPeriod.rain_chance != null) {
+                rainChancePercent = toPercent(firstPeriod.rain_chance);
+            } else if (forecastSummary?.next_24h_max_rain_chance != null) {
+                rainChancePercent = toPercent(forecastSummary.next_24h_max_rain_chance);
+            }
+            rainChancePercent = Math.min(100, Math.max(0, rainChancePercent));
             const pressure = Math.round(weatherData.main?.pressure || 1013);
             const aqi = calculateSimplifiedAQI(pressure, humidity);
             
@@ -1067,7 +1077,8 @@ window.SU_TOUR_STEPS = [
             const hours = forecastSummary.next_24h_forecast.slice(0, 6);
             strip.innerHTML = hours.map((item, i) => {
                 const time = formatForecastTime(item.time, i);
-                const rainChance = Math.min(100, Math.round((item.rain_chance || 0) * 100));
+                const raw = Number(item.rain_chance) || 0;
+                const rainChance = raw <= 1 ? Math.round(raw * 100) : Math.min(100, Math.round(raw));
                 return `
                     <div class="hourly-item">
                         <div class="hourly-time">${time}</div>
@@ -1122,7 +1133,8 @@ window.SU_TOUR_STEPS = [
                 <div class="ew-forecast-grid">
                     ${forecast.map((item, i) => {
                         const time = formatForecastTime(item.time, i);
-                        const rainChance = Math.min(100, Math.round((item.rain_chance || 0) * 100));
+                        const raw = Number(item.rain_chance) || 0;
+                const rainChance = raw <= 1 ? Math.round(raw * 100) : Math.min(100, Math.round(raw));
                         const rainVolume = item.rain_volume;
                         const rainColor = rainChance >= 60 ? '#dc2626' : rainChance >= 30 ? '#f97316' : '#2563eb';
 

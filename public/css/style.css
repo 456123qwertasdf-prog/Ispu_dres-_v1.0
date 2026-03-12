@@ -801,6 +801,7 @@ body {
 .sidebar-header {
     padding: 20px;
     border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    flex-shrink: 0;
 }
 
 .sidebar-logo {
@@ -842,6 +843,7 @@ body {
 .system-status {
     padding: 20px;
     border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    flex-shrink: 0;
 }
 
 .status-indicator {
@@ -875,7 +877,36 @@ body {
 
 .sidebar-nav {
     flex: 1;
+    min-height: 0;
     padding: 20px 0;
+    overflow-y: auto;
+    overflow-x: hidden;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 255, 255, 0.35) rgba(0, 0, 0, 0.2);
+}
+
+.sidebar-nav::-webkit-scrollbar {
+    width: 6px;
+}
+
+.sidebar-nav::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 3px;
+    margin: 8px 0;
+}
+
+.sidebar-nav::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.35);
+    border-radius: 3px;
+}
+
+.sidebar-nav::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.5);
+}
+
+.sidebar-nav::-webkit-scrollbar-thumb:active {
+    background: rgba(251, 191, 36, 0.6);
 }
 
 .nav-item {
@@ -914,6 +945,7 @@ body {
 }
 
 .sidebar-footer {
+    flex-shrink: 0;
     margin-top: auto;
     padding: 20px 0;
     border-top: 1px solid rgba(255, 255, 255, 0.1);

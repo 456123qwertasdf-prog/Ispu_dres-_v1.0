@@ -277,6 +277,13 @@
                             <option value="4">🟢 Low</option>
                         </select>
                     </div>
+                    <div class="rp-filter-group">
+                        <label for="needsBackupFilter">Needs backup</label>
+                        <select id="needsBackupFilter" class="rp-select" onchange="filterReports()">
+                            <option value="all">All</option>
+                            <option value="yes">🆘 Needs backup</option>
+                        </select>
+                    </div>
                 </div>
             </div>
 
@@ -288,16 +295,18 @@
                             <th>ID</th>
                             <th>Type</th>
                             <th>Reporter</th>
+                            <th>Reporter #</th>
                             <th>Location</th>
                             <th>Status</th>
                             <th>Priority</th>
+                            <th>Needs backup</th>
                             <th>Created</th>
                             <th>Actions</th>
                         </tr>
                     </thead>
                     <tbody id="reportsTableBody">
                         <tr>
-                            <td colspan="8">
+                            <td colspan="10">
                                 <div class="rp-empty">
                                     <i class="bi bi-hourglass-split"></i>
                                     Loading reports…
@@ -709,13 +718,81 @@ window.SU_TOUR_STEPS = [
         }
     }
 
+    // Resolve location text from report (object or JSON string)
+    function getLocationText(report) {
+        if (!report || !report.location) return 'Location not specified';
+        const loc = report.location;
+        if (typeof loc === 'string') {
+            try {
+                const l = JSON.parse(loc);
+                return l.address || l.formatted_address || 'Location detected';
+            } catch (_) { return loc; }
+        }
+        return loc.address || loc.formatted_address || 'Location detected';
+    }
+
     // ── Load Reports ──────────────────────────────────────────────────────────
     async function loadReports() {
         try {
             showLoadingIndicator();
             const reports = await window.emergencySystem.getReports();
-            allReports = reports || [];
-            filteredReports = [...allReports];
+            let list = reports || [];
+            // Enrich with reporter name and phone from get-users
+            try {
+                const { data } = await window.emergencySystem.supabase.functions.invoke('get-users', { body: {} });
+                if (data?.users && list.length) {
+                    list = list.map(report => {
+                        const r = { ...report };
+                        if (report.reporter_uid) {
+                            const u = data.users.find(x => (x.user_id || x.id) === report.reporter_uid);
+                            if (u) {
+                                r.reporter_full_name = u.name || u.full_name || report.reporter_name;
+                                r.reporter_phone = u.phone || u.contactNumber || '';
+                            }
+                        }
+                        return r;
+                    });
+                }
+            } catch (_) {}
+            // Enrich with needs_backup from assignments (so super user can see who needs backup)
+            const reportIds = (list || []).map(r => r.id).filter(Boolean);
+            if (reportIds.length > 0) {
+                try {
+                    const { data: backupAssignments } = await window.emergencySystem.supabase
+                        .from('assignment')
+                        .select('report_id')
+                        .eq('needs_backup', true)
+                        .in('report_id', reportIds);
+                    const reportIdsNeedingBackup = new Set((backupAssignments || []).map(a => a.report_id).filter(Boolean));
+                    list = list.map(r => ({ ...r, needs_backup: reportIdsNeedingBackup.has(r.id) }));
+                } catch (_) {}
+            }
+            // Enrich with needs_backup from assignments (so super user can see who needs backup)
+            if (list.length) {
+                const reportIds = list.map(r => r.id);
+                const { data: needsBackupAssignments } = await window.emergencySystem.supabase
+                    .from('assignment')
+                    .select('report_id')
+                    .eq('needs_backup', true)
+                    .in('report_id', reportIds);
+                const reportIdsNeedingBackup = new Set((needsBackupAssignments || []).map(a => a.report_id));
+                list = list.map(r => ({ ...r, needs_backup: reportIdsNeedingBackup.has(r.id) }));
+            }
+            // Enrich with assignments that need backup (so super user can see who needs backup)
+            try {
+                const reportIds = (list || []).map(r => r.id).filter(Boolean);
+                if (reportIds.length > 0) {
+                    const { data: needBackupAssignments } = await window.emergencySystem.supabase
+                        .from('assignment')
+                        .select('report_id')
+                        .eq('needs_backup', true)
+                        .in('report_id', reportIds);
+                    const needBackupReportIds = new Set((needBackupAssignments || []).map(a => a.report_id));
+                    list.forEach(r => { r.needs_backup = needBackupReportIds.has(r.id); });
+                }
+            } catch (_) {}
+            allReports = list;
+            filteredReports = [...list];
             displayReports();
             updatePagination();
             hideLoadingIndicator();
@@ -791,7 +868,7 @@ window.SU_TOUR_STEPS = [
         const pageReports = filteredReports.slice(start, end);
 
         if (!pageReports.length) {
-            tbody.innerHTML = `<tr><td colspan="8"><div class="rp-empty"><i class="bi bi-inbox"></i>No reports found</div></td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="10"><div class="rp-empty"><i class="bi bi-inbox"></i>No reports found</div></td></tr>`;
             return;
         }
 
@@ -800,7 +877,9 @@ window.SU_TOUR_STEPS = [
             const typeLabel = (report.type || 'other').replace('_', ' ');
             const statusLabel = (report.status || 'pending').toUpperCase();
             const createdDate = report.created_at ? formatReportDate(report.created_at) : 'N/A';
-            const address = report.location?.address || 'Location detected';
+            const address = getLocationText(report);
+            const reporterName = report.reporter_full_name || report.reporter_name || 'Anonymous';
+            const reporterPhone = report.reporter_phone || report.phone || report.contactNumber || '—';
 
             return `
             <tr>
@@ -810,7 +889,8 @@ window.SU_TOUR_STEPS = [
                         ${getEmergencyIcon(report.type)} ${typeLabel.toUpperCase()}
                     </span>
                 </td>
-                <td style="font-weight:500;">${report.reporter_name || 'Anonymous'}</td>
+                <td style="font-weight:500;">${reporterName}</td>
+                <td style="font-size:0.82rem;color:#6b7280;">${reporterPhone}</td>
                 <td style="max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
                     <a href="super-user-map.html?reportId=${report.id}" style="color:#2563eb;text-decoration:none;display:flex;align-items:center;gap:0.25rem;font-size:0.83rem;" title="View on Map">
                         <i class="bi bi-geo-alt-fill" style="color:#2563eb;flex-shrink:0;"></i>${address}
@@ -822,6 +902,7 @@ window.SU_TOUR_STEPS = [
                         ${getPriorityIcon(report.priority || 4)} ${getPriorityText(report.priority || 4)}
                     </span>
                 </td>
+                <td>${report.needs_backup ? '<span style="color:#dc2626;font-weight:700;" title="Responder requested backup">🆘 Yes</span>' : '—'}</td>
                 <td style="font-size:0.82rem;color:#6b7280;white-space:nowrap;">${createdDate}</td>
                 <td>
                     <div style="display:flex;gap:0.35rem;flex-wrap:wrap;">
@@ -852,11 +933,13 @@ window.SU_TOUR_STEPS = [
         const typeFilter = document.getElementById('typeFilter').value;
         const priorityFilter = document.getElementById('priorityFilter').value;
 
+        const needsBackupFilter = document.getElementById('needsBackupFilter')?.value || 'all';
         filteredReports = allReports.filter(report => {
             const statusMatch = statusFilter === 'all' || report.status === statusFilter;
             const typeMatch = typeFilter === 'all' || report.type === typeFilter;
             const priorityMatch = priorityFilter === 'all' || report.priority == priorityFilter;
-            return statusMatch && typeMatch && priorityMatch;
+            const needsBackupMatch = needsBackupFilter === 'all' || (needsBackupFilter === 'yes' && report.needs_backup === true);
+            return statusMatch && typeMatch && priorityMatch && needsBackupMatch;
         });
 
         currentPage = 1;
@@ -939,14 +1022,16 @@ window.SU_TOUR_STEPS = [
             ? `<img src="${imageUrl}" alt="Report image" style="width:100%;max-width:280px;height:180px;object-fit:cover;border-radius:8px;border:1px solid #e5e7eb;">`
             : `<div style="width:100%;max-width:280px;height:120px;background:#f3f4f6;border:2px dashed #d1d5db;border-radius:8px;display:flex;align-items:center;justify-content:center;color:#9ca3af;font-size:0.85rem;">No image uploaded</div>`;
 
-        // assignments (any active status so we show responder for accepted/enroute/on_scene too)
+        // assignments (any active status so we show responder for accepted/enroute/on_scene too); include needs_backup for "who needs backup"
         let assignedText = 'Not assigned';
+        let needsBackupInModal = false;
         try {
             const activeStatusesDisplay = ['assigned', 'accepted', 'enroute', 'on_scene'];
-            const { data: asgn } = await window.emergencySystem.supabase.from('assignment').select('responder_id,status').eq('report_id', rId).in('status', activeStatusesDisplay);
+            const { data: asgn } = await window.emergencySystem.supabase.from('assignment').select('responder_id,status,needs_backup').eq('report_id', rId).in('status', activeStatusesDisplay);
             if (asgn && asgn.length > 0) {
                 const resp = await window.emergencySystem.getResponders();
                 assignedText = asgn.map(a => { const r = resp.find(x=>x.id===a.responder_id); return r?.name||`Responder ${a.responder_id.substring(0,8)}`; }).join(', ');
+                needsBackupInModal = asgn.some(a => a.needs_backup === true);
             }
         } catch(_) { assignedText = report.responder_name || 'Not assigned'; }
 
@@ -1000,6 +1085,7 @@ window.SU_TOUR_STEPS = [
                 <div style="padding:1rem;display:grid;gap:0.6rem;">
                     <div style="display:flex;justify-content:space-between;padding:0.4rem 0;border-bottom:1px solid #f3f4f6;"><span style="font-weight:600;font-size:0.85rem;color:#374151;">Assigned Responder</span><span style="font-size:0.85rem;color:${assignedText!=='Not assigned'?'#1d4ed8':'#6b7280'};text-align:right;max-width:55%;">${escapeHtml(assignedText)}</span></div>
                     <div style="display:flex;justify-content:space-between;padding:0.4rem 0;border-bottom:1px solid #f3f4f6;"><span style="font-weight:600;font-size:0.85rem;color:#374151;">Assignment ID</span><span style="font-size:0.85rem;">${escapeHtml(String(report.assignment_id||'Not assigned'))}</span></div>
+                    ${needsBackupInModal ? '<div style="display:flex;justify-content:space-between;align-items:center;padding:0.4rem 0;border-bottom:1px solid #fef2f2;background:#fef2f2;margin:0 -1rem;padding:0.5rem 1rem;"><span style="font-weight:700;font-size:0.85rem;color:#dc2626;">🆘 Needs backup</span><span style="font-size:0.85rem;font-weight:600;color:#dc2626;">Yes — assign backup from below</span></div>' : ''}
                     <div style="display:flex;justify-content:space-between;padding:0.4rem 0;"><span style="font-weight:600;font-size:0.85rem;color:#374151;">Response Time</span><span style="font-size:0.85rem;">${escapeHtml(String(report.response_time||'Not specified'))}</span></div>
                 </div>
             </div>
@@ -1278,12 +1364,13 @@ window.SU_TOUR_STEPS = [
     }
 
     function generateCSV(reports) {
-        const headers = ['ID', 'Type', 'Reporter', 'Location', 'Status', 'Priority', 'Created', 'Message'];
+        const headers = ['ID', 'Type', 'Reporter', 'Reporter #', 'Location', 'Status', 'Priority', 'Created', 'Message'];
         const rows = reports.map(report => [
             report.id || 'N/A',
             report.type || 'other',
-            report.reporter_name || 'Anonymous',
-            report.location?.address || 'Location detected',
+            report.reporter_full_name || report.reporter_name || 'Anonymous',
+            report.reporter_phone || report.phone || report.contactNumber || '',
+            getLocationText(report),
             report.status || 'pending',
             getPriorityText(report.priority || 4),
             report.created_at ? formatReportDate(report.created_at) : 'N/A',

@@ -58,6 +58,52 @@
             box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
         }
         
+        .form-input.field-error,
+        .form-select.field-error {
+            border-color: #dc2626;
+            background-color: #fef2f2;
+            box-shadow: 0 0 0 2px rgba(220, 38, 38, 0.15);
+        }
+        .form-input.field-error:focus,
+        .form-select.field-error:focus {
+            border-color: #dc2626;
+            box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.2);
+        }
+        .field-error-message {
+            font-size: 0.8rem;
+            color: #dc2626;
+            margin-top: 0.35rem;
+            display: flex;
+            align-items: center;
+            gap: 0.35rem;
+        }
+        .field-error-message i {
+            flex-shrink: 0;
+        }
+        .registration-form .validation-errors-summary {
+            padding: 1rem 1.25rem;
+            background: #fef2f2;
+            border: 1px solid #fecaca;
+            border-radius: 8px;
+            margin-bottom: 1.25rem;
+            color: #991b1b;
+        }
+        .registration-form .validation-errors-summary h4 {
+            margin: 0 0 0.5rem 0;
+            font-size: 0.95rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .registration-form .validation-errors-summary ul {
+            margin: 0;
+            padding-left: 1.25rem;
+        }
+        .registration-form .validation-errors-summary li {
+            margin: 0.25rem 0;
+        }
+        
         .form-select {
             padding: 0.75rem;
             border: 1px solid #d1d5db;
@@ -1491,6 +1537,11 @@
                             <i class="bi bi-pencil-square"></i> <strong>Edit Mode:</strong> You are currently editing a user account. Click "Cancel" to exit edit mode.
                         </div>
                         
+                        <div id="validationErrorsSummary" class="validation-errors-summary" style="display: none;" role="alert">
+                            <h4><i class="bi bi-exclamation-triangle-fill"></i> <span id="validationErrorsTitle">The following already exist</span></h4>
+                            <ul id="validationErrorsList"></ul>
+                        </div>
+                        
                         <form id="userRegistrationForm">
                         <div class="form-grid">
                             <!-- Left Column -->
@@ -2334,10 +2385,64 @@
             return div.innerHTML;
         }
 
+        const REGISTRATION_ERROR_FIELDS = ['studentNumber', 'gmail', 'contactNumber'];
+
+        function clearFieldErrors() {
+            REGISTRATION_ERROR_FIELDS.forEach(function (fieldId) {
+                const el = document.getElementById(fieldId);
+                if (el) {
+                    el.classList.remove('field-error');
+                    const next = el.nextElementSibling;
+                    if (next && next.classList && next.classList.contains('field-error-message')) {
+                        next.remove();
+                    }
+                }
+            });
+            const summary = document.getElementById('validationErrorsSummary');
+            if (summary) summary.style.display = 'none';
+        }
+
+        function showFieldErrors(errors) {
+            if (!errors || !errors.length) return;
+            clearFieldErrors();
+            const list = document.getElementById('validationErrorsList');
+            const titleEl = document.getElementById('validationErrorsTitle');
+            const summary = document.getElementById('validationErrorsSummary');
+            if (!list || !summary) return;
+            list.innerHTML = '';
+            errors.forEach(function (err) {
+                const li = document.createElement('li');
+                li.textContent = err.message || (err.code === 'STUDENT_NUMBER_EXISTS' ? 'ID number already exists.' : err.code === 'PHONE_EXISTS' ? 'Contact number already exists.' : err.code === 'EMAIL_EXISTS' ? 'Email already exists.' : '');
+                list.appendChild(li);
+                const input = document.getElementById(err.field);
+                if (input) {
+                    input.classList.add('field-error');
+                    const msgEl = document.createElement('small');
+                    msgEl.className = 'field-error-message';
+                    msgEl.setAttribute('role', 'alert');
+                    msgEl.innerHTML = '<i class="bi bi-exclamation-circle-fill"></i> ' + (err.message || '');
+                    input.parentNode.insertBefore(msgEl, input.nextSibling);
+                }
+            });
+            titleEl.textContent = errors.length === 1 ? 'This value already exists' : 'The following already exist';
+            summary.style.display = 'block';
+            summary.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+
+        (function attachFieldErrorClearOnInput() {
+            REGISTRATION_ERROR_FIELDS.forEach(function (fieldId) {
+                const el = document.getElementById(fieldId);
+                if (el) {
+                    el.addEventListener('input', function () { clearFieldErrors(); });
+                    el.addEventListener('focus', function () { clearFieldErrors(); });
+                }
+            });
+        })();
+
         // Handle form submission: create user via Edge Function (service role)
         document.getElementById('userRegistrationForm').addEventListener('submit', async (e) => {
             e.preventDefault();
-            
+            clearFieldErrors();
             try {
                 const selectedTypes = Array.from(document.querySelectorAll('#userTypesCheckboxes input[name="userType"]:checked')).map(cb => cb.value);
                 if (!selectedTypes.length) {
@@ -2402,8 +2507,16 @@
 
                 console.log('Creating user with data:', formData);
 
-                const { data, error } = await window.emergencySystem.supabase.functions.invoke('create-user', {
-                    body: {
+                const supabaseUrl = window.EMERGENCY_CONFIG?.supabaseUrl || (window.emergencySystem?.supabase?.supabaseUrl) || 'https://hmolyqzbvxxliemclrld.supabase.co';
+                const { data: sessionData } = await window.emergencySystem.supabase.auth.getSession();
+                const token = sessionData?.session?.access_token;
+                const res = await fetch(`${supabaseUrl}/functions/v1/create-user`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': token ? `Bearer ${token}` : ''
+                    },
+                    body: JSON.stringify({
                         email: formData.gmail,
                         password: formData.password || undefined,
                         firstName: formData.firstname,
@@ -2414,44 +2527,36 @@
                         userTypes: formData.userTypes,
                         leaderId: formData.leaderId || undefined,
                         teamName: formData.teamName || undefined
-                    }
+                    })
                 });
-                
-                // Handle edge function errors more gracefully – show actual reason (e.g. already exists)
-                if (error) {
-                    console.error('Edge function error:', error);
-                    let errorMessage = error.message || 'Unknown error';
-                    let errorBody = null;
-                    // Supabase passes the Response in error.context – must use .json() to read body
-                    if (error.context && typeof error.context.json === 'function') {
-                        try {
-                            errorBody = await error.context.json();
-                        } catch (e) { /* ignore */ }
-                    }
-                    if (errorBody) {
-                        if (errorBody.error && errorBody.details) {
-                            errorMessage = errorBody.error + (errorBody.details ? ': ' + errorBody.details : '');
-                        } else if (errorBody.error) {
-                            errorMessage = errorBody.error;
-                        } else if (errorBody.details) {
-                            errorMessage = errorBody.details;
-                        } else if (errorBody.message) {
-                            errorMessage = errorBody.message;
-                        }
-                        if (errorBody.hint) errorMessage += ' ' + errorBody.hint;
-                        // Prefer short, clear message for known codes
-                        if (errorBody.code === 'EMAIL_EXISTS') {
-                            errorMessage = 'This email is already registered. Use a different email or find the user in the list.';
-                        } else if (errorBody.code === 'PROFILE_INSERT_ERROR' && errorBody.hint) {
-                            errorMessage = 'User could not be created: ' + (errorBody.hint || errorBody.details || errorBody.error);
-                        }
-                    }
-                    throw new Error(errorMessage);
+
+                let data = null;
+                try {
+                    data = await res.json();
+                } catch (_) {
+                    data = {};
                 }
-                
-                // Check if response indicates an error
+
+                if (!res.ok) {
+                    const body = data || {};
+                    const errors = body.errors || [];
+                    let message = body.message || body.error || body.details || 'Registration failed. Please try again.';
+                    if (errors.length > 0) {
+                        showFieldErrors(errors);
+                        message = body.message || (errors.length === 1 ? errors[0].message : 'The following already exist. Please fix the highlighted fields.');
+                    } else {
+                        const code = body.code;
+                        if (code === 'EMAIL_EXISTS') message = 'This email is already registered. Use a different email or find the user in the list.';
+                        else if (code === 'STUDENT_NUMBER_EXISTS') message = 'This ID number is already registered. Use a different ID number or find the user in the list.';
+                        else if (code === 'PHONE_EXISTS') message = 'This contact number is already registered. Use a different number or find the user in the list.';
+                        else if (code === 'PROFILE_INSERT_ERROR') message = body.message || 'This ID number, email, or contact number may already be in use. Check and try again.';
+                    }
+                    window.emergencySystem.showError(message);
+                    return;
+                }
+
                 if (data && data.error) {
-                    throw new Error(data.error + (data.details ? ': ' + data.details : ''));
+                    throw new Error(data.message || data.error + (data.details ? ': ' + data.details : ''));
                 }
 
                 // Extract credentials from response
@@ -2485,23 +2590,15 @@
                 
             } catch (error) {
                 console.error('Failed to register user:', error);
-                // Extract full error message (already user-friendly if we parsed Edge Function body)
-                let errorMessage = 'Unknown error';
-                if (error.message) {
-                    errorMessage = error.message;
-                } else if (error.error) {
-                    errorMessage = error.error;
-                } else if (typeof error === 'string') {
-                    errorMessage = error;
-                }
-                // Show specific reason; only prefix if it's the generic Edge Function message
-                const isGeneric = /Edge Function returned a non 2xx|Unknown error/i.test(errorMessage);
-                window.emergencySystem.showError(isGeneric ? 'Failed to register user: ' + errorMessage : errorMessage);
+                let errorMessage = error?.message || error?.error || (typeof error === 'string' ? error : 'Registration failed. Please try again.');
+                const isGeneric = /Edge Function returned|non-?2xx|Unknown error/i.test(errorMessage) && !/already registered|already exists|already in use/i.test(errorMessage);
+                window.emergencySystem.showError(isGeneric ? 'Registration failed: ' + errorMessage : errorMessage);
             }
         });
 
         // Clear form
         function clearForm() {
+            clearFieldErrors();
             document.getElementById('userRegistrationForm').reset();
             document.getElementById('displayUsername').value = ''; // Clear username display field
             document.getElementById('responderLeaderGroup').style.display = 'none';

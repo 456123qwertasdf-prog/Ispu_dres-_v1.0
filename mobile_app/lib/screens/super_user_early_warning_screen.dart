@@ -72,13 +72,30 @@ class _SuperUserEarlyWarningScreenState
     return '${temp.round()}°C';
   }
 
-  String _getRainChance() {
-    if (_weatherData == null) return '--%';
-    final pop = _weatherData!['pop'];
-    if (pop != null) {
-      return '${((pop as num) * 100).round()}%';
+  /// Match AccuWeather: current/next hour (first period), same as admin.
+  int? _rainChancePercent() {
+    if (_weatherData == null) return null;
+    num? raw;
+    final summary = _weatherData!['forecast_summary'];
+    if (summary is Map) {
+      final list = summary['next_24h_forecast'];
+      if (list is List && list.isNotEmpty) {
+        final first = list.first;
+        if (first is Map && first['rain_chance'] != null) raw = first['rain_chance'] as num;
+      }
+      if (raw == null && summary['next_24h_max_rain_chance'] != null) {
+        raw = summary['next_24h_max_rain_chance'] as num;
+      }
     }
-    return '--%';
+    raw ??= _weatherData!['pop'];
+    if (raw == null || raw is! num) return null;
+    final p = raw <= 1 ? (raw * 100).round() : raw.round().clamp(0, 100);
+    return p;
+  }
+
+  String _getRainChance() {
+    final p = _rainChancePercent();
+    return p == null ? '--%' : '$p%';
   }
 
   String _getWeatherCondition() {

@@ -1690,12 +1690,12 @@
                 const email = document.getElementById('email').value;
                 const password = document.getElementById('password').value;
 
-                // Sign in with Supabase
+                // Sign in with Supabase (signIn() waits for session to persist before returning)
                 await emergencySystem.signIn(email, password);
-                
+
                 // Get user role from metadata
                 const userRole = emergencySystem.user?.user_metadata?.role || 'citizen';
-                
+
                 // Redirect based on actual user role
                 redirectToDashboard(userRole);
                 

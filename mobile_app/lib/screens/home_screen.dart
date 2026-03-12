@@ -1830,37 +1830,27 @@ tooltipBackgroundColor: _tourAccent,
   double? _getRainChancePercentValue() {
     if (_weatherData == null) return null;
 
+    // API sends 0-1; old/cache may send 0-100
     double clampPercent(num chance) {
-      final percent = (chance * 100).toDouble();
+      final percent = chance <= 1 ? (chance * 100) : chance;
       if (percent < 0) return 0;
       if (percent > 100) return 100;
-      return percent;
+      return percent.toDouble();
     }
 
+    // Match AccuWeather: show current/next hour (first period), not max over 12h
     final dynamic forecastSummary = _weatherData!['forecast_summary'];
     if (forecastSummary is Map) {
-      final dynamic maxChance = forecastSummary['next_24h_max_rain_chance'];
-      if (maxChance is num) {
-        return clampPercent(maxChance);
-      }
-
       final dynamic nextForecast = forecastSummary['next_24h_forecast'];
-      if (nextForecast is List) {
-        double? highestChance;
-        for (final entry in nextForecast) {
-          if (entry is Map) {
-            final dynamic chance = entry['rain_chance'] ?? entry['pop'];
-            if (chance is num) {
-              if (highestChance == null || chance > highestChance) {
-                highestChance = chance.toDouble();
-              }
-            }
-          }
-        }
-        if (highestChance != null) {
-          return clampPercent(highestChance);
+      if (nextForecast is List && nextForecast.isNotEmpty) {
+        final first = nextForecast.first;
+        if (first is Map) {
+          final dynamic chance = first['rain_chance'] ?? first['pop'];
+          if (chance is num) return clampPercent(chance);
         }
       }
+      final dynamic maxChance = forecastSummary['next_24h_max_rain_chance'];
+      if (maxChance is num) return clampPercent(maxChance);
     }
 
     final dynamic pop = _weatherData!['pop'];

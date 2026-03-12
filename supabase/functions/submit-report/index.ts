@@ -122,7 +122,7 @@ serve(async (req) => {
       image_hash: imageHash,
       status: 'pending',
       lifecycle_status: 'pending',
-      created_at: reportData.timestamp || new Date().toISOString()
+      created_at: new Date().toISOString()
     }
 
     // Insert report into database - explicitly select image_path to ensure it's returned

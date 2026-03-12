@@ -201,14 +201,18 @@
                                         <option value="4">Low</option>
                                     </select>
                                 </div>
+                                <div class="filter-group">
+                                    <label for="needsBackupFilter" class="filter-label">Needs backup:</label>
+                                    <select id="needsBackupFilter" class="form-select" onchange="filterReports()">
+                                        <option value="all">All</option>
+                                        <option value="yes">🆘 Needs backup only</option>
+                                    </select>
+                                </div>
                             </div>
                             
                             <div class="flex gap-2">
                                 <button onclick="forceRefreshReports()" class="btn btn-primary">
                                     <i class="bi bi-arrow-clockwise"></i> Refresh Reports
-                                </button>
-                                <button onclick="debugReportStatuses()" class="btn btn-warning">
-                                    <i class="bi bi-bug"></i> Debug Status
                                 </button>
                                 <button onclick="syncAllCompletedStatuses()" class="btn btn-success">
                                     <i class="bi bi-arrow-repeat"></i> Sync All
@@ -230,16 +234,18 @@
                                         <th>ID</th>
                                         <th>Type</th>
                                         <th>Reporter</th>
+                                        <th>Reporter #</th>
                                         <th>Location</th>
                                         <th>Status</th>
                                         <th>Priority</th>
+                                        <th>Needs backup</th>
                                         <th>Created</th>
                                         <th>Actions</th>
                                     </tr>
                                 </thead>
                                 <tbody id="reportsTableBody">
                                     <tr>
-                                        <td colspan="8" class="text-center py-8">
+                                        <td colspan="10" class="text-center py-8">
                                             <div class="loading-spinner"></div>
                                             <p>Loading reports...</p>
                                         </td>
@@ -353,24 +359,67 @@
             }
         }
 
+        // Resolve location text from report (object or JSON string)
+        function getLocationText(report) {
+            if (!report || !report.location) return 'Location not specified';
+            const loc = report.location;
+            if (typeof loc === 'string') {
+                try {
+                    const l = JSON.parse(loc);
+                    return l.address || l.formatted_address || 'Location detected';
+                } catch (_) { return loc; }
+            }
+            return loc.address || loc.formatted_address || 'Location detected';
+        }
+
         // Load reports
         async function loadReports() {
             try {
                 showLoadingIndicator();
-                
+
                 console.log('🔄 Loading reports with fresh data...');
-                
-                // Force fresh data by clearing any potential cache
+
                 const reports = await window.emergencySystem.getReports();
-                allReports = reports || [];
-                filteredReports = [...allReports];
-                
+                let list = reports || [];
+                // Enrich with reporter name and phone from get-users
+                try {
+                    const { data } = await window.emergencySystem.supabase.functions.invoke('get-users', { body: {} });
+                    if (data?.users && list.length) {
+                        list = list.map(report => {
+                            const r = { ...report };
+                            if (report.reporter_uid) {
+                                const u = data.users.find(x => (x.user_id || x.id) === report.reporter_uid);
+                                if (u) {
+                                    r.reporter_full_name = u.name || u.full_name || report.reporter_name;
+                                    r.reporter_phone = u.phone || u.contactNumber || '';
+                                }
+                            }
+                            return r;
+                        });
+                    }
+                } catch (_) {}
+                // Enrich with assignments that need backup (so admin can see who needs backup)
+                try {
+                    const reportIds = (list || []).map(r => r.id).filter(Boolean);
+                    if (reportIds.length > 0) {
+                        const { data: needBackupAssignments } = await window.emergencySystem.supabase
+                            .from('assignment')
+                            .select('report_id')
+                            .eq('needs_backup', true)
+                            .in('report_id', reportIds);
+                        const needBackupReportIds = new Set((needBackupAssignments || []).map(a => a.report_id));
+                        list.forEach(r => { r.needs_backup = needBackupReportIds.has(r.id); });
+                    }
+                } catch (_) {}
+                allReports = list;
+                filteredReports = [...list];
+
                 console.log(`✅ Loaded ${allReports.length} reports`);
                 console.log('📊 Report statuses:', allReports.map(r => ({ id: r.id.substring(0, 8), status: r.status })));
-                
+
                 displayReports();
                 updatePagination();
-                
+
                 hideLoadingIndicator();
             } catch (error) {
                 console.error('Error loading reports:', error);
@@ -396,80 +445,6 @@
                 console.log('✅ Force refresh completed');
             } catch (error) {
                 console.error('❌ Error during force refresh:', error);
-            }
-        }
-
-        // Debug report statuses
-        async function debugReportStatuses() {
-            try {
-                console.log('🐛 Debugging report statuses...');
-                
-                // Get all reports with detailed info
-                const { data: reports, error: reportsError } = await window.emergencySystem.supabase
-                    .from('reports')
-                    .select('id, status, type, created_at, updated_at')
-                    .order('created_at', { ascending: false });
-                
-                if (reportsError) {
-                    console.error('❌ Error fetching reports for debug:', reportsError);
-                    return;
-                }
-                
-                console.log('📊 All reports in database:');
-                reports.forEach(report => {
-                    console.log(`  - ID: ${report.id.substring(0, 8)}... | Status: ${report.status} | Type: ${report.type} | Updated: ${report.updated_at}`);
-                });
-                
-                // Get all assignments with their statuses
-                const { data: assignments, error: assignmentsError } = await window.emergencySystem.supabase
-                    .from('assignment')
-                    .select('id, report_id, status, assigned_at, completed_at')
-                    .order('assigned_at', { ascending: false });
-                
-                if (assignmentsError) {
-                    console.error('❌ Error fetching assignments for debug:', assignmentsError);
-                } else {
-                    console.log('📋 All assignments in database:');
-                    assignments.forEach(assignment => {
-                        console.log(`  - Assignment ID: ${assignment.id.substring(0, 8)}... | Report ID: ${assignment.report_id?.substring(0, 8)}... | Status: ${assignment.status} | Completed: ${assignment.completed_at}`);
-                    });
-                }
-                
-                // Check for mismatched statuses
-                const mismatched = [];
-                reports.forEach(report => {
-                    const assignment = assignments.find(a => a.report_id === report.id);
-                    if (assignment && assignment.status === 'resolved' && report.status !== 'completed') {
-                        mismatched.push({
-                            reportId: report.id,
-                            reportStatus: report.status,
-                            assignmentStatus: assignment.status
-                        });
-                    }
-                });
-                
-                if (mismatched.length > 0) {
-                    console.warn('⚠️ Found mismatched statuses:');
-                    mismatched.forEach(m => {
-                        console.warn(`  - Report ${m.reportId.substring(0, 8)}... has status "${m.reportStatus}" but assignment is "${m.assignmentStatus}"`);
-                    });
-                } else {
-                    console.log('✅ No mismatched statuses found');
-                }
-                
-                alert(`Debug complete! Check console for details.\n\nReports: ${reports.length}\nAssignments: ${assignments?.length || 0}\nMismatched: ${mismatched.length}`);
-                
-                // If there are mismatched statuses, offer to fix them
-                if (mismatched.length > 0) {
-                    const fix = confirm(`Found ${mismatched.length} mismatched statuses. Would you like to fix them automatically?`);
-                    if (fix) {
-                        await fixMismatchedStatuses(mismatched);
-                    }
-                }
-                
-            } catch (error) {
-                console.error('❌ Error during debug:', error);
-                alert('Debug failed: ' + error.message);
             }
         }
 
@@ -656,7 +631,7 @@
             if (pageReports.length === 0) {
                 tbody.innerHTML = `
                     <tr>
-                        <td colspan="8" class="text-center py-8">
+                        <td colspan="10" class="text-center py-8">
                             <p class="text-gray-500">No reports found</p>
                         </td>
                     </tr>
@@ -664,16 +639,20 @@
                 return;
             }
 
+            const reporterName = (r) => r.reporter_full_name || r.reporter_name || 'Anonymous';
+            const reporterPhone = (r) => r.reporter_phone || r.phone || r.contactNumber || '—';
+
             tbody.innerHTML = pageReports.map(report => `
                 <tr>
                     <td class="font-mono text-sm">${report.id ? report.id.substring(0, 8) + '...' : 'N/A'}</td>
                     <td>
                         <span class="badge badge-${report.type || 'other'}">${getEmergencyIcon(report.type)} ${(report.type || 'other').toUpperCase()}</span>
                     </td>
-                    <td>${report.reporter_name || 'Anonymous'}</td>
+                    <td>${reporterName(report)}</td>
+                    <td>${reporterPhone(report)}</td>
                     <td>
                         <a href="map.html?reportId=${report.id}" style="color: #3b82f6; text-decoration: none; cursor: pointer;" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'" title="View on Map">
-                            <i class="bi bi-geo-alt-fill"></i> ${report.location?.address || 'Location detected'}
+                            <i class="bi bi-geo-alt-fill"></i> ${getLocationText(report)}
                         </a>
                     </td>
                     <td>
@@ -682,6 +661,7 @@
                     <td>
                         <span class="badge badge-priority-${report.priority || 4}">${getPriorityText(report.priority || 4)}</span>
                     </td>
+                    <td>${report.needs_backup ? '<span style="color:#dc2626;font-weight:700;" title="Responder requested backup">🆘 Yes</span>' : '—'}</td>
                     <td>${report.created_at ? formatReportDate(report.created_at) : 'N/A'}</td>
                     <td>
                         <div class="action-buttons">
@@ -712,12 +692,13 @@
             const typeFilter = document.getElementById('typeFilter').value;
             const priorityFilter = document.getElementById('priorityFilter').value;
 
+            const needsBackupFilter = document.getElementById('needsBackupFilter')?.value || 'all';
             filteredReports = allReports.filter(report => {
                 const statusMatch = statusFilter === 'all' || report.status === statusFilter;
                 const typeMatch = typeFilter === 'all' || report.type === typeFilter;
                 const priorityMatch = priorityFilter === 'all' || report.priority == priorityFilter;
-                
-                return statusMatch && typeMatch && priorityMatch;
+                const needsBackupMatch = needsBackupFilter === 'all' || (needsBackupFilter === 'yes' && report.needs_backup === true);
+                return statusMatch && typeMatch && priorityMatch && needsBackupMatch;
             });
 
             currentPage = 1;
@@ -783,12 +764,13 @@
 
         // Generate CSV
         function generateCSV(reports) {
-            const headers = ['ID', 'Type', 'Reporter', 'Location', 'Status', 'Priority', 'Created', 'Message'];
+            const headers = ['ID', 'Type', 'Reporter', 'Reporter #', 'Location', 'Status', 'Priority', 'Created', 'Message'];
             const rows = reports.map(report => [
                 report.id || 'N/A',
                 report.type || 'other',
-                report.reporter_name || 'Anonymous',
-                report.location?.address || 'Location detected',
+                report.reporter_full_name || report.reporter_name || 'Anonymous',
+                report.reporter_phone || report.phone || report.contactNumber || '',
+                getLocationText(report),
                 report.status || 'pending',
                 getPriorityText(report.priority || 4),
                 report.created_at ? formatReportDate(report.created_at) : 'N/A',

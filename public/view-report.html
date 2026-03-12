@@ -652,6 +652,10 @@
                                 <span class="pair-label">Response Time</span>
                                 <div id="responseTime" class="pair-value">Loading...</div>
                             </div>
+                            <div id="needsBackupRow" class="pair-row" style="display: none; background: #fef2f2; padding: 0.75rem 1rem; border-radius: 8px; margin: 0 -1rem;">
+                                <span class="pair-label" style="font-weight: 700; color: #dc2626;">🆘 Needs backup</span>
+                                <div class="pair-value"></div>
+                            </div>
                             <div id="responderNotesRow" class="pair-row" style="display: none;">
                                 <span class="pair-label">Responder note(s)</span>
                                 <div id="responderNotes" class="pair-value"></div>
@@ -1001,14 +1005,16 @@
                 imageContainer.innerHTML = '<div class="no-image">No image uploaded</div>';
             }
 
-            // Update assignment information - fetch multiple assigned responders
+            // Update assignment information - fetch multiple assigned responders (active statuses) and needs_backup
             const assignedResponderEl = document.getElementById('assignedResponder');
+            const needsBackupEl = document.getElementById('needsBackupRow');
             try {
+                const activeStatuses = ['assigned', 'accepted', 'enroute', 'on_scene'];
                 const { data: assignments, error: assignError } = await window.emergencySystem.supabase
                     .from('assignment')
-                    .select('responder_id, id, status')
+                    .select('responder_id, id, status, needs_backup')
                     .eq('report_id', reportId)
-                    .eq('status', 'assigned');
+                    .in('status', activeStatuses);
 
                 if (!assignError && assignments && assignments.length > 0) {
                     // Fetch responder names
@@ -1022,13 +1028,22 @@
                     
                     assignedResponderEl.textContent = responderNames.join(', ');
                     assignedResponderEl.style.color = '#059669';
+                    // Show "Needs backup" so admin/super user can see who needs backup
+                    const anyNeedsBackup = assignments.some(a => a.needs_backup === true);
+                    if (needsBackupEl) {
+                        needsBackupEl.style.display = anyNeedsBackup ? '' : 'none';
+                        const val = needsBackupEl.querySelector('.pair-value');
+                        if (val) val.innerHTML = anyNeedsBackup ? '<strong style="color:#dc2626;">🆘 Yes — responder requested backup. Assign additional responder below.</strong>' : '';
+                    }
                 } else {
                     assignedResponderEl.textContent = 'Not assigned';
                     assignedResponderEl.style.color = '#6b7280';
+                    if (needsBackupEl) needsBackupEl.style.display = 'none';
                 }
             } catch (err) {
                 console.warn('Could not fetch assignments:', err);
                 assignedResponderEl.textContent = report.responder_name || 'Not assigned';
+                if (needsBackupEl) needsBackupEl.style.display = 'none';
             }
             
             document.getElementById('assignmentId').textContent = report.assignment_id || 'Not assigned';
