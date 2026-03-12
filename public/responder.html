@@ -2016,8 +2016,42 @@
         async function updateAssignmentStatus(assignmentId, status) {
             try {
                 console.log(`📤 Updating assignment ${assignmentId} to status: ${status}`);
-                
-                // Get current assignment to find responder_id
+
+                const currentResponderId = responderId;
+                if (!currentResponderId) {
+                    emergencySystem.showError('Responder ID not found');
+                    return;
+                }
+
+                const report = currentReports.find(r => r.assignment_id === assignmentId);
+                const isSos = report && report.is_sos === true;
+                if (isSos) {
+                    const now = new Date().toISOString();
+                    const updateData = { status: status, updated_at: now };
+                    if (status === 'accepted') updateData.accepted_at = now;
+                    if (status === 'resolved' || status === 'completed') updateData.completed_at = now;
+                    const { error: sosAssignError } = await emergencySystem.supabase
+                        .from('sos_assignment')
+                        .update(updateData)
+                        .eq('id', assignmentId)
+                        .eq('responder_id', currentResponderId);
+                    if (sosAssignError) {
+                        emergencySystem.showError('Failed to update SOS assignment: ' + sosAssignError.message);
+                        return;
+                    }
+                    if (status === 'resolved' || status === 'completed') {
+                        await emergencySystem.supabase
+                            .from('sos_alerts')
+                            .update({ status: 'resolved', resolved_at: now })
+                            .eq('id', report.id);
+                    }
+                    if (report) { report.assignment_status = status; }
+                    loadAssignedReports();
+                    emergencySystem.showSuccess('Assignment marked as ' + status.toUpperCase());
+                    return;
+                }
+
+                // Get current assignment to find responder_id (report assignments only)
                 const { data: assignment, error: fetchError } = await emergencySystem.supabase
                     .from('assignment')
                     .select('responder_id, status')
@@ -2029,9 +2063,6 @@
                     emergencySystem.showError('Failed to fetch assignment details');
                     return;
                 }
-                
-                // Use responderId from global scope or from assignment
-                const currentResponderId = responderId || assignment.responder_id;
                 
                 if (!currentResponderId) {
                     console.error('❌ No responder ID available');

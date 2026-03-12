@@ -15,7 +15,9 @@ class _SuperUserSOSAlertsScreenState extends State<SuperUserSOSAlertsScreen> {
   bool _isLoading = true;
   String? _errorMessage;
   String _filterStatus = 'All';
-  
+  /// Responder id -> name for showing "Assigned: X" on cards
+  Map<String, String> _responderNames = {};
+
   // Stats
   int _totalAlerts = 0;
   int _activeAlerts = 0;
@@ -42,9 +44,31 @@ class _SuperUserSOSAlertsScreenState extends State<SuperUserSOSAlertsScreen> {
 
       if (response != null) {
         final alerts = response as List;
-        
+        final list = List<Map<String, dynamic>>.from(alerts);
+        final responderIds = list
+            .map((a) => a['assigned_responder_id']?.toString())
+            .whereType<String>()
+            .where((id) => id.isNotEmpty)
+            .toSet()
+            .toList();
+        Map<String, String> names = {};
+        if (responderIds.isNotEmpty) {
+          final resp = await SupabaseService.client
+              .from('responder')
+              .select('id, name')
+              .inFilter('id', responderIds);
+          if (resp != null && resp is List) {
+            for (final r in resp) {
+              final m = Map<String, dynamic>.from(r as Map);
+              final id = m['id']?.toString();
+              if (id != null) names[id] = m['name']?.toString() ?? 'Responder';
+            }
+          }
+        }
+        if (!mounted) return;
         setState(() {
-          _alerts = List<Map<String, dynamic>>.from(alerts);
+          _alerts = list;
+          _responderNames = names;
           _updateStats();
           _isLoading = false;
         });
@@ -70,6 +94,11 @@ class _SuperUserSOSAlertsScreenState extends State<SuperUserSOSAlertsScreen> {
       final status = (a['status'] ?? '').toString().toLowerCase();
       return status == _filterStatus.toLowerCase();
     }).toList();
+  }
+
+  bool _isActiveOrAcknowledged(String? status) {
+    final s = status?.toLowerCase() ?? '';
+    return s == 'active' || s == 'acknowledged';
   }
 
   Color _getStatusColor(String? status) {
@@ -199,6 +228,159 @@ class _SuperUserSOSAlertsScreenState extends State<SuperUserSOSAlertsScreen> {
     }
   }
 
+  Future<void> _openAssignResponderModal(Map<String, dynamic> alert) async {
+    final alertId = alert['id']?.toString();
+    if (alertId == null) return;
+    List<Map<String, dynamic>> responders = [];
+    try {
+      final resp = await SupabaseService.client
+          .from('responder')
+          .select('id, name, role, is_available')
+          .order('name');
+      if (resp != null && resp is List) {
+        responders = (resp as List)
+            .map((e) => Map<String, dynamic>.from(e as Map))
+            .where((r) => r['is_available'] != false)
+            .toList();
+      }
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to load responders: $e'), backgroundColor: Colors.red),
+      );
+      return;
+    }
+    if (!mounted) return;
+    if (responders.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('No available responders to assign'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      return;
+    }
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => Container(
+        height: MediaQuery.of(context).size.height * 0.5,
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        child: Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 16, 8, 12),
+              child: Row(
+                children: [
+                  const Icon(Icons.person_add_rounded, color: SuTheme.primary, size: 24),
+                  const SizedBox(width: 10),
+                  const Expanded(
+                    child: Text(
+                      'Assign Responder',
+                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: Color(0xFF1e293b)),
+                    ),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.close_rounded),
+                    onPressed: () => Navigator.pop(context),
+                  ),
+                ],
+              ),
+            ),
+            const Divider(height: 1),
+            Expanded(
+              child: ListView.builder(
+                padding: const EdgeInsets.symmetric(vertical: 8),
+                itemCount: responders.length,
+                itemBuilder: (context, index) {
+                  final r = responders[index];
+                  final id = r['id']?.toString() ?? '';
+                  final name = r['name']?.toString() ?? 'Responder';
+                  final role = r['role']?.toString() ?? '';
+                  return ListTile(
+                    leading: CircleAvatar(
+                      backgroundColor: SuTheme.primary.withOpacity(0.2),
+                      child: Text(
+                        (name.isNotEmpty ? name[0] : 'R').toUpperCase(),
+                        style: const TextStyle(color: SuTheme.primary, fontWeight: FontWeight.w600),
+                      ),
+                    ),
+                    title: Text(name, style: const TextStyle(fontWeight: FontWeight.w600)),
+                    subtitle: role.isNotEmpty ? Text(role, style: TextStyle(fontSize: 12, color: Colors.grey.shade600)) : null,
+                    onTap: () {
+                      Navigator.pop(context);
+                      _confirmAssignResponder(alertId, id);
+                    },
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _confirmAssignResponder(String alertId, String responderId) async {
+    try {
+      final supabase = SupabaseService.client;
+      final now = DateTime.now().toUtc().toIso8601String();
+
+      await supabase
+          .from('sos_alerts')
+          .update({'assigned_responder_id': responderId, 'assigned_at': now})
+          .eq('id', alertId);
+
+      await supabase.from('sos_assignment').delete().eq('sos_alert_id', alertId);
+
+      final insertResult = await supabase
+          .from('sos_assignment')
+          .insert({
+            'sos_alert_id': alertId,
+            'responder_id': responderId,
+            'status': 'assigned',
+            'assigned_at': now,
+          })
+          .select('id');
+      String? sosAssignmentId;
+      if (insertResult != null && insertResult is List && (insertResult as List).isNotEmpty) {
+        final first = (insertResult as List).first as Map<String, dynamic>;
+        sosAssignmentId = first['id']?.toString();
+      }
+
+      if (sosAssignmentId != null) {
+        try {
+          await SupabaseService.client.functions.invoke(
+            'notify-responder-sos-assignment',
+            body: {
+              'sos_alert_id': alertId,
+              'sos_assignment_id': sosAssignmentId,
+              'responder_id': responderId,
+            },
+          );
+        } catch (_) {}
+      }
+
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Responder assigned. They will see it in My Assignments and get a push notification.'),
+          backgroundColor: Colors.green,
+        ),
+      );
+      await _loadSOSAlerts();
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to assign: $e'), backgroundColor: Colors.red),
+      );
+    }
+  }
+
   void _viewOnMap(double latitude, double longitude, [String? label]) {
     // Open the app's Super User Map and focus on this SOS location (no external Google Maps)
     Navigator.of(context).pushNamed(
@@ -292,6 +474,13 @@ class _SuperUserSOSAlertsScreenState extends State<SuperUserSOSAlertsScreen> {
                     ),
                     const SizedBox(height: 12),
                     _buildDetailRow('Created At', _formatDate(alert['created_at']?.toString())),
+                    if (alert['assigned_responder_id'] != null) ...[
+                      const SizedBox(height: 12),
+                      _buildDetailRow(
+                        'Assigned',
+                        _responderNames[alert['assigned_responder_id']?.toString()] ?? 'Responder',
+                      ),
+                    ],
                     if (alert['acknowledged_at'] != null) ...[
                       const SizedBox(height: 12),
                       _buildDetailRow('Acknowledged At', _formatDate(alert['acknowledged_at']?.toString())),
@@ -301,6 +490,25 @@ class _SuperUserSOSAlertsScreenState extends State<SuperUserSOSAlertsScreen> {
                       _buildDetailRow('Resolved At', _formatDate(alert['resolved_at']?.toString())),
                     ],
                     const SizedBox(height: 24),
+                    if (_isActiveOrAcknowledged(alert['status']?.toString()))
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 12),
+                        child: SizedBox(
+                          width: double.infinity,
+                          child: FilledButton.icon(
+                            onPressed: () {
+                              Navigator.pop(context);
+                              _openAssignResponderModal(alert);
+                            },
+                            icon: const Icon(Icons.person_add_rounded),
+                            label: const Text('Assign Responder'),
+                            style: FilledButton.styleFrom(
+                              backgroundColor: const Color(0xFF2563eb),
+                              padding: const EdgeInsets.symmetric(vertical: 16),
+                            ),
+                          ),
+                        ),
+                      ),
                     SizedBox(
                       width: double.infinity,
                       child: FilledButton.icon(
@@ -784,10 +992,43 @@ class _SuperUserSOSAlertsScreenState extends State<SuperUserSOSAlertsScreen> {
                   ),
                 ],
               ),
+              if (alert['assigned_responder_id'] != null) ...[
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    Icon(Icons.person_pin_rounded, size: 14, color: Colors.grey.shade600),
+                    const SizedBox(width: 4),
+                    Text(
+                      'Assigned: ${_responderNames[alert['assigned_responder_id']?.toString()] ?? 'Responder'}',
+                      style: TextStyle(
+                        color: Colors.grey.shade700,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
               const SizedBox(height: 14),
               Row(
                 children: [
-                  if (isActive)
+                  if (isActive || isAcknowledged)
+                    Expanded(
+                      child: FilledButton.icon(
+                        onPressed: () => _openAssignResponderModal(alert),
+                        icon: const Icon(Icons.person_add_rounded, size: 18),
+                        label: const Text('Assign Responder'),
+                        style: FilledButton.styleFrom(
+                          backgroundColor: const Color(0xFF2563eb),
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                      ),
+                    ),
+                  if (isActive) ...[
+                    if (isActive || isAcknowledged) const SizedBox(width: 10),
                     Expanded(
                       child: FilledButton.icon(
                         onPressed: () => _acknowledgeAlert(alert['id']?.toString() ?? ''),
@@ -802,8 +1043,9 @@ class _SuperUserSOSAlertsScreenState extends State<SuperUserSOSAlertsScreen> {
                         ),
                       ),
                     ),
+                  ],
                   if (isActive || isAcknowledged) ...[
-                    if (isActive) const SizedBox(width: 10),
+                    const SizedBox(width: 10),
                     Expanded(
                       child: FilledButton.icon(
                         onPressed: () => _resolveAlert(alert['id']?.toString() ?? ''),

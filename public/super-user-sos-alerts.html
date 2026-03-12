@@ -681,17 +681,32 @@ window.SU_TOUR_STEPS = [
             // 2) Remove any existing sos_assignment for this alert (reassign case)
             await supabase.from('sos_assignment').delete().eq('sos_alert_id', assignResponderAlertId);
             // 3) Insert sos_assignment so responder sees it in My Assignments (web + mobile)
-            const { error: insertError } = await supabase
+            const { data: insertedRows, error: insertError } = await supabase
                 .from('sos_assignment')
                 .insert({
                     sos_alert_id: assignResponderAlertId,
                     responder_id: assignResponderSelectedId,
                     status: 'assigned',
                     assigned_at: new Date().toISOString()
-                });
+                })
+                .select('id');
             if (insertError) {
                 console.warn('sos_assignment insert failed (table may not exist yet):', insertError);
                 // Still show success for sos_alerts update
+            } else if (insertedRows && insertedRows.length > 0) {
+                // 4) Send push notification to responder (like report assignment flow)
+                const sosAssignmentId = insertedRows[0].id;
+                try {
+                    await window.emergencySystem.supabase.functions.invoke('notify-responder-sos-assignment', {
+                        body: {
+                            sos_alert_id: assignResponderAlertId,
+                            sos_assignment_id: sosAssignmentId,
+                            responder_id: assignResponderSelectedId
+                        }
+                    });
+                } catch (notifErr) {
+                    console.warn('SOS push notification failed (assignment still saved):', notifErr);
+                }
             }
             window.emergencySystem.showSuccess('Responder assigned to SOS alert. They will see it in My Assignments.');
             closeAssignResponderModal();

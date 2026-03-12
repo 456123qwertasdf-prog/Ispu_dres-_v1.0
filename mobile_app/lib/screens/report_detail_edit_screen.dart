@@ -25,6 +25,8 @@ class _ReportDetailEditScreenState extends State<ReportDetailEditScreen> {
   Map<String, dynamic>? _currentAssignment;
   /// Responder IDs that already have an active assignment (cannot assign another until finished).
   Set<String> _busyResponderIds = {};
+  /// Resolved reporter display name (from user_profiles/get-users) when report was opened without loader.
+  String? _resolvedReporterName;
 
   // Form controllers
   late TextEditingController _messageController;
@@ -39,6 +41,60 @@ class _ReportDetailEditScreenState extends State<ReportDetailEditScreen> {
     _initializeForm();
     _loadResponders();
     _loadAssignment();
+    _resolveReporterNameIfNeeded();
+  }
+
+  /// When report was opened without ReportDetailLoaderScreen (e.g. from reports list),
+  /// resolve real reporter name from user_profiles or get-users so we don't show "Citizen Reporter".
+  Future<void> _resolveReporterNameIfNeeded() async {
+    final report = widget.report;
+    final fullName = report['reporter_full_name']?.toString().trim();
+    final fallbackName = report['reporter_name']?.toString().trim();
+    if (fullName != null && fullName.isNotEmpty) return;
+    final reporterUid = report['reporter_uid']?.toString().trim();
+    final reportUserId = report['user_id']?.toString().trim();
+    final uidsToTry = <String>{
+      if (reporterUid != null && reporterUid.isNotEmpty) reporterUid.toLowerCase(),
+      if (reportUserId != null && reportUserId.isNotEmpty) reportUserId.toLowerCase(),
+    };
+    if (uidsToTry.isEmpty) return;
+    try {
+      for (final uid in uidsToTry) {
+        final profileResponse = await SupabaseService.client
+            .from('user_profiles')
+            .select('name')
+            .eq('user_id', uid)
+            .maybeSingle();
+        if (profileResponse != null &&
+            profileResponse is Map<String, dynamic>) {
+          final name = profileResponse['name']?.toString().trim();
+          if (name != null && name.isNotEmpty && mounted) {
+            setState(() => _resolvedReporterName = name);
+            return;
+          }
+        }
+      }
+      final usersResponse = await SupabaseService.client.functions.invoke(
+        'get-users',
+        body: {},
+      );
+      final data = usersResponse.data;
+      if (data is! Map || data['users'] is! List) return;
+      final users = data['users'] as List;
+      for (final u in users) {
+        if (u is! Map) continue;
+        final uid = (u['user_id']?.toString() ?? u['id']?.toString() ?? '')
+            .trim()
+            .toLowerCase();
+        if (uid.isNotEmpty && uidsToTry.contains(uid)) {
+          final name = u['name']?.toString().trim() ?? u['full_name']?.toString().trim();
+          if (name != null && name.isNotEmpty && mounted) {
+            setState(() => _resolvedReporterName = name);
+          }
+          return;
+        }
+      }
+    } catch (_) {}
   }
 
   void _initializeForm() {
@@ -451,8 +507,9 @@ class _ReportDetailEditScreenState extends State<ReportDetailEditScreen> {
     final createdAt = report['created_at']?.toString();
     // Last Updated = when super user assigned the responder (assignment time)
     final assignedAt = _currentAssignment?['assigned_at']?.toString();
-    // Use reporter_full_name from get-users (real name) when available, like web view-report
-    final fullName = report['reporter_full_name']?.toString().trim();
+    // Prefer real name: resolved in this screen, or from loader (reporter_full_name), then reporter_name
+    final fullName = _resolvedReporterName ??
+        report['reporter_full_name']?.toString().trim();
     final fallbackName = report['reporter_name']?.toString().trim();
     final reporterName = (fullName != null && fullName.isNotEmpty)
         ? fullName

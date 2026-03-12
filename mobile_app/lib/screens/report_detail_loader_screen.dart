@@ -48,28 +48,61 @@ class _ReportDetailLoaderScreenState extends State<ReportDetailLoaderScreen> {
       if (!mounted) return;
       if (response != null && response is Map<String, dynamic>) {
         final report = Map<String, dynamic>.from(response);
-        // Enrich with reporter real name from get-users (same as web view-report)
-        final reporterUid = report['reporter_uid']?.toString();
-        if (reporterUid != null && reporterUid.isNotEmpty) {
+        // Enrich with reporter real name: try user_profiles first, then get-users
+        final reporterUid = report['reporter_uid']?.toString().trim();
+        final reportUserId = report['user_id']?.toString().trim();
+        final uidsToTry = <String>{
+          if (reporterUid != null && reporterUid.isNotEmpty) reporterUid.toLowerCase(),
+          if (reportUserId != null && reportUserId.isNotEmpty) reportUserId.toLowerCase(),
+        };
+        if (uidsToTry.isNotEmpty) {
           try {
-            final usersResponse = await SupabaseService.client.functions.invoke(
-              'get-users',
-              body: {},
-            );
-            final data = usersResponse.data;
-            if (data is Map && data['users'] is List) {
-              final users = data['users'] as List;
-              for (final u in users) {
-                if (u is! Map) continue;
-                final uid = u['user_id']?.toString() ?? u['id']?.toString();
-                if (uid == reporterUid) {
-                  report['reporter_full_name'] =
-                      u['name']?.toString() ?? u['full_name']?.toString() ?? report['reporter_name']?.toString();
-                  report['reporter_email'] = u['email']?.toString();
-                  report['reporter_phone'] = u['phone']?.toString() ?? u['contactNumber']?.toString();
-                  report['reporter_student_number'] =
-                      u['student_number']?.toString() ?? u['studentNumber']?.toString();
+            // 1) Try direct user_profiles read (works when current user has admin/super_user policy)
+            for (final uid in uidsToTry) {
+              final profileResponse = await SupabaseService.client
+                  .from('user_profiles')
+                  .select('name, email, student_number')
+                  .eq('user_id', uid)
+                  .maybeSingle();
+              if (profileResponse != null && profileResponse is Map<String, dynamic>) {
+                final name = profileResponse['name']?.toString().trim();
+                if (name != null && name.isNotEmpty) {
+                  report['reporter_full_name'] = name;
+                  report['reporter_email'] = profileResponse['email']?.toString();
+                  report['reporter_student_number'] = profileResponse['student_number']?.toString();
                   break;
+                }
+              }
+            }
+            // 2) If still no real name, try get-users (service role returns all users)
+            if (report['reporter_full_name'] == null ||
+                (report['reporter_full_name'] as String).isEmpty) {
+              final usersResponse = await SupabaseService.client.functions.invoke(
+                'get-users',
+                body: {},
+              );
+              final data = usersResponse.data;
+              if (data is Map && data['users'] is List) {
+                final users = data['users'] as List;
+                for (final u in users) {
+                  if (u is! Map) continue;
+                  final uid = (u['user_id']?.toString() ?? u['id']?.toString() ?? '')
+                      .trim()
+                      .toLowerCase();
+                  if (uid.isEmpty) continue;
+                  if (uidsToTry.contains(uid)) {
+                    final fullName = u['name']?.toString().trim() ??
+                        u['full_name']?.toString().trim() ??
+                        report['reporter_name']?.toString();
+                    if (fullName != null && fullName.isNotEmpty) {
+                      report['reporter_full_name'] = fullName;
+                    }
+                    report['reporter_email'] = u['email']?.toString();
+                    report['reporter_phone'] = u['phone']?.toString() ?? u['contactNumber']?.toString();
+                    report['reporter_student_number'] =
+                        u['student_number']?.toString() ?? u['studentNumber']?.toString();
+                    break;
+                  }
                 }
               }
             }

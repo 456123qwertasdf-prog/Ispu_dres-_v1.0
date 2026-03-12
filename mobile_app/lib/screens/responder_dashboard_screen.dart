@@ -738,6 +738,45 @@ class _ResponderDashboardScreenState extends State<ResponderDashboardScreen> {
         return;
       }
 
+      // SOS assignments: update sos_assignment (and sos_alerts on resolve) directly
+      final isSos = (assignment.report.type ?? '').toLowerCase() == 'sos';
+      if (isSos) {
+        final now = DateTime.now().toUtc().toIso8601String();
+        final updateData = <String, dynamic>{
+          'status': newStatus,
+          'updated_at': now,
+        };
+        if (newStatus == 'accepted' && assignment.status == 'assigned') {
+          updateData['accepted_at'] = now;
+        }
+        if (newStatus == 'resolved' || newStatus == 'completed') {
+          updateData['completed_at'] = now;
+        }
+        if (notes != null && notes.trim().isNotEmpty) {
+          updateData['notes'] = notes.trim();
+        }
+        await SupabaseService.client
+            .from('sos_assignment')
+            .update(updateData)
+            .eq('id', assignment.id)
+            .eq('responder_id', responderId);
+        if (newStatus == 'resolved' || newStatus == 'completed') {
+          await SupabaseService.client
+              .from('sos_alerts')
+              .update({
+                'status': 'resolved',
+                'resolved_at': now,
+              })
+              .eq('id', assignment.report.id);
+        }
+        await _loadPage(showLoader: false);
+        if (mounted && _pendingEnrouteAssignmentId == assignment.id && newStatus == 'enroute') {
+          setState(() => _pendingEnrouteAssignmentId = null);
+        }
+        _showSnack('Assignment marked as ${newStatus.toUpperCase()}');
+        return;
+      }
+
       // Handle 'accepted' status - use accept-assignment function
       if (newStatus == 'accepted' && assignment.status == 'assigned') {
         debugPrint('📞 Calling accept-assignment edge function...');
