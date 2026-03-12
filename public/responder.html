@@ -130,17 +130,6 @@
                             <div class="stat-trend" id="responseTrend">Loading...</div>
                 </div>
             </div>
-                    
-                    <div class="stat-card stat-card-orange">
-                        <div class="stat-icon">
-                            <i class="bi bi-geo-alt"></i>
-                </div>
-                        <div class="stat-content">
-                            <div class="stat-number" id="coverageRadius">5km</div>
-                            <div class="stat-label">Coverage Radius</div>
-                            <div class="stat-trend" id="coverageTrend">Active</div>
-                </div>
-            </div>
                 </div>
 
                 <!-- Readiness Synopsis (Prepare / be ready / inspect) -->
@@ -346,7 +335,7 @@
     <script>
     window.SU_TOUR_STEPS = [
         { sel: '#dashboard-section > .card', title: 'Responder Dashboard', desc: 'Your emergency response hub. Here you see assignments, readiness, and status. Use the sidebar to switch to My Assignments, Map View, or Profile.' },
-        { sel: '.stats-grid', title: 'Your stats', desc: 'Assigned reports, completed count, average response time, and coverage radius at a glance.' },
+        { sel: '.stats-grid', title: 'Your stats', desc: 'Assigned reports, completed count, and average response time at a glance.' },
         { sel: '#dashboard-section .card:nth-of-type(2)', title: 'Readiness Notice', desc: 'Current readiness message based on recent system reports. Stay prepared.' },
         { sel: '.dashboard-cards-row', title: 'Assignments', desc: 'My Assignments shows your active tasks. Completed Assignments shows your history. Click an assignment to view details and navigate.' },
         { sel: '.sidebar-nav', title: 'Navigation', desc: 'Dashboard, My Assignments, Map View, and Profile. Use Map View to see emergencies and get directions.' }
@@ -757,6 +746,51 @@
                         };
                     }).filter(report => report !== null);
                     
+                // Load SOS assignments for this responder (same list as report assignments)
+                try {
+                    const { data: sosAssignments, error: sosErr } = await emergencySystem.supabase
+                        .from('sos_assignment')
+                        .select('id, sos_alert_id, responder_id, status, assigned_at')
+                        .eq('responder_id', responderId)
+                        .in('status', ['assigned', 'accepted', 'enroute', 'on_scene'])
+                        .order('assigned_at', { ascending: false });
+                    if (!sosErr && sosAssignments && sosAssignments.length > 0) {
+                        const sosAlertIds = sosAssignments.map(a => a.sos_alert_id).filter(Boolean);
+                        const { data: sosAlerts } = await emergencySystem.supabase
+                            .from('sos_alerts')
+                            .select('id, reporter_name, latitude, longitude, location_address, status, created_at')
+                            .in('id', sosAlertIds);
+                        const sosAlertsMap = new Map((sosAlerts || []).map(a => [a.id, a]));
+                        sosAssignments.forEach(sa => {
+                            const alert = sosAlertsMap.get(sa.sos_alert_id);
+                            if (!alert) return;
+                            const responder = respondersMap.get(sa.responder_id);
+                            currentReports.push({
+                                id: alert.id,
+                                message: 'SOS Emergency Alert',
+                                type: 'sos',
+                                status: sa.status,
+                                created_at: sa.assigned_at,
+                                location: { latitude: parseFloat(alert.latitude), longitude: parseFloat(alert.longitude) },
+                                reporter_name: alert.reporter_name || 'Anonymous',
+                                image_path: null,
+                                assignment_id: sa.id,
+                                assignment_status: sa.status,
+                                assigned_at: sa.assigned_at,
+                                accepted_at: null,
+                                completed_at: null,
+                                responder_name: responder?.name,
+                                responder_role: responder?.role,
+                                is_assigned_to_me: true,
+                                needs_backup: false,
+                                needs_backup_at: null,
+                                is_sos: true
+                            });
+                        });
+                        console.log('✅ Loaded SOS assignments for responder:', sosAssignments.length);
+                    }
+                } catch (e) { console.warn('Could not load SOS assignments:', e); }
+
                 console.log('✅ Loaded assignments for responder:', currentReports.length);
                 displayAssignments();
                 
@@ -4130,6 +4164,7 @@
                 earthquake: '🌍',
                 storm: '⛈️',
                 false_alarm: '🚫',
+                sos: '🚨',
                 other: '⚠️',
                 unknown: '❓'
             };
@@ -4149,7 +4184,8 @@
                 earthquake: '#8b5cf6', // Purple for earthquakes
                 storm: '#6366f1',     // Indigo for storms
                 false_alarm: '#9ca3af', // Gray for false alarm
-                other: '#6b7280',     // Gray for other
+                sos: '#dc2626',      // Red for SOS
+                other: '#6b7280',    // Gray for other
                 unknown: '#6b7280'   // Gray for unknown
             };
             return colors[type.toLowerCase()] || '#ef4444';

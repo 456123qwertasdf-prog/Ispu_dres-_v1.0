@@ -205,7 +205,17 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
         '/super-user': (context) => const SuperUserDashboardScreen(),
         '/super-user-reports': (context) => const SuperUserReportsScreen(),
         '/super-user-announcements': (context) => const SuperUserAnnouncementsScreen(),
-        '/super-user-map': (context) => const SuperUserMapScreen(),
+        '/super-user-map': (context) {
+          final args = ModalRoute.of(context)?.settings.arguments;
+          final m = args is Map ? args as Map<String, dynamic> : null;
+          final lat = m?['sosLat'];
+          final lng = m?['sosLng'];
+          return SuperUserMapScreen(
+            initialSosLat: lat is num ? lat.toDouble() : null,
+            initialSosLng: lng is num ? lng.toDouble() : null,
+            initialSosLabel: m?['sosLabel']?.toString(),
+          );
+        },
         '/super-user-early-warning': (context) => const SuperUserEarlyWarningScreen(),
         '/super-user-sos-alerts': (context) => const SuperUserSOSAlertsScreen(),
       },

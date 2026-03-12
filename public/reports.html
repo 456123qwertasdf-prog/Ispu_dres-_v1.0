@@ -234,11 +234,11 @@
                                         <th>ID</th>
                                         <th>Type</th>
                                         <th>Reporter</th>
-                                        <th>Reporter #</th>
                                         <th>Location</th>
                                         <th>Status</th>
+                                        <th>Responder</th>
                                         <th>Priority</th>
-                                        <th>Needs backup</th>
+                                        <th>Backup status</th>
                                         <th>Created</th>
                                         <th>Actions</th>
                                     </tr>
@@ -372,6 +372,25 @@
             return loc.address || loc.formatted_address || 'Location detected';
         }
 
+        // Resolve latitude, longitude for CSV export (e.g. "14.123456, 121.654321")
+        function getLocationLatLong(report) {
+            if (!report || !report.location) return '';
+            const loc = report.location;
+            let lat = null, lng = null;
+            if (typeof loc === 'string') {
+                try {
+                    const l = JSON.parse(loc);
+                    lat = l.latitude ?? l.lat;
+                    lng = l.longitude ?? l.lng ?? l.lon;
+                } catch (_) {}
+            } else {
+                lat = loc.latitude ?? loc.lat;
+                lng = loc.longitude ?? loc.lng ?? loc.lon;
+            }
+            if (lat != null && lng != null) return `${lat}, ${lng}`;
+            return getLocationText(report);
+        }
+
         // Load reports
         async function loadReports() {
             try {
@@ -392,6 +411,7 @@
                                 if (u) {
                                     r.reporter_full_name = u.name || u.full_name || report.reporter_name;
                                     r.reporter_phone = u.phone || u.contactNumber || '';
+                                    r.reporter_student_number = u.student_number || u.studentNumber || '';
                                 }
                             }
                             return r;
@@ -409,6 +429,60 @@
                             .in('report_id', reportIds);
                         const needBackupReportIds = new Set((needBackupAssignments || []).map(a => a.report_id));
                         list.forEach(r => { r.needs_backup = needBackupReportIds.has(r.id); });
+                    }
+                } catch (_) {}
+                // Enrich with responder names and backup status (Responder + Backup status columns)
+                try {
+                    const reportIds = (list || []).map(r => r.id).filter(Boolean);
+                    if (reportIds.length > 0) {
+                        const { data: allAssignments } = await window.emergencySystem.supabase
+                            .from('assignment')
+                            .select('report_id, responder_id, status, role')
+                            .in('report_id', reportIds)
+                            .in('status', ['assigned', 'accepted', 'enroute', 'on_scene', 'resolved']);
+                        const responders = await window.emergencySystem.getResponders() || [];
+                        const byReport = {};
+                        (allAssignments || []).forEach(a => {
+                            if (!byReport[a.report_id]) byReport[a.report_id] = { names: [], backupAssigned: false, backupResolved: false };
+                            const name = (responders.find(r => r.id === a.responder_id) || {}).name || `Responder ${(a.responder_id || '').substring(0, 8)}`;
+                            if (!byReport[a.report_id].names.includes(name)) byReport[a.report_id].names.push(name);
+                            if (a.role === 'backup') {
+                                byReport[a.report_id].backupAssigned = true;
+                                if (a.status === 'resolved') byReport[a.report_id].backupResolved = true;
+                            }
+                        });
+                        list.forEach(r => {
+                            const info = byReport[r.id];
+                            r.responder_names = info ? info.names.join(', ') : '';
+                            if (r.needs_backup && info) {
+                                r.backup_status = info.backupResolved ? 'Success' : info.backupAssigned ? 'Assigned' : 'Needs backup';
+                            } else if (info && (info.backupAssigned || info.backupResolved)) {
+                                r.backup_status = info.backupResolved ? 'Success' : 'Assigned';
+                            } else {
+                                r.backup_status = '—';
+                            }
+                        });
+                    }
+                } catch (_) {}
+                // Enrich with responder notes for CSV export
+                try {
+                    const reportIds = (list || []).map(r => r.id).filter(Boolean);
+                    if (reportIds.length > 0) {
+                        const { data: notesRows } = await window.emergencySystem.supabase
+                            .from('assignment')
+                            .select('report_id, notes')
+                            .in('report_id', reportIds)
+                            .not('notes', 'is', null);
+                        const notesByReport = {};
+                        (notesRows || []).forEach(row => {
+                            const n = (row.notes || '').trim();
+                            if (!n) return;
+                            if (!notesByReport[row.report_id]) notesByReport[row.report_id] = [];
+                            notesByReport[row.report_id].push(n);
+                        });
+                        list.forEach(r => {
+                            r.responder_notes = (notesByReport[r.id] || []).join(' | ');
+                        });
                     }
                 } catch (_) {}
                 allReports = list;
@@ -640,7 +714,6 @@
             }
 
             const reporterName = (r) => r.reporter_full_name || r.reporter_name || 'Anonymous';
-            const reporterPhone = (r) => r.reporter_phone || r.phone || r.contactNumber || '—';
 
             tbody.innerHTML = pageReports.map(report => `
                 <tr>
@@ -649,7 +722,6 @@
                         <span class="badge badge-${report.type || 'other'}">${getEmergencyIcon(report.type)} ${(report.type || 'other').toUpperCase()}</span>
                     </td>
                     <td>${reporterName(report)}</td>
-                    <td>${reporterPhone(report)}</td>
                     <td>
                         <a href="map.html?reportId=${report.id}" style="color: #3b82f6; text-decoration: none; cursor: pointer;" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'" title="View on Map">
                             <i class="bi bi-geo-alt-fill"></i> ${getLocationText(report)}
@@ -658,10 +730,11 @@
                     <td>
                         <span class="badge badge-${report.status || 'pending'}">${(report.status || 'pending').toUpperCase()}</span>
                     </td>
+                    <td style="max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${(report.responder_names || '').replace(/"/g, '&quot;')}">${report.responder_names || '—'}</td>
                     <td>
                         <span class="badge badge-priority-${report.priority || 4}">${getPriorityText(report.priority || 4)}</span>
                     </td>
-                    <td>${report.needs_backup ? '<span style="color:#dc2626;font-weight:700;" title="Responder requested backup">🆘 Yes</span>' : '—'}</td>
+                    <td>${report.backup_status === 'Success' ? '<span style="color:#16a34a;font-weight:600;" title="Backup completed">✓ Success</span>' : report.backup_status === 'Assigned' ? '<span style="color:#2563eb;font-weight:600;">Assigned</span>' : report.backup_status === 'Needs backup' ? '<span style="color:#dc2626;font-weight:600;">Needs backup</span>' : '—'}</td>
                     <td>${report.created_at ? formatReportDate(report.created_at) : 'N/A'}</td>
                     <td>
                         <div class="action-buttons">
@@ -762,22 +835,31 @@
             window.URL.revokeObjectURL(url);
         }
 
-        // Generate CSV
+        // Generate CSV (Reporter # and Responder note(s) included for export only)
         function generateCSV(reports) {
-            const headers = ['ID', 'Type', 'Reporter', 'Reporter #', 'Location', 'Status', 'Priority', 'Created', 'Message'];
-            const rows = reports.map(report => [
-                report.id || 'N/A',
-                report.type || 'other',
-                report.reporter_full_name || report.reporter_name || 'Anonymous',
-                report.reporter_phone || report.phone || report.contactNumber || '',
-                getLocationText(report),
-                report.status || 'pending',
-                getPriorityText(report.priority || 4),
-                report.created_at ? formatReportDate(report.created_at) : 'N/A',
-                report.message || ''
-            ]);
-            
-            return [headers, ...rows].map(row => row.map(field => `"${field}"`).join(',')).join('\n');
+            const headers = ['ID', 'Type', 'Reporter', 'Reporter #', 'Location', 'Status', 'Responder', 'Priority', 'Backup status', 'Created', 'Message', 'Responder note(s)'];
+            const escapeCsv = (v) => `"${String(v || '').replace(/"/g, '""')}"`;
+            const rows = reports.map(report => {
+                const reporterName = report.reporter_full_name || report.reporter_name || 'Anonymous';
+                const contactNumber = report.reporter_phone || report.phone || report.contactNumber || '';
+                const locationText = getLocationLatLong(report);
+                const messageText = (report.message || report.description || '').trim();
+                return [
+                    report.id || 'N/A',
+                    report.type || 'other',
+                    reporterName,
+                    contactNumber,
+                    locationText,
+                    report.status || 'pending',
+                    report.responder_names || '',
+                    getPriorityText(report.priority || 4),
+                    report.backup_status || '—',
+                    report.created_at ? formatReportDate(report.created_at) : 'N/A',
+                    messageText,
+                    report.responder_notes || ''
+                ];
+            });
+            return [headers, ...rows].map(row => row.map(escapeCsv).join(',')).join('\n');
         }
 
         // Pagination functions
@@ -873,7 +955,7 @@
             if (tbody) {
                 tbody.innerHTML = `
                     <tr>
-                        <td colspan="8" class="text-center py-8">
+                        <td colspan="10" class="text-center py-8">
                             <div class="loading-spinner"></div>
                             <p>Loading reports...</p>
                         </td>

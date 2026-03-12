@@ -295,11 +295,11 @@
                             <th>ID</th>
                             <th>Type</th>
                             <th>Reporter</th>
-                            <th>Reporter #</th>
                             <th>Location</th>
                             <th>Status</th>
+                            <th>Responder</th>
                             <th>Priority</th>
-                            <th>Needs backup</th>
+                            <th>Backup status</th>
                             <th>Created</th>
                             <th>Actions</th>
                         </tr>
@@ -477,7 +477,7 @@
 <!-- Assign Responder Modal (from View Report) -->
 <div id="assignResponderModal" style="display:none;position:fixed;inset:0;z-index:1100;background:rgba(0,0,0,0.5);align-items:center;justify-content:center;">
     <div style="background:white;border-radius:12px;width:90%;max-width:480px;box-shadow:0 20px 60px rgba(0,0,0,0.3);overflow:hidden;">
-        <div style="background:linear-gradient(135deg,#1d4ed8,#2563eb);color:white;padding:1.25rem 1.5rem;display:flex;justify-content:space-between;align-items:center;">
+        <div id="assignResponderModalHeader" style="background:linear-gradient(135deg,#1d4ed8,#2563eb);color:white;padding:1.25rem 1.5rem;display:flex;justify-content:space-between;align-items:center;">
             <h3 style="margin:0;font-size:1.05rem;font-weight:700;"><i class="bi bi-person-plus"></i> Assign Responder(s)</h3>
             <button onclick="closeAssignResponderModalVR()" style="background:rgba(255,255,255,0.2);border:none;color:white;width:32px;height:32px;border-radius:50%;cursor:pointer;font-size:1.1rem;display:flex;align-items:center;justify-content:center;">&times;</button>
         </div>
@@ -486,11 +486,11 @@
             <div id="vrResponderList" style="max-height:280px;overflow-y:auto;border:1px solid #e5e7eb;border-radius:8px;padding:0.5rem;">
                 <div style="padding:1rem;text-align:center;color:#6b7280;">Loading responders...</div>
             </div>
-            <p style="margin-top:0.5rem;font-size:0.75rem;color:#6b7280;">Select one or more responders to assign to this report.</p>
+            <p id="assignResponderModalHint" style="margin-top:0.5rem;font-size:0.75rem;color:#6b7280;">Select one or more responders to assign to this report.</p>
         </div>
         <div style="padding:1rem 1.25rem;border-top:1px solid #e5e7eb;display:flex;gap:0.75rem;justify-content:flex-end;">
             <button onclick="closeAssignResponderModalVR()" class="btn btn-secondary btn-sm">Cancel</button>
-            <button onclick="confirmAssignResponderVR()" class="btn btn-success btn-sm"><i class="bi bi-person-plus"></i> Assign Responders</button>
+            <button id="assignResponderConfirmBtn" onclick="confirmAssignResponderVR()" class="btn btn-success btn-sm"><i class="bi bi-person-plus"></i> Assign Responders</button>
         </div>
     </div>
 </div>
@@ -731,6 +731,25 @@ window.SU_TOUR_STEPS = [
         return loc.address || loc.formatted_address || 'Location detected';
     }
 
+    // Resolve latitude, longitude for CSV export (e.g. "14.123456, 121.654321")
+    function getLocationLatLong(report) {
+        if (!report || !report.location) return '';
+        const loc = report.location;
+        let lat = null, lng = null;
+        if (typeof loc === 'string') {
+            try {
+                const l = JSON.parse(loc);
+                lat = l.latitude ?? l.lat;
+                lng = l.longitude ?? l.lng ?? l.lon;
+            } catch (_) {}
+        } else {
+            lat = loc.latitude ?? loc.lat;
+            lng = loc.longitude ?? loc.lng ?? loc.lon;
+        }
+        if (lat != null && lng != null) return `${lat}, ${lng}`;
+        return getLocationText(report);
+    }
+
     // ── Load Reports ──────────────────────────────────────────────────────────
     async function loadReports() {
         try {
@@ -748,6 +767,7 @@ window.SU_TOUR_STEPS = [
                             if (u) {
                                 r.reporter_full_name = u.name || u.full_name || report.reporter_name;
                                 r.reporter_phone = u.phone || u.contactNumber || '';
+                                r.reporter_student_number = u.student_number || u.studentNumber || '';
                             }
                         }
                         return r;
@@ -789,6 +809,60 @@ window.SU_TOUR_STEPS = [
                         .in('report_id', reportIds);
                     const needBackupReportIds = new Set((needBackupAssignments || []).map(a => a.report_id));
                     list.forEach(r => { r.needs_backup = needBackupReportIds.has(r.id); });
+                }
+            } catch (_) {}
+            // Enrich with responder names and backup status (for table Responder + Backup status columns)
+            try {
+                const reportIds = (list || []).map(r => r.id).filter(Boolean);
+                if (reportIds.length > 0) {
+                    const { data: allAssignments } = await window.emergencySystem.supabase
+                        .from('assignment')
+                        .select('report_id, responder_id, status, role')
+                        .in('report_id', reportIds)
+                        .in('status', ['assigned', 'accepted', 'enroute', 'on_scene', 'resolved']);
+                    const responders = await window.emergencySystem.getResponders() || [];
+                    const byReport = {};
+                    (allAssignments || []).forEach(a => {
+                        if (!byReport[a.report_id]) byReport[a.report_id] = { names: [], backupAssigned: false, backupResolved: false };
+                        const name = (responders.find(r => r.id === a.responder_id) || {}).name || `Responder ${(a.responder_id || '').substring(0, 8)}`;
+                        if (!byReport[a.report_id].names.includes(name)) byReport[a.report_id].names.push(name);
+                        if (a.role === 'backup') {
+                            byReport[a.report_id].backupAssigned = true;
+                            if (a.status === 'resolved') byReport[a.report_id].backupResolved = true;
+                        }
+                    });
+                    list.forEach(r => {
+                        const info = byReport[r.id];
+                        r.responder_names = info ? info.names.join(', ') : '';
+                        if (r.needs_backup && info) {
+                            r.backup_status = info.backupResolved ? 'Success' : info.backupAssigned ? 'Assigned' : 'Needs backup';
+                        } else if (info && (info.backupAssigned || info.backupResolved)) {
+                            r.backup_status = info.backupResolved ? 'Success' : 'Assigned';
+                        } else {
+                            r.backup_status = '—';
+                        }
+                    });
+                }
+            } catch (_) {}
+            // Enrich with responder notes for CSV export
+            try {
+                const reportIds = (list || []).map(r => r.id).filter(Boolean);
+                if (reportIds.length > 0) {
+                    const { data: notesRows } = await window.emergencySystem.supabase
+                        .from('assignment')
+                        .select('report_id, notes')
+                        .in('report_id', reportIds)
+                        .not('notes', 'is', null);
+                    const notesByReport = {};
+                    (notesRows || []).forEach(row => {
+                        const n = (row.notes || '').trim();
+                        if (!n) return;
+                        if (!notesByReport[row.report_id]) notesByReport[row.report_id] = [];
+                        notesByReport[row.report_id].push(n);
+                    });
+                    list.forEach(r => {
+                        r.responder_notes = (notesByReport[r.id] || []).join(' | ');
+                    });
                 }
             } catch (_) {}
             allReports = list;
@@ -879,7 +953,6 @@ window.SU_TOUR_STEPS = [
             const createdDate = report.created_at ? formatReportDate(report.created_at) : 'N/A';
             const address = getLocationText(report);
             const reporterName = report.reporter_full_name || report.reporter_name || 'Anonymous';
-            const reporterPhone = report.reporter_phone || report.phone || report.contactNumber || '—';
 
             return `
             <tr>
@@ -890,19 +963,19 @@ window.SU_TOUR_STEPS = [
                     </span>
                 </td>
                 <td style="font-weight:500;">${reporterName}</td>
-                <td style="font-size:0.82rem;color:#6b7280;">${reporterPhone}</td>
                 <td style="max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
                     <a href="super-user-map.html?reportId=${report.id}" style="color:#2563eb;text-decoration:none;display:flex;align-items:center;gap:0.25rem;font-size:0.83rem;" title="View on Map">
                         <i class="bi bi-geo-alt-fill" style="color:#2563eb;flex-shrink:0;"></i>${address}
                     </a>
                 </td>
                 <td><span class="rp-status ${getStatusClass(report.status)}">${statusLabel}</span></td>
+                <td style="max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${escapeHtml(report.responder_names || '')}">${report.responder_names || '—'}</td>
                 <td>
                     <span class="rp-priority" style="${getPriorityStyle(report.priority || 4)}">
                         ${getPriorityIcon(report.priority || 4)} ${getPriorityText(report.priority || 4)}
                     </span>
                 </td>
-                <td>${report.needs_backup ? '<span style="color:#dc2626;font-weight:700;" title="Responder requested backup">🆘 Yes</span>' : '—'}</td>
+                <td>${report.backup_status === 'Success' ? '<span style="color:#16a34a;font-weight:600;" title="Backup completed">✓ Success</span>' : report.backup_status === 'Assigned' ? '<span style="color:#2563eb;font-weight:600;">Assigned</span>' : report.backup_status === 'Needs backup' ? '<span style="color:#dc2626;font-weight:600;">Needs backup</span>' : '—'}</td>
                 <td style="font-size:0.82rem;color:#6b7280;white-space:nowrap;">${createdDate}</td>
                 <td>
                     <div style="display:flex;gap:0.35rem;flex-wrap:wrap;">
@@ -1022,17 +1095,25 @@ window.SU_TOUR_STEPS = [
             ? `<img src="${imageUrl}" alt="Report image" style="width:100%;max-width:280px;height:180px;object-fit:cover;border-radius:8px;border:1px solid #e5e7eb;">`
             : `<div style="width:100%;max-width:280px;height:120px;background:#f3f4f6;border:2px dashed #d1d5db;border-radius:8px;display:flex;align-items:center;justify-content:center;color:#9ca3af;font-size:0.85rem;">No image uploaded</div>`;
 
-        // assignments (any active status so we show responder for accepted/enroute/on_scene too); include needs_backup for "who needs backup"
+        // assignments: include resolved so completed reports show who responded; include needs_backup and notes
         let assignedText = 'Not assigned';
         let needsBackupInModal = false;
+        let responderNote = '';
+        let backupStatusModal = '—';
         try {
-            const activeStatusesDisplay = ['assigned', 'accepted', 'enroute', 'on_scene'];
-            const { data: asgn } = await window.emergencySystem.supabase.from('assignment').select('responder_id,status,needs_backup').eq('report_id', rId).in('status', activeStatusesDisplay);
+            const statusesForDisplay = ['assigned', 'accepted', 'enroute', 'on_scene', 'resolved'];
+            const { data: asgn } = await window.emergencySystem.supabase.from('assignment').select('responder_id,status,needs_backup,notes,role').eq('report_id', rId).in('status', statusesForDisplay);
             if (asgn && asgn.length > 0) {
                 const resp = await window.emergencySystem.getResponders();
-                assignedText = asgn.map(a => { const r = resp.find(x=>x.id===a.responder_id); return r?.name||`Responder ${a.responder_id.substring(0,8)}`; }).join(', ');
+                assignedText = asgn.map(a => { const r = resp.find(x=>x.id===a.responder_id); return r?.name||`Responder ${(a.responder_id||'').substring(0,8)}`; }).join(', ');
                 needsBackupInModal = asgn.some(a => a.needs_backup === true);
-            }
+                const withNotes = asgn.filter(a => a.notes && a.notes.trim());
+                if (withNotes.length) responderNote = withNotes.map(a => a.notes.trim()).join('\n\n');
+                const backupAsgn = asgn.filter(a => a.role === 'backup');
+                if (backupAsgn.some(a => a.status === 'resolved')) backupStatusModal = 'Success';
+                else if (backupAsgn.length) backupStatusModal = 'Assigned';
+                else if (needsBackupInModal) backupStatusModal = 'Needs backup';
+            } else if (report.needs_backup) backupStatusModal = 'Needs backup';
         } catch(_) { assignedText = report.responder_name || 'Not assigned'; }
 
         // badge helpers
@@ -1085,8 +1166,10 @@ window.SU_TOUR_STEPS = [
                 <div style="padding:1rem;display:grid;gap:0.6rem;">
                     <div style="display:flex;justify-content:space-between;padding:0.4rem 0;border-bottom:1px solid #f3f4f6;"><span style="font-weight:600;font-size:0.85rem;color:#374151;">Assigned Responder</span><span style="font-size:0.85rem;color:${assignedText!=='Not assigned'?'#1d4ed8':'#6b7280'};text-align:right;max-width:55%;">${escapeHtml(assignedText)}</span></div>
                     <div style="display:flex;justify-content:space-between;padding:0.4rem 0;border-bottom:1px solid #f3f4f6;"><span style="font-weight:600;font-size:0.85rem;color:#374151;">Assignment ID</span><span style="font-size:0.85rem;">${escapeHtml(String(report.assignment_id||'Not assigned'))}</span></div>
+                    <div style="display:flex;justify-content:space-between;padding:0.4rem 0;border-bottom:1px solid #f3f4f6;"><span style="font-weight:600;font-size:0.85rem;color:#374151;">Backup status</span><span style="font-size:0.85rem;font-weight:600;color:${backupStatusModal==='Success'?'#16a34a':backupStatusModal==='Assigned'?'#2563eb':backupStatusModal==='Needs backup'?'#dc2626':'#6b7280'};">${backupStatusModal}</span></div>
                     ${needsBackupInModal ? '<div style="display:flex;justify-content:space-between;align-items:center;padding:0.4rem 0;border-bottom:1px solid #fef2f2;background:#fef2f2;margin:0 -1rem;padding:0.5rem 1rem;"><span style="font-weight:700;font-size:0.85rem;color:#dc2626;">🆘 Needs backup</span><span style="font-size:0.85rem;font-weight:600;color:#dc2626;">Yes — assign backup from below</span></div>' : ''}
-                    <div style="display:flex;justify-content:space-between;padding:0.4rem 0;"><span style="font-weight:600;font-size:0.85rem;color:#374151;">Response Time</span><span style="font-size:0.85rem;">${escapeHtml(String(report.response_time||'Not specified'))}</span></div>
+                    <div style="display:flex;justify-content:space-between;padding:0.4rem 0;border-bottom:1px solid #f3f4f6;"><span style="font-weight:600;font-size:0.85rem;color:#374151;">Response Time</span><span style="font-size:0.85rem;">${escapeHtml(String(report.response_time||'Not specified'))}</span></div>
+                    ${responderNote ? `<div style="padding:0.5rem 0 0;border-top:1px solid #f3f4f6;"><div style="font-weight:600;font-size:0.85rem;color:#374151;margin-bottom:0.35rem;"><i class="bi bi-chat-left-text"></i> Responder note</div><div style="font-size:0.85rem;color:#374151;background:#f9fafb;padding:0.6rem;border-radius:6px;white-space:pre-wrap;">${escapeHtml(responderNote)}</div></div>` : ''}
                 </div>
             </div>
             <div style="border:1px solid #e5e7eb;border-radius:0.5rem;overflow:hidden;">
@@ -1107,7 +1190,8 @@ window.SU_TOUR_STEPS = [
             </div>` : '<div></div>'}
         </div>
         <div style="display:flex;gap:1rem;padding-top:1rem;border-top:1px solid #e5e7eb;flex-wrap:wrap;">
-            <button onclick="showAssignResponderModal('${rId}')" class="btn btn-success btn-sm"><i class="bi bi-person-plus"></i> Assign Responder</button>
+            <button onclick="window._assignAsBackup=false; showAssignResponderModal('${rId}')" class="btn btn-success btn-sm"><i class="bi bi-person-plus"></i> Assign Responder</button>
+            <button onclick="window._assignAsBackup=true; showAssignResponderModal('${rId}')" class="btn btn-sm" style="background:#0d9488;color:white;border:none;cursor:pointer;"><i class="bi bi-shield-plus"></i> Assign Backup</button>
             <button onclick="closeViewModal();openCorrectionModalFromId('${rId}')" class="btn btn-warning btn-sm"><i class="bi bi-pencil-square"></i> Correct Classification</button>
             <button onclick="closeViewModal(); openEditModal('${rId}')" class="btn btn-sm" style="background:#3b82f6;color:white;border:none;cursor:pointer;"><i class="bi bi-pencil"></i> Edit Report</button>
             <button onclick="closeViewModal()" class="btn btn-secondary btn-sm"><i class="bi bi-x-lg"></i> Close</button>
@@ -1190,7 +1274,15 @@ window.SU_TOUR_STEPS = [
 
     async function showAssignResponderModal(reportId) {
         currentReportId = reportId;
+        const isBackup = !!window._assignAsBackup;
         const modal = document.getElementById('assignResponderModal');
+        const header = document.getElementById('assignResponderModalHeader');
+        const hint = document.getElementById('assignResponderModalHint');
+        const confirmBtn = document.getElementById('assignResponderConfirmBtn');
+        if (header) header.querySelector('h3').innerHTML = isBackup ? '<i class="bi bi-shield-plus"></i> Assign Backup Responder(s)' : '<i class="bi bi-person-plus"></i> Assign Responder(s)';
+        if (header) header.style.background = isBackup ? 'linear-gradient(135deg,#0d9488,#0f766e)' : 'linear-gradient(135deg,#1d4ed8,#2563eb)';
+        if (hint) hint.textContent = isBackup ? 'Select responder(s) to send as backup for this incident.' : 'Select one or more responders to assign to this report.';
+        if (confirmBtn) confirmBtn.innerHTML = isBackup ? '<i class="bi bi-shield-plus"></i> Assign Backup' : '<i class="bi bi-person-plus"></i> Assign Responders';
         modal.style.display = 'flex';
         const list = document.getElementById('vrResponderList');
         list.innerHTML = '<div style="padding:1rem;text-align:center;color:#6b7280;">Loading responders...</div>';
@@ -1300,20 +1392,23 @@ window.SU_TOUR_STEPS = [
                 return;
             }
             const assignedAt = new Date().toISOString();
+            const assignAsBackup = !!window._assignAsBackup;
             const rows = newIds.map(id => ({
                 report_id: currentReportId,
                 responder_id: id,
                 status: 'assigned',
                 assigned_at: assignedAt,
-                role: 'primary'
+                role: assignAsBackup ? 'backup' : 'primary'
             }));
             const { data: inserted, error } = await window.emergencySystem.supabase.from('assignment').insert(rows).select('id');
             if (error) {
                 console.error('Assignment insert error:', error.code, error.message, error.details);
                 throw error;
             }
-            await window.emergencySystem.supabase.from('reports').update({ status: 'assigned', last_update: assignedAt }).eq('id', currentReportId).neq('status','completed');
-            showToast(`${newIds.length} responder(s) assigned successfully!`, 'success');
+            if (!assignAsBackup) {
+                await window.emergencySystem.supabase.from('reports').update({ status: 'assigned', last_update: assignedAt }).eq('id', currentReportId).neq('status','completed');
+            }
+            showToast(assignAsBackup ? `Backup: ${newIds.length} responder(s) assigned.` : `${newIds.length} responder(s) assigned successfully!`, 'success');
             closeAssignResponderModalVR();
             await loadReports();
             if (!document.getElementById('viewReportModal').classList.contains('hidden')) {
@@ -1364,19 +1459,29 @@ window.SU_TOUR_STEPS = [
     }
 
     function generateCSV(reports) {
-        const headers = ['ID', 'Type', 'Reporter', 'Reporter #', 'Location', 'Status', 'Priority', 'Created', 'Message'];
-        const rows = reports.map(report => [
-            report.id || 'N/A',
-            report.type || 'other',
-            report.reporter_full_name || report.reporter_name || 'Anonymous',
-            report.reporter_phone || report.phone || report.contactNumber || '',
-            getLocationText(report),
-            report.status || 'pending',
-            getPriorityText(report.priority || 4),
-            report.created_at ? formatReportDate(report.created_at) : 'N/A',
-            report.message || ''
-        ]);
-        return [headers, ...rows].map(row => row.map(field => `"${field}"`).join(',')).join('\n');
+        const headers = ['ID', 'Type', 'Reporter', 'Reporter #', 'Location', 'Status', 'Responder', 'Priority', 'Backup status', 'Created', 'Message', 'Responder note(s)'];
+        const escapeCsv = (v) => `"${String(v || '').replace(/"/g, '""')}"`;
+        const rows = reports.map(report => {
+            const reporterName = report.reporter_full_name || report.reporter_name || 'Anonymous';
+            const contactNumber = report.reporter_phone || report.phone || report.contactNumber || '';
+            const locationText = getLocationLatLong(report);
+            const messageText = (report.message || report.description || '').trim();
+            return [
+                report.id || 'N/A',
+                report.type || 'other',
+                reporterName,
+                contactNumber,
+                locationText,
+                report.status || 'pending',
+                report.responder_names || '',
+                getPriorityText(report.priority || 4),
+                report.backup_status || '—',
+                report.created_at ? formatReportDate(report.created_at) : 'N/A',
+                messageText,
+                report.responder_notes || ''
+            ];
+        });
+        return [headers, ...rows].map(row => row.map(escapeCsv).join(',')).join('\n');
     }
 
     // ── Pagination ────────────────────────────────────────────────────────────

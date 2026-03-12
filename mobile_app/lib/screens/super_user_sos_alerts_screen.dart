@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:url_launcher/url_launcher.dart';
 import '../services/supabase_service.dart';
 import '../utils/super_user_theme.dart';
 
@@ -200,19 +199,16 @@ class _SuperUserSOSAlertsScreenState extends State<SuperUserSOSAlertsScreen> {
     }
   }
 
-  Future<void> _viewOnMap(double latitude, double longitude) async {
-    final url = Uri.parse('https://www.google.com/maps?q=$latitude,$longitude');
-    if (await canLaunchUrl(url)) {
-      await launchUrl(url, mode: LaunchMode.externalApplication);
-    } else {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Could not open map'),
-          backgroundColor: Colors.red,
-        ),
-      );
-    }
+  void _viewOnMap(double latitude, double longitude, [String? label]) {
+    // Open the app's Super User Map and focus on this SOS location (no external Google Maps)
+    Navigator.of(context).pushNamed(
+      '/super-user-map',
+      arguments: <String, dynamic>{
+        'sosLat': latitude,
+        'sosLng': longitude,
+        'sosLabel': label ?? 'SOS Alert',
+      },
+    );
   }
 
   void _showAlertDetails(Map<String, dynamic> alert) {
@@ -309,9 +305,14 @@ class _SuperUserSOSAlertsScreenState extends State<SuperUserSOSAlertsScreen> {
                       width: double.infinity,
                       child: FilledButton.icon(
                         onPressed: () {
-                          final lat = (alert['latitude'] ?? 0) as double;
-                          final lng = (alert['longitude'] ?? 0) as double;
-                          _viewOnMap(lat, lng);
+                          final lat = (alert['latitude'] is num)
+                              ? (alert['latitude'] as num).toDouble()
+                              : double.tryParse(alert['latitude']?.toString() ?? '') ?? 0.0;
+                          final lng = (alert['longitude'] is num)
+                              ? (alert['longitude'] as num).toDouble()
+                              : double.tryParse(alert['longitude']?.toString() ?? '') ?? 0.0;
+                          final label = alert['reporter_name']?.toString();
+                          _viewOnMap(lat, lng, label);
                         },
                         icon: const Icon(Icons.map),
                         label: const Text('View on Map'),

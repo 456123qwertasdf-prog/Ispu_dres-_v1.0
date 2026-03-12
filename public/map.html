@@ -749,26 +749,6 @@
                             <p>Active Responders</p>
                         </div>
                     </div>
-                    
-                    <div class="summary-card">
-                        <div class="summary-icon">
-                            <i class="bi bi-clock"></i>
-                        </div>
-                        <div class="summary-content">
-                            <h3 id="avgResponseTime">--</h3>
-                            <p>Avg Response Time</p>
-                        </div>
-                    </div>
-                    
-                    <div class="summary-card">
-                        <div class="summary-icon">
-                            <i class="bi bi-geo-alt"></i>
-                        </div>
-                        <div class="summary-content">
-                            <h3 id="coverageRadius">8km</h3>
-                            <p>Coverage Radius</p>
-                        </div>
-                    </div>
                 </div>
                 
                 <!-- Map Container -->
@@ -1662,8 +1642,6 @@
         function updateSummaryCards(reports, responders) {
             document.getElementById('totalEmergencies').textContent = reports.length;
             document.getElementById('totalResponders').textContent = responders.filter(r => r.is_available).length;
-            document.getElementById('avgResponseTime').textContent = '--';
-            document.getElementById('coverageRadius').textContent = '8km';
         }
 
         // Utility functions

@@ -48,6 +48,33 @@ class _ReportDetailLoaderScreenState extends State<ReportDetailLoaderScreen> {
       if (!mounted) return;
       if (response != null && response is Map<String, dynamic>) {
         final report = Map<String, dynamic>.from(response);
+        // Enrich with reporter real name from get-users (same as web view-report)
+        final reporterUid = report['reporter_uid']?.toString();
+        if (reporterUid != null && reporterUid.isNotEmpty) {
+          try {
+            final usersResponse = await SupabaseService.client.functions.invoke(
+              'get-users',
+              body: {},
+            );
+            final data = usersResponse.data;
+            if (data is Map && data['users'] is List) {
+              final users = data['users'] as List;
+              for (final u in users) {
+                if (u is! Map) continue;
+                final uid = u['user_id']?.toString() ?? u['id']?.toString();
+                if (uid == reporterUid) {
+                  report['reporter_full_name'] =
+                      u['name']?.toString() ?? u['full_name']?.toString() ?? report['reporter_name']?.toString();
+                  report['reporter_email'] = u['email']?.toString();
+                  report['reporter_phone'] = u['phone']?.toString() ?? u['contactNumber']?.toString();
+                  report['reporter_student_number'] =
+                      u['student_number']?.toString() ?? u['studentNumber']?.toString();
+                  break;
+                }
+              }
+            }
+          } catch (_) {}
+        }
         // Enrich with assignment_status if available
         try {
           final assignmentResponse = await SupabaseService.client

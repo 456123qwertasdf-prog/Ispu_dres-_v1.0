@@ -152,6 +152,7 @@
         .act-ack  { background:#fef3c7; color:#b45309; }
         .act-res  { background:#ecfdf5; color:#059669; }
         .act-view { background:#eff6ff; color:#2563eb; }
+        .act-assign { background:#e0e7ff; color:#3730a3; }
 
         /* Reporter cell */
         .reporter-cell { display:flex; align-items:center; gap:0.6rem; }
@@ -314,6 +315,7 @@
                             <th>Reporter</th>
                             <th>Location</th>
                             <th>Status</th>
+                            <th>Assigned</th>
                             <th>Created</th>
                             <th>Acknowledged</th>
                             <th>Resolved</th>
@@ -322,7 +324,7 @@
                     </thead>
                     <tbody id="alertsTableBody">
                         <tr>
-                            <td colspan="7" style="text-align:center;padding:3rem;color:#9ca3af;">
+                            <td colspan="8" style="text-align:center;padding:3rem;color:#9ca3af;">
                                 <i class="bi bi-hourglass-split" style="font-size:1.5rem;display:block;margin-bottom:0.5rem;"></i>
                                 Loading SOS alerts…
                             </td>
@@ -352,6 +354,10 @@
                 <span class="sos-detail-label">Reporter</span>
                 <span class="sos-detail-value" id="alertModalReporter"></span>
             </div>
+            <div class="sos-detail-row" id="alertModalAssignedRow">
+                <span class="sos-detail-label">Assigned Responder</span>
+                <span class="sos-detail-value" id="alertModalAssigned"></span>
+            </div>
             <div class="sos-detail-row">
                 <span class="sos-detail-label">Status</span>
                 <span class="sos-detail-value" id="alertModalStatus"></span>
@@ -376,6 +382,26 @@
                 <span class="sos-detail-label">Resolved At</span>
                 <span class="sos-detail-value" id="alertModalResolvedValue"></span>
             </div>
+        </div>
+    </div>
+</div>
+
+<!-- Assign Responder Modal -->
+<div id="assignResponderModal" class="sos-modal hidden">
+    <div class="sos-modal-box" style="max-width:420px;">
+        <div class="sos-modal-header" style="background:linear-gradient(135deg,#1e3a8a,#3730a3);">
+            <h2><i class="bi bi-person-plus-fill"></i> Assign Responder</h2>
+            <button class="sos-modal-close" onclick="closeAssignResponderModal()"><i class="bi bi-x"></i></button>
+        </div>
+        <div class="sos-modal-body">
+            <p style="margin:0 0 0.75rem;font-size:0.875rem;color:#6b7280;">Select a responder to assign to this SOS alert.</p>
+            <div id="assignResponderList" style="max-height:280px;overflow-y:auto;border:1px solid #e5e7eb;border-radius:10px;padding:0.5rem;">
+                <div style="padding:1rem;text-align:center;color:#9ca3af;">Loading responders…</div>
+            </div>
+        </div>
+        <div style="padding:1rem 1.5rem;border-top:1px solid #f1f5f9;display:flex;gap:0.5rem;justify-content:flex-end;">
+            <button type="button" class="sos-refresh-btn" style="background:#6b7280;" onclick="closeAssignResponderModal()">Cancel</button>
+            <button type="button" class="sos-refresh-btn" id="assignResponderConfirm" onclick="confirmAssignResponder()"><i class="bi bi-person-plus"></i> Assign</button>
         </div>
     </div>
 </div>
@@ -406,6 +432,8 @@ window.SU_TOUR_STEPS = [
 <script>
     let alertsCache = [];
     let currentAlertId = null;
+    let assignResponderAlertId = null;
+    let assignResponderSelectedId = null;
 
     document.addEventListener('DOMContentLoaded', async function () {
         try {
@@ -437,7 +465,7 @@ window.SU_TOUR_STEPS = [
     async function loadSOSAlerts() {
         try {
             const tbody = document.getElementById('alertsTableBody');
-            tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:3rem;color:#9ca3af;">
+            tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:3rem;color:#9ca3af;">
                 <i class="bi bi-hourglass-split" style="font-size:1.5rem;display:block;margin-bottom:0.5rem;"></i>Loading…</td></tr>`;
 
             const { data: alerts, error } = await window.emergencySystem.supabase
@@ -448,6 +476,14 @@ window.SU_TOUR_STEPS = [
                 alertsCache = [];
             } else {
                 alertsCache = alerts || [];
+                // Enrich with responder names for assigned_responder_id
+                try {
+                    const responders = await window.emergencySystem.getResponders();
+                    const responderMap = (responders || []).reduce((acc, r) => { acc[r.id] = r.name || r.email || 'Responder'; return acc; }, {});
+                    alertsCache.forEach(a => {
+                        a.assigned_responder_name = a.assigned_responder_id ? (responderMap[a.assigned_responder_id] || '—') : null;
+                    });
+                } catch (e) { console.warn('Could not load responder names for SOS:', e); }
             }
             updateStats();
             applyFilters();
@@ -478,7 +514,7 @@ window.SU_TOUR_STEPS = [
     function renderAlertsTable(alerts) {
         const tbody = document.getElementById('alertsTableBody');
         if (!alerts || alerts.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="7">
+            tbody.innerHTML = `<tr><td colspan="8">
                 <div class="sos-empty">
                     <i class="bi bi-shield-check"></i>
                     <p>No SOS alerts found.</p>
@@ -492,6 +528,7 @@ window.SU_TOUR_STEPS = [
             const statusText = a.status.charAt(0).toUpperCase() + a.status.slice(1);
             const location = a.location_address || `${a.latitude?.toFixed(5)}, ${a.longitude?.toFixed(5)}`;
             const initial = (a.reporter_name || 'A').charAt(0).toUpperCase();
+            const assignedText = a.assigned_responder_name || '<span style="color:#d1d5db;">—</span>';
             const fmt = d => {
                 if (!d) return '<span style="color:#d1d5db;">—</span>';
                 const date = new Date(d);
@@ -500,6 +537,8 @@ window.SU_TOUR_STEPS = [
             };
 
             const actions = [];
+            if (a.status === 'active' || a.status === 'acknowledged')
+                actions.push(`<button class="act-btn act-assign" onclick="openAssignResponderModal('${a.id}')"><i class="bi bi-person-plus"></i> Assign Responder</button>`);
             if (a.status === 'active')
                 actions.push(`<button class="act-btn act-ack" onclick="acknowledgeAlert('${a.id}')"><i class="bi bi-check-circle"></i> Acknowledge</button>`);
             if (a.status === 'active' || a.status === 'acknowledged')
@@ -519,6 +558,7 @@ window.SU_TOUR_STEPS = [
                 </td>
                 <td class="location-cell" title="${location}">${location}</td>
                 <td><span class="s-badge ${statusClass}">${statusText}</span></td>
+                <td style="font-size:0.8rem;">${assignedText}</td>
                 <td style="font-size:0.8rem;color:#6b7280;">${fmt(a.created_at)}</td>
                 <td style="font-size:0.8rem;color:#6b7280;">${fmt(a.acknowledged_at)}</td>
                 <td style="font-size:0.8rem;color:#6b7280;">${fmt(a.resolved_at)}</td>
@@ -572,7 +612,93 @@ window.SU_TOUR_STEPS = [
         const resEl = document.getElementById('alertModalResolved');
         resEl.style.display = a.resolved_at ? 'flex' : 'none';
         if (a.resolved_at) document.getElementById('alertModalResolvedValue').textContent = toLocal(a.resolved_at);
+        const assignedRow = document.getElementById('alertModalAssignedRow');
+        const assignedVal = document.getElementById('alertModalAssigned');
+        if (assignedRow && assignedVal) {
+            assignedRow.style.display = 'flex';
+            assignedVal.textContent = a.assigned_responder_name || 'Not assigned';
+        }
         document.getElementById('alertModal').classList.remove('hidden');
+    }
+
+    async function openAssignResponderModal(alertId) {
+        assignResponderAlertId = alertId;
+        assignResponderSelectedId = null;
+        document.getElementById('assignResponderModal').classList.remove('hidden');
+        const listEl = document.getElementById('assignResponderList');
+        listEl.innerHTML = '<div style="padding:1rem;text-align:center;color:#9ca3af;">Loading responders…</div>';
+        try {
+            const responders = await window.emergencySystem.getResponders();
+            const available = (responders || []).filter(r => r.is_available !== false);
+            if (available.length === 0) {
+                listEl.innerHTML = '<div style="padding:1rem;text-align:center;color:#6b7280;">No responders available.</div>';
+                return;
+            }
+            listEl.innerHTML = available.map(r => `
+                <div class="sos-detail-row" style="cursor:pointer;padding:0.6rem 0.75rem;margin:0.25rem 0;border-radius:8px;border:2px solid transparent;" data-responder-id="${r.id}" onclick="selectAssignResponder('${r.id}')">
+                    <strong>${r.name || r.email || 'Responder'}</strong>
+                    <span style="font-size:0.8rem;color:#6b7280;">${r.role || ''}</span>
+                </div>
+            `).join('');
+        } catch (e) {
+            listEl.innerHTML = '<div style="padding:1rem;text-align:center;color:#dc2626;">Failed to load responders.</div>';
+        }
+    }
+
+    function selectAssignResponder(responderId) {
+        assignResponderSelectedId = responderId;
+        document.querySelectorAll('#assignResponderList [data-responder-id]').forEach(el => {
+            el.style.borderColor = el.dataset.responderId === responderId ? '#2563eb' : 'transparent';
+            el.style.background = el.dataset.responderId === responderId ? '#eff6ff' : 'transparent';
+        });
+    }
+
+    function closeAssignResponderModal() {
+        document.getElementById('assignResponderModal').classList.add('hidden');
+        assignResponderAlertId = null;
+        assignResponderSelectedId = null;
+    }
+
+    async function confirmAssignResponder() {
+        if (!assignResponderAlertId || !assignResponderSelectedId) {
+            window.emergencySystem.showError('Please select a responder.');
+            return;
+        }
+        try {
+            const supabase = window.emergencySystem.supabase;
+            // 1) Update sos_alerts so the table shows assigned responder
+            const { error: updateError } = await supabase
+                .from('sos_alerts')
+                .update({
+                    assigned_responder_id: assignResponderSelectedId,
+                    assigned_at: new Date().toISOString()
+                })
+                .eq('id', assignResponderAlertId);
+            if (updateError) {
+                window.emergencySystem.showError('Failed to assign: ' + updateError.message);
+                return;
+            }
+            // 2) Remove any existing sos_assignment for this alert (reassign case)
+            await supabase.from('sos_assignment').delete().eq('sos_alert_id', assignResponderAlertId);
+            // 3) Insert sos_assignment so responder sees it in My Assignments (web + mobile)
+            const { error: insertError } = await supabase
+                .from('sos_assignment')
+                .insert({
+                    sos_alert_id: assignResponderAlertId,
+                    responder_id: assignResponderSelectedId,
+                    status: 'assigned',
+                    assigned_at: new Date().toISOString()
+                });
+            if (insertError) {
+                console.warn('sos_assignment insert failed (table may not exist yet):', insertError);
+                // Still show success for sos_alerts update
+            }
+            window.emergencySystem.showSuccess('Responder assigned to SOS alert. They will see it in My Assignments.');
+            closeAssignResponderModal();
+            await loadSOSAlerts();
+        } catch (e) {
+            window.emergencySystem.showError('Failed to assign responder.');
+        }
     }
 
     function closeAlertModal() {

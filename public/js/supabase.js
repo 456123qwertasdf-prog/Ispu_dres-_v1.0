@@ -376,31 +376,30 @@ class EmergencyResponseSystem {
   async signOut() {
     try {
       console.log('🚪 Signing out...');
-      
+
       const { error } = await this.supabase.auth.signOut();
       if (error) throw error;
 
       this.user = null;
       this.updateUIForGuestUser();
-      
+
       console.log('✅ Successfully signed out');
       this.showSuccess('Successfully signed out!');
-      
-      // Redirect to login page after successful sign out
+
+      // Redirect quickly so user can re-login; cache-bust so login page loads fresh
+      const loginUrl = 'login.html?t=' + Date.now();
       setTimeout(() => {
         console.log('🔄 Redirecting to login page...');
-        window.location.href = 'login.html';
-      }, 1000); // Small delay to show success message
-      
+        window.location.href = loginUrl;
+      }, 400);
     } catch (error) {
       console.error('❌ Sign out failed:', error);
       this.showError('Sign out failed: ' + error.message);
-      
-      // Even if sign out fails, redirect to login page
+
       setTimeout(() => {
         console.log('🔄 Redirecting to login page despite error...');
-        window.location.href = 'login.html';
-      }, 2000);
+        window.location.href = 'login.html?t=' + Date.now();
+      }, 1000);
       
       throw error;
     }

@@ -1469,22 +1469,56 @@
     <!-- Scripts -->
     <script src="js/supabase.js"></script>
     <script>
-        // Initialize login system
-        document.addEventListener('DOMContentLoaded', async () => {
-            // Wait for system initialization
-            await new Promise(resolve => {
-                const checkInit = () => {
-                    if (emergencySystem.isInitialized) {
+        // Wait for emergency system to be ready (used by form handlers so fast re-login works)
+        function waitForInit() {
+            return new Promise(resolve => {
+                const check = () => {
+                    if (window.emergencySystem && window.emergencySystem.isInitialized) {
                         resolve();
                     } else {
-                        setTimeout(checkInit, 100);
+                        setTimeout(check, 50);
                     }
                 };
-                checkInit();
+                check();
             });
+        }
+
+        // Attach form handlers immediately so submit never does default (fixes fast logout→login doing nothing)
+        document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('loginForm').addEventListener('submit', handleLogin);
+            document.getElementById('signUpForm').addEventListener('submit', handleSignUp);
+            const passwordInput = document.getElementById('signupPassword');
+            if (passwordInput) {
+                passwordInput.addEventListener('input', (e) => updatePasswordStrength(e.target.value));
+            }
+            const removeIconsFromRequirements = () => {
+                document.querySelectorAll('.password-requirement').forEach(req => {
+                    req.querySelectorAll('i, .bi, [class*="bi-"]').forEach(icon => icon.remove());
+                    req.classList.remove('bi', 'bi-lock', 'bi-lock-fill');
+                    req.querySelectorAll('*').forEach(el => {
+                        if (el.classList.contains('bi') || Array.from(el.classList).some(c => c.startsWith('bi-'))) el.remove();
+                    });
+                });
+            };
+            removeIconsFromRequirements();
+            setTimeout(removeIconsFromRequirements, 100);
+            setTimeout(removeIconsFromRequirements, 500);
+        });
+
+        // Post-init: redirect checks and one-time setup
+        document.addEventListener('DOMContentLoaded', async () => {
+            await waitForInit();
+
+            // Clean cache-bust param from URL (from signOut redirect) so address bar is tidy
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.has('t') && window.history && window.history.replaceState) {
+                urlParams.delete('t');
+                const qs = urlParams.toString();
+                const clean = (window.location.pathname || '/login.html') + (qs ? '?' + qs : '');
+                window.history.replaceState({}, document.title, clean);
+            }
 
             // Check if this is a password reset redirect (hash tokens or PKCE code)
-            const urlParams = new URLSearchParams(window.location.search);
             const hashParams = new URLSearchParams(window.location.hash.substring(1));
             const hasResetToken = hashParams.get('access_token') || hashParams.get('type') === 'recovery';
             const hasResetCode = urlParams.get('code');
@@ -1516,41 +1550,6 @@
                     window.history.replaceState({}, document.title, window.location.pathname || '/login.html');
                 }
             }
-
-            // Set up form handlers
-            document.getElementById('loginForm').addEventListener('submit', handleLogin);
-            document.getElementById('signUpForm').addEventListener('submit', handleSignUp);
-            
-            // Set up password strength checker
-            const passwordInput = document.getElementById('signupPassword');
-            if (passwordInput) {
-                passwordInput.addEventListener('input', (e) => {
-                    updatePasswordStrength(e.target.value);
-                });
-            }
-            
-            // Force remove any icon elements from password requirements
-            const removeIconsFromRequirements = () => {
-                const requirements = document.querySelectorAll('.password-requirement');
-                requirements.forEach(req => {
-                    // Remove any icon elements
-                    const icons = req.querySelectorAll('i, .bi, [class*="bi-"]');
-                    icons.forEach(icon => icon.remove());
-                    // Ensure no icon classes on the requirement itself
-                    req.classList.remove('bi', 'bi-lock', 'bi-lock-fill');
-                    // Remove any icon classes from all child elements
-                    req.querySelectorAll('*').forEach(el => {
-                        if (el.classList.contains('bi') || Array.from(el.classList).some(c => c.startsWith('bi-'))) {
-                            el.remove();
-                        }
-                    });
-                });
-            };
-            
-            // Run immediately and after a short delay to catch dynamically added content
-            removeIconsFromRequirements();
-            setTimeout(removeIconsFromRequirements, 100);
-            setTimeout(removeIconsFromRequirements, 500);
         });
 
         // Forgot Password Modal Functions
@@ -1676,25 +1675,25 @@
         // Handle login
         async function handleLogin(e) {
             e.preventDefault();
-            
+
             const submitBtn = document.querySelector('#loginForm button[type="submit"]');
             const submitText = document.getElementById('submitText');
             const submitLoading = document.getElementById('submitLoading');
-            
+
             try {
-                // Show loading state
                 submitBtn.disabled = true;
                 submitText.classList.add('hidden');
                 submitLoading.classList.remove('hidden');
 
+                // Wait for system to be ready (fixes fast re-login after logout when init is still running)
+                await waitForInit();
+
                 const email = document.getElementById('email').value;
                 const password = document.getElementById('password').value;
 
-                // Sign in with Supabase (signIn() waits for session to persist before returning)
-                await emergencySystem.signIn(email, password);
+                await window.emergencySystem.signIn(email, password);
 
-                // Get user role from metadata
-                const userRole = emergencySystem.user?.user_metadata?.role || 'citizen';
+                const userRole = window.emergencySystem.user?.user_metadata?.role || 'citizen';
 
                 // Redirect based on actual user role
                 redirectToDashboard(userRole);
@@ -1835,17 +1834,18 @@
         // Handle sign up
         async function handleSignUp(e) {
             e.preventDefault();
-            
+
             const submitBtn = document.querySelector('#signUpForm button[type="submit"]');
             const signupText = document.getElementById('signupText');
             const signupLoading = document.getElementById('signupLoading');
-            
+
             try {
-                // Show loading state
                 submitBtn.disabled = true;
                 signupText.classList.add('hidden');
                 signupLoading.classList.remove('hidden');
-                
+
+                await waitForInit();
+
                 const name = document.getElementById('signupName').value;
                 const email = document.getElementById('signupEmail').value;
                 const password = document.getElementById('signupPassword').value;

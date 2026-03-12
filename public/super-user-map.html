@@ -938,17 +938,10 @@
                 </div>
             </div>
             <div class="summary-card">
-                <div class="summary-icon"><i class="bi bi-stopwatch-fill"></i></div>
+                <div class="summary-icon" style="background:linear-gradient(135deg,#ef4444 0%,#b91c1c 50%,#991b1b 100%);"><i class="bi bi-exclamation-octagon-fill"></i></div>
                 <div class="summary-content">
-                    <h3 id="avgResponseTime">--</h3>
-                    <p>Avg Response Time</p>
-                </div>
-            </div>
-            <div class="summary-card">
-                <div class="summary-icon"><i class="bi bi-radar"></i></div>
-                <div class="summary-content">
-                    <h3 id="coverageRadius">8km</h3>
-                    <p>Coverage Radius</p>
+                    <h3 id="activeSOSCount">0</h3>
+                    <p>Active SOS</p>
                 </div>
             </div>
         </div>
@@ -1040,7 +1033,7 @@
 <script>
 window.SU_TOUR_STEPS = [
     { sel: '.su-page-header', title: 'Map View', desc: 'Real-time emergency locations and response teams for LSPU Sta. Cruz Campus. Use Refresh to update the map.' },
-    { sel: '.summary-cards', title: 'Summary stats', desc: 'Total emergencies, active responders, average response time, and coverage radius at a glance.' },
+    { sel: '.summary-cards', title: 'Summary stats', desc: 'Total emergencies and active responders at a glance.' },
     { sel: '.mv-panel', title: 'Emergency map', desc: 'Interactive map showing emergency reports and responders. Use All / Active / Completed to filter. Click markers for details.' },
     { sel: '.sidebar-nav', title: 'Navigation', desc: 'Go to Dashboard, Emergency Reports, Early Warning, Announcements, Readiness & Safety, or SOS Alerts.' }
 ];
@@ -1049,6 +1042,8 @@ window.SU_TOUR_STEPS = [
     <script>
         let map;
         let emergencyMarkers = [];
+        let sosMarkers = [];      // SOS alerts from sos_alerts table (shown on map in real time)
+        let sosAlerts = [];       // Cached SOS alerts
         let responderMarkers = [];
         let responderMarkersMap = new Map(); // Map responder ID to marker for smooth updates
         let markerClusterGroup;
@@ -1226,6 +1221,10 @@ window.SU_TOUR_STEPS = [
                 
                 // Apply current filter and update map
                 applyFilter();
+                
+                // Load and show SOS alerts on map (real-time)
+                await loadSOSAlerts();
+                updateMapWithSOSAlerts(sosAlerts);
                 
                 // Update map with responders (this will now show assignment status)
                 updateMapWithResponders(responders || []);
@@ -1699,6 +1698,72 @@ window.SU_TOUR_STEPS = [
             });
             
             console.log(`🗺️ Total emergency markers added: ${emergencyMarkers.length}`);
+        }
+
+        // Load SOS alerts from sos_alerts table (real-time on map)
+        async function loadSOSAlerts() {
+            try {
+                const { data: alerts, error } = await window.emergencySystem.supabase
+                    .from('sos_alerts')
+                    .select('*')
+                    .order('created_at', { ascending: false });
+                if (error) {
+                    console.warn('⚠️ Failed to load SOS alerts:', error.message);
+                    sosAlerts = [];
+                    return;
+                }
+                sosAlerts = alerts || [];
+                console.log('🚨 Loaded SOS alerts:', sosAlerts.length);
+            } catch (e) {
+                console.warn('⚠️ loadSOSAlerts error:', e);
+                sosAlerts = [];
+            }
+        }
+
+        // Add SOS markers to the map (only active SOS – not acknowledged or resolved)
+        function updateMapWithSOSAlerts(alerts) {
+            if (!map || !markerClusterGroup) return;
+            const list = (alerts || sosAlerts || []).filter(a => (a.status || '').toLowerCase() === 'active');
+            // Remove existing SOS markers from cluster
+            sosMarkers.forEach(m => {
+                if (markerClusterGroup.hasLayer(m)) markerClusterGroup.removeLayer(m);
+            });
+            sosMarkers = [];
+            list.forEach((alert) => {
+                const lat = parseFloat(alert.latitude);
+                const lng = parseFloat(alert.longitude);
+                if (isNaN(lat) || isNaN(lng) || lat < -90 || lat > 90 || lng < -180 || lng > 180) return;
+                const status = (alert.status || 'active').toLowerCase();
+                const sosIcon = L.divIcon({
+                    className: '',
+                    html: `<div style="position:relative;width:40px;height:40px;display:flex;align-items:center;justify-content:center;">
+                        <div style="position:absolute;width:40px;height:40px;border-radius:50%;background:rgba(239,68,68,0.25);animation:sosPulse 1.4s ease-out infinite;"></div>
+                        <div style="width:26px;height:26px;border-radius:50%;background:#ef4444;border:3px solid white;box-shadow:0 2px 8px rgba(239,68,68,0.7);display:flex;align-items:center;justify-content:center;font-size:0.7rem;font-weight:900;color:white;z-index:1;position:relative;">SOS</div>
+                    </div>`,
+                    iconSize: [40, 40],
+                    iconAnchor: [20, 20],
+                    popupAnchor: [0, -24]
+                });
+                const label = alert.reporter_name || 'SOS Alert';
+                const locationText = alert.location_address || `${lat.toFixed(5)}, ${lng.toFixed(5)}`;
+                const marker = L.marker([lat, lng], { icon: sosIcon, zIndexOffset: 9998 });
+                marker.sosAlertId = alert.id;
+                marker.bindPopup(`
+                    <div style="min-width:200px;">
+                        <div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.5rem;">
+                            <span style="background:#fef2f2;color:#dc2626;font-weight:800;padding:0.2rem 0.6rem;border-radius:9999px;font-size:0.75rem;">🚨 SOS ALERT</span>
+                            <span style="font-size:0.7rem;color:#6b7280;">${status}</span>
+                        </div>
+                        <div style="font-weight:700;color:#0f172a;margin-bottom:0.25rem;">${label}</div>
+                        <div style="font-size:0.8rem;color:#6b7280;"><i class="bi bi-geo-alt"></i> ${locationText}</div>
+                        <div style="font-size:0.75rem;color:#9ca3af;margin-top:0.25rem;">${alert.created_at ? new Date(alert.created_at).toLocaleString() : ''}</div>
+                        <a href="super-user-sos-alerts.html" style="display:inline-flex;align-items:center;gap:0.3rem;margin-top:0.6rem;padding:0.3rem 0.75rem;background:#ef4444;color:white;border-radius:8px;font-size:0.78rem;font-weight:700;text-decoration:none;">View SOS Alerts</a>
+                    </div>
+                `, { maxWidth: 280 });
+                sosMarkers.push(marker);
+                markerClusterGroup.addLayer(marker);
+            });
+            console.log('🚨 SOS markers on map:', sosMarkers.length);
         }
 
         // Helper function to parse responder location (handles GeoJSON and regular formats)
@@ -2175,8 +2240,11 @@ window.SU_TOUR_STEPS = [
             }
             
             document.getElementById('totalResponders').textContent = responders.filter(r => r.is_available).length;
-            document.getElementById('avgResponseTime').textContent = '--';
-            document.getElementById('coverageRadius').textContent = '8km';
+
+            // Active SOS count (from sos_alerts with status = active)
+            const activeSOS = (sosAlerts || []).filter(a => (a.status || '').toLowerCase() === 'active').length;
+            const totalSOSEl = document.getElementById('activeSOSCount');
+            if (totalSOSEl) totalSOSEl.textContent = activeSOS;
         }
 
         // Utility functions
@@ -2518,6 +2586,54 @@ window.SU_TOUR_STEPS = [
                     });
                 
                 realtimeChannels.push(assignmentsChannel);
+                
+                // Subscribe to sos_alerts table so new/updated SOS show on map in real time
+                const sosChannel = window.emergencySystem.supabase
+                    .channel('map-sos-alerts-updates')
+                    .on('postgres_changes', {
+                        event: 'INSERT',
+                        schema: 'public',
+                        table: 'sos_alerts'
+                    }, async () => {
+                        console.log('🚨 New SOS alert – updating map');
+                        await loadSOSAlerts();
+                        updateMapWithSOSAlerts(sosAlerts);
+                        const responders = await window.emergencySystem.getResponders();
+                        updateSummaryCards(allReports || [], responders || []);
+                        updateMapTimestamp();
+                    })
+                    .on('postgres_changes', {
+                        event: 'UPDATE',
+                        schema: 'public',
+                        table: 'sos_alerts'
+                    }, async () => {
+                        console.log('🚨 SOS alert updated – updating map');
+                        await loadSOSAlerts();
+                        updateMapWithSOSAlerts(sosAlerts);
+                        const responders = await window.emergencySystem.getResponders();
+                        updateSummaryCards(allReports || [], responders || []);
+                        updateMapTimestamp();
+                    })
+                    .on('postgres_changes', {
+                        event: 'DELETE',
+                        schema: 'public',
+                        table: 'sos_alerts'
+                    }, async () => {
+                        console.log('🚨 SOS alert removed – updating map');
+                        await loadSOSAlerts();
+                        updateMapWithSOSAlerts(sosAlerts);
+                        const responders = await window.emergencySystem.getResponders();
+                        updateSummaryCards(allReports || [], responders || []);
+                        updateMapTimestamp();
+                    })
+                    .subscribe((status) => {
+                        if (status === 'SUBSCRIBED') {
+                            console.log('✅ Subscribed to SOS alerts updates');
+                        } else if (status === 'CHANNEL_ERROR') {
+                            console.error('❌ Error subscribing to SOS alerts updates');
+                        }
+                    });
+                realtimeChannels.push(sosChannel);
                 
                 console.log('✅ Real-time updates setup complete');
             } catch (error) {

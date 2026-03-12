@@ -366,10 +366,78 @@ class _ResponderDashboardScreenState extends State<ResponderDashboardScreen> {
           .order('assigned_at', ascending: false);
 
       final assignmentsRaw = assignmentsResponse as List<dynamic>? ?? [];
-      final assignments = assignmentsRaw
+      var assignments = assignmentsRaw
           .whereType<Map<String, dynamic>>()
           .map(ResponderAssignment.fromMap)
           .toList();
+
+      // Load SOS assignments for this responder (show in same list as report assignments)
+      try {
+        final sosAssignmentResponse = await SupabaseService.client
+            .from('sos_assignment')
+            .select('id, sos_alert_id, responder_id, status, assigned_at, accepted_at, completed_at, updated_at')
+            .eq('responder_id', profile.id)
+            .inFilter('status', ['assigned', 'accepted', 'enroute', 'on_scene'])
+            .order('assigned_at', ascending: false);
+        final sosAssignmentList = sosAssignmentResponse as List<dynamic>? ?? [];
+        if (sosAssignmentList.isNotEmpty) {
+          final sosAlertIds = sosAssignmentList
+              .map((e) => (e as Map)['sos_alert_id']?.toString())
+              .whereType<String>()
+              .toSet()
+              .toList();
+          final sosAlertsResponse = await SupabaseService.client
+              .from('sos_alerts')
+              .select('id, reporter_name, latitude, longitude, status, created_at')
+              .inFilter('id', sosAlertIds);
+          final sosAlerts = (sosAlertsResponse as List<dynamic>? ?? [])
+              .map((e) => Map<String, dynamic>.from(e as Map))
+              .fold<Map<String, Map<String, dynamic>>>(
+                {},
+                (acc, a) {
+                  acc[a['id']?.toString() ?? ''] = a;
+                  return acc;
+                },
+              );
+          final sosAssignmentItems = <ResponderAssignment>[];
+          for (final sa in sosAssignmentList) {
+            final saMap = Map<String, dynamic>.from(sa as Map);
+            final alertId = saMap['sos_alert_id']?.toString();
+            if (alertId == null) continue;
+            final alert = sosAlerts[alertId];
+            if (alert == null) continue;
+            final lat = (alert['latitude'] is num) ? (alert['latitude'] as num).toDouble() : double.tryParse(alert['latitude']?.toString() ?? '');
+            final lng = (alert['longitude'] is num) ? (alert['longitude'] as num).toDouble() : double.tryParse(alert['longitude']?.toString() ?? '');
+            if (lat == null || lng == null) continue;
+            final reportMap = <String, dynamic>{
+              'id': alert['id'],
+              'type': 'sos',
+              'message': 'SOS Emergency Alert',
+              'status': alert['status'] ?? 'active',
+              'lifecycle_status': 'assigned',
+              'location': <String, double>{'latitude': lat, 'longitude': lng},
+              'reporter_name': alert['reporter_name'] ?? 'Anonymous',
+              'image_path': null,
+              'created_at': alert['created_at'],
+            };
+            final assignmentMap = <String, dynamic>{
+              'id': saMap['id'],
+              'status': saMap['status'] ?? 'assigned',
+              'assigned_at': saMap['assigned_at'],
+              'accepted_at': saMap['accepted_at'],
+              'completed_at': saMap['completed_at'],
+              'updated_at': saMap['updated_at'],
+              'notes': null,
+              'needs_backup': false,
+              'reports': reportMap,
+            };
+            try {
+              sosAssignmentItems.add(ResponderAssignment.fromMap(assignmentMap));
+            } catch (_) {}
+          }
+          assignments = [...assignments, ...sosAssignmentItems];
+        }
+      } catch (_) {}
 
       if (!mounted) return;
 

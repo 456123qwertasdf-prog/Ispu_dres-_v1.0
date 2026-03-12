@@ -451,7 +451,14 @@ class _ReportDetailEditScreenState extends State<ReportDetailEditScreen> {
     final createdAt = report['created_at']?.toString();
     // Last Updated = when super user assigned the responder (assignment time)
     final assignedAt = _currentAssignment?['assigned_at']?.toString();
-    final reporterName = report['reporter_name']?.toString() ?? 'Unknown';
+    // Use reporter_full_name from get-users (real name) when available, like web view-report
+    final fullName = report['reporter_full_name']?.toString().trim();
+    final fallbackName = report['reporter_name']?.toString().trim();
+    final reporterName = (fullName != null && fullName.isNotEmpty)
+        ? fullName
+        : (fallbackName != null && fallbackName.isNotEmpty)
+            ? fallbackName
+            : 'Unknown';
     final responderName = _currentAssignment?['responder']?['name']?.toString() ??
         report['responder_name']?.toString();
 

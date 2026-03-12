@@ -652,6 +652,10 @@
                                 <span class="pair-label">Response Time</span>
                                 <div id="responseTime" class="pair-value">Loading...</div>
                             </div>
+                            <div id="backupStatusRow" class="pair-row" style="display: none;">
+                                <span class="pair-label">Backup status</span>
+                                <div class="pair-value">—</div>
+                            </div>
                             <div id="needsBackupRow" class="pair-row" style="display: none; background: #fef2f2; padding: 0.75rem 1rem; border-radius: 8px; margin: 0 -1rem;">
                                 <span class="pair-label" style="font-weight: 700; color: #dc2626;">🆘 Needs backup</span>
                                 <div class="pair-value"></div>
@@ -718,6 +722,9 @@
                 <button class="btn-action btn-success" id="assignBtn">
                     <i class="bi bi-person-plus"></i> Assign Responder
                 </button>
+                <button class="btn-action" id="assignBackupBtn" style="background:#0d9488;color:white;border:none;" title="Assign backup responder(s)">
+                    <i class="bi bi-shield-plus"></i> Assign Backup
+                </button>
                 <button class="btn-action" id="correctBtn" style="background:#F59E0B;color:white;" title="Correct Classification">
                     <i class="bi bi-pencil-square"></i> Correct Classification
                 </button>
@@ -731,11 +738,11 @@
         </div>
     </div>
 
-    <!-- Assign Responder Modal -->
+    <!-- Assign Responder / Assign Backup Modal -->
     <div id="assignModal" class="modal-overlay" style="display: none;">
         <div class="modal-content">
-            <div class="modal-header">
-                <h3 class="modal-title">Assign Responder(s)</h3>
+            <div class="modal-header" id="assignModalHeader">
+                <h3 class="modal-title" id="assignModalTitle">Assign Responder(s)</h3>
                 <button class="modal-close" onclick="closeAssignModal()">
                     <i class="bi bi-x"></i>
                 </button>
@@ -746,7 +753,7 @@
                     <div id="responderList" style="max-height: 300px; overflow-y: auto; border: 1px solid #e5e7eb; border-radius: 8px; padding: 0.5rem;">
                         <div style="padding: 1rem; text-align: center; color: #6b7280;">Loading responders...</div>
                     </div>
-                    <p style="margin-top: 0.5rem; font-size: 0.75rem; color: #6b7280;">
+                    <p id="assignModalHint" style="margin-top: 0.5rem; font-size: 0.75rem; color: #6b7280;">
                         Select one or more responders to assign to this emergency report.
                     </p>
                 </div>
@@ -1005,16 +1012,17 @@
                 imageContainer.innerHTML = '<div class="no-image">No image uploaded</div>';
             }
 
-            // Update assignment information - fetch multiple assigned responders (active statuses) and needs_backup
+            // Update assignment information - include resolved so completed reports show who responded; needs_backup and role for backup status
             const assignedResponderEl = document.getElementById('assignedResponder');
             const needsBackupEl = document.getElementById('needsBackupRow');
+            const backupStatusEl = document.getElementById('backupStatusRow');
             try {
-                const activeStatuses = ['assigned', 'accepted', 'enroute', 'on_scene'];
+                const statusesForDisplay = ['assigned', 'accepted', 'enroute', 'on_scene', 'resolved'];
                 const { data: assignments, error: assignError } = await window.emergencySystem.supabase
                     .from('assignment')
-                    .select('responder_id, id, status, needs_backup')
+                    .select('responder_id, id, status, needs_backup, role')
                     .eq('report_id', reportId)
-                    .in('status', activeStatuses);
+                    .in('status', statusesForDisplay);
 
                 if (!assignError && assignments && assignments.length > 0) {
                     // Fetch responder names
@@ -1023,7 +1031,7 @@
                     
                     const responderNames = assignments.map(a => {
                         const responder = responders.find(r => r.id === a.responder_id);
-                        return responder?.name || `Responder ${a.responder_id.substring(0, 8)}`;
+                        return responder?.name || `Responder ${(a.responder_id || '').substring(0, 8)}`;
                     });
                     
                     assignedResponderEl.textContent = responderNames.join(', ');
@@ -1035,15 +1043,36 @@
                         const val = needsBackupEl.querySelector('.pair-value');
                         if (val) val.innerHTML = anyNeedsBackup ? '<strong style="color:#dc2626;">🆘 Yes — responder requested backup. Assign additional responder below.</strong>' : '';
                     }
+                    // Backup status: — / Needs backup / Assigned / Success
+                    let backupStatusText = '—';
+                    const backupAssignments = assignments.filter(a => a.role === 'backup');
+                    if (backupAssignments.some(a => a.status === 'resolved')) backupStatusText = 'Success';
+                    else if (backupAssignments.length) backupStatusText = 'Assigned';
+                    else if (anyNeedsBackup) backupStatusText = 'Needs backup';
+                    if (backupStatusEl) {
+                        backupStatusEl.style.display = '';
+                        const backupVal = backupStatusEl.querySelector('.pair-value');
+                        if (backupVal) {
+                            backupVal.textContent = backupStatusText;
+                            backupVal.style.fontWeight = '600';
+                            backupVal.style.color = backupStatusText === 'Success' ? '#16a34a' : backupStatusText === 'Assigned' ? '#2563eb' : backupStatusText === 'Needs backup' ? '#dc2626' : '#6b7280';
+                        }
+                    }
                 } else {
                     assignedResponderEl.textContent = 'Not assigned';
                     assignedResponderEl.style.color = '#6b7280';
                     if (needsBackupEl) needsBackupEl.style.display = 'none';
+                    if (backupStatusEl) {
+                        backupStatusEl.style.display = '';
+                        const backupVal = backupStatusEl.querySelector('.pair-value');
+                        if (backupVal) { backupVal.textContent = '—'; backupVal.style.color = '#6b7280'; }
+                    }
                 }
             } catch (err) {
                 console.warn('Could not fetch assignments:', err);
                 assignedResponderEl.textContent = report.responder_name || 'Not assigned';
                 if (needsBackupEl) needsBackupEl.style.display = 'none';
+                if (backupStatusEl) backupStatusEl.style.display = 'none';
             }
             
             document.getElementById('assignmentId').textContent = report.assignment_id || 'Not assigned';
@@ -1240,8 +1269,11 @@
             return data.display_name || null;
         }
 
-        // Assign responder functionality
-        document.getElementById('assignBtn').addEventListener('click', async function() {
+        // Assign responder / Assign backup — shared open modal
+        async function openAssignModal() {
+            const isBackup = !!window._assignAsBackup;
+            const reportId = currentReport?.id;
+            if (!reportId) return;
             try {
                 const responders = await window.emergencySystem.getResponders();
                 if (!responders || responders.length === 0) {
@@ -1381,12 +1413,29 @@
                     });
                 }
 
+                // Update modal title and hint for Assign vs Assign Backup
+                const modalTitle = document.getElementById('assignModalTitle');
+                const modalHint = document.getElementById('assignModalHint');
+                const confirmBtn = document.getElementById('assignConfirm');
+                if (modalTitle) modalTitle.textContent = isBackup ? 'Assign Backup Responder(s)' : 'Assign Responder(s)';
+                if (modalHint) modalHint.textContent = isBackup ? 'Select responder(s) to send as backup for this incident.' : 'Select one or more responders to assign to this emergency report.';
+                if (confirmBtn) confirmBtn.innerHTML = isBackup ? '<i class="bi bi-shield-plus"></i> Assign Backup' : '<i class="bi bi-person-plus"></i> Assign Responders';
+
                 // Show modal
                 document.getElementById('assignModal').style.display = 'flex';
             } catch (error) {
                 console.error('Error loading responders:', error);
                 showError('Failed to load responders');
             }
+        }
+
+        document.getElementById('assignBtn').addEventListener('click', function() {
+            window._assignAsBackup = false;
+            openAssignModal();
+        });
+        document.getElementById('assignBackupBtn').addEventListener('click', function() {
+            window._assignAsBackup = true;
+            openAssignModal();
         });
 
         // Confirm assignment
@@ -1446,11 +1495,12 @@
                     return;
                 }
 
-                // Create assignments for new responders
+                const assignAsBackup = !!window._assignAsBackup;
                 const assignmentsToCreate = newResponderIds.map(responderId => ({
                         report_id: reportId,
                         responder_id: responderId,
-                        status: 'assigned'
+                        status: 'assigned',
+                        role: assignAsBackup ? 'backup' : 'primary'
                 }));
 
                 const { data: newAssignments, error: assignmentError } = await window.emergencySystem.supabase
@@ -1460,45 +1510,26 @@
 
                 if (assignmentError) throw assignmentError;
 
-                // Update report status to 'assigned' if not already completed
-                console.log(`🔄 Updating report ${reportId.substring(0, 8)}... status to 'assigned'`);
-                
-                const { data: currentReport, error: fetchCurrentError } = await window.emergencySystem.supabase
-                    .from('reports')
-                    .select('status')
-                    .eq('id', reportId)
-                    .single();
-                
-                if (fetchCurrentError) {
-                    console.warn('Could not fetch current report status:', fetchCurrentError);
-                } else {
-                    console.log(`📊 Current report status: ${currentReport?.status}`);
-                }
-                
-                // Update status to 'assigned' (unless already completed)
-                const { data: updatedReport, error: updateError } = await window.emergencySystem.supabase
-                    .from('reports')
-                    .update({
-                        status: 'assigned',
-                        last_update: new Date().toISOString()
-                    })
-                    .eq('id', reportId)
-                    .neq('status', 'completed') // Don't update if already completed
-                    .select()
-                    .single();
-
-                if (updateError) {
-                    console.error('❌ Report status update failed:', updateError);
-                    // Don't throw - assignment was successful, just log the error
-                } else {
-                    console.log(`✅ Report status updated to: ${updatedReport?.status}`);
+                // Update report status to 'assigned' only when assigning primary (not when only adding backup)
+                if (!assignAsBackup) {
+                    console.log(`🔄 Updating report ${reportId.substring(0, 8)}... status to 'assigned'`);
+                    const { data: updatedReport, error: updateError } = await window.emergencySystem.supabase
+                        .from('reports')
+                        .update({
+                            status: 'assigned',
+                            last_update: new Date().toISOString()
+                        })
+                        .eq('id', reportId)
+                        .neq('status', 'completed')
+                        .select()
+                        .single();
+                    if (updateError) console.error('❌ Report status update failed:', updateError);
                 }
 
                 const count = newAssignments.length;
                 const responderText = count > 1 ? 'responders' : 'responder';
                 
-                // Show success message first
-                showSuccess(`${count} ${responderText} assigned successfully!`);
+                showSuccess(assignAsBackup ? `Backup: ${count} ${responderText} assigned.` : `${count} ${responderText} assigned successfully!`);
                 
                 // Close modal after a brief delay so user can see the message
                 setTimeout(() => {

@@ -11,7 +11,16 @@ import '../utils/super_user_theme.dart';
 import 'report_detail_loader_screen.dart';
 
 class SuperUserMapScreen extends StatefulWidget {
-  const SuperUserMapScreen({super.key});
+  const SuperUserMapScreen({
+    super.key,
+    this.initialSosLat,
+    this.initialSosLng,
+    this.initialSosLabel,
+  });
+
+  final double? initialSosLat;
+  final double? initialSosLng;
+  final String? initialSosLabel;
 
   @override
   State<SuperUserMapScreen> createState() => _SuperUserMapScreenState();
@@ -34,6 +43,16 @@ class _SuperUserMapScreenState extends State<SuperUserMapScreen> {
     super.initState();
     _loadData();
     _setupRealtimeUpdates();
+    // When opened from SOS "View on Map", focus the map on that location
+    if (widget.initialSosLat != null && widget.initialSosLng != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        _mapController.move(
+          latlong.LatLng(widget.initialSosLat!, widget.initialSosLng!),
+          17,
+        );
+      });
+    }
   }
 
   @override
