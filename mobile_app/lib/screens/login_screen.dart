@@ -1288,13 +1288,13 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
               const SizedBox(height: 20),
               
-              // Email Field
+              // Email Field (Gmail only)
               TextFormField(
                 controller: _signupEmailController,
                 keyboardType: TextInputType.emailAddress,
                 decoration: InputDecoration(
-                  labelText: 'Email',
-                  hintText: 'Enter your email',
+                  labelText: 'Email (Gmail only)',
+                  hintText: 'Enter your @gmail.com address',
                   prefixIcon: const Icon(Icons.email_outlined),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
@@ -1306,8 +1306,12 @@ class _LoginScreenState extends State<LoginScreen> {
                   if (value == null || value.isEmpty) {
                     return 'Please enter your email';
                   }
-                  if (!value.contains('@') || !value.contains('.')) {
+                  final email = value.trim().toLowerCase();
+                  if (!email.contains('@') || !email.contains('.')) {
                     return 'Please enter a valid email';
+                  }
+                  if (!email.endsWith('@gmail.com')) {
+                    return 'Only @gmail.com addresses are allowed';
                   }
                   return null;
                 },

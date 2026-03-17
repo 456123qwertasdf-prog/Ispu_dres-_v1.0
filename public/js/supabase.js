@@ -336,6 +336,11 @@ class EmergencyResponseSystem {
 
   async signUp(email, password, userData = {}) {
     try {
+      const emailTrimmed = (email || '').toString().trim().toLowerCase();
+      if (!emailTrimmed.endsWith('@gmail.com')) {
+        this.showError('Only Gmail addresses are allowed. Please use an @gmail.com email.');
+        throw new Error('Only Gmail addresses are allowed. Please use an @gmail.com email.');
+      }
       const { data, error } = await this.supabase.auth.signUp({
         email,
         password,
@@ -898,7 +903,7 @@ class EmergencyResponseSystem {
       
       let query = this.supabase
         .from('responder')
-        .select('*')
+        .select('*, responder_last_location(latitude, longitude, updated_at)')
         .order('created_at', { ascending: false });
 
       // Apply filters
@@ -920,8 +925,24 @@ class EmergencyResponseSystem {
         throw error;
       }
 
-      console.log('✅ Responders loaded successfully:', data.length);
-      return data || [];
+      const rows = data || [];
+      // Resolve leader names without self-referential join (avoids PGRST200 schema cache issues)
+      const leaderIds = [...new Set(rows.map(r => r.leader_id).filter(Boolean))];
+      if (leaderIds.length > 0) {
+        const { data: leaders, error: leadersError } = await this.supabase
+          .from('responder')
+          .select('id, name')
+          .in('id', leaderIds);
+        if (!leadersError && leaders && leaders.length > 0) {
+          const leaderMap = Object.fromEntries(leaders.map(l => [l.id, { id: l.id, name: l.name }]));
+          rows.forEach(r => {
+            if (r.leader_id && leaderMap[r.leader_id]) r.leader = leaderMap[r.leader_id];
+          });
+        }
+      }
+
+      console.log('✅ Responders loaded successfully:', rows.length);
+      return rows;
     } catch (error) {
       console.error('❌ Failed to fetch responders:', error);
       this.showError('Failed to load responders: ' + error.message);

@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Map View - LSPU Emergency Response System</title>
     <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/su-header-shared.css">
     <link rel="stylesheet" href="css/system-status.css">
     <link rel="stylesheet" href="css/logout-modal.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
@@ -204,6 +205,10 @@
                 0% { transform: translateX(-100%) translateY(-100%) rotate(45deg); }
                 100% { transform: translateX(100%) translateY(100%) rotate(45deg); }
             }
+            @keyframes spin {
+                from { transform: rotate(0deg); }
+                to { transform: rotate(360deg); }
+            }
             
             .summary-icon i {
                 font-size: 28px;
@@ -280,6 +285,62 @@
                 }
             }
             
+            /* Filter buttons — exact match to super-user */
+            .filter-controls { margin-top: 1rem; display: flex; gap: 0.5rem; flex-wrap: wrap; }
+            .filter-btn {
+                padding: 0.5rem 1rem; border-radius: 8px; font-weight: 600; font-size: 0.875rem; cursor: pointer;
+                transition: all 0.2s ease; border: 2px solid transparent; background: #f1f5f9; color: #64748b;
+                display: inline-flex; align-items: center; gap: 0.5rem;
+            }
+            .filter-btn:hover { background: #e2e8f0; color: #475569; transform: translateY(-1px); }
+            .filter-btn.active { background: linear-gradient(135deg, #2563eb, #1d4ed8) !important; color: white !important; border-color: #1d4ed8 !important; box-shadow: 0 2px 8px rgba(59,130,246,0.35) !important; }
+            .filter-btn.active:hover { background: linear-gradient(135deg, #1d4ed8, #1e40af) !important; }
+            .filter-btn { border-radius: 10px !important; font-size: 0.8rem !important; }
+            .mv-main { padding: 1.75rem; background: #f1f5f9; min-height: 100vh; }
+            .mv-btn { padding: 0.45rem 1.05rem; border-radius: 10px; border: none; font-size: 0.83rem; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 0.35rem; transition: filter 0.15s, transform 0.15s; white-space: nowrap; }
+            .mv-btn:hover { filter: brightness(1.08); transform: translateY(-1px); }
+            .mv-btn-green { background: linear-gradient(135deg, #2563eb, #1d4ed8); color: white; box-shadow: 0 2px 8px rgba(59,130,246,0.3); }
+            .mv-btn-sm { padding: 0.32rem 0.7rem; font-size: 0.78rem; }
+            .mv-panel { background: white; border-radius: 16px; box-shadow: 0 2px 12px rgba(0,0,0,0.06); border: 1px solid rgba(0,0,0,0.04); overflow: hidden; margin-bottom: 1.25rem; }
+            .mv-panel-header { padding: 1rem 1.5rem; border-bottom: 1px solid #f1f5f9; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.6rem; }
+            .mv-panel-title { font-size: 0.95rem; font-weight: 700; color: #0f172a; display: flex; align-items: center; gap: 0.5rem; }
+            .mv-panel-title i { color: #2563eb; }
+            .mv-panel-body { padding: 0; }
+            #map { height: 520px; width: 100%; border-radius: 0 0 16px 16px; background: #e5e7eb; }
+            .mv-map-toolbar { display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap; }
+            .mv-map-controls { display: flex; gap: 0.4rem; flex-wrap: wrap; align-items: center; }
+            .mv-map-controls .mv-btn { background: #fff; color: #475569; border: 1.5px solid #e2e8f0; border-radius: 10px; font-weight: 600; transition: all 0.2s ease; }
+            .mv-map-controls .mv-btn:hover { background: #f8fafc; border-color: #cbd5e1; color: #0f172a; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+            .mv-layer-toggle { margin-right: 2px; }
+            .mv-layer-toggle.active { background: #fff !important; color: #475569 !important; border-color: #e2e8f0 !important; }
+            .mv-layer-toggle:not(.active) { background: #f1f5f9 !important; color: #94a3b8 !important; border-color: #e2e8f0 !important; opacity: 0.85; }
+            .mv-layer-toggle:not(.active):hover { opacity: 1; color: #64748b !important; }
+            .mv-map-controls .mv-btn-fit-all { background: linear-gradient(135deg, #0ea5e9, #0284c7); color: #fff; border: none; box-shadow: 0 2px 8px rgba(14,165,233,0.35); }
+            .mv-map-controls .mv-btn-fit-all:hover { background: linear-gradient(135deg, #0284c7, #0369a1); box-shadow: 0 4px 12px rgba(14,165,233,0.45); transform: translateY(-1px); }
+            .mv-map-controls .mv-btn-green { border: none; }
+            .mv-ops-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem; }
+            @media (max-width: 800px) { .mv-ops-grid { grid-template-columns: 1fr; } }
+            .mv-ops-badge { padding: 0.25rem 0.65rem; border-radius: 9999px; font-size: 0.72rem; font-weight: 800; }
+            .mv-ops-badge-red { background: #fef2f2; color: #dc2626; }
+            .mv-ops-badge-blue { background: #eff6ff; color: #2563eb; }
+            .mv-last-update { font-size: 0.72rem; color: rgba(255,255,255,0.6); display: flex; align-items: center; gap: 0.4rem; }
+            .mv-ops-grid .mv-panel-header { display: flex; align-items: center; justify-content: space-between; }
+            .text-muted { color: #9ca3af; font-size: 0.875rem; margin: 0; }
+
+            /* Cluster spiderfy + quick-pick UI */
+            .cluster-quick-pick { max-height: 320px; overflow-y: auto; padding: 4px 0; }
+            .cluster-quick-pick-title { margin: 0 0 10px 0; font-size: 0.95rem; font-weight: 700; color: #0f172a; display: flex; align-items: center; gap: 0.5rem; }
+            .cluster-quick-pick-title i { color: #6366f1; }
+            .cluster-quick-pick-hint { font-size: 0.75rem; color: #64748b; margin-bottom: 10px; }
+            .cluster-quick-pick-item { display: block; width: 100%; padding: 10px 12px; margin-bottom: 6px; border: none; border-radius: 10px; background: #f8fafc; color: #1e293b; text-align: left; cursor: pointer; transition: all 0.2s ease; border-left: 3px solid transparent; font-size: 0.875rem; }
+            .cluster-quick-pick-item:hover { background: #eef2ff; border-left-color: #6366f1; transform: translateX(2px); }
+            .cluster-quick-pick-item strong { display: block; margin-bottom: 2px; }
+            .cluster-quick-pick-item small { color: #64748b; font-size: 0.75rem; }
+            .cluster-quick-pick-item .badge { font-size: 0.65rem; margin-left: 4px; }
+
+            /* Spider legs (Leaflet.markercluster) — visible dashed lines from cluster to markers */
+            .leaflet-cluster-anim .leaflet-marker-icon { transition: transform 0.25s ease-out; }
+
             /* Modern Operations Panel */
             .operations-panel {
                 display: grid;
@@ -688,10 +749,9 @@
                 margin: 5px 0;
                 font-size: 0.875rem;
             }
-            /* Ensure responder markers are always visible and on top */
+            /* Ensure responder markers are always visible and on top (do not use position: relative – it breaks icon placement) */
             .responder-marker {
                 z-index: 1000 !important;
-                position: relative;
             }
             .leaflet-marker-icon.responder-marker {
                 z-index: 1000 !important;
@@ -709,94 +769,126 @@
             }
         </style>
         
-        <!-- Main Content -->
-        <div class="main-content">
-            <!-- Map Section -->
-            <div class="admin-section active">
-                <!-- Page header banner (same as image) -->
-                <div class="admin-page-header">
-                    <div>
-                        <h2><i class="bi bi-map"></i> Emergency Map View</h2>
-                        <p>Real-time emergency locations and response teams</p>
-                    </div>
-                    <div class="admin-page-header-right">
-                        <span class="admin-page-badge"><i class="bi bi-shield-fill"></i> Admin</span>
-                        <div class="admin-header-time">
-                            <div class="time-label">Logged in as</div>
-                            <div class="time-value" id="adminHeaderUserName">Admin User</div>
-                        </div>
+        <!-- Main Content — same structure as Super User map -->
+        <div class="main-content mv-main">
+            <!-- Page Header (same as super-user) -->
+            <div class="su-page-header">
+                <div>
+                    <h1><i class="bi bi-map-fill"></i> Map View</h1>
+                    <p>Real-time emergency locations &amp; response teams · LSPU Sta. Cruz Campus</p>
+                    <div class="mv-last-update" style="margin-top:0.4rem;">
+                        <i class="bi bi-clock"></i> Last updated: <span id="mapLastUpdated">—</span>
                     </div>
                 </div>
+                <div class="su-header-right">
+                    <button type="button" id="refreshMapBtn" onclick="refreshMap()" class="mv-btn mv-btn-green" title="Reload map data">
+                        <i class="bi bi-arrow-clockwise" id="refreshMapIcon"></i>
+                        <span id="refreshMapLabel">Refresh</span>
+                    </button>
+                    <span class="su-badge"><i class="bi bi-shield-fill"></i> Admin</span>
+                    <div class="su-header-time">
+                        <div class="time-label">Logged in as</div>
+                        <div class="time-value" id="adminHeaderUserName">Admin User</div>
+                    </div>
+                </div>
+            </div>
 
-                <!-- Summary Cards -->
-                <div class="summary-cards">
-                    <div class="summary-card">
-                        <div class="summary-icon">
-                            <i class="bi bi-exclamation-triangle"></i>
-                        </div>
-                        <div class="summary-content">
-                            <h3 id="totalEmergencies">0</h3>
-                            <p>Total Emergencies</p>
-                        </div>
+            <!-- Stat Cards (same as super-user, 2 cards: no SOS) -->
+            <div class="summary-cards" style="margin-bottom:1.25rem;">
+                <div class="summary-card">
+                    <div class="summary-icon"><i class="bi bi-exclamation-triangle-fill"></i></div>
+                    <div class="summary-content">
+                        <h3 id="totalEmergencies">0</h3>
+                        <p>Total Emergencies</p>
                     </div>
-                    
-                    <div class="summary-card">
-                        <div class="summary-icon">
-                            <i class="bi bi-people"></i>
+                </div>
+                <div class="summary-card">
+                    <div class="summary-icon"><i class="bi bi-people-fill"></i></div>
+                    <div class="summary-content">
+                        <h3 id="totalResponders">0</h3>
+                        <p>Active Responders</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Map Panel (same as super-user) -->
+            <div class="mv-panel">
+                <div class="mv-panel-header">
+                    <div class="mv-panel-title">
+                        <i class="bi bi-geo-alt-fill"></i> Emergency Map
+                        <span style="font-size:0.72rem;font-weight:500;color:#9ca3af;margin-left:0.25rem;">· LSPU Sta. Cruz, Laguna</span>
+                    </div>
+                    <div class="mv-map-toolbar">
+                        <div class="filter-controls" style="margin-top:0;">
+                            <button class="filter-btn" data-filter="all" onclick="setFilter('all')" id="filterAll">
+                                <i class="bi bi-list-ul"></i> All
+                            </button>
+                            <button class="filter-btn active" data-filter="active" onclick="setFilter('active')" id="filterActive">
+                                <i class="bi bi-exclamation-circle-fill"></i> Active
+                            </button>
+                            <button class="filter-btn" data-filter="completed" onclick="setFilter('completed')" id="filterCompleted">
+                                <i class="bi bi-check-circle-fill"></i> Completed
+                            </button>
                         </div>
-                        <div class="summary-content">
-                            <h3 id="totalResponders">0</h3>
-                            <p>Active Responders</p>
+                        <div class="mv-map-controls">
+                            <span class="mv-layer-label" style="font-size:0.75rem;color:#6b7280;margin-right:4px;">Layers:</span>
+                            <button class="mv-btn mv-btn-sm mv-layer-toggle active" onclick="toggleLayer('emergencies')" id="layerEmergencies" title="Show/hide emergency markers">
+                                <i class="bi bi-exclamation-octagon-fill"></i> Emergencies
+                            </button>
+                            <button class="mv-btn mv-btn-sm mv-layer-toggle active" onclick="toggleLayer('responders')" id="layerResponders" title="Show/hide response team markers">
+                                <i class="bi bi-people-fill"></i> Response Teams
+                            </button>
+                            <button class="mv-btn mv-btn-sm" onclick="toggleClusterView()" id="clusterToggle">
+                                <i class="bi bi-layers-fill"></i> Cluster emergency
+                            </button>
+                            <button class="mv-btn mv-btn-sm" onclick="toggleResponderClusterView()" id="responderClusterToggle" title="Cluster or show response team markers individually">
+                                <i class="bi bi-people-fill"></i> Cluster responders
+                            </button>
+                            <button class="mv-btn mv-btn-sm mv-btn-fit-all" onclick="fitAllMarkers()" title="Fit map to show all emergencies and responders">
+                                <i class="bi bi-arrows-fullscreen"></i> Fit All
+                            </button>
+                            <button class="mv-btn mv-btn-sm mv-btn-green" onclick="goToLSPU()" title="Center on LSPU campus">
+                                <i class="bi bi-building"></i> LSPU
+                            </button>
                         </div>
                     </div>
                 </div>
-                
-                <!-- Map Container -->
-                <div class="card">
-                    <div class="card-header">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <h3 class="card-title">🗺️ Emergency Map</h3>
-                            <div class="map-controls">
-                                <button class="btn btn-sm btn-outline-primary" onclick="toggleClusterView()" id="clusterToggle">
-                                    <i class="bi bi-layers"></i> Cluster View
-                                </button>
-                                <button class="btn btn-sm btn-outline-secondary" onclick="fitAllMarkers()">
-                                    <i class="bi bi-arrows-fullscreen"></i> Fit All
-                                </button>
-                                <button class="btn btn-sm btn-outline-info" onclick="refreshMap()">
-                                    <i class="bi bi-arrow-clockwise"></i> Refresh
-                                </button>
+                <div class="mv-panel-body">
+                    <div id="map"></div>
+                </div>
+            </div>
+
+            <!-- Operations Panel (same as super-user) -->
+            <div class="mv-ops-grid">
+                <div class="mv-panel">
+                    <div class="mv-panel-header">
+                        <div class="mv-panel-title">
+                            <i class="bi bi-exclamation-octagon-fill" style="color:#ef4444;"></i>
+                            <span id="emergenciesTitle">Active Emergencies</span>
+                        </div>
+                        <span class="mv-ops-badge mv-ops-badge-red" id="activeCount">0</span>
+                    </div>
+                    <div class="mv-panel-body" style="padding:1rem;">
+                        <div id="activeEmergencies" class="emergency-list">
+                            <div style="text-align:center;padding:2rem;color:#9ca3af;">
+                                <i class="bi bi-hourglass-split" style="font-size:1.75rem;display:block;margin-bottom:0.5rem;"></i>
+                                Loading emergencies…
                             </div>
                         </div>
                     </div>
-                    <div class="card-body">
-                        <div id="map" style="height: 500px; width: 100%; border-radius: 10px; background: #f0f0f0; border: 2px solid #ddd;"></div>
-                        <!-- Operations Panel -->
-                <div class="operations-panel">
-                    <!-- Active Emergencies -->
-                    <div class="card">
-                        <div class="card-header">
-                            <h3 class="card-title">🚨 Active Emergencies</h3>
-                            <span class="badge badge-danger" id="activeCount">0</span>
+                </div>
+                <div class="mv-panel">
+                    <div class="mv-panel-header">
+                        <div class="mv-panel-title">
+                            <i class="bi bi-people-fill" style="color:#2563eb;"></i> Response Teams
                         </div>
-                        <div class="card-body">
-                            <div id="activeEmergencies" class="emergency-list">
-                                <div class="loading-spinner"></div>
-                                <p>Loading active emergencies...</p>
-                            </div>
-                        </div>
+                        <span class="mv-ops-badge mv-ops-badge-blue" id="teamCount">0</span>
                     </div>
-                    
-                    <!-- Response Teams -->
-                    <div class="card">
-                        <div class="card-header">
-                            <h3 class="card-title">👥 Response Teams</h3>
-                            <span class="badge badge-info" id="teamCount">0</span>
-                        </div>
-                        <div class="card-body">
-                            <div id="responseTeams" class="team-list">
-                                <div class="loading-spinner"></div>
-                                <p>Loading response teams...</p>
+                    <div class="mv-panel-body" style="padding:1rem;">
+                        <div id="responseTeams" class="team-list">
+                            <div style="text-align:center;padding:2rem;color:#9ca3af;">
+                                <i class="bi bi-hourglass-split" style="font-size:1.75rem;display:block;margin-bottom:0.5rem;"></i>
+                                Loading teams…
                             </div>
                         </div>
                     </div>
@@ -805,98 +897,46 @@
         </div>
     </div>
 
-                        <!-- Map Legend -->
-                        <div class="map-legend">
-                            <h4>Map Legend</h4>
-                            <div class="legend-section">
-                                <h5>Emergency Status</h5>
-                                <div class="legend-items">
-                                    <div class="legend-item">
-                                        <div class="legend-marker status-pending"></div>
-                                        <span>Pending</span>
-                                    </div>
-                                    <div class="legend-item">
-                                        <div class="legend-marker status-processing"></div>
-                                        <span>Processing</span>
-                                    </div>
-                                    <div class="legend-item">
-                                        <div class="legend-marker status-classified"></div>
-                                        <span>Classified</span>
-                                    </div>
-                                    <div class="legend-item">
-                                        <div class="legend-marker status-assigned"></div>
-                                        <span>Assigned</span>
-                                    </div>
-                                    <div class="legend-item">
-                                        <div class="legend-marker status-in-progress"></div>
-                                        <span>In Progress</span>
-                                    </div>
-                                    <div class="legend-item">
-                                        <div class="legend-marker status-completed"></div>
-                                        <span>Completed</span>
-                                    </div>
-                                    <div class="legend-item">
-                                        <div class="legend-marker status-cancelled"></div>
-                                        <span>Cancelled</span>
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <div class="legend-section">
-                                <h5>Emergency Types</h5>
-                                <div class="legend-items">
-                                    <div class="legend-item">
-                                        <div class="legend-icon">🔥</div>
-                                        <span>Fire</span>
-                                    </div>
-                                    <div class="legend-item">
-                                        <div class="legend-icon">🌊</div>
-                                        <span>Flood</span>
-                                    </div>
-                                    <div class="legend-item">
-                                        <div class="legend-icon">🚗</div>
-                                        <span>Accident</span>
-                                    </div>
-                                    <div class="legend-item">
-                                        <div class="legend-icon">🏥</div>
-                                        <span>Medical</span>
-                                    </div>
-                                    <div class="legend-item">
-                                        <div class="legend-icon">⚠️</div>
-                                        <span>Other</span>
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <div class="legend-section">
-                                <h5>Personnel</h5>
-                                <div class="legend-items">
-                                    <div class="legend-item">
-                                        <div class="legend-marker responder-marker"></div>
-                                        <span>Responder</span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                
-            
-
     <script>
         let map;
         let emergencyMarkers = [];
         let responderMarkers = [];
         let responderMarkersMap = new Map(); // Map responder ID to marker for smooth updates
         let markerClusterGroup;
+        let responderClusterGroup; // Responders in their own cluster (same as super-user)
+        let responderUnclusteredLayer; // When responder cluster is off, responder markers go here
+        let unclusteredLayer;   // When cluster is off, emergency markers go here
+        let clusterViewEnabled = true; // true = clustered, false = individual markers (emergencies)
+        let responderClusterViewEnabled = true; // true = clustered, false = individual (responders)
+        let showEmergenciesLayer = true;
+        let showRespondersLayer = true;
         let realtimeChannels = [];
         let assignmentsData = []; // Store active assignments
         let assignmentLines = []; // Store assignment connection polylines
+        let assignmentRouteCache = new Map(); // Cache OSRM routes
+        let lastResponderPositionCache = new Map(); // responderId -> { lat, lng } so Individual uses exact same position as Cluster
+        let mapInteractionTimeout = null;
+        let mapIsInteracting = false;
+        let lastZoomLevel = 16;
+        let allReports = []; // Store all reports for filtering
+        let currentFilter = 'active'; // 'all', 'active', 'completed'
+
+        const LSPU_LAT = 14.2625;
+        const LSPU_LNG = 121.3972;
 
         // Get URL parameter
         function getUrlParameter(name) {
             const urlParams = new URLSearchParams(window.location.search);
             return urlParams.get(name);
+        }
+
+        function goToLSPU() {
+            if (map) map.flyTo([LSPU_LAT, LSPU_LNG], 18, { duration: 1.2 });
+        }
+
+        function updateMapTimestamp() {
+            const el = document.getElementById('mapLastUpdated');
+            if (el) el.textContent = new Date().toLocaleTimeString('en-PH', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
         }
 
         // Initialize the system when the page loads
@@ -915,16 +955,14 @@
 
                 // Initialize map
                 initializeMap();
-                
+                updateMapTimestamp();
+
                 // Wait for map to be ready
                 await new Promise(resolve => setTimeout(resolve, 500));
-                
-                // Load data
+
+                // Load data (loadMapData calls loadAssignments and applyFilter)
                 await loadMapData();
-                
-                // Load assignments
-                await loadAssignments();
-                
+
                 // Setup real-time updates
                 setupRealtimeUpdates();
                 
@@ -967,45 +1005,151 @@
                 return;
             }
             
-            // Default coordinates (LSPU Sta. Cruz Main Campus)
-            const defaultLat = 14.262646;
-            const defaultLng = 121.3958235;
-            
             try {
-                map = L.map('map').setView([defaultLat, defaultLng], 16);
+                map = L.map('map', {
+                    center: [LSPU_LAT, LSPU_LNG],
+                    zoom: 18,
+                    maxBounds: L.latLngBounds(L.latLng(4.2, 115.5), L.latLng(21.5, 127.5)),
+                    maxBoundsViscosity: 1.0
+                });
+                map.setView([LSPU_LAT, LSPU_LNG], 18);
+                lastZoomLevel = 18;
                 console.log('✅ Map created successfully');
                 
-                // Add OpenStreetMap tiles
+                // Add OpenStreetMap tiles (same as super-user)
                 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                    attribution: '© OpenStreetMap contributors'
+                    attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+                    maxZoom: 19
                 }).addTo(map);
                 
-                // Initialize marker cluster group
+                // Emergency cluster: spiderfy on click with visible spider legs + quick-pick UI
                 markerClusterGroup = L.markerClusterGroup({
                     chunkedLoading: true,
-                    maxClusterRadius: 50,
+                    maxClusterRadius: 100,
                     spiderfyOnMaxZoom: true,
                     showCoverageOnHover: false,
-                    zoomToBoundsOnClick: true,
+                    zoomToBoundsOnClick: false,
+                    spiderfyDistanceMultiplier: 1.8,
+                    spiderLegPolylineOptions: { weight: 2, opacity: 0.65, color: '#6366f1', dashArray: '6,8' },
                     iconCreateFunction: function(cluster) {
                         const childCount = cluster.getChildCount();
                         let className = 'marker-cluster marker-cluster-';
-                        if (childCount < 10) {
-                            className += 'small';
-                        } else if (childCount < 100) {
-                            className += 'medium';
-                        } else {
-                            className += 'large';
-                        }
+                        if (childCount < 10) className += 'small';
+                        else if (childCount < 100) className += 'medium';
+                        else className += 'large';
                         return L.divIcon({
                             html: '<div><span>' + childCount + '</span></div>',
                             className: className,
-                            iconSize: L.point(40, 40)
+                            iconSize: L.point(40, 40),
+                            iconAnchor: L.point(20, 20)
                         });
                     }
                 });
-                
                 map.addLayer(markerClusterGroup);
+                markerClusterGroup.on('spiderfy unspiderfy', function() { setTimeout(updateAssignmentLinePositions, 80); });
+                // When user clicks a cluster: spiderfy (spread pins with legs) + quick-pick popup
+                markerClusterGroup.on('clusterclick', function(e) {
+                    const cluster = e.layer;
+                    cluster.spiderfy();
+                    const childMarkers = cluster.getAllChildMarkers();
+                    const reports = childMarkers.map(function(m) { return m._report; }).filter(Boolean);
+                    if (reports.length === 0) return;
+                    const listHtml = reports.map(function(r) {
+                        const type = (r.type || 'other').toUpperCase();
+                        const status = (r.status || 'pending').toUpperCase();
+                        const time = r.created_at ? new Date(r.created_at).toLocaleString() : 'N/A';
+                        return '<button type="button" class="cluster-quick-pick-item" onclick="window.__closeClusterPopup(); focusOnReport(\'' + r.id + '\');"><strong>' + type + '</strong> ' + (r.reporter_name || 'Anonymous') + ' <span class="badge badge-' + (r.status || 'pending') + '">' + status + '</span><br><small>' + time + '</small></button>';
+                    }).join('');
+                    const popupHtml = '<div class="map-popup cluster-quick-pick"><div class="cluster-quick-pick-title"><i class="bi bi-diagram-3"></i> ' + reports.length + ' in this cluster</div><div class="cluster-quick-pick-hint">Click one to focus & open details</div>' + listHtml + '</div>';
+                    window.__clusterPopup = L.popup({ maxWidth: 340, closeButton: true }).setLatLng(cluster.getLatLng()).setContent(popupHtml);
+                    window.__closeClusterPopup = function() { if (window.__clusterPopup && map.hasLayer(window.__clusterPopup)) map.removeLayer(window.__clusterPopup); };
+                    window.__clusterPopup.openOn(map);
+                });
+
+                // Responder cluster: same config as emergency for smooth spiderfy + visible spider legs + quick-pick UI
+                responderClusterGroup = L.markerClusterGroup({
+                    chunkedLoading: true,
+                    maxClusterRadius: 100,
+                    spiderfyOnMaxZoom: true,
+                    showCoverageOnHover: false,
+                    zoomToBoundsOnClick: false,
+                    spiderfyDistanceMultiplier: 1.8,
+                    spiderLegPolylineOptions: { weight: 2, opacity: 0.65, color: '#0ea5e9', dashArray: '6,8' },
+                    iconCreateFunction: function(cluster) {
+                        const childCount = cluster.getChildCount();
+                        let className = 'marker-cluster marker-cluster-';
+                        if (childCount < 10) className += 'small';
+                        else if (childCount < 100) className += 'medium';
+                        else className += 'large';
+                        return L.divIcon({
+                            html: '<div><span>' + childCount + '</span></div>',
+                            className: 'responder-cluster ' + className,
+                            iconSize: L.point(40, 40),
+                            iconAnchor: L.point(20, 20)
+                        });
+                    }
+                });
+                map.addLayer(responderClusterGroup);
+                responderClusterGroup.on('spiderfy unspiderfy', function() { setTimeout(updateAssignmentLinePositions, 80); });
+                // When user clicks a responder cluster: spiderfy + quick-pick popup
+                responderClusterGroup.on('clusterclick', function(e) {
+                    const cluster = e.layer;
+                    cluster.spiderfy();
+                    const childMarkers = cluster.getAllChildMarkers();
+                    const responders = childMarkers.map(function(m) { return m._responder; }).filter(Boolean);
+                    if (responders.length === 0) return;
+                    const listHtml = responders.map(function(r) {
+                        const teamLeader = [r.teamName ? 'Team: ' + r.teamName : null, r.leaderName ? 'Leader: ' + r.leaderName : null].filter(Boolean).join(' · ');
+                        return '<button type="button" class="cluster-quick-pick-item" onclick="window.__closeClusterPopup(); focusOnResponder(\'' + r.id + '\');"><strong>' + (r.name || 'Responder') + '</strong> ' + (r.role || 'Responder') + (teamLeader ? '<br><small>' + teamLeader + '</small>' : '') + '<br><small>' + (r.statusText || '') + '</small></button>';
+                    }).join('');
+                    const popupHtml = '<div class="map-popup cluster-quick-pick"><div class="cluster-quick-pick-title"><i class="bi bi-people"></i> ' + responders.length + ' responder(s) here</div><div class="cluster-quick-pick-hint">Click one to focus & open details</div>' + listHtml + '</div>';
+                    window.__clusterPopup = L.popup({ maxWidth: 340, closeButton: true }).setLatLng(cluster.getLatLng()).setContent(popupHtml);
+                    window.__closeClusterPopup = function() { if (window.__clusterPopup && map.hasLayer(window.__clusterPopup)) map.removeLayer(window.__clusterPopup); };
+                    window.__clusterPopup.openOn(map);
+                });
+
+                responderUnclusteredLayer = L.layerGroup();
+                map.addLayer(responderUnclusteredLayer);
+
+                unclusteredLayer = L.layerGroup();
+                map.addLayer(unclusteredLayer);
+                map.on('zoomstart movestart', function() {
+                    mapIsInteracting = true;
+                    if (mapInteractionTimeout) clearTimeout(mapInteractionTimeout);
+                });
+                map.on('zoomend', function() {
+                    lastZoomLevel = map.getZoom();
+                });
+                function restoreResponderPositions() {
+                    if (typeof responderMarkers === 'undefined' || !responderMarkers.length) return;
+                    // Don't overwrite positions while responder cluster is spiderfied (same idea as emergency cluster)
+                    if (responderClusterGroup && responderClusterGroup._spiderfied) return;
+                    responderMarkers.forEach(function(m) {
+                        if (!m) return;
+                        var lat = m._creationLat != null ? m._creationLat : (m._trueLatLng ? m._trueLatLng.lat : null);
+                        var lng = m._creationLng != null ? m._creationLng : (m._trueLatLng ? m._trueLatLng.lng : null);
+                        if (lat != null && lng != null) m.setLatLng(fixLatLng(lat, lng));
+                    });
+                }
+                // Keep markers at their last-updated location: no position updates until map has settled (1.2s after zoom/pan/resize)
+                map.on('zoomend moveend', function() {
+                    if (mapInteractionTimeout) clearTimeout(mapInteractionTimeout);
+                    mapInteractionTimeout = setTimeout(function() { mapIsInteracting = false; }, 1200);
+                    restoreResponderPositions();
+                    setTimeout(restoreResponderPositions, 100);
+                });
+                map.on('resize', function() {
+                    mapIsInteracting = true;
+                    if (mapInteractionTimeout) clearTimeout(mapInteractionTimeout);
+                    mapInteractionTimeout = setTimeout(function() { mapIsInteracting = false; }, 1200);
+                    setTimeout(restoreResponderPositions, 150);
+                });
+                window.addEventListener('resize', function() {
+                    mapIsInteracting = true;
+                    if (mapInteractionTimeout) clearTimeout(mapInteractionTimeout);
+                    mapInteractionTimeout = setTimeout(function() { mapIsInteracting = false; }, 1200);
+                    setTimeout(restoreResponderPositions, 150);
+                });
                 
                 console.log('✅ Map tiles and clustering added successfully');
                     
@@ -1015,33 +1159,149 @@
             }
         }
 
+        // Only show markers with coordinates within Philippines (avoid test/bad data)
+        function isWithinReasonableBounds(lat, lng) {
+            if (typeof lat !== 'number' || typeof lng !== 'number' || isNaN(lat) || isNaN(lng)) return false;
+            return lat >= 4.5 && lat <= 21.2 && lng >= 116 && lng <= 127;
+        }
+        function fixLatLng(lat, lng) {
+            const la = Number(parseFloat(lat).toFixed(6));
+            const ln = Number(parseFloat(lng).toFixed(6));
+            return L.latLng(la, ln);
+        }
+        function fitMapToMarkerCoordinates() {
+            if (!map) return;
+            var points = [];
+            emergencyMarkers.forEach(function(m) {
+                if (m && m.getLatLng) points.push(m.getLatLng());
+            });
+            responderMarkers.forEach(function(m) {
+                if (m && m.getLatLng) points.push(m.getLatLng());
+            });
+            if (points.length === 0) {
+                map.setView([LSPU_LAT, LSPU_LNG], map.getZoom());
+                return;
+            }
+            var bounds = L.latLngBounds(points);
+            try {
+                map.fitBounds(bounds.pad(0.15), { maxZoom: map.getZoom(), animate: true, duration: 0.25 });
+            } catch (e) {
+                map.setView(bounds.getCenter(), map.getZoom(), { animate: true, duration: 0.25 });
+            }
+        }
+
+        // Filter helpers (same as super-user)
+        function filterEmergencyReports(reports) {
+            return (reports || []).filter(report => {
+                const effectiveType = (report.corrected_type || report.type || '').toLowerCase().trim();
+                return effectiveType !== 'non_emergency' && effectiveType !== 'false_alarm';
+            });
+        }
+
+        function getFilteredReports() {
+            if (!allReports || allReports.length === 0) return [];
+            const emergencyReports = filterEmergencyReports(allReports);
+            let result;
+            switch (currentFilter) {
+                case 'active':
+                    result = emergencyReports.filter(report => {
+                        const status = report.status?.toLowerCase();
+                        return status === 'pending' || status === 'processing' || status === 'classified' || status === 'assigned' || status === 'in-progress';
+                    });
+                    break;
+                case 'completed':
+                    result = emergencyReports.filter(report => {
+                        const status = report.status?.toLowerCase();
+                        return status === 'completed' || status === 'resolved' || status === 'cancelled';
+                    });
+                    break;
+                default:
+                    result = emergencyReports;
+            }
+            const assignmentReportIds = new Set((assignmentsData || []).map(a => a.reports?.id).filter(Boolean));
+            const missing = emergencyReports.filter(r => assignmentReportIds.has(r.id) && !result.some(f => f.id === r.id));
+            return result.length || missing.length ? [...result, ...missing] : result;
+        }
+
+        async function setFilter(filter) {
+            currentFilter = filter;
+            document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
+            const id = 'filter' + filter.charAt(0).toUpperCase() + filter.slice(1);
+            const el = document.getElementById(id);
+            if (el) el.classList.add('active');
+            const titleEl = document.getElementById('emergenciesTitle');
+            if (titleEl) {
+                if (filter === 'active') titleEl.textContent = 'Active Emergencies';
+                else if (filter === 'completed') titleEl.textContent = 'Completed Emergencies';
+                else titleEl.textContent = 'All Emergencies';
+            }
+            await applyFilter();
+            if (filter === 'active') {
+                try {
+                    const responders = await getRespondersForMap();
+                    updateMapWithResponders(responders || []);
+                    await loadAssignments();
+                    responderMarkers.forEach(marker => {
+                        if (!marker) return;
+                        if (responderClusterViewEnabled && responderClusterGroup && !responderClusterGroup.hasLayer(marker)) {
+                            if (responderUnclusteredLayer && responderUnclusteredLayer.hasLayer(marker))
+                                responderUnclusteredLayer.removeLayer(marker);
+                            responderClusterGroup.addLayer(marker);
+                        } else if (!responderClusterViewEnabled && responderUnclusteredLayer && !responderUnclusteredLayer.hasLayer(marker)) {
+                            if (responderClusterGroup && responderClusterGroup.hasLayer(marker))
+                                responderClusterGroup.removeLayer(marker);
+                            responderUnclusteredLayer.addLayer(marker);
+                        }
+                    });
+                } catch (e) { console.warn('setFilter responders:', e); }
+            }
+            try {
+                const responders = await getRespondersForMap();
+                updateSummaryCards(allReports, responders || []);
+            } catch (e) { updateSummaryCards(allReports, []); }
+        }
+
+        async function applyFilter() {
+            const filteredReports = getFilteredReports();
+            try {
+                const responders = await getRespondersForMap();
+                updateMapWithResponders(responders || []);
+            } catch (e) { console.warn('applyFilter responders:', e); }
+            updateMapWithReports(filteredReports);
+            updateActiveEmergencies(filteredReports);
+            try { await loadAssignments(); } catch (e) { console.warn('applyFilter loadAssignments:', e); }
+        }
+
+        // Get responders list: API + responders from assignments (admin sees responders even if RLS limits API)
+        async function getRespondersForMap() {
+            let list = [];
+            try {
+                list = await window.emergencySystem.getResponders() || [];
+            } catch (e) {
+                console.warn('getResponders failed, using responders from assignments:', e);
+            }
+            const byId = new Map();
+            list.forEach(r => { if (r && r.id) byId.set(r.id, r); });
+            (assignmentsData || []).forEach(a => {
+                if (a.responder && a.responder.id && !byId.has(a.responder.id))
+                    byId.set(a.responder.id, a.responder);
+            });
+            return Array.from(byId.values());
+        }
+
         // Load map data
         async function loadMapData() {
             try {
                 console.log('🔄 Loading map data...');
-                
-                // Load reports and responders
-                const [reports, responders] = await Promise.all([
-                    window.emergencySystem.getReports(),
-                    window.emergencySystem.getResponders()
-                ]);
-                
-                console.log('📊 Loaded data:', {
-                    reports: reports?.length || 0,
-                    responders: responders?.length || 0
-                });
-                
-                // Update map with data
-                updateMapWithReports(reports || []);
-                updateMapWithResponders(responders || []);
-                
-                // Update UI
-                updateActiveEmergencies(reports || []);
-                updateResponseTeams(responders || []);
-                updateSummaryCards(reports || [], responders || []);
-                
+                const reports = await window.emergencySystem.getReports();
+                allReports = reports || [];
+                await loadAssignments();
+                const responders = await getRespondersForMap();
+                console.log('📊 Loaded data:', { reports: allReports.length, responders: responders.length });
+                await applyFilter();
+                updateResponseTeams(responders);
+                updateSummaryCards(allReports, responders);
                 console.log('✅ Map data loaded successfully');
-                
             } catch (error) {
                 console.error('❌ Error loading map data:', error);
             }
@@ -1051,7 +1311,6 @@
         async function loadAssignments() {
             try {
                 console.log('📋 Loading assignments...');
-                
                 const { data: assignments, error } = await window.emergencySystem.supabase
                     .from('assignment')
                     .select(`
@@ -1075,79 +1334,88 @@
                             name,
                             role,
                             last_location,
-                            is_available
+                            is_available,
+                            responder_last_location(latitude, longitude, updated_at)
                         )
                     `)
                     .in('status', ['assigned', 'accepted', 'enroute', 'on_scene']);
-                
                 if (error) throw error;
-                
                 assignmentsData = assignments || [];
                 console.log(`✅ Loaded ${assignmentsData.length} active assignments`);
-                
-                // Update map with assignment connections
-                updateAssignmentConnections();
-                
+                await updateAssignmentConnections();
             } catch (error) {
                 console.error('❌ Error loading assignments:', error);
             }
         }
 
-        // Update assignment connections on map
-        function updateAssignmentConnections() {
+        function getStraightAssignmentLatLngs(responderLocation, reportLocation) {
+            return [
+                [responderLocation.lat, responderLocation.lng],
+                [reportLocation.lat, reportLocation.lng]
+            ];
+        }
+
+        async function getRoadRouteLatLngs(responderLocation, reportLocation) {
+            const key = [
+                responderLocation.lat.toFixed(5),
+                responderLocation.lng.toFixed(5),
+                reportLocation.lat.toFixed(5),
+                reportLocation.lng.toFixed(5)
+            ].join('|');
+            if (assignmentRouteCache.has(key)) return assignmentRouteCache.get(key);
+            const url = `https://router.project-osrm.org/route/v1/driving/${responderLocation.lng},${responderLocation.lat};${reportLocation.lng},${reportLocation.lat}?overview=full&geometries=geojson&steps=false`;
+            try {
+                const response = await fetch(url);
+                if (!response.ok) throw new Error('HTTP ' + response.status);
+                const data = await response.json();
+                const coords = data?.routes?.[0]?.geometry?.coordinates;
+                if (!Array.isArray(coords) || coords.length < 2) return null;
+                const latLngs = coords.map(([lng, lat]) => [lat, lng]);
+                assignmentRouteCache.set(key, latLngs);
+                return latLngs;
+            } catch (err) {
+                console.warn('⚠️ Road route failed, using straight line:', err);
+                return null;
+            }
+        }
+
+        async function updateAssignmentConnections() {
             if (!map) return;
-            
-            // Remove existing assignment lines
             assignmentLines.forEach(line => map.removeLayer(line));
             assignmentLines = [];
-            
             console.log('🔗 Drawing assignment connections...');
-            
-            assignmentsData.forEach(assignment => {
-                if (!assignment.reports || !assignment.responder) return;
-                
+            for (const assignment of assignmentsData) {
+                if (!assignment.reports || !assignment.responder) continue;
                 const report = assignment.reports;
                 const responder = assignment.responder;
-                
-                // Get report location
-                const reportLocation = parseResponderLocation(report.location);
-                if (!reportLocation) return;
-                
-                // Get responder location
-                const responderLocation = parseResponderLocation(responder.last_location);
-                if (!responderLocation) return;
-                
-                // Determine line color and style based on assignment status
+                const responderMarker = responderMarkersMap.get(responder.id);
+                const reportMarker = emergencyMarkers.find(m => m.reportId === report.id);
+                let responderLocation = responderMarker ? responderMarker.getLatLng() : null;
+                let reportLocation = reportMarker ? reportMarker.getLatLng() : null;
+                if (!responderLocation) responderLocation = getResponderLocation(responder);
+                if (!reportLocation) reportLocation = parseResponderLocation(report.location);
+                if (!reportLocation || !responderLocation) continue;
                 const statusConfig = {
-                    'assigned': { color: '#f59e0b', dashArray: '10, 5', opacity: 0.6 },    // Amber - dashed
-                    'accepted': { color: '#3b82f6', dashArray: '15, 5', opacity: 0.7 },     // Blue - dashed
-                    'enroute': { color: '#06b6d4', dashArray: '20, 5', opacity: 0.8 },      // Cyan - dashed (moving)
-                    'on_scene': { color: '#10b981', dashArray: null, opacity: 0.9 }          // Green - solid
+                    'assigned': { color: '#f59e0b', dashArray: '10, 5', opacity: 0.6 },
+                    'accepted': { color: '#3b82f6', dashArray: '15, 5', opacity: 0.7 },
+                    'enroute': { color: '#06b6d4', dashArray: '20, 5', opacity: 0.8 },
+                    'on_scene': { color: '#2563eb', dashArray: null, opacity: 0.9 }
                 };
-                
                 const config = statusConfig[assignment.status] || { color: '#6b7280', dashArray: '5, 5', opacity: 0.5 };
-                
-                // Create polyline connecting responder to emergency
-                const polylineOptions = {
-                    color: config.color,
-                    weight: 4,
-                    opacity: config.opacity,
-                    className: 'assignment-connection'
-                };
-                
-                if (config.dashArray) {
-                    polylineOptions.dashArray = config.dashArray;
-                }
-                
+                const polylineOptions = { color: config.color, weight: 4, opacity: config.opacity, className: 'assignment-connection' };
+                if (config.dashArray) polylineOptions.dashArray = config.dashArray;
+                const routeLatLngs = await getRoadRouteLatLngs(responderLocation, reportLocation);
                 const polyline = L.polyline(
-                    [[responderLocation.lat, responderLocation.lng], [reportLocation.lat, reportLocation.lng]],
+                    routeLatLngs || getStraightAssignmentLatLngs(responderLocation, reportLocation),
                     polylineOptions
                 ).addTo(map);
-                
-                // Add popup to line
+                if (polyline.bringToFront) polyline.bringToFront();
+                if (responderMarker && reportMarker) {
+                    polyline._responderMarker = responderMarker;
+                    polyline._reportMarker = reportMarker;
+                }
                 const statusText = assignment.status.charAt(0).toUpperCase() + assignment.status.slice(1).replace('_', ' ');
                 const assignedTime = assignment.assigned_at ? new Date(assignment.assigned_at).toLocaleString() : 'N/A';
-                
                 polyline.bindPopup(`
                     <div class="assignment-popup">
                         <h4>Assignment Connection</h4>
@@ -1155,16 +1423,24 @@
                         <p><strong>Emergency:</strong> ${(report.type || 'Unknown').toUpperCase()}</p>
                         <p><strong>Status:</strong> <span style="color: ${config.color}; font-weight: bold;">${statusText}</span></p>
                         <p><strong>Assigned:</strong> ${assignedTime}</p>
-                        <button onclick="viewReport('${report.id}')" class="btn btn-sm btn-primary" style="margin-top: 8px;">
-                            View Emergency
-                        </button>
+                        <button onclick="viewReport('${report.id}')" class="btn btn-sm btn-primary" style="margin-top: 8px;">View Emergency</button>
                     </div>
                 `);
-                
                 assignmentLines.push(polyline);
-            });
-            
+            }
             console.log(`✅ Created ${assignmentLines.length} assignment connections`);
+            applyLayerVisibility(); // sync assignment lines with layer toggles
+        }
+
+        async function updateAssignmentLinePositions() {
+            for (const line of assignmentLines) {
+                if (line._responderMarker && line._reportMarker) {
+                    const a = line._responderMarker.getLatLng();
+                    const b = line._reportMarker.getLatLng();
+                    const routeLatLngs = await getRoadRouteLatLngs(a, b);
+                    line.setLatLngs(routeLatLngs || getStraightAssignmentLatLngs(a, b));
+                }
+            }
         }
 
         // Helper function for time since
@@ -1177,6 +1453,16 @@
             if (hours < 24) return `${hours} hours ago`;
             const days = Math.floor(hours / 24);
             return `${days} days ago`;
+        }
+
+        // Helper: get responder position from DB (prefer responder_last_location for consistent map display)
+        function getResponderLocation(responder) {
+            const rll = responder.responder_last_location;
+            const row = Array.isArray(rll) ? rll[0] : rll;
+            if (row && typeof row.latitude === 'number' && typeof row.longitude === 'number') {
+                return { lat: row.latitude, lng: row.longitude };
+            }
+            return parseResponderLocation(responder.last_location);
         }
 
         // Helper function to parse responder location (handles GeoJSON and regular JSON)
@@ -1225,11 +1511,10 @@
                 return;
             }
             
-            // Clear existing emergency markers from cluster group (but keep responder markers)
+            // Clear existing emergency markers from cluster group and unclustered layer
             emergencyMarkers.forEach(marker => {
-                if (markerClusterGroup.hasLayer(marker)) {
-                    markerClusterGroup.removeLayer(marker);
-                }
+                if (markerClusterGroup.hasLayer(marker)) markerClusterGroup.removeLayer(marker);
+                if (unclusteredLayer && unclusteredLayer.hasLayer(marker)) unclusteredLayer.removeLayer(marker);
             });
             emergencyMarkers = [];
             
@@ -1262,10 +1547,14 @@
                     }
                 }
                 
-                // Validate coordinates are valid numbers and within reasonable bounds
+                // Validate coordinates and skip if outside Philippines (avoids test/bad data)
                 if (isNaN(lat) || isNaN(lng) || lat < -90 || lat > 90 || lng < -180 || lng > 180) {
                     console.warn(`⚠️ Skipping report ${report.id} - invalid or missing coordinates. Location data:`, report.location);
-                    return; // Skip this report instead of using random coordinates
+                    return;
+                }
+                if (!isWithinReasonableBounds(lat, lng)) {
+                    console.warn(`⚠️ Skipping report ${report.id} - coordinates outside Philippines (${lat}, ${lng}). Only real locations are shown.`);
+                    return;
                 }
                 
                 if (!isNaN(lat) && !isNaN(lng)) {
@@ -1281,8 +1570,9 @@
                         iconAnchor: [15, 15]
                     });
                     
-                    const marker = L.marker([lat, lng], { icon });
+                    const marker = L.marker(fixLatLng(lat, lng), { icon });
                     marker.reportId = report.id; // Store report ID for focusOnReport
+                    marker._report = { id: report.id, type: report.type, status: report.status, reporter_name: report.reporter_name, message: report.message, created_at: report.created_at };
                     console.log(`✅ Marker created`);
                     
                     // Create popup content with assignment info
@@ -1305,7 +1595,11 @@
                     
                     marker.bindPopup(popupContent);
                     emergencyMarkers.push(marker);
-                    markerClusterGroup.addLayer(marker);
+                    if (clusterViewEnabled) {
+                        markerClusterGroup.addLayer(marker);
+                    } else {
+                        unclusteredLayer.addLayer(marker);
+                    }
                     console.log(`✅ Added emergency marker for ${report.type || 'other'} (${report.status || 'pending'}) at`, lat, lng);
                 }
             });
@@ -1314,30 +1608,46 @@
             console.log(`📊 Expected ${reports.length} reports, created ${emergencyMarkers.length} markers`);
         }
 
-        // Update map with responders
+        // Update map with responders – one marker per responder (deduplicate by id)
         function updateMapWithResponders(responders) {
             if (!map) {
                 console.warn('⚠️ Map not ready, skipping responder updates');
                 return;
             }
+            const byId = new Map();
+            (responders || []).forEach(r => {
+                if (r && r.id && !byId.has(r.id)) byId.set(r.id, r);
+            });
+            const uniqueResponders = Array.from(byId.values());
+            console.log('👮 Updating responder markers for', uniqueResponders.length, 'responders');
             
-            console.log('👮 Updating responder markers for', responders.length, 'responders');
-            console.log(`📍 Current responderMarkersMap size: ${responderMarkersMap.size}`);
-            
-            responders.forEach((responder, index) => {
+            uniqueResponders.forEach((responder) => {
                 const responderId = responder.id;
                 console.log(`📍 Processing responder ${responder.name || responderId}:`, responder.last_location);
                 
-                const location = parseResponderLocation(responder.last_location);
+                const existingMarker = responderMarkersMap.get(responderId);
+                // Prefer cached position (from when marker was created) so Individual matches Cluster; never overwrite from marker in cluster.
+                const cacheKey = String(responderId);
+                let location = lastResponderPositionCache.get(cacheKey);
+                const fromCache = !!location;
+                if (!location) location = getResponderLocation(responder);
                 
                 if (!location) {
                     console.warn(`⚠️ Skipping responder ${responder.name || responderId} - invalid or missing coordinates. Location data:`, responder.last_location);
                     return;
                 }
+                if (!isWithinReasonableBounds(location.lat, location.lng)) {
+                    console.warn(`⚠️ Skipping responder ${responder.name || responderId} - coordinates outside Philippines (not a real location).`);
+                    return;
+                }
                 
-                console.log(`✅ Responder ${responder.name || responderId} has valid location:`, location);
-                
-                const existingMarker = responderMarkersMap.get(responderId);
+                if (!responderClusterViewEnabled) {
+                    console.log(`✅ Responder ${responder.name || responderId} Individual:`, location.lat.toFixed(6), location.lng.toFixed(6), fromCache ? '(from cache)' : '(from API)');
+                } else {
+                    console.log(`✅ Responder ${responder.name || responderId} has valid location:`, location);
+                }
+                // Only set cache when creating a new marker so cache stays the creation position; do not overwrite from existing marker.
+                if (!existingMarker) lastResponderPositionCache.set(cacheKey, { lat: location.lat, lng: location.lng });
                 
                 // Find active assignment for this responder
                 const activeAssignment = assignmentsData.find(a => 
@@ -1368,31 +1678,26 @@
                 }
                 const needsHelp = responder.needs_assistance === true || (activeAssignment && activeAssignment.needs_backup === true);
                 if (needsHelp) {
-                    iconColor = '#dc2626';
-                    iconEmoji = '🆘';
+                    iconColor = '#ea580c';
+                    iconEmoji = '🛟';
                     statusText = 'Needs backup';
                 }
                 
                 if (existingMarker) {
-                    // Update existing marker position smoothly
-                    const newLatLng = L.latLng(location.lat, location.lng);
-                    const currentLatLng = existingMarker.getLatLng();
-                    
-                    // Only animate if location changed significantly (more than ~10 meters)
-                    const distance = currentLatLng.distanceTo(newLatLng);
-                    if (distance > 10) {
-                        // Smoothly animate marker to new position
-                        existingMarker.setLatLng(newLatLng, {
-                            animate: true,
-                            duration: 1.0, // 1 second animation
-                            easeLinearity: 0.25
-                        });
-                        
-                        console.log(`📍 Moving responder ${responder.name || responderId} to new location (${distance.toFixed(0)}m away)`);
+                    const teamName = responder.team_name || null;
+                    const leaderName = (responder.leader && responder.leader.name) ? responder.leader.name : null;
+                    existingMarker._responder = { id: responderId, name: responder.name || 'Responder', role: responder.role || 'Responder', statusText, teamName, leaderName };
+                    // Realtime: update marker position from latest API/responder_last_location
+                    const freshLocation = getResponderLocation(responder);
+                    if (freshLocation && isWithinReasonableBounds(freshLocation.lat, freshLocation.lng)) {
+                        existingMarker.setLatLng(fixLatLng(freshLocation.lat, freshLocation.lng));
+                        existingMarker._trueLatLng = fixLatLng(freshLocation.lat, freshLocation.lng);
+                        existingMarker._creationLat = freshLocation.lat;
+                        existingMarker._creationLng = freshLocation.lng;
+                        lastResponderPositionCache.set(cacheKey, { lat: freshLocation.lat, lng: freshLocation.lng });
                     }
-                    
-                    // Update icon if assignment status changed
-                    if (existingMarker.assignmentStatus !== (activeAssignment?.status || 'none')) {
+                    const statusKey = (activeAssignment?.status || 'none') + (needsHelp ? '-help' : '');
+                    if (existingMarker.assignmentStatus !== statusKey) {
                         const newIcon = L.divIcon({
                             className: 'responder-marker',
                             html: `<div class="responder-icon" style="background: ${iconColor};">${iconEmoji}</div>`,
@@ -1400,7 +1705,7 @@
                             iconAnchor: [15, 15]
                         });
                         existingMarker.setIcon(newIcon);
-                        existingMarker.assignmentStatus = activeAssignment?.status || 'none';
+                        existingMarker.assignmentStatus = statusKey;
                     }
                     
                     // Ensure marker is brought to front (only if method exists)
@@ -1417,8 +1722,10 @@
                         <div class="map-popup">
                             <h4>${responder.name}</h4>
                             <p><strong>Role:</strong> ${responder.role || 'Responder'}</p>
+                            ${teamName ? `<p><strong>Team:</strong> ${teamName}</p>` : ''}
+                            ${leaderName ? `<p><strong>Leader:</strong> ${leaderName}</p>` : ''}
                             <p><strong>Status:</strong> <span style="color: ${iconColor}; font-weight: bold;">${statusText}</span></p>
-                            ${needsHelp ? '<p><strong style="color: #dc2626;">🆘 NEEDS BACKUP / ASSISTANCE</strong></p>' : ''}
+                            ${needsHelp ? '<p><strong style="color: #ea580c;">🛟 NEEDS BACKUP / ASSISTANCE</strong></p>' : ''}
                             <p><strong>Available:</strong> ${responder.is_available ? 'Yes' : 'No'}</p>
                             <p><strong>Last Update:</strong> ${responder.updated_at ? new Date(responder.updated_at).toLocaleTimeString() : 'Just now'}</p>
                     `;
@@ -1455,14 +1762,23 @@
                         iconAnchor: [15, 15]
                     });
                     
-                    const marker = L.marker([location.lat, location.lng], { 
+                    var initialLatLng = fixLatLng(location.lat, location.lng);
+                    const marker = L.marker(initialLatLng, {
                         icon,
-                        zIndexOffset: 1000, // Ensure responder markers are always on top
+                        zIndexOffset: 1000,
                         riseOnHover: true
                     });
-                    
-                    // Add to map and ensure visibility
-                    marker.addTo(map);
+                    if (responderClusterViewEnabled && responderClusterGroup) {
+                        responderClusterGroup.addLayer(marker);
+                    } else if (responderUnclusteredLayer) {
+                        responderUnclusteredLayer.addLayer(marker);
+                    }
+                    marker._trueLatLng = initialLatLng;
+                    marker._creationLat = location.lat;
+                    marker._creationLng = location.lng;
+                    const teamName = responder.team_name || null;
+                    const leaderName = (responder.leader && responder.leader.name) ? responder.leader.name : null;
+                    marker._responder = { id: responderId, name: responder.name || 'Responder', role: responder.role || 'Responder', statusText, teamName, leaderName };
                     
                     // Only call bringToFront if it exists (Leaflet marker method)
                     if (marker && typeof marker.bringToFront === 'function') {
@@ -1473,29 +1789,29 @@
                         }
                     }
                     
-                    // Force update z-index via DOM if needed
+                    // Force z-index via DOM; do not set position (Leaflet positions the icon – overriding breaks placement)
                     setTimeout(() => {
                         const markerElement = marker.getElement();
                         if (markerElement) {
                             markerElement.style.zIndex = '1000';
-                            markerElement.style.position = 'relative';
                             markerElement.style.display = 'block';
                             markerElement.style.visibility = 'visible';
                             markerElement.style.opacity = '1';
-                            console.log(`  ✅ Set z-index for responder marker: ${responder.name || responderId}`);
                         }
                     }, 100);
                     
                     // Store responder ID and assignment status on marker
                     marker.responderId = responderId;
-                    marker.assignmentStatus = activeAssignment?.status || 'none';
+                    marker.assignmentStatus = (activeAssignment?.status || 'none') + (needsHelp ? '-help' : '');
                     
                     let popupContent = `
                         <div class="map-popup">
                             <h4>${responder.name}</h4>
                             <p><strong>Role:</strong> ${responder.role || 'Responder'}</p>
+                            ${teamName ? `<p><strong>Team:</strong> ${teamName}</p>` : ''}
+                            ${leaderName ? `<p><strong>Leader:</strong> ${leaderName}</p>` : ''}
                             <p><strong>Status:</strong> <span style="color: ${iconColor}; font-weight: bold;">${statusText}</span></p>
-                            ${needsHelp ? '<p><strong style="color: #dc2626;">🆘 NEEDS BACKUP / ASSISTANCE</strong></p>' : ''}
+                            ${needsHelp ? '<p><strong style="color: #ea580c;">🛟 NEEDS BACKUP / ASSISTANCE</strong></p>' : ''}
                             <p><strong>Available:</strong> ${responder.is_available ? 'Yes' : 'No'}</p>
                             <p><strong>Last Update:</strong> ${responder.updated_at ? new Date(responder.updated_at).toLocaleTimeString() : 'Just now'}</p>
                     `;
@@ -1532,55 +1848,52 @@
                 }
             });
             
-            // Remove markers for responders that are no longer in the list
-            const currentResponderIds = new Set(responders.map(r => r.id));
+            // Remove markers for responders that are no longer in the list (from cluster, unclustered, or map)
+            const currentResponderIds = new Set(uniqueResponders.map(r => r.id));
             responderMarkersMap.forEach((marker, responderId) => {
                 if (!currentResponderIds.has(responderId)) {
-                    if (map.hasLayer(marker)) {
+                    if (responderClusterGroup && responderClusterGroup.hasLayer(marker))
+                        responderClusterGroup.removeLayer(marker);
+                    else if (responderUnclusteredLayer && responderUnclusteredLayer.hasLayer(marker))
+                        responderUnclusteredLayer.removeLayer(marker);
+                    else if (map.hasLayer(marker))
                         map.removeLayer(marker);
-                    }
                     responderMarkersMap.delete(responderId);
                     const index = responderMarkers.findIndex(m => m.responderId === responderId);
-                    if (index > -1) {
-                        responderMarkers.splice(index, 1);
-                    }
+                    if (index > -1) responderMarkers.splice(index, 1);
                 }
             });
             
             console.log(`👮 Total responder markers: ${responderMarkers.length}`);
         }
 
-        // Update active emergencies
+        // Update active emergencies list (same as super-user: badge = count for current filter)
         function updateActiveEmergencies(reports) {
-            // Show ALL reports, not just "active" ones
-            const allReports = reports || [];
-            
-            // Count active emergencies (pending, processing, classified, assigned, in-progress)
-            const activeCount = allReports.filter(report => 
-                report.status === 'pending' || 
-                report.status === 'processing' || 
-                report.status === 'classified' ||
-                report.status === 'assigned' ||
-                report.status === 'in-progress'
-            ).length;
-            
-            document.getElementById('activeCount').textContent = activeCount;
-            
+            const filteredReports = reports || [];
+            let badgeText = filteredReports.length;
+            if (currentFilter === 'active') {
+                badgeText = (allReports || []).filter(r => {
+                    const s = r.status?.toLowerCase();
+                    return s === 'pending' || s === 'processing' || s === 'classified' || s === 'assigned' || s === 'in-progress';
+                }).length;
+            } else if (currentFilter === 'completed') {
+                badgeText = (allReports || []).filter(r => {
+                    const s = r.status?.toLowerCase();
+                    return s === 'completed' || s === 'resolved' || s === 'cancelled';
+                }).length;
+            }
+            document.getElementById('activeCount').textContent = badgeText;
             const container = document.getElementById('activeEmergencies');
-            if (allReports.length === 0) {
-                container.innerHTML = '<p class="text-muted">No emergencies found</p>';
+            if (filteredReports.length === 0) {
+                let message = 'No emergencies found';
+                if (currentFilter === 'active') message = 'No active emergencies';
+                else if (currentFilter === 'completed') message = 'No completed emergencies';
+                container.innerHTML = '<p class="text-muted">' + message + '</p>';
                 return;
             }
-            
-            // Show all reports, but highlight active ones
-            container.innerHTML = allReports.map((report, index) => {
-                const isActive = report.status === 'pending' || 
-                                report.status === 'processing' || 
-                                report.status === 'classified' ||
-                                report.status === 'assigned' ||
-                                report.status === 'in-progress';
-                
-                // Get location address for display
+            container.innerHTML = filteredReports.map((report, index) => {
+                const status = report.status?.toLowerCase();
+                const isActive = status === 'pending' || status === 'processing' || status === 'classified' || status === 'assigned' || status === 'in-progress';
                 let locationText = 'Location detected';
                 if (report.location) {
                     if (typeof report.location === 'string') {
@@ -1603,7 +1916,7 @@
                         <div class="emergency-details">
                             <h4>${(report.type || 'other').toUpperCase()}</h4>
                             <p>${locationText}</p>
-                            <span class="badge badge-${report.status || 'pending'}">${(report.status || 'pending').toUpperCase()}</span>
+                            <span class="badge badge-${report.status || 'pending'}">${(status || 'pending').toUpperCase()}</span>
                             ${report.responder_id ? `<small class="assigned-info">Assigned to: ${report.responder_name || 'Responder'}</small>` : ''}
                             <small class="report-time">${report.created_at ? new Date(report.created_at).toLocaleString() : 'N/A'}</small>
                         </div>
@@ -1624,18 +1937,24 @@
                 return;
             }
             
-            container.innerHTML = activeResponders.map(responder => `
+            const leaderName = (r) => (r.leader && r.leader.name) ? r.leader.name : (r.leader_name || null);
+            container.innerHTML = activeResponders.map(responder => {
+                const teamName = responder.team_name || null;
+                const leader = leaderName(responder);
+                return `
                 <div class="team-item">
                     <div class="team-avatar">
                         <i class="bi bi-person-badge"></i>
                     </div>
                     <div class="team-details">
                         <h4>${responder.name || 'Unknown'}</h4>
-                        <p>${responder.role || 'Responder'}</p>
+                        <p>${responder.role || 'Responder'}${teamName ? ` · ${teamName}` : ''}</p>
+                        ${leader ? `<p class="team-leader"><small><strong>Leader:</strong> ${leader}</small></p>` : ''}
                         <span class="badge badge-${responder.status || 'available'}">${(responder.status || 'available').toUpperCase()}</span>
                     </div>
                 </div>
-            `).join('');
+            `;
+            }).join('');
         }
 
         // Update summary cards
@@ -1694,93 +2013,202 @@
             alert('Assignment functionality will be implemented in the assignment modal');
         }
 
-        // Focus on a specific report on the map (called from emergency list or URL parameter)
+        // Focus on a specific report on the map (same as super-user)
         function focusOnReport(reportId) {
-            try {
-                console.log('📍 Focusing on report:', reportId);
-                
-                // Use the stored reportId property for more reliable matching
-                const marker = emergencyMarkers.find(m => m.reportId === reportId);
-                
-                if (!marker) {
-                    console.warn(`⚠️ Marker not found for report ID: ${reportId}. Available markers:`, emergencyMarkers.map(m => m.reportId));
-                    return;
-                }
-                
-                // Get marker position
-                const latLng = marker.getLatLng();
-                
-                // If marker is in a cluster, uncluster it first
-                if (markerClusterGroup && markerClusterGroup.hasLayer(marker)) {
-                    // Zoom in to uncluster
-                    map.setView(latLng, 18, {
-                        animate: true,
-                        duration: 0.5
-                    });
-                    
-                    // Wait a bit for cluster to expand, then focus
-                    setTimeout(() => {
-                        map.setView(latLng, 16, {
-                            animate: true,
-                            duration: 0.5
-                        });
-                        
-                        // Open popup after view animation
-                        setTimeout(() => {
-                            if (marker.openPopup) {
-                                marker.openPopup();
-                            }
-                        }, 600);
-                    }, 300);
-                } else {
-                    // Marker is not clustered, just focus on it
-                    map.setView(latLng, 16, {
-                        animate: true,
-                        duration: 0.5
-                    });
-                    
-                    // Open popup after view animation
-                    setTimeout(() => {
-                        if (marker.openPopup) {
-                            marker.openPopup();
-                        }
-                    }, 600);
-                }
-                
-                console.log('✅ Focused on report successfully');
-                
-            } catch (error) {
-                console.error('❌ Error focusing on report:', error);
+            const marker = emergencyMarkers.find(m => m.reportId === reportId);
+            if (marker) {
+                map.setView(marker.getLatLng(), 15);
+                marker.openPopup();
+            } else {
+                console.warn('⚠️ Marker not found for report ID:', reportId);
             }
         }
 
-        // Map control functions
+        // Focus on a specific responder on the map (for cluster quick-pick)
+        function focusOnResponder(responderId) {
+            const marker = responderMarkersMap.get(responderId);
+            if (marker) {
+                map.setView(marker.getLatLng(), 15);
+                marker.openPopup();
+            } else {
+                console.warn('⚠️ Marker not found for responder ID:', responderId);
+            }
+        }
+
+        // Layer visibility — separate emergencies vs response teams to see if they're in one location or nearby
+        function toggleLayer(layer) {
+            if (layer === 'emergencies') {
+                showEmergenciesLayer = !showEmergenciesLayer;
+                const btn = document.getElementById('layerEmergencies');
+                if (btn) {
+                    btn.classList.toggle('active', showEmergenciesLayer);
+                    btn.title = showEmergenciesLayer ? 'Hide emergency markers' : 'Show emergency markers';
+                }
+            } else if (layer === 'responders') {
+                showRespondersLayer = !showRespondersLayer;
+                const btn = document.getElementById('layerResponders');
+                if (btn) {
+                    btn.classList.toggle('active', showRespondersLayer);
+                    btn.title = showRespondersLayer ? 'Hide response team markers' : 'Show response team markers';
+                }
+            }
+            applyLayerVisibility();
+        }
+        function applyLayerVisibility() {
+            if (!map || !markerClusterGroup || !responderClusterGroup || !unclusteredLayer) return;
+            if (showEmergenciesLayer) {
+                if (!map.hasLayer(markerClusterGroup)) map.addLayer(markerClusterGroup);
+                if (!map.hasLayer(unclusteredLayer)) map.addLayer(unclusteredLayer);
+            } else {
+                if (map.hasLayer(markerClusterGroup)) map.removeLayer(markerClusterGroup);
+                if (map.hasLayer(unclusteredLayer)) map.removeLayer(unclusteredLayer);
+            }
+            if (showRespondersLayer) {
+                if (responderClusterViewEnabled) {
+                    if (responderUnclusteredLayer && map.hasLayer(responderUnclusteredLayer)) map.removeLayer(responderUnclusteredLayer);
+                    if (!map.hasLayer(responderClusterGroup)) map.addLayer(responderClusterGroup);
+                } else {
+                    if (map.hasLayer(responderClusterGroup)) map.removeLayer(responderClusterGroup);
+                    if (responderUnclusteredLayer && !map.hasLayer(responderUnclusteredLayer)) map.addLayer(responderUnclusteredLayer);
+                }
+            } else {
+                if (map.hasLayer(responderClusterGroup)) map.removeLayer(responderClusterGroup);
+                if (responderUnclusteredLayer && map.hasLayer(responderUnclusteredLayer)) map.removeLayer(responderUnclusteredLayer);
+            }
+            // Show assignment lines only when both layers are visible
+            assignmentLines.forEach(function(line) {
+                if (showEmergenciesLayer && showRespondersLayer) {
+                    if (!map.hasLayer(line)) map.addLayer(line);
+                } else {
+                    if (map.hasLayer(line)) map.removeLayer(line);
+                }
+            });
+        }
+
+        // Map control — toggle cluster view (same as super-user: inline styles on button)
         function toggleClusterView() {
             const button = document.getElementById('clusterToggle');
-            if (markerClusterGroup.options.disableClustering) {
-                markerClusterGroup.options.disableClustering = false;
-                markerClusterGroup.refreshClusters();
-                button.innerHTML = '<i class="bi bi-layers"></i> Cluster View';
-                button.classList.remove('btn-primary');
-                button.classList.add('btn-outline-primary');
+            if (!unclusteredLayer) return;
+            clusterViewEnabled = !clusterViewEnabled;
+            if (clusterViewEnabled) {
+                emergencyMarkers.forEach(marker => {
+                    if (unclusteredLayer.hasLayer(marker)) {
+                        unclusteredLayer.removeLayer(marker);
+                        markerClusterGroup.addLayer(marker);
+                    }
+                });
+                button.innerHTML = '<i class="bi bi-layers-fill"></i> Cluster emergency';
+                button.style.background = '#f3f4f6';
+                button.style.color = '#374151';
+                button.style.border = '1.5px solid #e5e7eb';
             } else {
-                markerClusterGroup.options.disableClustering = true;
-                markerClusterGroup.refreshClusters();
-                button.innerHTML = '<i class="bi bi-eye"></i> Individual View';
-                button.classList.remove('btn-outline-primary');
-                button.classList.add('btn-primary');
+                emergencyMarkers.forEach(marker => {
+                    if (markerClusterGroup.hasLayer(marker)) {
+                        markerClusterGroup.removeLayer(marker);
+                        unclusteredLayer.addLayer(marker);
+                    }
+                });
+                button.innerHTML = '<i class="bi bi-eye"></i> Individual';
+                button.style.background = 'linear-gradient(135deg,#2563eb,#1d4ed8)';
+                button.style.color = 'white';
+                button.style.border = '1.5px solid #1d4ed8';
             }
+        }
+
+        // Map control — toggle responder cluster (Option C: separate toggle for response teams)
+        // Re-build all responder markers from API when toggling so Individual uses same data/path as Cluster.
+        let responderClusterToggleInProgress = false;
+        async function toggleResponderClusterView() {
+            const button = document.getElementById('responderClusterToggle');
+            if (!responderUnclusteredLayer || !responderClusterGroup || !map) return;
+            if (responderClusterToggleInProgress) return;
+            responderClusterToggleInProgress = true;
+            if (button) { button.disabled = true; button.style.opacity = '0.7'; }
+            responderClusterViewEnabled = !responderClusterViewEnabled;
+            if (!responderClusterViewEnabled) {
+                responderMarkers.forEach(function(m) {
+                    if (!m || m.responderId == null) return;
+                    var key = String(m.responderId);
+                    var lat = m._creationLat != null ? m._creationLat : (m._trueLatLng && m._trueLatLng.lat != null ? m._trueLatLng.lat : null);
+                    var lng = m._creationLng != null ? m._creationLng : (m._trueLatLng && m._trueLatLng.lng != null ? m._trueLatLng.lng : null);
+                    if (lat != null && lng != null) lastResponderPositionCache.set(key, { lat: lat, lng: lng });
+                });
+            }
+            function clearAllResponderMarkers() {
+                responderMarkers.forEach(function(m) {
+                    if (responderClusterGroup.hasLayer(m)) responderClusterGroup.removeLayer(m);
+                    else if (responderUnclusteredLayer.hasLayer(m)) responderUnclusteredLayer.removeLayer(m);
+                });
+                responderMarkers = [];
+                responderMarkersMap.clear();
+            }
+            clearAllResponderMarkers();
+            try {
+                const responders = await getRespondersForMap();
+                updateMapWithResponders(responders || []);
+                await updateAssignmentConnections();
+            } catch (e) {
+                console.error('toggleResponderClusterView:', e);
+            } finally {
+                responderClusterToggleInProgress = false;
+                if (button) { button.disabled = false; button.style.opacity = ''; }
+            }
+            if (responderClusterViewEnabled) {
+                button.innerHTML = '<i class="bi bi-people-fill"></i> Cluster responders';
+                button.title = 'Show response team markers individually';
+                button.style.background = '#f3f4f6';
+                button.style.color = '#374151';
+                button.style.border = '1.5px solid #e5e7eb';
+            } else {
+                button.innerHTML = '<i class="bi bi-person-lines-fill"></i> Individual';
+                button.title = 'Cluster response team markers';
+                button.style.background = 'linear-gradient(135deg,#2563eb,#1d4ed8)';
+                button.style.color = 'white';
+                button.style.border = '1.5px solid #1d4ed8';
+            }
+            applyLayerVisibility();
         }
 
         function fitAllMarkers() {
-            if (emergencyMarkers.length > 0) {
-                const group = new L.featureGroup(emergencyMarkers);
-                map.fitBounds(group.getBounds().pad(0.1));
+            const all = [];
+            emergencyMarkers.forEach(function(m) {
+                if (m && m.getLatLng) all.push(m);
+            });
+            responderMarkers.forEach(function(m) {
+                if (m && m.getLatLng) all.push(m);
+            });
+            if (all.length > 0) {
+                const group = new L.featureGroup(all);
+                map.fitBounds(group.getBounds().pad(0.15));
+            } else {
+                map.setView([LSPU_LAT, LSPU_LNG], 18);
             }
         }
 
         function refreshMap() {
-            loadMapData();
+            var btn = document.getElementById('refreshMapBtn');
+            var icon = document.getElementById('refreshMapIcon');
+            var label = document.getElementById('refreshMapLabel');
+            if (btn) btn.disabled = true;
+            if (icon) { icon.className = 'bi bi-hourglass-split'; icon.style.animation = 'spin 0.8s linear infinite'; }
+            if (label) label.textContent = 'Refreshing…';
+            loadMapData()
+                .then(function() {
+                    updateMapTimestamp();
+                    if (icon) { icon.className = 'bi bi-check-lg'; icon.style.animation = ''; }
+                    if (label) label.textContent = 'Updated';
+                    if (btn) btn.disabled = false;
+                    setTimeout(function() {
+                        if (icon) icon.className = 'bi bi-arrow-clockwise';
+                        if (label) label.textContent = 'Refresh';
+                    }, 2000);
+                })
+                .catch(function(err) {
+                    console.error('Refresh failed:', err);
+                    if (icon) { icon.className = 'bi bi-arrow-clockwise'; icon.style.animation = ''; }
+                    if (label) label.textContent = 'Refresh';
+                    if (btn) btn.disabled = false;
+                });
         }
 
         // Setup real-time updates
@@ -1797,11 +2225,12 @@
                         table: 'reports'
                     }, async (payload) => {
                         console.log('📥 New report created:', payload.new);
-                        // Reload reports to get enriched data
-                        const reports = await window.emergencySystem.getReports();
-                        updateMapWithReports(reports || []);
-                        updateActiveEmergencies(reports || []);
-                        updateSummaryCards(reports || [], await window.emergencySystem.getResponders() || []);
+                        allReports = await window.emergencySystem.getReports();
+                        await applyFilter();
+                        const responders = await getRespondersForMap();
+                        updateResponseTeams(responders || []);
+                        updateSummaryCards(allReports || [], responders || []);
+                        updateMapTimestamp();
                     })
                     .on('postgres_changes', {
                         event: 'UPDATE',
@@ -1809,11 +2238,11 @@
                         table: 'reports'
                     }, async (payload) => {
                         console.log('📝 Report updated:', payload.new);
-                        // Reload reports to get enriched data
-                        const reports = await window.emergencySystem.getReports();
-                        updateMapWithReports(reports || []);
-                        updateActiveEmergencies(reports || []);
-                        updateSummaryCards(reports || [], await window.emergencySystem.getResponders() || []);
+                        allReports = await window.emergencySystem.getReports();
+                        await applyFilter();
+                        const responders = await getRespondersForMap();
+                        updateSummaryCards(allReports || [], responders || []);
+                        updateMapTimestamp();
                     })
                     .on('postgres_changes', {
                         event: 'DELETE',
@@ -1821,16 +2250,17 @@
                         table: 'reports'
                     }, async (payload) => {
                         console.log('🗑️ Report deleted:', payload.old);
-                        // Remove marker for deleted report
                         const marker = emergencyMarkers.find(m => m.reportId === payload.old.id);
                         if (marker) {
-                            markerClusterGroup.removeLayer(marker);
+                            if (markerClusterGroup.hasLayer(marker)) markerClusterGroup.removeLayer(marker);
+                            if (unclusteredLayer && unclusteredLayer.hasLayer(marker)) unclusteredLayer.removeLayer(marker);
                             emergencyMarkers = emergencyMarkers.filter(m => m.reportId !== payload.old.id);
                         }
-                        // Reload to update counts
-                        const reports = await window.emergencySystem.getReports();
-                        updateActiveEmergencies(reports || []);
-                        updateSummaryCards(reports || [], await window.emergencySystem.getResponders() || []);
+                        allReports = await window.emergencySystem.getReports();
+                        await applyFilter();
+                        const responders = await getRespondersForMap();
+                        updateSummaryCards(allReports || [], responders || []);
+                        updateMapTimestamp();
                     })
                     .subscribe((status) => {
                         if (status === 'SUBSCRIBED') {
@@ -1851,14 +2281,12 @@
                         table: 'responder'
                     }, async (payload) => {
                         console.log('👮 Responder updated:', payload.new);
-                        // Reload responders to get updated locations
-                        const responders = await window.emergencySystem.getResponders();
+                        await loadAssignments();
+                        const responders = await getRespondersForMap();
                         updateMapWithResponders(responders || []);
                         updateResponseTeams(responders || []);
-                        // Reload assignments in case responder assignment status changed
-                        await loadAssignments();
-                        const reports = await window.emergencySystem.getReports();
-                        updateSummaryCards(reports || [], responders || []);
+                        updateSummaryCards(allReports || [], responders || []);
+                        updateMapTimestamp();
                     })
                     .on('postgres_changes', {
                         event: 'INSERT',
@@ -1866,12 +2294,12 @@
                         table: 'responder'
                     }, async (payload) => {
                         console.log('👮 New responder added:', payload.new);
-                        // Reload responders
-                        const responders = await window.emergencySystem.getResponders();
+                        await loadAssignments();
+                        const responders = await getRespondersForMap();
                         updateMapWithResponders(responders || []);
                         updateResponseTeams(responders || []);
-                        const reports = await window.emergencySystem.getReports();
-                        updateSummaryCards(reports || [], responders || []);
+                        updateSummaryCards(allReports || [], responders || []);
+                        updateMapTimestamp();
                     })
                     .subscribe((status) => {
                         if (status === 'SUBSCRIBED') {
@@ -1892,15 +2320,12 @@
                         table: 'assignment'
                     }, async (payload) => {
                         console.log('📋 Assignment changed:', payload);
-                        // Reload assignments and update connections
                         await loadAssignments();
-                        // Reload responders to update their status icons
-                        const responders = await window.emergencySystem.getResponders();
+                        const responders = await getRespondersForMap();
                         updateMapWithResponders(responders || []);
-                        // Reload reports to get updated responder names
-                        const reports = await window.emergencySystem.getReports();
-                        updateMapWithReports(reports || []);
-                        updateActiveEmergencies(reports || []);
+                        await applyFilter();
+                        updateSummaryCards(allReports || [], responders || []);
+                        updateMapTimestamp();
                     })
                     .subscribe((status) => {
                         if (status === 'SUBSCRIBED') {

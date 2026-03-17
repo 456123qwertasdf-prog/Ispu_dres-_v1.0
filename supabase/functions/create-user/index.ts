@@ -57,6 +57,20 @@ Deno.serve(async (req) => {
       )
     }
 
+    // Only @gmail.com emails are allowed for account creation
+    const emailTrimmedForDomain = (email ?? '').toString().trim().toLowerCase()
+    if (!emailTrimmedForDomain.endsWith('@gmail.com')) {
+      return new Response(
+        JSON.stringify({
+          error: 'Only Gmail addresses are allowed',
+          code: 'INVALID_EMAIL_DOMAIN',
+          message: 'Please use a valid @gmail.com email address.',
+          errors: [{ code: 'INVALID_EMAIL_DOMAIN', field: 'gmail', message: 'Only @gmail.com addresses are allowed.' }]
+        }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
     // Generate password if not provided (empty string or undefined/null)
     const generatedPassword = (password && password.trim() !== '') ? password : generateSecurePassword()
     const isTemporaryPassword = !password || password.trim() === ''

@@ -336,6 +336,14 @@
             background: rgba(255, 255, 255, 0.3);
             transform: translateX(-2px);
         }
+        #reportContentBody > div[style*="grid-template-columns"] {
+            grid-template-columns: repeat(3, 1fr);
+        }
+        @media (max-width: 1024px) {
+            #reportContentBody > div[style*="grid-template-columns"] {
+                grid-template-columns: 1fr !important;
+            }
+        }
     </style>
 </head>
 <body>
@@ -399,7 +407,7 @@
                 </div>
             </div>
 
-            <!-- Content wrapper -->
+            <!-- Content wrapper (same layout as Reports page modal – 1st image) -->
             <div class="vr-content">
 
             <div id="loadingState" class="loading-state">
@@ -408,127 +416,20 @@
             </div>
 
             <div id="reportContent" style="display: none;">
-                <!-- Report Header (dark blue card like image 1) -->
-                <div class="report-header-card">
-                    <a href="super-user-reports.html" class="back-button">
-                        <i class="bi bi-arrow-left"></i> Back to Reports
-                    </a>
-                    <h1>
-                        <span id="reportType">Emergency Report</span>
-                        <span class="status-badge header-status" id="reportStatusBadge">PENDING</span>
-                    </h1>
-                    <p class="subtitle">Report ID: <span id="reportId">-</span></p>
-                    <div class="report-meta">
-                        <div class="meta-item">
-                            <i class="bi bi-calendar"></i>
-                            <span id="reportCreated">-</span>
-                        </div>
-                        <div class="meta-item">
-                            <i class="bi bi-person"></i>
-                            <span id="reportReporter">-</span>
-                        </div>
-                        <div class="meta-item">
-                            <i class="bi bi-exclamation-circle"></i>
-                            <span id="reportPriority">-</span>
-                        </div>
+                <!-- Blue header bar like 1st image: Report #ID / Emergency Report — Super User View -->
+                <div style="background:linear-gradient(135deg,#1d4ed8 0%,#2563eb 100%);color:white;padding:1.25rem 1.5rem;display:flex;justify-content:space-between;align-items:center;border-radius:12px 12px 0 0;">
+                    <div>
+                        <h2 id="reportPageTitle" style="margin:0;font-size:1.2rem;font-weight:700;">Report Details</h2>
+                        <p style="margin:0.25rem 0 0;font-size:0.8rem;opacity:0.85;">Emergency Report — Super User View</p>
                     </div>
+                    <a href="super-user-reports.html" style="display:inline-flex;align-items:center;gap:0.5rem;padding:0.5rem 1rem;background:rgba(255,255,255,0.2);color:white;border-radius:8px;text-decoration:none;font-weight:600;font-size:0.875rem;"><i class="bi bi-arrow-left"></i> Back to Reports</a>
                 </div>
-
-                <!-- Action Buttons (order & colors like image 1: Edit yellow, Assign blue, Map gray, Delete red) -->
-                <div class="action-buttons">
-                    <button class="btn-action btn-warning" onclick="editReport()">
-                        <i class="bi bi-pencil"></i> Edit Report
-                    </button>
-                    <button class="btn-action btn-primary" onclick="assignResponder()" id="assignBtn">
-                        <i class="bi bi-person-plus"></i> Assign Responder
-                    </button>
-                    <button class="btn-action btn-success" onclick="changeResponder()" id="changeBtn" style="display: none;">
-                        <i class="bi bi-person-check"></i> Change Responder
-                    </button>
-                    <button class="btn-action btn-warning" onclick="assignResponder()" id="assignBackupBtn" style="display: none;" title="Assign an additional responder to backup or assist">
-                        <i class="bi bi-person-plus-fill"></i> Assign backup / Assist
-                    </button>
-                    <button class="btn-action btn-secondary" onclick="viewOnMap()" style="background:#4b5563;color:white;">
-                        <i class="bi bi-map"></i> View on Map
-                    </button>
-                    <button class="btn-action btn-danger" onclick="deleteReport()">
-                        <i class="bi bi-trash"></i> Delete Report
-                    </button>
-                </div>
-
-                <!-- Info Grid: 3 panels like image 1 -->
-                <div class="info-grid">
-                    <!-- Report Details (includes image) -->
-                    <div class="info-card">
-                        <h3><i class="bi bi-info-circle"></i> Report Details</h3>
-                        <div class="info-row">
-                            <span class="info-label">Type:</span>
-                            <span class="info-value" id="reportTypeValue">-</span>
-                        </div>
-                        <div class="info-row">
-                            <span class="info-label">Status:</span>
-                            <span class="info-value" id="reportStatusValue">-</span>
-                        </div>
-                        <div class="info-row">
-                            <span class="info-label">Priority:</span>
-                            <span class="info-value" id="reportPriorityValue">-</span>
-                        </div>
-                        <div class="info-row">
-                            <span class="info-label">Message:</span>
-                            <span class="info-value" id="reportMessage">-</span>
-                        </div>
-                        <div class="info-row">
-                            <span class="info-label">Created:</span>
-                            <span class="info-value" id="reportCreatedAt">-</span>
-                        </div>
-                        <div class="info-row">
-                            <span class="info-label">Last Updated:</span>
-                            <span class="info-value" id="reportUpdatedAt">-</span>
-                        </div>
-                        <div style="margin-top:1rem;padding-top:1rem;border-top:1px solid #f3f4f6;">
-                            <div class="info-label" style="margin-bottom:0.5rem;">Report Image</div>
-                            <div id="reportImageContainer">
-                                <img id="reportImage" class="image-preview" style="display: none;" alt="Report image">
-                                <div id="noImage" class="no-image">
-                                    <i class="bi bi-image" style="font-size: 2rem; opacity: 0.3;"></i>
-                                    <div style="margin-top: 0.5rem; font-size: 0.85rem;">No image available</div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Location -->
-                    <div class="info-card">
-                        <h3><i class="bi bi-geo-alt"></i> Location</h3>
-                        <div class="info-row">
-                            <span class="info-label">Address:</span>
-                            <span class="info-value" id="reportLocation">-</span>
-                        </div>
-                        <div class="info-row">
-                            <span class="info-label">Coordinates:</span>
-                            <span class="info-value" id="reportCoordinates">-</span>
-                        </div>
-                        <div id="mapContainer" class="map-container"></div>
-                    </div>
-
-                    <!-- Assignment -->
-                    <div class="info-card">
-                        <h3><i class="bi bi-person-badge"></i> Assignment</h3>
-                        <div class="info-row">
-                            <span class="info-label">Assigned To:</span>
-                            <span class="info-value" id="reportAssignedTo">Not assigned</span>
-                        </div>
-                        <div class="info-row">
-                            <span class="info-label">Assignment Status:</span>
-                            <span class="info-value" id="reportAssignmentStatus">-</span>
-                        </div>
-                        <div class="info-row" id="responderNeedsHelpRow" style="display: none;"></div>
-                        <div class="info-row" id="resolutionNoteRow" style="display: none; flex-direction: column; align-items: stretch;">
-                            <span class="info-label">Resolution note (what happened):</span>
-                            <span class="info-value" id="reportResolutionNote" style="white-space: pre-wrap; max-width: 100%; margin-top: 0.25rem;"></span>
-                        </div>
-                        <div id="assignmentHistory" class="assignment-history"></div>
-                    </div>
+                <!-- Body: same section grid as modal -->
+                <div id="reportContentBody" style="padding:1.5rem;"></div>
+                <!-- Map (below sections) -->
+                <div id="mapSection" style="padding:0 1.5rem 1.5rem;border-top:1px solid #e5e7eb;padding-top:1rem;">
+                    <div class="info-label" style="margin-bottom:0.5rem;"><i class="bi bi-geo-alt"></i> Location on map</div>
+                    <div id="mapContainer" class="map-container"></div>
                 </div>
             </div>
 
@@ -552,9 +453,16 @@
         let map = null;
 
         function escapeHtml(text) {
+            if (text == null || text === undefined) return '';
             const div = document.createElement('div');
             div.textContent = text;
             return div.innerHTML;
+        }
+
+        function formatReportDate(dateString) {
+            if (!dateString) return 'N/A';
+            const d = new Date(dateString);
+            return isNaN(d.getTime()) ? 'N/A' : d.toLocaleString('en-PH', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
         }
 
         // Get report ID from URL
@@ -592,7 +500,7 @@
                 const nameEl = document.getElementById('suUserName');
                 if (nameEl) nameEl.textContent = displayName;
                 
-                // Load report details
+                // Load report and show modal-style layout (like 1st image)
                 await loadReportDetails();
                 
                 console.log('✅ Super user view report page initialized successfully');
@@ -602,7 +510,7 @@
             }
         });
 
-        // Load report details
+        // Load report details and render modal-style layout (like Reports page – 1st image)
         async function loadReportDetails() {
             try {
                 console.log('📄 Loading report details for ID:', reportId);
@@ -614,27 +522,33 @@
                 }
 
                 currentReport = report;
-                
-                // Load assignment information
-                let assignment = null;
-                if (report.assignment_id || report.responder_id) {
-                    try {
-                        const { data: assignments, error } = await window.emergencySystem.supabase
-                            .from('assignment')
-                            .select('*, responder:responder_id(id, name, role, phone, needs_assistance)')
-                            .eq('report_id', reportId)
-                            .order('assigned_at', { ascending: false })
-                            .limit(1);
-                        
-                        if (!error && assignments && assignments.length > 0) {
-                            assignment = assignments[0];
-                        }
-                    } catch (err) {
-                        console.warn('Could not load assignment:', err);
-                    }
-                }
 
-                // Load assignment history
+                if (report.reporter_uid) {
+                    try {
+                        const { data } = await window.emergencySystem.supabase.functions.invoke('get-users', { body: {} });
+                        if (data?.users) {
+                            const u = data.users.find(x => (x.user_id || x.id) === report.reporter_uid);
+                            if (u) {
+                                report.reporter_email = u.email || '';
+                                report.reporter_student_number = u.student_number || u.studentNumber || '';
+                                report.reporter_phone = u.phone || u.contactNumber || '';
+                                report.reporter_full_name = u.name || u.full_name || report.reporter_name || '';
+                            }
+                        }
+                    } catch (_) {}
+                }
+                
+                let assignment = null;
+                try {
+                    const { data: assignments, error } = await window.emergencySystem.supabase
+                        .from('assignment')
+                        .select('*, responder:responder_id(id, name, role, phone, needs_assistance)')
+                        .eq('report_id', reportId)
+                        .order('assigned_at', { ascending: false })
+                        .limit(1);
+                    if (!error && assignments && assignments.length > 0) assignment = assignments[0];
+                } catch (err) { console.warn('Could not load assignment:', err); }
+
                 let assignmentHistory = [];
                 try {
                     const { data: history, error } = await window.emergencySystem.supabase
@@ -642,21 +556,13 @@
                         .select('*, responder:responder_id(id, name, role)')
                         .eq('report_id', reportId)
                         .order('assigned_at', { ascending: false });
-                    
-                    if (!error && history) {
-                        assignmentHistory = history;
-                    }
-                } catch (err) {
-                    console.warn('Could not load assignment history:', err);
-                }
+                    if (!error && history) assignmentHistory = history;
+                } catch (err) { console.warn('Could not load assignment history:', err); }
 
-                // Populate UI
-                populateReportDetails(report, assignment, assignmentHistory);
-                
-                // Initialize map
+                document.getElementById('reportPageTitle').textContent = 'Report #' + (reportId || '').substring(0, 8).toUpperCase();
+                populateReportBody(report, assignment, assignmentHistory);
                 initializeMap(report);
                 
-                // Show content
                 document.getElementById('loadingState').style.display = 'none';
                 document.getElementById('reportContent').style.display = 'block';
                 
@@ -666,165 +572,108 @@
             }
         }
 
-        // Populate report details in UI
-        function populateReportDetails(report, assignment, assignmentHistory) {
-            // Header
-            const rawId = (report.id || '').replace(/-/g, ' ').trim();
-            document.getElementById('reportId').textContent = rawId || '-';
-            document.getElementById('reportType').textContent = (report.type || report.classification || 'Emergency').toUpperCase();
-            document.getElementById('reportTypeValue').textContent = report.type || report.classification || 'Unknown';
-            
-            // Status (header badge stays light on blue card)
-            const status = (report.status || 'pending').toLowerCase();
-            const statusBadge = document.getElementById('reportStatusBadge');
-            statusBadge.textContent = status.toUpperCase();
-            statusBadge.className = 'status-badge header-status status-' + status;
-            document.getElementById('reportStatusValue').textContent = status.toUpperCase();
-            
-            // Priority
-            const priority = report.priority || 4;
-            const priorityText = getPriorityText(priority);
-            const priorityBadge = document.getElementById('reportPriority');
-            priorityBadge.innerHTML = `<span class="priority-badge priority-${priority}">${priorityText}</span>`;
-            document.getElementById('reportPriorityValue').textContent = priorityText;
-            
-            // Dates
-            document.getElementById('reportCreated').textContent = report.created_at ? 
-                new Date(report.created_at).toLocaleString() : '-';
-            document.getElementById('reportCreatedAt').textContent = report.created_at ? 
-                new Date(report.created_at).toLocaleString() : '-';
-            document.getElementById('reportUpdatedAt').textContent = report.last_update || report.updated_at ? 
-                new Date(report.last_update || report.updated_at).toLocaleString() : 
-                (report.created_at ? new Date(report.created_at).toLocaleString() : '-');
-            
-            // Reporter
-            document.getElementById('reportReporter').textContent = report.reporter_name || 'Anonymous';
-            
-            // Message
-            document.getElementById('reportMessage').textContent = report.message || report.description || report.details || 'No description provided.';
-            
-            // Location
-            let locationText = formatLocation(report.location);
-            document.getElementById('reportLocation').textContent = locationText || 'Not specified';
-            
-            const coords = extractCoordinates(report);
-            if (coords) {
-                document.getElementById('reportCoordinates').textContent = `${coords.lat.toFixed(6)}, ${coords.lng.toFixed(6)}`;
-            } else {
-                document.getElementById('reportCoordinates').textContent = 'Not available';
-            }
-            
-            // Assignment
-            const resolutionNoteRow = document.getElementById('resolutionNoteRow');
-            const resolutionNoteEl = document.getElementById('reportResolutionNote');
-            if (assignment && assignment.notes && assignment.notes.trim()) {
-                resolutionNoteRow.style.display = 'flex';
-                resolutionNoteEl.textContent = assignment.notes.trim();
-            } else {
-                resolutionNoteRow.style.display = 'none';
-                resolutionNoteEl.textContent = '';
-            }
-            if (assignment && assignment.responder) {
-                document.getElementById('reportAssignedTo').textContent = 
-                    `${assignment.responder.name} (${assignment.responder.role})`;
-                document.getElementById('reportAssignmentStatus').innerHTML = 
-                    `<span class="status-badge status-${assignment.status || 'assigned'}">${(assignment.status || 'assigned').toUpperCase()}</span>`;
-                document.getElementById('assignBtn').style.display = 'none';
-                document.getElementById('changeBtn').style.display = 'inline-flex';
-                // Show responder needs backup/assistance alert
-                const needsBackup = assignment.needs_backup === true;
-                const needsAssistance = assignment.responder && assignment.responder.needs_assistance === true;
-                const needsHelp = needsBackup || needsAssistance;
-                const alertRow = document.getElementById('responderNeedsHelpRow');
-                if (alertRow) {
-                    if (needsHelp) {
-                        alertRow.style.display = 'flex';
-                        alertRow.innerHTML = '<span class="info-label">⚠️ Responder:</span><span class="info-value"><strong class="text-danger">Requested backup / needs assistance</strong></span>';
-                    } else {
-                        alertRow.style.display = 'none';
-                        alertRow.innerHTML = '';
-                    }
+        // Build modal-style body (same layout as 1st image: Emergency Info, Reporter, Location & Description, Assignment, Timestamps)
+        function populateReportBody(report, assignment, assignmentHistory) {
+            let locationText = 'Location not specified';
+            if (report.location) {
+                if (typeof report.location === 'string') {
+                    try { const l = JSON.parse(report.location); locationText = l.address || l.formatted_address || 'Location detected'; } catch (_) { locationText = report.location; }
+                } else {
+                    locationText = report.location.address || report.location.formatted_address || 'Location detected';
                 }
-                const assignBackupBtn = document.getElementById('assignBackupBtn');
-                if (assignBackupBtn) assignBackupBtn.style.display = needsHelp ? 'inline-flex' : 'none';
-            } else if (report.responder_name) {
-                document.getElementById('reportAssignedTo').textContent = report.responder_name;
-                document.getElementById('reportAssignmentStatus').textContent = 'Assigned';
-                document.getElementById('assignBtn').style.display = 'none';
-                document.getElementById('changeBtn').style.display = 'inline-flex';
-                const alertRow = document.getElementById('responderNeedsHelpRow');
-                if (alertRow) { alertRow.style.display = 'none'; alertRow.innerHTML = ''; }
-                const assignBackupBtn = document.getElementById('assignBackupBtn');
-                if (assignBackupBtn) assignBackupBtn.style.display = 'none';
-            } else {
-                document.getElementById('reportAssignedTo').textContent = 'Not assigned';
-                document.getElementById('reportAssignmentStatus').textContent = '-';
-                document.getElementById('assignBtn').style.display = 'inline-flex';
-                document.getElementById('changeBtn').style.display = 'none';
-                const alertRow = document.getElementById('responderNeedsHelpRow');
-                if (alertRow) { alertRow.style.display = 'none'; alertRow.innerHTML = ''; }
-                const assignBackupBtn = document.getElementById('assignBackupBtn');
-                if (assignBackupBtn) assignBackupBtn.style.display = 'none';
             }
-            
-            // Assignment History
-            if (assignmentHistory.length > 0) {
-                const historyContainer = document.getElementById('assignmentHistory');
-                historyContainer.innerHTML = '<h4 style="margin-bottom: 0.75rem; font-size: 0.9rem; color: #6b7280;">History:</h4>' +
-                    assignmentHistory.map(a => `
-                        <div class="assignment-item">
-                            <div class="assignment-item-header">
-                                <span class="assignment-item-responder">
-                                    ${a.responder ? a.responder.name : 'Unknown'} 
-                                    ${a.responder ? `(${a.responder.role})` : ''}
-                                </span>
-                                <span class="assignment-item-status status-${a.status || 'assigned'}">
-                                    ${(a.status || 'assigned').toUpperCase()}
-                                </span>
-                            </div>
-                            <div class="assignment-item-time">
-                                ${a.assigned_at ? new Date(a.assigned_at).toLocaleString() : '-'}
-                            </div>
-                            ${(a.notes && a.notes.trim()) ? `<div class="assignment-item-notes" style="margin-top: 0.5rem; padding: 0.5rem; background: #f8fafc; border-radius: 8px; font-size: 0.875rem; color: #475569;">${escapeHtml(a.notes.trim())}</div>` : ''}
-                        </div>
-                    `).join('');
+            const createdAt = formatReportDate(report.created_at);
+            const updatedAt = report.last_update ? formatReportDate(report.last_update) : 'Never updated';
+            let classification = report.corrected_description || report.ai_description || '';
+            if (classification && classification.includes('-')) { const parts = classification.split('-').map(p=>p.trim()); if (parts.length>1) classification = parts.slice(1).join('-').trim(); }
+            if (!classification) {
+                const msg = (report.message || '').trim();
+                const isGeneric = /emergency\s+reported\s+from\s+mobile\s+app/i.test(msg);
+                const t = report.type || '';
+                if (isGeneric) classification = t ? (t.charAt(0).toUpperCase() + t.slice(1).replace(/_/g, ' ') + ' (pending)') : 'Pending classification';
+                else classification = msg ? (msg.length > 50 ? msg.substring(0, 50) + '...' : msg) : 'Not specified';
             }
-            
-            // Image – ensure Superuser can see the report image
-            let imageUrl = report.image_url || report.photo_url || report.image || report.image_path || null;
-            try {
-                if (imageUrl && typeof imageUrl === 'string' && !/^https?:\/\//i.test(imageUrl)) {
-                    const path = imageUrl.startsWith('/') ? imageUrl.slice(1) : imageUrl;
-                    const pub = window.emergencySystem?.supabase?.storage
-                        ?.from('reports-images')
-                        ?.getPublicUrl(path);
-                    if (pub?.data?.publicUrl) {
-                        imageUrl = pub.data.publicUrl;
-                    } else {
-                        // Fallback: build public URL (same as mobile app)
-                        const base = 'https://hmolyqzbvxxliemclrld.supabase.co';
-                        imageUrl = base + '/storage/v1/object/public/reports-images/' + path;
-                    }
-                }
-            } catch (e) {
-                console.warn('Could not resolve public URL for report image:', e);
-            }
+            const rName = report.reporter_full_name || report.reporter_name || 'Anonymous';
+            const rEmail = report.reporter_email || report.email || report.gmail || 'Not provided';
+            const rStuNo = report.reporter_student_number || report.student_number || 'Not provided';
+            const rPhone = report.reporter_phone || report.phone || report.contactNumber || 'Not provided';
 
-            if (imageUrl) {
-                const imgEl = document.getElementById('reportImage');
-                const noImgEl = document.getElementById('noImage');
-                imgEl.src = imageUrl;
-                imgEl.style.display = 'block';
-                imgEl.alt = 'Report photo';
-                noImgEl.style.display = 'none';
-                imgEl.onerror = function() {
-                    imgEl.style.display = 'none';
-                    noImgEl.style.display = 'block';
-                };
-            } else {
-                document.getElementById('reportImage').style.display = 'none';
-                document.getElementById('noImage').style.display = 'block';
+            let imageUrl = report.image_url || report.photo_url || report.image || report.image_path || null;
+            if (imageUrl && !/^https?:\/\//i.test(imageUrl)) {
+                try {
+                    const p = window.emergencySystem?.supabase?.storage?.from('reports-images')?.getPublicUrl(imageUrl);
+                    if (p?.data?.publicUrl) imageUrl = p.data.publicUrl;
+                } catch (_) {}
             }
+            const imgHtml = imageUrl
+                ? '<img src="' + escapeHtml(imageUrl) + '" alt="Report image" style="width:100%;max-width:280px;height:180px;object-fit:cover;border-radius:8px;border:1px solid #e5e7eb;">'
+                : '<div style="width:100%;max-width:280px;height:120px;background:#f3f4f6;border:2px dashed #d1d5db;border-radius:8px;display:flex;align-items:center;justify-content:center;color:#9ca3af;font-size:0.85rem;">No image uploaded</div>';
+
+            let assignedText = 'Not assigned';
+            let backupStatusModal = '—';
+            let responderNote = '';
+            let needsBackupInModal = false;
+            if (assignmentHistory && assignmentHistory.length > 0) {
+                assignedText = assignmentHistory.map(a => a.responder ? a.responder.name : ('Responder ' + (a.responder_id || '').substring(0, 8))).join(', ');
+                needsBackupInModal = assignmentHistory.some(a => a.needs_backup === true);
+                const withNotes = assignmentHistory.filter(a => a.notes && a.notes.trim());
+                if (withNotes.length) responderNote = withNotes.map(a => a.notes.trim()).join('\n\n');
+                const backupAsgn = assignmentHistory.filter(a => a.role === 'backup');
+                if (backupAsgn.some(a => a.status === 'resolved')) backupStatusModal = 'Success';
+                else if (backupAsgn.length) backupStatusModal = 'Assigned';
+                else if (needsBackupInModal) backupStatusModal = 'Needs backup';
+            } else if (report.responder_name) assignedText = report.responder_name;
+            if (report.needs_backup && backupStatusModal === '—') backupStatusModal = 'Needs backup';
+
+            const typeIcons = { fire:'🔥', flood:'🌊', accident:'🚗', medical:'🏥', earthquake:'🌍', storm:'⛈️', false_alarm:'🚫', other:'⚠️' };
+            const typeLabels = { false_alarm:'False Alarm', non_emergency:'Non-Emergency' };
+            const t = report.type || 'other';
+            const typeBadge = '<span style="display:inline-flex;align-items:center;gap:0.4rem;padding:0.3rem 0.75rem;border-radius:8px;font-weight:600;font-size:0.85rem;background:#eff6ff;color:#1d4ed8;">' + (typeIcons[t]||'⚠️') + ' ' + (typeLabels[t] || (t.toUpperCase().replace('_',' '))) + '</span>';
+            const statusColors = { pending:'#fef3c7|#d97706', processing:'#dbeafe|#2563eb', classified:'#fed7aa|#ea580c', assigned:'#e0e7ff|#7c3aed', 'in-progress':'#93c5fd|#1d4ed8', 'in_progress':'#93c5fd|#1d4ed8', completed:'#d1fae5|#047857', cancelled:'#f3f4f6|#6b7280' };
+            const sc = (statusColors[report.status]||'#f3f4f6|#6b7280').split('|');
+            const statusBadge = '<span style="padding:0.25rem 0.75rem;border-radius:20px;font-size:0.78rem;font-weight:600;text-transform:uppercase;background:' + sc[0] + ';color:' + sc[1] + ';">' + (report.status||'unknown').toUpperCase() + '</span>';
+            const pColors = { '1':'#fee2e2|#dc2626', '2':'#fef3c7|#d97706', '3':'#dbeafe|#2563eb', '4':'#f3f4f6|#6b7280' };
+            const pc = (pColors[report.priority||4]||'#f3f4f6|#6b7280').split('|');
+            const pLabels = { '1':'Critical', '2':'High', '3':'Medium', '4':'Low' };
+            const priorityBadge = '<span style="padding:0.25rem 0.75rem;border-radius:20px;font-size:0.78rem;font-weight:600;background:' + pc[0] + ';color:' + pc[1] + ';">' + (pLabels[report.priority||4]||'Low') + '</span>';
+
+            const body = document.getElementById('reportContentBody');
+            body.innerHTML = ''
+                + '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;margin-bottom:1rem;">'
+                + '<div style="border:1px solid #e5e7eb;border-radius:0.5rem;overflow:hidden;"><div style="background:#f9fafb;padding:0.75rem 1rem;border-bottom:1px solid #e5e7eb;display:flex;align-items:center;gap:0.5rem;"><i class="bi bi-exclamation-triangle" style="color:#1d4ed8;"></i><strong style="font-size:0.9rem;">Emergency Information</strong></div><div style="padding:1rem;display:grid;gap:0.6rem;">'
+                + '<div style="display:flex;justify-content:space-between;align-items:center;padding:0.4rem 0;border-bottom:1px solid #f3f4f6;"><span style="font-weight:600;font-size:0.85rem;color:#374151;">Type</span><div>' + typeBadge + '</div></div>'
+                + '<div style="display:flex;justify-content:space-between;align-items:center;padding:0.4rem 0;border-bottom:1px solid #f3f4f6;"><span style="font-weight:600;font-size:0.85rem;color:#374151;">Classification</span><div style="text-align:right;font-size:0.85rem;max-width:55%;">' + escapeHtml(classification) + '</div></div>'
+                + '<div style="display:flex;justify-content:space-between;align-items:center;padding:0.4rem 0;border-bottom:1px solid #f3f4f6;"><span style="font-weight:600;font-size:0.85rem;color:#374151;">Status</span><div>' + statusBadge + '</div></div>'
+                + '<div style="display:flex;justify-content:space-between;align-items:center;padding:0.4rem 0;border-bottom:1px solid #f3f4f6;"><span style="font-weight:600;font-size:0.85rem;color:#374151;">Priority</span><div>' + priorityBadge + '</div></div>'
+                + '<div style="display:flex;justify-content:space-between;align-items:center;padding:0.4rem 0;"><span style="font-weight:600;font-size:0.85rem;color:#374151;">Severity</span><span style="font-size:0.85rem;">' + escapeHtml(report.severity||'LOW') + '</span></div></div></div>'
+                + '<div style="border:1px solid #e5e7eb;border-radius:0.5rem;overflow:hidden;"><div style="background:#f9fafb;padding:0.75rem 1rem;border-bottom:1px solid #e5e7eb;display:flex;align-items:center;gap:0.5rem;"><i class="bi bi-person" style="color:#1d4ed8;"></i><strong style="font-size:0.9rem;">Reporter Information</strong></div><div style="padding:1rem;display:grid;gap:0.6rem;">'
+                + '<div style="display:flex;justify-content:space-between;padding:0.4rem 0;border-bottom:1px solid #f3f4f6;"><span style="font-weight:600;font-size:0.85rem;color:#374151;">Name</span><span style="font-size:0.85rem;">' + escapeHtml(rName) + '</span></div>'
+                + '<div style="display:flex;justify-content:space-between;padding:0.4rem 0;border-bottom:1px solid #f3f4f6;"><span style="font-weight:600;font-size:0.85rem;color:#374151;">Email</span><span style="font-size:0.85rem;word-break:break-all;max-width:60%;text-align:right;">' + escapeHtml(rEmail) + '</span></div>'
+                + '<div style="display:flex;justify-content:space-between;padding:0.4rem 0;border-bottom:1px solid #f3f4f6;"><span style="font-weight:600;font-size:0.85rem;color:#374151;">Student No.</span><span style="font-size:0.85rem;">' + escapeHtml(rStuNo) + '</span></div>'
+                + '<div style="display:flex;justify-content:space-between;padding:0.4rem 0;"><span style="font-weight:600;font-size:0.85rem;color:#374151;">Contact</span><span style="font-size:0.85rem;">' + escapeHtml(rPhone) + '</span></div></div></div>'
+                + '<div style="border:1px solid #e5e7eb;border-radius:0.5rem;overflow:hidden;"><div style="background:#f9fafb;padding:0.75rem 1rem;border-bottom:1px solid #e5e7eb;display:flex;align-items:center;gap:0.5rem;"><i class="bi bi-geo-alt" style="color:#1d4ed8;"></i><strong style="font-size:0.9rem;">Location &amp; Description</strong></div><div style="padding:1rem;display:grid;gap:0.6rem;">'
+                + '<div style="display:flex;justify-content:space-between;padding:0.4rem 0;border-bottom:1px solid #f3f4f6;"><span style="font-weight:600;font-size:0.85rem;color:#374151;">Location</span><span style="font-size:0.85rem;text-align:right;max-width:60%;">' + escapeHtml(locationText) + '</span></div>'
+                + '<div style="padding:0.4rem 0;border-bottom:1px solid #f3f4f6;"><div style="font-weight:600;font-size:0.85rem;color:#374151;margin-bottom:0.3rem;">Description</div><div style="font-size:0.85rem;color:#374151;">' + escapeHtml(report.message||'No description provided') + '</div></div>'
+                + '<div style="padding:0.4rem 0;">' + imgHtml + '</div></div></div></div>'
+                + '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;margin-bottom:1.5rem;">'
+                + '<div style="border:1px solid #e5e7eb;border-radius:0.5rem;overflow:hidden;"><div style="background:#f9fafb;padding:0.75rem 1rem;border-bottom:1px solid #e5e7eb;display:flex;align-items:center;gap:0.5rem;"><i class="bi bi-person-badge" style="color:#1d4ed8;"></i><strong style="font-size:0.9rem;">Assignment Information</strong></div><div style="padding:1rem;display:grid;gap:0.6rem;">'
+                + '<div style="display:flex;justify-content:space-between;padding:0.4rem 0;border-bottom:1px solid #f3f4f6;"><span style="font-weight:600;font-size:0.85rem;color:#374151;">Assigned Responder</span><span style="font-size:0.85rem;color:' + (assignedText!=='Not assigned'?'#1d4ed8':'#6b7280') + ';text-align:right;max-width:55%;">' + escapeHtml(assignedText) + '</span></div>'
+                + '<div style="display:flex;justify-content:space-between;padding:0.4rem 0;border-bottom:1px solid #f3f4f6;"><span style="font-weight:600;font-size:0.85rem;color:#374151;">Assignment ID</span><span style="font-size:0.85rem;">' + escapeHtml(String(report.assignment_id||'Not assigned')) + '</span></div>'
+                + '<div style="display:flex;justify-content:space-between;padding:0.4rem 0;border-bottom:1px solid #f3f4f6;"><span style="font-weight:600;font-size:0.85rem;color:#374151;">Backup status</span><span style="font-size:0.85rem;font-weight:600;color:' + (backupStatusModal==='Success'?'#16a34a':backupStatusModal==='Assigned'?'#2563eb':backupStatusModal==='Needs backup'?'#dc2626':'#6b7280') + ';">' + backupStatusModal + '</span></div>'
+                + (needsBackupInModal ? '<div style="display:flex;justify-content:space-between;align-items:center;padding:0.4rem 0;border-bottom:1px solid #fef2f2;background:#fef2f2;margin:0 -1rem;padding:0.5rem 1rem;"><span style="font-weight:700;font-size:0.85rem;color:#dc2626;">🆘 Needs backup</span><span style="font-size:0.85rem;font-weight:600;color:#dc2626;">Yes — assign backup from Reports page</span></div>' : '')
+                + '<div style="display:flex;justify-content:space-between;padding:0.4rem 0;border-bottom:1px solid #f3f4f6;"><span style="font-weight:600;font-size:0.85rem;color:#374151;">Response Time</span><span style="font-size:0.85rem;">' + escapeHtml(String(report.response_time||'Not specified')) + '</span></div>'
+                + (responderNote ? '<div style="padding:0.5rem 0 0;border-top:1px solid #f3f4f6;"><div style="font-weight:600;font-size:0.85rem;color:#374151;margin-bottom:0.35rem;"><i class="bi bi-chat-left-text"></i> Responder note</div><div style="font-size:0.85rem;color:#374151;background:#f9fafb;padding:0.6rem;border-radius:6px;white-space:pre-wrap;">' + escapeHtml(responderNote) + '</div></div>' : '')
+                + '</div></div>'
+                + '<div style="border:1px solid #e5e7eb;border-radius:0.5rem;overflow:hidden;"><div style="background:#f9fafb;padding:0.75rem 1rem;border-bottom:1px solid #e5e7eb;display:flex;align-items:center;gap:0.5rem;"><i class="bi bi-clock-history" style="color:#1d4ed8;"></i><strong style="font-size:0.9rem;">Timestamps</strong></div><div style="padding:1rem;display:grid;gap:0.6rem;">'
+                + '<div style="display:flex;justify-content:space-between;padding:0.4rem 0;border-bottom:1px solid #f3f4f6;"><span style="font-weight:600;font-size:0.85rem;color:#374151;">Created At</span><span style="font-size:0.85rem;">' + createdAt + '</span></div>'
+                + '<div style="display:flex;justify-content:space-between;padding:0.4rem 0;"><span style="font-weight:600;font-size:0.85rem;color:#374151;">Last Updated</span><span style="font-size:0.85rem;">' + updatedAt + '</span></div></div></div><div></div></div>'
+                + '<div style="display:flex;gap:1rem;padding-top:1rem;border-top:1px solid #e5e7eb;flex-wrap:wrap;">'
+                + '<a href="super-user-reports.html?assign=' + escapeHtml(reportId) + '" class="btn btn-success btn-sm"><i class="bi bi-person-plus"></i> Assign Responder</a>'
+                + '<a href="super-user-reports.html?assign=' + escapeHtml(reportId) + '&backup=1" class="btn btn-sm" style="background:#0d9488;color:white;border:none;cursor:pointer;padding:0.375rem 0.875rem;border-radius:6px;text-decoration:none;font-size:0.875rem;"><i class="bi bi-shield-plus"></i> Assign Backup</a>'
+                + '<a href="super-user-reports.html?edit=' + escapeHtml(reportId) + '" class="btn btn-sm" style="background:#3b82f6;color:white;border:none;padding:0.375rem 0.875rem;border-radius:6px;text-decoration:none;font-size:0.875rem;"><i class="bi bi-pencil"></i> Edit Report</a>'
+                + '<a href="super-user-map.html?reportId=' + escapeHtml(reportId) + '" class="btn btn-secondary btn-sm" style="text-decoration:none;"><i class="bi bi-map"></i> View on Map</a>'
+                + '<button type="button" onclick="deleteReport()" class="btn btn-danger btn-sm"><i class="bi bi-trash"></i> Delete Report</button>'
+                + '</div>';
         }
 
         // Initialize map

@@ -56,6 +56,23 @@ serve(async (req) => {
       SERVICE_ROLE
     )
 
+    // Only @gmail.com allowed when *changing* email; existing non-Gmail can be left unchanged
+    if (email) {
+      const emailTrimmed = (email ?? '').toString().trim().toLowerCase();
+      const { data: existingUser } = await supabase.auth.admin.getUserById(userId);
+      const existingEmail = (existingUser?.user?.email ?? '').toString().trim().toLowerCase();
+      const isChangingEmail = existingEmail !== emailTrimmed;
+      if (isChangingEmail && !emailTrimmed.endsWith('@gmail.com')) {
+        return new Response(
+          JSON.stringify({
+            error: 'Only Gmail addresses are allowed',
+            message: 'Please use a valid @gmail.com email address.'
+          }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+    }
+
     // Update auth user only if fields provided (skip on pure archive/restore)
     const displayName = `${firstName ?? ''} ${lastName ?? ''}`.trim()
     const typesArr = Array.isArray(userTypes) && userTypes.length ? userTypes : (userType ? [userType] : null)

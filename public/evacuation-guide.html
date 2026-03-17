@@ -73,6 +73,93 @@
             margin: 0.5rem 0;
             border-radius: 8px;
         }
+
+        /* Evacuation map & routes – modern, smooth */
+        .evacuation-routes-section {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+        .evacuation-map-wrap {
+            position: relative;
+            border-radius: 20px;
+            overflow: hidden;
+            background: linear-gradient(145deg, #f8fafc 0%, #f1f5f9 100%);
+            box-shadow: 0 4px 24px rgba(15, 23, 42, 0.08), 0 1px 3px rgba(15, 23, 42, 0.04);
+            border: 1px solid rgba(226, 232, 240, 0.8);
+            transition: box-shadow 0.35s ease, transform 0.35s ease;
+        }
+        .evacuation-map-wrap:hover {
+            box-shadow: 0 12px 40px rgba(15, 23, 42, 0.12), 0 4px 12px rgba(15, 23, 42, 0.06);
+            transform: translateY(-2px);
+        }
+        .evacuation-map-wrap .map-label {
+            position: absolute;
+            top: 1rem;
+            left: 1rem;
+            z-index: 2;
+            background: rgba(255, 255, 255, 0.92);
+            backdrop-filter: blur(12px);
+            padding: 0.5rem 1rem;
+            border-radius: 12px;
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: #0f172a;
+            letter-spacing: 0.02em;
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+        }
+        .evacuation-map-wrap img {
+            display: block;
+            width: 100%;
+            height: auto;
+            max-height: 520px;
+            object-fit: contain;
+            object-position: center;
+        }
+        .evacuation-cards-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+        }
+        @media (max-width: 768px) {
+            .evacuation-cards-row { grid-template-columns: 1fr; }
+        }
+        .evacuation-route-card {
+            border-radius: 16px;
+            padding: 1.5rem 1.75rem;
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 4px 20px rgba(15, 23, 42, 0.06);
+            transition: box-shadow 0.3s ease, border-color 0.3s ease, transform 0.3s ease;
+        }
+        .evacuation-route-card:hover {
+            box-shadow: 0 8px 32px rgba(15, 23, 42, 0.1);
+            border-color: #cbd5e1;
+            transform: translateY(-2px);
+        }
+        .evacuation-route-card.primary {
+            border-left: 4px solid #10b981;
+            background: linear-gradient(135deg, #f0fdf4 0%, #ffffff 30%);
+        }
+        .evacuation-route-card.secondary {
+            border-left: 4px solid #f59e0b;
+            background: linear-gradient(135deg, #fffbeb 0%, #ffffff 30%);
+        }
+        .evacuation-route-card h4 {
+            font-size: 1.125rem;
+            font-weight: 700;
+            color: #0f172a;
+            margin: 0 0 1rem 0;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .evacuation-route-card h4 i { opacity: 0.9; }
+        .evacuation-route-card p { margin: 0.5rem 0; color: #475569; font-size: 0.9375rem; line-height: 1.5; }
+        .evacuation-route-card .route-list { margin-top: 0.75rem; }
+        .evacuation-route-card .route-list .flex { margin: 0.4rem 0; }
+        .evacuation-route-card .route-list i.text-green-600 { color: #059669; }
+        .evacuation-route-card .route-list i.bi-building { color: #64748b; }
         
         /* Modal Styles */
         .modal {
@@ -469,51 +556,52 @@
                         </h3>
                     </div>
                     <div class="card-body">
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <!-- Main Evacuation Area -->
-                            <div class="evacuation-route">
-                                <h4 class="text-lg font-semibold mb-3 flex items-center gap-2">
-                                    <i class="bi bi-geo-alt"></i> Primary Evacuation Area
-                                </h4>
-                                <p class="mb-3"><strong>Location:</strong> Main Quadrangle / Open Field</p>
-                                <p class="mb-3"><strong>Capacity:</strong> 2,000+ people</p>
-                                <div class="space-y-2">
-                                    <div class="flex items-center gap-2">
-                                        <i class="bi bi-check-circle text-green-600"></i>
-                                        <span>Open space away from buildings</span>
-                                    </div>
-                                    <div class="flex items-center gap-2">
-                                        <i class="bi bi-check-circle text-green-600"></i>
-                                        <span>First aid station available</span>
-                                    </div>
-                                    <div class="flex items-center gap-2">
-                                        <i class="bi bi-check-circle text-green-600"></i>
-                                        <span>Emergency supplies storage</span>
+                        <div class="evacuation-routes-section">
+                            <!-- Campus evacuation map (1st image) -->
+                            <div class="evacuation-map-wrap">
+                                <span class="map-label"><i class="bi bi-signpost-split"></i> Campus Evacuation Map</span>
+                                <img src="images/evacuation-routes-map.png" alt="LSPU Sta. Cruz Campus evacuation routes and assembly area" loading="lazy">
+                            </div>
+                            <!-- Primary & secondary areas -->
+                            <div class="evacuation-cards-row">
+                                <div class="evacuation-route-card primary">
+                                    <h4><i class="bi bi-geo-alt-fill"></i> Primary Evacuation Area</h4>
+                                    <p><strong>Location:</strong> Main Quadrangle / Open Field</p>
+                                    <p><strong>Capacity:</strong> 2,000+ people</p>
+                                    <div class="route-list space-y-2">
+                                        <div class="flex items-center gap-2">
+                                            <i class="bi bi-check-circle text-green-600"></i>
+                                            <span>Open space away from buildings</span>
+                                        </div>
+                                        <div class="flex items-center gap-2">
+                                            <i class="bi bi-check-circle text-green-600"></i>
+                                            <span>First aid station available</span>
+                                        </div>
+                                        <div class="flex items-center gap-2">
+                                            <i class="bi bi-check-circle text-green-600"></i>
+                                            <span>Emergency supplies storage</span>
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
-
-                            <!-- Secondary Evacuation Areas -->
-                            <div class="evacuation-route">
-                                <h4 class="text-lg font-semibold mb-3 flex items-center gap-2">
-                                    <i class="bi bi-geo-alt-fill"></i> Secondary Evacuation Areas
-                                </h4>
-                                <div class="space-y-2">
-                                    <div class="flex items-center gap-2">
-                                        <i class="bi bi-building"></i>
-                                        <span>Gymnasium (Building 15)</span>
-                                    </div>
-                                    <div class="flex items-center gap-2">
-                                        <i class="bi bi-building"></i>
-                                        <span>Library (Building 8)</span>
-                                    </div>
-                                    <div class="flex items-center gap-2">
-                                        <i class="bi bi-building"></i>
-                                        <span>Auditorium (Building 12)</span>
-                                    </div>
-                                    <div class="flex items-center gap-2">
-                                        <i class="bi bi-building"></i>
-                                        <span>Parking Area (North Side)</span>
+                                <div class="evacuation-route-card secondary">
+                                    <h4><i class="bi bi-geo-alt"></i> Secondary Evacuation Areas</h4>
+                                    <div class="route-list space-y-2">
+                                        <div class="flex items-center gap-2">
+                                            <i class="bi bi-building"></i>
+                                            <span>Gymnasium (Building 15)</span>
+                                        </div>
+                                        <div class="flex items-center gap-2">
+                                            <i class="bi bi-building"></i>
+                                            <span>Library (Building 8)</span>
+                                        </div>
+                                        <div class="flex items-center gap-2">
+                                            <i class="bi bi-building"></i>
+                                            <span>Auditorium (Building 12)</span>
+                                        </div>
+                                        <div class="flex items-center gap-2">
+                                            <i class="bi bi-building"></i>
+                                            <span>Parking Area (North Side)</span>
+                                        </div>
                                     </div>
                                 </div>
                             </div>

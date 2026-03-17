@@ -1596,20 +1596,26 @@
                 return;
             }
                 
-            container.innerHTML = responders.map(responder => `
+            const leaderName = (r) => (r.leader && r.leader.name) ? r.leader.name : (r.leader_name || null);
+            container.innerHTML = responders.map(responder => {
+                const teamName = responder.team_name || null;
+                const leader = leaderName(responder);
+                return `
                 <div class="team-item-modern">
                     <div class="team-avatar-modern">
                         <i class="bi bi-person-badge"></i>
                     </div>
                     <div class="team-details-modern">
                         <h4>${responder.name}</h4>
-                        <p>${responder.role}</p>
+                        <p>${responder.role}${teamName ? ` · ${teamName}` : ''}</p>
+                        ${leader ? `<p class="team-leader-modern" style="margin:0.125rem 0 0.375rem 0;font-size:0.75rem;color:#6b7280;"><strong>Leader:</strong> ${leader}</p>` : ''}
                         <span class="status-badge-modern ${responder.status === 'active' ? 'active' : 'inactive'}">
                             ${responder.status.toUpperCase()}
                         </span>
                     </div>
                 </div>
-            `).join('');
+            `;
+            }).join('');
         }
 
         // Update active emergency reports

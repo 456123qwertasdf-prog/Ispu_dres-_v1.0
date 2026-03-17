@@ -2178,8 +2178,9 @@
                 leaderGroup.style.display = 'none';
             }
 
-            // Attach the editing user id to the form for update
+            // Attach the editing user id and original email for update (so we can allow unchanged non-Gmail)
             document.getElementById('userRegistrationForm').dataset.editUserId = userId;
+            document.getElementById('userRegistrationForm').dataset.originalGmail = (user.gmail || '').trim();
 
             // Update UI to show edit mode
             enterEditMode(userId);
@@ -2223,6 +2224,7 @@
 
         // Exit edit mode - reset UI
         function exitEditMode() {
+            delete document.getElementById('userRegistrationForm').dataset.originalGmail;
             const formTitle = document.getElementById('formTitle');
             const submitButton = document.getElementById('submitButton');
             const submitButtonText = document.getElementById('submitButtonText');
@@ -2455,7 +2457,7 @@
                     password: document.getElementById('password').value,
                     firstname: document.getElementById('firstname').value,
                     lastname: document.getElementById('lastname').value,
-                    gmail: document.getElementById('gmail').value,
+                    gmail: document.getElementById('gmail').value.trim(),
                     studentNumber: document.getElementById('studentNumber').value,
                     contactNumber: document.getElementById('contactNumber').value,
                     role: document.getElementById('userRole').value,
@@ -2463,7 +2465,19 @@
                     teamName: document.getElementById('userRole').value === 'responder' ? (document.getElementById('responderTeamName').value || null) : null
                 };
 
+                // Only @gmail.com emails allowed for new users, or when changing email on edit
                 const editingUserId = document.getElementById('userRegistrationForm').dataset.editUserId;
+                const originalGmail = (document.getElementById('userRegistrationForm').dataset.originalGmail || '').trim().toLowerCase();
+                const gmailChanged = editingUserId && formData.gmail.trim().toLowerCase() !== originalGmail;
+                if (formData.gmail) {
+                    if (editingUserId && !gmailChanged) {
+                        // Editing and email unchanged – allow any (e.g. existing non-Gmail)
+                    } else if (!formData.gmail.toLowerCase().endsWith('@gmail.com')) {
+                        window.emergencySystem.showError('Only Gmail addresses are allowed. Please use an @gmail.com email.');
+                        return;
+                    }
+                }
+
                 if (editingUserId) {
                     const userTypesToUpdate = formData.userTypes.length ? formData.userTypes : (formData.studentNumber ? ['student'] : ['student']);
                     console.log('Updating user with data:', { userId: editingUserId, userTypes: userTypesToUpdate, ...formData });
@@ -2494,6 +2508,7 @@
                     
                     // Clear edit mode and reset form
                     delete document.getElementById('userRegistrationForm').dataset.editUserId;
+                    delete document.getElementById('userRegistrationForm').dataset.originalGmail;
                     exitEditMode();
                     document.getElementById('userRegistrationForm').reset();
                     
@@ -2606,6 +2621,7 @@
 
             // Clear edit mode
             delete document.getElementById('userRegistrationForm').dataset.editUserId;
+            delete document.getElementById('userRegistrationForm').dataset.originalGmail;
             exitEditMode();
         }
         

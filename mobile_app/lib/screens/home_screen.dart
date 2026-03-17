@@ -2432,24 +2432,27 @@ tooltipBackgroundColor: _tourAccent,
             ),
             const SizedBox(height: 20),
             _buildModernContactCard(
-              'Fire Department',
-              '117',
+              'BFP (Bureau of Fire Protection)',
+              '09174173698',
               Icons.local_fire_department_rounded,
               const Color.fromARGB(255, 249, 22, 22),
+              subtitle: 'Mobile: 0917 417 3698\nLandline: (049) 501-0004',
             ),
             const SizedBox(height: 12),
             _buildModernContactCard(
-              'Police Department',
-              '117',
+              'Police Station',
+              '09284653820',
               Icons.local_police_rounded,
               const Color(0xFF3b82f6),
+              subtitle: 'Mobile: 0928-465-3820\nLandline: 501-5971',
             ),
             const SizedBox(height: 12),
             _buildModernContactCard(
-              'Medical Team',
-              '117',
+              'Medical Emergency',
+              '0495013218',
               Icons.medical_services_rounded,
               const Color(0xFF10b981),
+              subtitle: 'Laguna Doctors Hospital: (049) 501-3218\nLaguna Medical Center: (049) 543-333',
             ),
             const SizedBox(height: 12),
             _buildModernContactCard(
@@ -2465,7 +2468,7 @@ tooltipBackgroundColor: _tourAccent,
     );
   }
 
-  Widget _buildModernContactCard(String name, String number, IconData icon, Color color) {
+  Widget _buildModernContactCard(String name, String number, IconData icon, Color color, {String? subtitle}) {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -2518,24 +2521,35 @@ tooltipBackgroundColor: _tourAccent,
                         ),
                       ),
                       const SizedBox(height: 4),
-                      Row(
-                        children: [
-                          Icon(
-                            Icons.phone_rounded,
-                            size: 14,
-                            color: Colors.grey.shade500,
+                      if (subtitle != null)
+                        Text(
+                          subtitle,
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w500,
+                            color: Colors.grey.shade600,
+                            height: 1.35,
                           ),
-                          const SizedBox(width: 4),
-                          Text(
-                            number,
-                            style: TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w600,
-                              color: Colors.grey.shade600,
+                        )
+                      else
+                        Row(
+                          children: [
+                            Icon(
+                              Icons.phone_rounded,
+                              size: 14,
+                              color: Colors.grey.shade500,
                             ),
-                          ),
-                        ],
-                      ),
+                            const SizedBox(width: 4),
+                            Text(
+                              number,
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.grey.shade600,
+                              ),
+                            ),
+                          ],
+                        ),
                     ],
                   ),
                 ),

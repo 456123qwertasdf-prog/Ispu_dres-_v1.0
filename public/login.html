@@ -1400,7 +1400,7 @@
                         
                         <div class="form-group">
                             <div class="input-icon"><i class="bi bi-envelope"></i></div>
-                            <input type="email" id="signupEmail" class="form-input" placeholder="Email" required>
+                            <input type="email" id="signupEmail" class="form-input" placeholder="Gmail address (@gmail.com only)" required title="Only @gmail.com addresses are allowed">
                         </div>
                         
                         <div class="form-group">
@@ -1847,9 +1847,15 @@
                 await waitForInit();
 
                 const name = document.getElementById('signupName').value;
-                const email = document.getElementById('signupEmail').value;
+                const email = document.getElementById('signupEmail').value.trim();
                 const password = document.getElementById('signupPassword').value;
                 const confirmPassword = document.getElementById('signupConfirmPassword').value;
+
+                // Only @gmail.com emails are allowed
+                if (!email.toLowerCase().endsWith('@gmail.com')) {
+                    emergencySystem.showError('Only Gmail addresses are allowed. Please use an @gmail.com email.');
+                    return;
+                }
 
                 // Validate password strength
                 const passwordValidation = validatePassword(password);
